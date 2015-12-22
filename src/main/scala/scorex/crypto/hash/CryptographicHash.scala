@@ -1,4 +1,4 @@
-package scorex.crypto
+package scorex.crypto.hash
 
 import java.security.MessageDigest
 
@@ -34,13 +34,4 @@ trait CryptographicHash {
 object CryptographicHash {
   type Message = Array[Byte]
   type Digest = Array[Byte]
-}
-
-/**
-  * Hashing functions implementation with sha256 impl from Java SDK
-  */
-object Sha256 extends CryptographicHash {
-  override val DigestSize = 32
-
-  override def hash(input: Array[Byte]) = MessageDigest.getInstance("SHA-256").digest(input)
 }

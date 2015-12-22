@@ -1,10 +1,10 @@
-package scorex.crypto;
+package scorex.crypto.hash;
 
 /**
- * RIPEMD160 Implementation, used to encode addresses only
+ * RIPEMD160J Implementation, used to encode addresses only
  */
 
-public class RIPEMD160 {
+public class RIPEMD160J {
 
     private static final int[][] ArgArray = {{11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8,
             7, 6, 8, 13, 11, 9, 7, 15, 7, 12, 15, 9, 11, 7, 13, 12,
@@ -32,7 +32,7 @@ public class RIPEMD160 {
     private int working_ptr;
     private int msglen;
 
-    public RIPEMD160() {
+    public RIPEMD160J() {
         MDbuf = new int[5];
         MDbuf[0] = 0x67452301;
         MDbuf[1] = 0xefcdab89;
@@ -186,7 +186,7 @@ public class RIPEMD160 {
         compress(X);
     }
 
-    public void update(byte[] input) {
+    private void update(byte[] input) {
         for (int i = 0; i < input.length; i++) {
             working[working_ptr >> 2] ^= ((int) input[i]) << ((working_ptr & 3) << 3);
             working_ptr++;
@@ -201,7 +201,7 @@ public class RIPEMD160 {
         msglen += input.length;
     }
 
-    public byte[] digestBin() {
+    private byte[] digestBin() {
         MDfinish(working, msglen, 0);
         byte[] res = new byte[20];
         for (int i = 0; i < 20; i++) {
