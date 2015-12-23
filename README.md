@@ -28,9 +28,18 @@ Supported hash algorithms are:
 - Skein
 - Whirlpool
        
-Take a look at CryptographicHash interface and use them like
+Take a look at CryptographicHash interface and use supported hash algorithms like
 ```scala
 Sha256.hash("test")
+```
+Create your own hash chain algorithm
+
+```scala
+import scorex.crypto.hashChain
+object MyCustomHash extends CryptographicHash {
+  override val DigestSize: Int = 64
+  override def hash(input: Message): Digest = hashChain(input, Blake512, BMW512, Groestl512, Skein512, Sha512)
+}
 ```
 
 ### Encode
