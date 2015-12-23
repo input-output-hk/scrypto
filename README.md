@@ -29,9 +29,11 @@ Supported hash algorithms are:
 - Whirlpool
        
 Take a look at CryptographicHash interface and use supported hash algorithms like
+
 ```scala
 Sha256.hash("test")
 ```
+
 Create your own hash chain algorithm
 
 ```scala
