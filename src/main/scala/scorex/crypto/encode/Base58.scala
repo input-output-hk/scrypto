@@ -1,4 +1,4 @@
-package scorex.crypto
+package scorex.crypto.encode
 
 import scala.util.Try
 

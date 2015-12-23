@@ -1,8 +1,7 @@
-package scorex.crypto.hash
+package scorex.crypto.encode
 
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.Base58
 
 class Base58Specification extends PropSpec
 with PropertyChecks
