@@ -11,10 +11,23 @@ libraryDependencies += "org.consensusresearch" %% "scrypto" % "+"
 ```
 
 ### Hash functions
-Supported hash functions are:
-- Sha256
-- Ripemd160
-
+Supported hash algorithms are:
+- Blake
+- BMW
+- CubeHash
+- Echo
+- Fugue
+- Groestl
+- Hamsi
+- JH
+- Keccak
+- Luffa
+- Sha
+- SHAvite
+- SIMD
+- Skein
+- Whirlpool
+       
 Take a look at CryptographicHash interface and use them like
 ```scala
 Sha256.hash("test")
