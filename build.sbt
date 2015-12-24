@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "2.+" % "test",
   "org.scalactic" %% "scalactic" % "2.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.+" % "test",
+  "org.slf4j" % "slf4j-api" % "1.+",
   "org.whispersystems" % "curve25519-java" % "+"
 )
 
