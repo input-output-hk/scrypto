@@ -31,20 +31,24 @@ Supported hash algorithms are:
 Take a look at CryptographicHash interface and use supported hash algorithms like
 
 ```scala
-Sha256.hash("test")
+Keccak512.hash("some string or bytes")
 ```
 
-Create your own hash chain algorithm
+### Hash chain
+
+It's possible to apply hash functions sequentially to create more secure hash function. The most well-known [X11](http://en.wiki.dashninja.pl/wiki/X11) hash chain is available from this library.
+
+You can easily create your own hash chain function:
 ```scala
 import scorex.crypto.applyHashes
 object MyCustomHash extends CryptographicHash {
   override val DigestSize: Int = 64
-  override def hash(input: Message): Digest = applyHashes(input, Blake512, BMW512, Groestl512, Skein512, Sha512)
+  override def hash(input: Message): Digest = applyHashes(input, Blake512, Sha512, Groestl512, Skein512)
 }
 ```
 or just
 ```scala
-val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Keccak512, Luffa512, CubeHash512, SHAvite512)
+val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Keccak512, Luffa512, Wirlpool)
 ```
 
 ### Encode
