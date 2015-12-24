@@ -1,7 +1,7 @@
 package scorex.crypto.hash
 
-import fr.cryptohash.{BMW512, Digest}
+import fr.cryptohash.Digest
 
 object BMW512 extends FRHash {
-  override protected val hf: Digest = new BMW512
+  override protected val hf: Digest = new fr.cryptohash.BMW512
 }
