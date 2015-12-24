@@ -4,6 +4,10 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto._
 
+import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+
 trait HashTest extends PropSpec
 with PropertyChecks
 with GeneratorDrivenPropertyChecks
@@ -38,6 +42,12 @@ with Matchers {
       external.foreach { m =>
         bytes2hex(hash.hash(m._1)) shouldBe m._2.toLowerCase
       }
+    }
+
+    property(s"${hash.getClass.getSimpleName} is thread safe") {
+      val singleThreadHashes = (0 until 1000).map(i => hash.hash(i.toString))
+      val multiThreadHashes = Future.sequence((0 until 1000).map(i => Future(hash.hash(i.toString))))
+      singleThreadHashes.map(bytes2hex(_)) shouldBe Await.result(multiThreadHashes, 1.minute).map(bytes2hex(_))
     }
   }
 
