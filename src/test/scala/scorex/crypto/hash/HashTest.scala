@@ -45,8 +45,8 @@ with Matchers {
     }
 
     property(s"${hash.getClass.getSimpleName} is thread safe") {
-      val singleThreadHashes = (0 until 1000).map(i => hash.hash(i.toString))
-      val multiThreadHashes = Future.sequence((0 until 1000).map(i => Future(hash.hash(i.toString))))
+      val singleThreadHashes = (0 until 100).map(i => hash.hash(i.toString))
+      val multiThreadHashes = Future.sequence((0 until 100).map(i => Future(hash.hash(i.toString))))
       singleThreadHashes.map(bytes2hex(_)) shouldBe Await.result(multiThreadHashes, 1.minute).map(bytes2hex(_))
     }
   }
