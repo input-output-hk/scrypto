@@ -35,13 +35,16 @@ Sha256.hash("test")
 ```
 
 Create your own hash chain algorithm
-
 ```scala
-import scorex.crypto.hashChain
+import scorex.crypto.applyHashes
 object MyCustomHash extends CryptographicHash {
   override val DigestSize: Int = 64
-  override def hash(input: Message): Digest = hashChain(input, Blake512, BMW512, Groestl512, Skein512, Sha512)
+  override def hash(input: Message): Digest = applyHashes(input, Blake512, BMW512, Groestl512, Skein512, Sha512)
 }
+```
+or just
+```scala
+val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Keccak512, Luffa512, CubeHash512, SHAvite512)
 ```
 
 ### Encode

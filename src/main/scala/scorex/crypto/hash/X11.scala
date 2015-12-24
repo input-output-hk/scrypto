@@ -1,13 +1,13 @@
 package scorex.crypto.hash
 
 import scorex.crypto.hash.CryptographicHash.{Digest, Message}
-import scorex.crypto.hashChain
+import scorex.crypto.applyHashes
 
 object X11 extends CryptographicHash {
 
   override val DigestSize: Int = 32
 
-  override def hash(input: Message): Digest = hashChain(input,
+  override def hash(input: Message): Digest = applyHashes(input,
     Blake512, BMW512, Groestl512, Skein512, JH512, Keccak512, Luffa512, CubeHash512, SHAvite512, SIMD512, ECHO512)
     .slice(0, DigestSize * 8)
 
