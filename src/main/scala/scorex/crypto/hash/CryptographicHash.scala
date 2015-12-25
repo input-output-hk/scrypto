@@ -28,6 +28,10 @@ trait CryptographicHash {
 
   def hash(input: String): Digest = hash(input.getBytes)
 
+  /**
+    * May be useful sometimes, but it's better to use chain of different hash algorithms
+    */
+  @deprecated
   def doubleHash(input: Message): Digest = hash(hash(input))
 }
 
