@@ -4,10 +4,12 @@ Scrypto is an open source cryptographic toolkit designed to make it easier and s
 ## Get Scrypto
 
 Scrypto is available on Sonatype for Scala 2.11!
-You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
-
 ```scala
-libraryDependencies += "org.consensusresearch" %% "scrypto" % "+"
+resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
+```
+You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
+```scala
+libraryDependencies += "org.consensusresearch" %% "scrypto" % "1.0.1"
 ```
 
 ### Hash functions
