@@ -33,7 +33,7 @@ Supported hash algorithms are:
 Take a look at CryptographicHash interface and use supported hash algorithms like
 
 ```scala
-Keccak512.hash("some string or bytes")
+Keccak512("some string or bytes")
 ```
 
 ### Hash chain

@@ -1,7 +1,5 @@
 package scorex.crypto.hash
 
-import java.security.MessageDigest
-
 /**
   * From Wikipedia (https://en.wikipedia.org/wiki/Cryptographic_hash_function):
   * "A cryptographic hash function is a hash function which is considered practically impossible to invert,
@@ -23,6 +21,10 @@ trait CryptographicHash {
   import CryptographicHash._
 
   val DigestSize: Int //in bytes
+
+  def apply(input: Message): Digest = hash(input)
+
+  def apply(input: String): Digest = hash(input.getBytes)
 
   def hash(input: Message): Digest
 
