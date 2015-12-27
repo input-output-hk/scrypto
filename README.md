@@ -15,6 +15,7 @@ libraryDependencies += "org.consensusresearch" %% "scrypto" % "1.0.2"
 ### Hash functions
 Supported hash algorithms are:
 - Blake
+- Blake2b
 - BMW
 - CubeHash
 - Echo
@@ -31,11 +32,10 @@ Supported hash algorithms are:
 - Whirlpool
        
 Take a look at CryptographicHash interface and use supported hash algorithms like
-
 ```scala
 Keccak512("some string or bytes")
 ```
-
+All provided hash functions are secure, and their implementations are thread safe.
 ### Hash chain
 
 It's possible to apply hash functions sequentially to create more secure hash function. The most well-known [X11](http://en.wiki.dashninja.pl/wiki/X11) hash chain is available from this library.
