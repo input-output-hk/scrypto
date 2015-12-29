@@ -54,7 +54,9 @@ val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Kecca
 ```
 
 ### Encode
+- Base16
 - Base58
+- Base64
 
 ### Signing functions
 - Curve25519
