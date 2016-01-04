@@ -60,3 +60,7 @@ val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Kecca
 
 ### Signing functions
 - Curve25519
+
+# Contributing
+
+Your contributions are always welcome! Please submit a pull request or create an issue to add a new cryptographic primitives or better implementations
