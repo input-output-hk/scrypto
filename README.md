@@ -1,4 +1,4 @@
-# Scrypto [![Build Status](http://scorextech.gq:8080/job/scrypto/badge/icon)](http://scorextech.gq:8080/job/scrypto/)
+# Scrypto
 Scrypto is an open source cryptographic toolkit designed to make it easier and safer for developers to use cryptography in their applications.
 
 ## Get Scrypto
