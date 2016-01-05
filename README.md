@@ -101,7 +101,7 @@ Run 'sbt test' from a folder contains the framework to launch tests.
 
 # License
 
-The code is under Public Domain CC0 license means you can anything with it.
+The code is under Public Domain CC0 license means you can do anything with it. Full license text is in [COPYING file](https://github.com/ScorexProject/scrypto/blob/master/COPYING)
 
 # Contributing
 
