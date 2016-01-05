@@ -92,6 +92,9 @@ Example:
   assert(curveImpl.verify(sig, message, keyPair._2))
 ```
 
+**Note on security:** Scrypto provides Scala wrapper for [Curve25519-Java](https://github.com/WhisperSystems/curve25519-java) by
+Whisper Systems, so has the same security properties. JDK's SecureRandom used to obtain seed bytes.
+
 # Tests
 
 Run 'sbt test' from a folder contains the framework to launch tests.
