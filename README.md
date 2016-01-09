@@ -1,4 +1,4 @@
-# Scrypto [![Build Status](http://ci.scorex.ml:8080/buildStatus/icon?job=scrypto)](http://ci.scorex.ml:8080/job/scrypto)
+# Scrypto [![Build Status](http://23.94.190.226:8080/buildStatus/icon?job=scrypto)](http://23.94.190.226:8080/job/scrypto)
 Scrypto is an open source cryptographic toolkit designed to make it easier and safer for developers to use cryptography in their applications.
 
 It was extracted from [Scorex](https://github.com/ScorexProject/Scorex-Lagonaki), open-source modular blockchain & cryptocurrency framework.
