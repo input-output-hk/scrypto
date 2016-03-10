@@ -95,6 +95,16 @@ Example:
 **Note on security:** Scrypto provides Scala wrapper for [Curve25519-Java](https://github.com/WhisperSystems/curve25519-java) by
 Whisper Systems, so has the same security properties. JDK's SecureRandom used to obtain seed bytes.
 
+### Authenticated data structure
+
+Scrypto supports following authenticated data structure:
+
+Example:
+
+```scala
+TODO
+```
+
 # Tests
 
 Run 'sbt test' from a folder contains the framework to launch tests.

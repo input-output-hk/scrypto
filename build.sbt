@@ -7,6 +7,9 @@ version := "1.0.4"
 scalaVersion := "2.11.7"
 
 libraryDependencies ++= Seq(
+  "org.mapdb" % "mapdb" % "2.+",
+  "com.google.guava" % "guava" % "15.+",
+  "com.typesafe.play" %% "play-json" % "2.4.+",
   "io.spray" %% "spray-testkit" % "1.+" % "test",
   "org.scalatest" %% "scalatest" % "2.+" % "test",
   "org.scalactic" %% "scalactic" % "2.+" % "test",
