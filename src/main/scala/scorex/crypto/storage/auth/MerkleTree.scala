@@ -1,26 +1,21 @@
 package scorex.crypto.storage.auth
 
-import java.io.{FileOutputStream, RandomAccessFile}
-import java.nio.file.{Files, Paths}
+import java.io.RandomAccessFile
 
 import scorex.crypto.hash.CryptographicHash
 import scorex.crypto.hash.CryptographicHash.Digest
-import scorex.crypto.storage._
 import scorex.utils.ScorexLogging
 
 import scala.annotation.tailrec
 
-class MerkleTree[H <: CryptographicHash](treeFolder: String,
+class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
                                          val nonEmptyBlocks: Position,
-                                         blockSize: Int,
                                          hash: H = DefaultHash
                                         ) extends ScorexLogging {
 
   import MerkleTree._
 
   val level = calculateRequiredLevel(nonEmptyBlocks)
-
-  lazy val storage = new TreeStorage(treeFolder + TreeFileName, level)
 
   val rootHash: Digest = getHash((level, 0)).get
 
@@ -29,7 +24,7 @@ class MerkleTree[H <: CryptographicHash](treeFolder: String,
   /**
     * Return AuthDataBlock at position $index
     */
-  def byIndex(index: Position): Option[AuthDataBlock[Block]] = {
+  def byIndex(index: Position): Option[DataBlockSignature] = {
     if (index < nonEmptyBlocks && index >= 0) {
       @tailrec
       def calculateTreePath(n: Position, currentLevel: Int, acc: Seq[Digest] = Seq()): Seq[Digest] = {
@@ -49,10 +44,7 @@ class MerkleTree[H <: CryptographicHash](treeFolder: String,
         }
       }
 
-      val path = Paths.get(treeFolder + "/" + index)
-      val data: Block = Files.readAllBytes(path)
-      val treePath = calculateTreePath(index, 0)
-      Some(AuthDataBlock(data, treePath))
+      Some(DataBlockSignature(index, calculateTreePath(index, 0)))
     } else {
       None
     }
@@ -88,15 +80,17 @@ object MerkleTree {
   type Block = Array[Byte]
 
   val TreeFileName = "/hashTree"
+  val SegmentsFileName = "/segments"
 
   /**
-    * Create Merkle tree from file with data
+    * Process file to TreeStorage
     */
-  def fromFile[H <: CryptographicHash](fileName: String,
-                                       treeFolder: String,
-                                       blockSize: Int,
-                                       hash: H = DefaultHash
-                                      ): MerkleTree[H] = {
+  def processFile[H <: CryptographicHash](fileName: String,
+                                          treeFolder: String,
+                                          blockSize: Int,
+                                          segmentsStorage: SegmentsStorage,
+                                          hash: H = DefaultHash
+                                         ): (TreeStorage, Long) = {
     val byteBuffer = new Array[Byte](blockSize)
 
     def readLines(bigDataFilePath: String, chunkIndex: Position): Array[Byte] = {
@@ -126,9 +120,7 @@ object MerkleTree {
 
     def processBlocks(currentBlock: Position = 0): Unit = {
       val block: Block = readLines(fileName, currentBlock)
-      val fos = new FileOutputStream(treeFolder + "/" + currentBlock)
-      fos.write(block)
-      fos.close()
+      segmentsStorage.set(currentBlock, block)
       storage.set((0, currentBlock), hash(block))
       if (currentBlock < nonEmptyBlocks - 1) {
         processBlocks(currentBlock + 1)
@@ -137,10 +129,34 @@ object MerkleTree {
 
     processBlocks()
 
+    segmentsStorage.commit()
     storage.commit()
-    storage.close()
 
-    new MerkleTree(treeFolder, nonEmptyBlocks, blockSize, hash)
+    (storage, nonEmptyBlocks)
+  }
+
+  /**
+    * Create Merkle tree from file with data
+    */
+  def fromFile[H <: CryptographicHash](fileName: String,
+                                       treeFolder: String,
+                                       blockSize: Int,
+                                       hash: H = DefaultHash
+                                      ): (MerkleTree[H], SegmentsStorage) = {
+    val segmentsStorage = new SegmentsStorage(treeFolder + SegmentsFileName)
+    val (storage, nonEmptyBlocks) = processFile(fileName, treeFolder, blockSize, segmentsStorage, hash)
+    (new MerkleTree(storage, nonEmptyBlocks, hash), segmentsStorage)
+  }
+
+  def fromData[Block, H <: CryptographicHash](treeFolder: String, data: Iterable[TreeSegment], hash: H = DefaultHash)
+  : MerkleTree[H] = {
+    val nonEmptyBlocks: Position = data.size
+    val level = calculateRequiredLevel(nonEmptyBlocks)
+
+    lazy val storage = new TreeStorage(treeFolder + TreeFileName, level)
+    for ((segment, position) <- data.view.zipWithIndex) storage.set((0, position), hash(segment.bytes))
+
+    new MerkleTree(storage, nonEmptyBlocks, hash)
   }
 
   private def calculateRequiredLevel(numberOfDataBlocks: Position): Int = {

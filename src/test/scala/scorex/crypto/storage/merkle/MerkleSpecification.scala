@@ -5,28 +5,25 @@ import java.io.{File, FileOutputStream}
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.storage.auth.MerkleTree
-import scorex.crypto.storage.auth._
+import scorex.crypto.storage.auth.{MerkleTree, _}
 
 import scala.util.Random
 
 class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
-
 
   property("value returned from byIndex() is valid for random dataset") {
     //fix block numbers for faster tests
     for (blocks <- List(7, 8, 9, 128)) {
       val smallInteger = Gen.choose(0, blocks - 1)
       val (treeDirName: String, _, tempFile: String) = generateFile(blocks)
-      val tree = MerkleTree.fromFile(tempFile, treeDirName, 1024)
+      val (tree, segmentsStorage) = MerkleTree.fromFile(tempFile, treeDirName, 1024)
       forAll(smallInteger) { (index: Int) =>
-        val leafOption = tree.byIndex(index)
+        val leafOption = tree.byIndex(index).map(sig => AuthDataBlock(segmentsStorage.get(index).get, sig))
         leafOption should not be None
         val leaf = leafOption.get
-        val resp = leaf.check(index, tree.rootHash)(DefaultHash)
+        val resp = leaf.check(tree.rootHash)(DefaultHash)
         resp shouldBe true
       }
-      tree.storage.close()
     }
   }
 
@@ -35,14 +32,11 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
     for (blocks <- List(7, 8, 9, 128)) {
       val (treeDirName: String, _, tempFile: String) = generateFile(blocks, "2")
 
-      val fileTree = MerkleTree.fromFile(tempFile, treeDirName, 1024)
+      val (fileTree, segmentsStorage) = MerkleTree.fromFile(tempFile, treeDirName, 1024)
       val rootHash = fileTree.rootHash
 
-      fileTree.storage.close()
-
-      val tree = new MerkleTree(treeDirName, fileTree.nonEmptyBlocks, 1024)
+      val tree = new MerkleTree(fileTree.storage, fileTree.nonEmptyBlocks)
       val newRootHash = tree.rootHash
-      tree.storage.close()
       rootHash shouldBe newRootHash
     }
   }

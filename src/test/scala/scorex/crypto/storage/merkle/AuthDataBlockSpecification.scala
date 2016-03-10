@@ -3,7 +3,7 @@ package scorex.crypto.storage.merkle
 import org.scalacheck.Arbitrary
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.storage.auth.AuthDataBlock
+import scorex.crypto.storage.auth.{DataBlockSignature, AuthDataBlock}
 import scorex.utils.Random.randomBytes
 
 class AuthDataBlockSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
@@ -11,7 +11,7 @@ class AuthDataBlockSpecification extends PropSpec with PropertyChecks with Gener
   val keyVal = for {
     key: Long <- Arbitrary.arbitrary[Long]
     value <- Arbitrary.arbitrary[String]
-  } yield AuthDataBlock(value.getBytes, Seq(randomBytes(), randomBytes()))
+  } yield AuthDataBlock(value.getBytes, DataBlockSignature(key, Seq(randomBytes(), randomBytes())))
 
   property("decode-encode roundtrip") {
     forAll(keyVal) { case b: AuthDataBlock[Array[Byte]] =>

@@ -1,6 +1,6 @@
 package scorex.crypto.storage.auth
 
-import com.google.common.primitives.{Bytes, Ints}
+import com.google.common.primitives.{Longs, Bytes, Ints}
 import play.api.libs.json._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.CryptographicHash
@@ -11,14 +11,16 @@ import scala.util.Try
 
 /**
   * @param data - data block
-  * @param merklePath - merkle path, complementary to data block
+  * @param signature - segment position and merkle path, complementary to data block
   */
-case class AuthDataBlock[Block](data: Block, merklePath: Seq[Digest]) {
+case class AuthDataBlock[Block](data: Block, signature: DataBlockSignature) {
+
+  val merklePath = signature.merklePath
 
   /**
     * Checks that this block is at position $index in tree with root hash = $rootHash
     */
-  def check[HashImpl <: CryptographicHash](index: Position, rootHash: Digest)
+  def check[HashImpl <: CryptographicHash](rootHash: Digest)
                                           (hashFunction: HashImpl = DefaultHash): Boolean = {
 
     @tailrec
@@ -35,7 +37,7 @@ case class AuthDataBlock[Block](data: Block, merklePath: Seq[Digest]) {
     }
 
     if (merklePath.nonEmpty)
-      calculateHash(index, hashFunction(data.asInstanceOf[Message]), merklePath) sameElements rootHash
+      calculateHash(signature.index, hashFunction(data.asInstanceOf[Message]), merklePath) sameElements rootHash
     else
       false
   }
@@ -49,7 +51,7 @@ object AuthDataBlock {
     val merklePathLength = Bytes.ensureCapacity(Ints.toByteArray(b.merklePath.length), 4, 0)
     val merklePathSize = Bytes.ensureCapacity(Ints.toByteArray(b.merklePath.head.length), 4, 0)
     val merklePath = b.merklePath.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
-    dataSize ++ merklePathLength ++ merklePathSize ++ b.data ++ merklePath
+    dataSize ++ merklePathLength ++ merklePathSize ++ b.data ++ merklePath ++ Longs.toByteArray(b.signature.index)
   }
 
   def decode(bytes: Array[Byte]): Try[AuthDataBlock[Array[Byte]]] = Try {
@@ -61,35 +63,34 @@ object AuthDataBlock {
     val merklePath = (0 until merklePathLength).map { i =>
       bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)
     }
-    AuthDataBlock(data, merklePath)
+    val index = Longs.fromByteArray(bytes.takeRight(8))
+    AuthDataBlock(data, DataBlockSignature(index, merklePath))
   }
 
   implicit def authDataBlockReads[T](implicit fmt: Reads[T]): Reads[AuthDataBlock[T]] = new Reads[AuthDataBlock[T]] {
     def reads(json: JsValue): JsResult[AuthDataBlock[T]] = JsSuccess(AuthDataBlock[T](
-      (json \ "data").get match {
-        case JsString(ts) =>
-          Base58.decode(ts).get.asInstanceOf[T]
-        case _ =>
-          throw new RuntimeException("Data MUST be a string")
-      },
-      (json \ "merklePath").get match {
-        case JsArray(ts) => ts.map { t =>
-          t match {
-            case JsString(digest) =>
-              Base58.decode(digest)
-            case m =>
-              throw new RuntimeException("MerklePath MUST be array of strings" + m + " given")
-          }
-        }.map(_.get)
-        case m =>
-          throw new RuntimeException("MerklePath MUST be a list " + m + " given")
-      }
+      Base58.decode((json \ "data").as[String]).get.asInstanceOf[T],
+      DataBlockSignature(
+        (json \ "index").as[Long],
+        (json \ "merklePath").get match {
+          case JsArray(ts) => ts.map { t =>
+            t match {
+              case JsString(digest) =>
+                Base58.decode(digest)
+              case m =>
+                throw new RuntimeException("MerklePath MUST be array of strings" + m + " given")
+            }
+          }.map(_.get)
+          case m =>
+            throw new RuntimeException("MerklePath MUST be a list " + m + " given")
+        })
     ))
   }
 
   implicit def authDataBlockWrites[T](implicit fmt: Writes[T]): Writes[AuthDataBlock[T]] = new Writes[AuthDataBlock[T]] {
     def writes(ts: AuthDataBlock[T]) = JsObject(Seq(
       "data" -> JsString(Base58.encode(ts.data.asInstanceOf[Array[Byte]])),
+      "index" -> JsNumber(ts.signature.index),
       "merklePath" -> JsArray(
         ts.merklePath.map(digest => JsString(Base58.encode(digest)))
       )
