@@ -25,15 +25,8 @@ case class AuthDataBlock[Block](data: Block, signature: DataBlockSignature) {
 
     @tailrec
     def calculateHash(idx: Position, nodeHash: Digest, path: Seq[Digest]): Digest = {
-      val hash = if (idx % 2 == 0)
-        hashFunction(nodeHash ++ path.head)
-      else
-        hashFunction(path.head ++ nodeHash)
-
-      if (path.size == 1)
-        hash
-      else
-        calculateHash(idx / 2, hash, path.tail)
+      val hash = if (idx % 2 == 0) hashFunction(nodeHash ++ path.head) else hashFunction(path.head ++ nodeHash)
+      if (path.size == 1) hash else calculateHash(idx / 2, hash, path.tail)
     }
 
     if (merklePath.nonEmpty)
