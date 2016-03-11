@@ -21,7 +21,7 @@ case class AuthDataBlock[Block](data: Block, signature: MerkleProof) {
     * Checks that this block is at position $index in tree with root hash = $rootHash
     */
   def check[HashImpl <: CryptographicHash](rootHash: Digest)
-                                          (hashFunction: HashImpl = DefaultHash): Boolean = {
+                                          (hashFunction: HashImpl = DefaultHashFunction): Boolean = {
 
     @tailrec
     def calculateHash(idx: Position, nodeHash: Digest, path: Seq[Digest]): Digest = {

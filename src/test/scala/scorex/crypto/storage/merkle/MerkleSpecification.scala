@@ -21,7 +21,7 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
         val leafOption = tree.byIndex(index).map(sig => AuthDataBlock(segmentsStorage.get(index).get, sig))
         leafOption should not be None
         val leaf = leafOption.get
-        val resp = leaf.check(tree.rootHash)(DefaultHash)
+        val resp = leaf.check(tree.rootHash)(DefaultHashFunction)
         resp shouldBe true
       }
     }

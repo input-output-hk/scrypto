@@ -10,7 +10,7 @@ import scala.annotation.tailrec
 
 class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
                                          val nonEmptyBlocks: Position,
-                                         hash: H = DefaultHash
+                                         hashFunction: H = DefaultHashFunction
                                         ) extends ScorexLogging {
 
   import MerkleTree._
@@ -50,7 +50,7 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
     }
   }
 
-  private lazy val emptyHash = hash("")
+  private lazy val emptyHash = hashFunction("")
 
   private def getHash(key: TreeStorage.Key): Option[Digest] = {
     storage.get(key) match {
@@ -59,9 +59,9 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
           val h1 = getHash((key._1 - 1, key._2 * 2))
           val h2 = getHash((key._1 - 1, key._2 * 2 + 1))
           val calculatedHash = (h1, h2) match {
-            case (Some(hash1), Some(hash2)) => hash(hash1 ++ hash2)
-            case (Some(h), _) => hash(h ++ emptyHash)
-            case (_, Some(h)) => hash(emptyHash ++ h)
+            case (Some(hash1), Some(hash2)) => hashFunction(hash1 ++ hash2)
+            case (Some(h), _) => hashFunction(h ++ emptyHash)
+            case (_, Some(h)) => hashFunction(emptyHash ++ h)
             case _ => emptyHash
           }
           storage.set(key, calculatedHash)
@@ -89,7 +89,7 @@ object MerkleTree {
                                           treeFolder: String,
                                           blockSize: Int,
                                           segmentsStorage: SegmentsStorage,
-                                          hash: H = DefaultHash
+                                          hash: H = DefaultHashFunction
                                          ): (TreeStorage, Long) = {
     val byteBuffer = new Array[Byte](blockSize)
 
@@ -141,14 +141,14 @@ object MerkleTree {
   def fromFile[H <: CryptographicHash](fileName: String,
                                        treeFolder: String,
                                        blockSize: Int,
-                                       hash: H = DefaultHash
+                                       hash: H = DefaultHashFunction
                                       ): (MerkleTree[H], SegmentsStorage) = {
     val segmentsStorage = new SegmentsStorage(treeFolder + SegmentsFileName)
     val (storage, nonEmptyBlocks) = processFile(fileName, treeFolder, blockSize, segmentsStorage, hash)
     (new MerkleTree(storage, nonEmptyBlocks, hash), segmentsStorage)
   }
 
-  def fromData[Block, H <: CryptographicHash](treeFolder: String, data: Iterable[TreeSegment], hash: H = DefaultHash)
+  def fromData[Block, H <: CryptographicHash](treeFolder: String, data: Iterable[TreeSegment], hash: H = DefaultHashFunction)
   : MerkleTree[H] = {
     val nonEmptyBlocks: Position = data.size
     val level = calculateRequiredLevel(nonEmptyBlocks)
