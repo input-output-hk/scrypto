@@ -1,4 +1,4 @@
-package scorex.crypto.storage.auth
+package scorex.crypto.ads.merkle
 
 import java.io.RandomAccessFile
 

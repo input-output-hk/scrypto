@@ -1,12 +1,12 @@
-package scorex.crypto.storage.merkle
+package scorex.crypto.ads.merkle
 
 import java.io.File
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.storage.auth.TreeStorage
-import scorex.crypto.storage.auth.TreeStorage.Key
+import scorex.crypto.ads.merkle.TreeStorage
+import scorex.crypto.ads.merkle.TreeStorage.Key
 import scorex.crypto.hash.CryptographicHash.Digest
 
 

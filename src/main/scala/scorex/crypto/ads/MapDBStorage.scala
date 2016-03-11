@@ -1,4 +1,4 @@
-package scorex.crypto.storage
+package scorex.crypto.ads
 
 import java.io.File
 

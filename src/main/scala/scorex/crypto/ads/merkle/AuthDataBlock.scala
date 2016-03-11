@@ -1,4 +1,4 @@
-package scorex.crypto.storage.auth
+package scorex.crypto.ads.merkle
 
 import com.google.common.primitives.{Longs, Bytes, Ints}
 import play.api.libs.json._

@@ -1,8 +1,8 @@
-package scorex.crypto.storage
+package scorex.crypto.ads
 
 import scorex.crypto.hash.Blake2b256
 
-package object auth {
+package object merkle {
   type Position = Long
   val DefaultHashFunction = Blake2b256
 }
