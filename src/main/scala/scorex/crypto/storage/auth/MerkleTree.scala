@@ -148,8 +148,9 @@ object MerkleTree {
     (new MerkleTree(storage, nonEmptyBlocks, hash), segmentsStorage)
   }
 
-  def fromData[Block, H <: CryptographicHash](treeFolder: String, data: Iterable[TreeSegment], hash: H = DefaultHashFunction)
-  : MerkleTree[H] = {
+  def fromData[Block, H <: CryptographicHash](treeFolder: String,
+                                              data: Iterable[TreeSegment],
+                                              hash: H = DefaultHashFunction): MerkleTree[H] = {
     val nonEmptyBlocks: Position = data.size
     val level = calculateRequiredLevel(nonEmptyBlocks)
 
