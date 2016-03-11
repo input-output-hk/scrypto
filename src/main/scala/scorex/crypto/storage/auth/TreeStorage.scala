@@ -2,7 +2,7 @@ package scorex.crypto.storage.auth
 
 import java.io.File
 
-import org.mapdb.{Serializer, HTreeMap, DBMaker}
+import org.mapdb.{DBMaker, HTreeMap, Serializer}
 import scorex.crypto.hash.CryptographicHash.Digest
 import scorex.crypto.storage.Storage
 import scorex.utils.ScorexLogging
@@ -47,21 +47,14 @@ class TreeStorage(fileName: String, levels: Int) extends Storage[(Int, Long), Ar
     dbs.foreach(_.close())
   }
 
-  override def get(key: Key): Option[Digest] = {
-    Try {
-      maps(key._1).get(key._2)
-    } match {
-      case Success(v) =>
-        Option(v)
+  override def get(key: Key): Option[Digest] = Try(maps(key._1).get(key._2)) match {
+    case Success(v) =>
+      Option(v)
 
-      case Failure(e) =>
-        if (key._1 == 0) {
-          log.debug("Enable to load key for level 0: " + key)
-        }
-        None
-    }
+    case Failure(e) =>
+      if (key._1 == 0) log.debug("Enable to load key for level 0: " + key)
+      None
   }
-
 }
 
 object TreeStorage {

@@ -13,7 +13,7 @@ import scala.util.Try
   * @param data - data block
   * @param signature - segment position and merkle path, complementary to data block
   */
-case class AuthDataBlock[Block](data: Block, signature: DataBlockSignature) {
+case class AuthDataBlock[Block](data: Block, signature: MerkleProof) {
 
   val merklePath = signature.merklePath
 
@@ -57,13 +57,13 @@ object AuthDataBlock {
       bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)
     }
     val index = Longs.fromByteArray(bytes.takeRight(8))
-    AuthDataBlock(data, DataBlockSignature(index, merklePath))
+    AuthDataBlock(data, MerkleProof(index, merklePath))
   }
 
   implicit def authDataBlockReads[T](implicit fmt: Reads[T]): Reads[AuthDataBlock[T]] = new Reads[AuthDataBlock[T]] {
     def reads(json: JsValue): JsResult[AuthDataBlock[T]] = JsSuccess(AuthDataBlock[T](
       Base58.decode((json \ "data").as[String]).get.asInstanceOf[T],
-      DataBlockSignature(
+      MerkleProof(
         (json \ "index").as[Long],
         (json \ "merklePath").get match {
           case JsArray(ts) => ts.map { t =>

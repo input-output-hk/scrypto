@@ -24,7 +24,7 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
   /**
     * Return AuthDataBlock at position $index
     */
-  def byIndex(index: Position): Option[DataBlockSignature] = {
+  def byIndex(index: Position): Option[MerkleProof] = {
     if (index < nonEmptyBlocks && index >= 0) {
       @tailrec
       def calculateTreePath(n: Position, currentLevel: Int, acc: Seq[Digest] = Seq()): Seq[Digest] = {
@@ -44,7 +44,7 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
         }
       }
 
-      Some(DataBlockSignature(index, calculateTreePath(index, 0)))
+      Some(MerkleProof(index, calculateTreePath(index, 0)))
     } else {
       None
     }
