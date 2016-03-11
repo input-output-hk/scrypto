@@ -1,3 +1,3 @@
-package scorex.crypto.singing
+package scorex.crypto.signatures
 
 trait EllipticCurve extends SigningFunctions

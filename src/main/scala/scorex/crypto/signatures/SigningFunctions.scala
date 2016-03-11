@@ -1,4 +1,4 @@
-package scorex.crypto.singing
+package scorex.crypto.signatures
 
 import java.security.SecureRandom
 

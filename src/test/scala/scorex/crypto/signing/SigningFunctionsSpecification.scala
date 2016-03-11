@@ -2,7 +2,7 @@ package scorex.crypto.signing
 
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.singing.Curve25519
+import scorex.crypto.signatures.Curve25519
 
 
 class SigningFunctionsSpecification extends PropSpec
