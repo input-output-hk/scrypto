@@ -29,4 +29,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.slf4j" % "slf4j-api" % "1.7.18",
   "org.whispersystems" % "curve25519-java" % "0.2.4"
 )
-// LIBRARY_DEPENDENCIES_HASH ad47cdad87238630fc9eb855168c1227b2e11186
+// LIBRARY_DEPENDENCIES_HASH 0f3c947d07094f2cbad2dfcfdc8835f4ece10313

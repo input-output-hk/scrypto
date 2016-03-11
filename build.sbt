@@ -4,7 +4,7 @@ name := "scrypto"
 
 version := "1.0.4"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "org.mapdb" % "mapdb" % "2.+",
@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
   "io.spray" %% "spray-testkit" % "1.+" % "test",
   "org.scalatest" %% "scalatest" % "2.+" % "test",
   "org.scalactic" %% "scalactic" % "2.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.+" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.12.+" % "test",
   "org.slf4j" % "slf4j-api" % "1.+",
   "org.whispersystems" % "curve25519-java" % "+"
 )
