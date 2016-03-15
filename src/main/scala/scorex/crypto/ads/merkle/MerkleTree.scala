@@ -14,12 +14,11 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage[H],
   import MerkleTree._
 
   type Digest = H#Digest
-
+  private lazy val emptyHash = hashFunction("")
   val level = calculateRequiredLevel(nonEmptyBlocks)
 
-  val rootHash: Digest = getHash((level, 0)).get
-
   storage.commit()
+  val rootHash: Digest = getHash((level, 0)).get
 
   /**
     * Return AuthDataBlock at position $index
@@ -50,8 +49,6 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage[H],
     }
   }
 
-  private lazy val emptyHash = hashFunction("")
-
   private def getHash(key: TreeStorage.Key): Option[Digest] = {
     storage.get(key) match {
       case None =>
@@ -81,6 +78,19 @@ object MerkleTree {
 
   val TreeFileName = "/hashTree"
   val SegmentsFileName = "/segments"
+
+  /**
+    * Create Merkle tree from file with data
+    */
+  def fromFile[H <: CryptographicHash](fileName: String,
+                                       treeFolder: String,
+                                       blockSize: Int,
+                                       hash: H = DefaultHashFunction
+                                      ): (MerkleTree[H], SegmentsStorage) = {
+    val segmentsStorage = new SegmentsStorage(treeFolder + SegmentsFileName)
+    val (storage, nonEmptyBlocks) = processFile(fileName, treeFolder, blockSize, segmentsStorage, hash)
+    (new MerkleTree(storage, nonEmptyBlocks, hash), segmentsStorage)
+  }
 
   /**
     * Process file to TreeStorage
@@ -133,19 +143,6 @@ object MerkleTree {
     storage.commit()
 
     (storage, nonEmptyBlocks)
-  }
-
-  /**
-    * Create Merkle tree from file with data
-    */
-  def fromFile[H <: CryptographicHash](fileName: String,
-                                       treeFolder: String,
-                                       blockSize: Int,
-                                       hash: H = DefaultHashFunction
-                                      ): (MerkleTree[H], SegmentsStorage) = {
-    val segmentsStorage = new SegmentsStorage(treeFolder + SegmentsFileName)
-    val (storage, nonEmptyBlocks) = processFile(fileName, treeFolder, blockSize, segmentsStorage, hash)
-    (new MerkleTree(storage, nonEmptyBlocks, hash), segmentsStorage)
   }
 
   def fromData[Block, H <: CryptographicHash](treeFolder: String,

@@ -13,16 +13,17 @@ package object crypto {
     hex.replaceAll("[^0-9A-Fa-f]", "").sliding(2, 2).toArray.map(Integer.parseInt(_, 16).toByte)
   }
 
+  def hashChain(hashes: CryptographicHash*): CryptographicHash = {
+    new CryptographicHash {
+      override def hash(input: Message) = applyHashes(input, hashes: _*)
+
+      override val DigestSize: Int = hashes.head.DigestSize
+    }
+  }
+
   def applyHashes(input: Message, hashes: CryptographicHash*): Array[Byte] = {
     require(hashes.nonEmpty)
     require(hashes.forall(_.DigestSize == hashes.head.DigestSize), "Use hash algorithms with the same digest size")
     hashes.foldLeft(input)((bytes, hashFunction) => hashFunction.hash(bytes))
-  }
-
-  def hashChain(hashes: CryptographicHash*): CryptographicHash = {
-    new CryptographicHash {
-      override def hash(input: Message) = applyHashes(input, hashes:_*)
-      override val DigestSize: Int = hashes.head.DigestSize
-    }
   }
 }

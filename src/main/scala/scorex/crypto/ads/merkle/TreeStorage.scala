@@ -43,12 +43,12 @@ class TreeStorage[HashFunction <: CryptographicHash](fileName: String, levels: I
     Failure(t)
   }
 
-  override def commit(): Unit = dbs.foreach(_.commit())
-
   override def close(): Unit = {
     commit()
     dbs.foreach(_.close())
   }
+
+  override def commit(): Unit = dbs.foreach(_.commit())
 
   override def get(key: Key): Option[Digest] = Try(maps(key._1).get(key._2)) match {
     case Success(v) =>

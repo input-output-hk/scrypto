@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
   */
 class MapDBStorage[Key, Value](fileName: String) extends Storage[Key, Value] with ScorexLogging {
 
-  protected val db:DB = DBMaker.appendFileDB(new File(fileName))
+  protected val db: DB = DBMaker.appendFileDB(new File(fileName))
     .fileMmapEnableIfSupported()
     .closeOnJvmShutdown()
     .checksumEnable()

@@ -17,7 +17,14 @@ import scala.util.Try
 case class AuthDataBlock[HashFunction <: CryptographicHash](data: Array[Byte], merkleProof: MerkleProof[HashFunction]) {
 
   type Digest = HashFunction#Digest
-
+  lazy val bytes: Array[Byte] = {
+    require(this.merklePath.nonEmpty, "Merkle path cannot be empty")
+    val dataSize = Bytes.ensureCapacity(Ints.toByteArray(this.data.length), 4, 0)
+    val merklePathLength = Bytes.ensureCapacity(Ints.toByteArray(this.merklePath.length), 4, 0)
+    val merklePathSize = Bytes.ensureCapacity(Ints.toByteArray(this.merklePath.head.length), 4, 0)
+    val merklePath = this.merklePath.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
+    dataSize ++ merklePathLength ++ merklePathSize ++ data ++ merklePath ++ Longs.toByteArray(merkleProof.index)
+  }
   val merklePath = merkleProof.merklePath
 
   /**
@@ -35,15 +42,6 @@ case class AuthDataBlock[HashFunction <: CryptographicHash](data: Array[Byte], m
       calculateHash(merkleProof.index, hashFunction(data.asInstanceOf[Message]), merklePath) sameElements rootHash
 
     if (merklePath.nonEmpty) sameHash else false
-  }
-
-  lazy val bytes: Array[Byte] = {
-    require(this.merklePath.nonEmpty, "Merkle path cannot be empty")
-    val dataSize = Bytes.ensureCapacity(Ints.toByteArray(this.data.length), 4, 0)
-    val merklePathLength = Bytes.ensureCapacity(Ints.toByteArray(this.merklePath.length), 4, 0)
-    val merklePathSize = Bytes.ensureCapacity(Ints.toByteArray(this.merklePath.head.length), 4, 0)
-    val merklePath = this.merklePath.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
-    dataSize ++ merklePathLength ++ merklePathSize ++ data ++ merklePath ++ Longs.toByteArray(merkleProof.index)
   }
 }
 
