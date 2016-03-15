@@ -7,13 +7,13 @@ import scorex.utils.ScorexLogging
 
 import scala.annotation.tailrec
 
-class MerkleTree[H <: CryptographicHash](val storage: TreeStorage[H],
+class MerkleTree[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
                                          val nonEmptyBlocks: Position,
-                                         hashFunction: H = DefaultHashFunction) extends ScorexLogging {
+                                         hashFunction: HashFn = DefaultHashFunction) extends ScorexLogging {
 
   import MerkleTree._
 
-  type Digest = H#Digest
+  type Digest = HashFn#Digest
   private lazy val emptyHash = hashFunction("")
   val level = calculateRequiredLevel(nonEmptyBlocks)
 
@@ -23,7 +23,7 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage[H],
   /**
     * Return AuthDataBlock at position $index
     */
-  def byIndex(index: Position): Option[MerkleProof[H]] = {
+  def byIndex(index: Position): Option[MerkleProof[HashFn]] = {
     if (index < nonEmptyBlocks && index >= 0) {
       @tailrec
       def calculateTreePath(n: Position, currentLevel: Int, acc: Seq[Digest] = Seq()): Seq[Digest] = {
@@ -145,16 +145,16 @@ object MerkleTree {
     (storage, nonEmptyBlocks)
   }
 
-  def fromData[Block, H <: CryptographicHash](treeFolder: String,
+  def fromData[Block, HashFn <: CryptographicHash](treeFolder: String,
                                               data: Iterable[TreeSegment],
-                                              hash: H = DefaultHashFunction): MerkleTree[H] = {
+                                              hash: HashFn = DefaultHashFunction): MerkleTree[HashFn] = {
     val nonEmptyBlocks: Position = data.size
     val level = calculateRequiredLevel(nonEmptyBlocks)
 
-    lazy val storage = new TreeStorage[H](treeFolder + TreeFileName, level)
+    lazy val storage = new TreeStorage[HashFn](treeFolder + TreeFileName, level)
     for ((segment, position) <- data.view.zipWithIndex) storage.set((0, position), hash(segment.bytes))
 
-    new MerkleTree[H](storage, nonEmptyBlocks, hash)
+    new MerkleTree[HashFn](storage, nonEmptyBlocks, hash)
   }
 
   private def calculateRequiredLevel(numberOfDataBlocks: Position): Int = {
