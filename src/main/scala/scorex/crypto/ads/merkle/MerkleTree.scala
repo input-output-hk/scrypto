@@ -3,17 +3,17 @@ package scorex.crypto.ads.merkle
 import java.io.RandomAccessFile
 
 import scorex.crypto.hash.CryptographicHash
-import scorex.crypto.hash.CryptographicHash.Digest
 import scorex.utils.ScorexLogging
 
 import scala.annotation.tailrec
 
-class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
+class MerkleTree[H <: CryptographicHash](val storage: TreeStorage[H],
                                          val nonEmptyBlocks: Position,
-                                         hashFunction: H = DefaultHashFunction
-                                        ) extends ScorexLogging {
+                                         hashFunction: H = DefaultHashFunction) extends ScorexLogging {
 
   import MerkleTree._
+
+  type Digest = H#Digest
 
   val level = calculateRequiredLevel(nonEmptyBlocks)
 
@@ -24,7 +24,7 @@ class MerkleTree[H <: CryptographicHash](val storage: TreeStorage,
   /**
     * Return AuthDataBlock at position $index
     */
-  def byIndex(index: Position): Option[MerkleProof] = {
+  def byIndex(index: Position): Option[MerkleProof[H]] = {
     if (index < nonEmptyBlocks && index >= 0) {
       @tailrec
       def calculateTreePath(n: Position, currentLevel: Int, acc: Seq[Digest] = Seq()): Seq[Digest] = {
@@ -90,7 +90,7 @@ object MerkleTree {
                                           blockSize: Int,
                                           segmentsStorage: SegmentsStorage,
                                           hash: H = DefaultHashFunction
-                                         ): (TreeStorage, Long) = {
+                                         ): (TreeStorage[H], Long) = {
     val byteBuffer = new Array[Byte](blockSize)
 
     def readLines(bigDataFilePath: String, chunkIndex: Position): Array[Byte] = {
@@ -116,7 +116,7 @@ object MerkleTree {
 
     val level = calculateRequiredLevel(nonEmptyBlocks)
 
-    lazy val storage = new TreeStorage(treeFolder + TreeFileName, level)
+    lazy val storage = new TreeStorage[H](treeFolder + TreeFileName, level)
 
     def processBlocks(currentBlock: Position = 0): Unit = {
       val block: Block = readLines(fileName, currentBlock)
@@ -154,10 +154,10 @@ object MerkleTree {
     val nonEmptyBlocks: Position = data.size
     val level = calculateRequiredLevel(nonEmptyBlocks)
 
-    lazy val storage = new TreeStorage(treeFolder + TreeFileName, level)
+    lazy val storage = new TreeStorage[H](treeFolder + TreeFileName, level)
     for ((segment, position) <- data.view.zipWithIndex) storage.set((0, position), hash(segment.bytes))
 
-    new MerkleTree(storage, nonEmptyBlocks, hash)
+    new MerkleTree[H](storage, nonEmptyBlocks, hash)
   }
 
   private def calculateRequiredLevel(numberOfDataBlocks: Position): Int = {

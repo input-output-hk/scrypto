@@ -5,7 +5,7 @@ import java.io.{File, FileOutputStream}
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.ads.merkle.{MerkleTree, _}
+import scorex.crypto.hash.Blake2b256
 
 import scala.util.Random
 
@@ -16,9 +16,9 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
     for (blocks <- List(7, 8, 9, 128)) {
       val smallInteger = Gen.choose(0, blocks - 1)
       val (treeDirName: String, _, tempFile: String) = generateFile(blocks)
-      val (tree, segmentsStorage) = MerkleTree.fromFile(tempFile, treeDirName, 1024)
+      val (tree, segmentsStorage) = MerkleTree.fromFile[Blake2b256.type](tempFile, treeDirName, 1024)
       forAll(smallInteger) { (index: Int) =>
-        val leafOption = tree.byIndex(index).map(sig => AuthDataBlock(segmentsStorage.get(index).get, sig))
+        val leafOption = tree.byIndex(index).map(proof => AuthDataBlock[Blake2b256.type](segmentsStorage.get(index).get, proof))
         leafOption should not be None
         val leaf = leafOption.get
         val resp = leaf.check(tree.rootHash)(DefaultHashFunction)

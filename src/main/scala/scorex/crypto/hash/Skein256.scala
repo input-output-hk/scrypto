@@ -1,7 +1,5 @@
 package scorex.crypto.hash
 
-import fr.cryptohash.Digest
-
 object Skein256 extends FRHash {
-  override protected def hf: Digest = new fr.cryptohash.Skein256
+  override protected def hf: fr.cryptohash.Digest = new fr.cryptohash.Skein256
 }

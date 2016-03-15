@@ -7,5 +7,5 @@ object Blake2b512 extends CryptographicHash {
 
   override val DigestSize: Int = 64
 
-  override def hash(input: Message): CryptographicHash.Digest = Blake2b.Digest.newInstance(DigestSize).digest(input)
+  override def hash(input: Message): Digest = Blake2b.Digest.newInstance(DigestSize).digest(input)
 }

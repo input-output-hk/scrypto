@@ -20,6 +20,7 @@ trait CryptographicHash {
 
   import CryptographicHash._
 
+  type Digest = Array[Byte]
   val DigestSize: Int //in bytes
 
   def apply(input: Message): Digest = hash(input)
@@ -39,5 +40,4 @@ trait CryptographicHash {
 
 object CryptographicHash {
   type Message = Array[Byte]
-  type Digest = Array[Byte]
 }

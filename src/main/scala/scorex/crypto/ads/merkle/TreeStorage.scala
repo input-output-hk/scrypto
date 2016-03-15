@@ -3,15 +3,18 @@ package scorex.crypto.ads.merkle
 import java.io.File
 
 import org.mapdb.{DBMaker, HTreeMap, Serializer}
-import scorex.crypto.hash.CryptographicHash.Digest
 import scorex.crypto.ads.Storage
+import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScorexLogging
 
 import scala.util.{Failure, Success, Try}
 
-class TreeStorage(fileName: String, levels: Int) extends Storage[(Int, Long), Array[Byte]] with ScorexLogging {
+class TreeStorage[HashFunction <: CryptographicHash](fileName: String, levels: Int)
+  extends Storage[(Int, Long), Array[Byte]] with ScorexLogging {
 
   import TreeStorage._
+
+  type Digest = HashFunction#Digest
 
   private val dbs =
     (0 to levels) map { n: Int =>
@@ -61,5 +64,5 @@ object TreeStorage {
   type Level = Int
   type Position = Long
   type Key = (Level, Position)
-  type Value = Digest
+  //type Value = Digest
 }

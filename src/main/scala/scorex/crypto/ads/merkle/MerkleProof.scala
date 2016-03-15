@@ -1,5 +1,5 @@
 package scorex.crypto.ads.merkle
 
-import scorex.crypto.hash.CryptographicHash._
+import scorex.crypto.hash.CryptographicHash
 
-case class MerkleProof(index: Position, merklePath: Seq[Digest])
+case class MerkleProof[HashFunction <: CryptographicHash](index: Position, merklePath: Seq[CryptographicHash#Digest])

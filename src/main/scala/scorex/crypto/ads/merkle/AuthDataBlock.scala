@@ -9,19 +9,21 @@ import scorex.crypto.hash.CryptographicHash._
 import scala.annotation.tailrec
 import scala.util.Try
 
+
 /**
   * @param data - data block
   * @param merkleProof - segment position and merkle path, complementary to data block
   */
-case class AuthDataBlock[Block](data: Block, merkleProof: MerkleProof) {
+case class AuthDataBlock[HashFunction <: CryptographicHash](data: Array[Byte], merkleProof: MerkleProof[HashFunction]) {
+
+  type Digest = HashFunction#Digest
 
   val merklePath = merkleProof.merklePath
 
   /**
     * Checks that this block is at position $index in tree with root hash = $rootHash
     */
-  def check[HashImpl <: CryptographicHash](rootHash: Digest)
-                                          (hashFunction: HashImpl = DefaultHashFunction): Boolean = {
+  def check(rootHash: Digest)(implicit hashFunction: HashFunction): Boolean = {
 
     @tailrec
     def calculateHash(idx: Position, nodeHash: Digest, path: Seq[Digest]): Digest = {
@@ -34,20 +36,19 @@ case class AuthDataBlock[Block](data: Block, merkleProof: MerkleProof) {
 
     if (merklePath.nonEmpty) sameHash else false
   }
+
+  lazy val bytes: Array[Byte] = {
+    require(this.merklePath.nonEmpty, "Merkle path cannot be empty")
+    val dataSize = Bytes.ensureCapacity(Ints.toByteArray(this.data.length), 4, 0)
+    val merklePathLength = Bytes.ensureCapacity(Ints.toByteArray(this.merklePath.length), 4, 0)
+    val merklePathSize = Bytes.ensureCapacity(Ints.toByteArray(this.merklePath.head.length), 4, 0)
+    val merklePath = this.merklePath.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
+    dataSize ++ merklePathLength ++ merklePathSize ++ data ++ merklePath ++ Longs.toByteArray(merkleProof.index)
+  }
 }
 
 object AuthDataBlock {
-
-  def encode(b: AuthDataBlock[Array[Byte]]): Array[Byte] = {
-    require(b.merklePath.nonEmpty, "Merkle path cannot be empty")
-    val dataSize = Bytes.ensureCapacity(Ints.toByteArray(b.data.length), 4, 0)
-    val merklePathLength = Bytes.ensureCapacity(Ints.toByteArray(b.merklePath.length), 4, 0)
-    val merklePathSize = Bytes.ensureCapacity(Ints.toByteArray(b.merklePath.head.length), 4, 0)
-    val merklePath = b.merklePath.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
-    dataSize ++ merklePathLength ++ merklePathSize ++ b.data ++ merklePath ++ Longs.toByteArray(b.merkleProof.index)
-  }
-
-  def decode(bytes: Array[Byte]): Try[AuthDataBlock[Array[Byte]]] = Try {
+  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): Try[AuthDataBlock[HashFunction]] = Try {
     val dataSize = Ints.fromByteArray(bytes.slice(0, 4))
     val merklePathLength = Ints.fromByteArray(bytes.slice(4, 8))
     val merklePathSize = Ints.fromByteArray(bytes.slice(8, 12))
@@ -60,9 +61,10 @@ object AuthDataBlock {
     AuthDataBlock(data, MerkleProof(index, merklePath))
   }
 
-  implicit def authDataBlockReads[T](implicit fmt: Reads[T]): Reads[AuthDataBlock[T]] = new Reads[AuthDataBlock[T]] {
-    def reads(json: JsValue): JsResult[AuthDataBlock[T]] = JsSuccess(AuthDataBlock[T](
-      Base58.decode((json \ "data").as[String]).get.asInstanceOf[T],
+  implicit def authDataBlockReads[T, HashFunction <: CryptographicHash]
+  (implicit fmt: Reads[T]): Reads[AuthDataBlock[HashFunction]] = new Reads[AuthDataBlock[HashFunction]] {
+    def reads(json: JsValue): JsResult[AuthDataBlock[HashFunction]] = JsSuccess(AuthDataBlock[HashFunction](
+      Base58.decode((json \ "data").as[String]).get,
       MerkleProof(
         (json \ "index").as[Long],
         (json \ "merklePath").get match {
@@ -80,9 +82,9 @@ object AuthDataBlock {
     ))
   }
 
-  implicit def authDataBlockWrites[T](implicit fmt: Writes[T]): Writes[AuthDataBlock[T]] = new Writes[AuthDataBlock[T]] {
-    def writes(ts: AuthDataBlock[T]) = JsObject(Seq(
-      "data" -> JsString(Base58.encode(ts.data.asInstanceOf[Array[Byte]])),
+  implicit def authDataBlockWrites[T, HashFunction <: CryptographicHash](implicit fmt: Writes[T]): Writes[AuthDataBlock[HashFunction]] = new Writes[AuthDataBlock[HashFunction]] {
+    def writes(ts: AuthDataBlock[HashFunction]) = JsObject(Seq(
+      "data" -> JsString(Base58.encode(ts.data)),
       "index" -> JsNumber(ts.merkleProof.index),
       "merklePath" -> JsArray(
         ts.merklePath.map(digest => JsString(Base58.encode(digest)))

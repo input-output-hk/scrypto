@@ -1,11 +1,10 @@
 package scorex.crypto.hash
 
-import fr.cryptohash.Digest
 import scorex.crypto.hash.CryptographicHash.Message
 
 trait FRHash extends CryptographicHash {
-  protected def hf: Digest
+  protected def hf: fr.cryptohash.Digest
   override lazy val DigestSize: Int = hf.getDigestLength
 
-  override def hash(input: Message): CryptographicHash.Digest = hf.digest(input)
+  override def hash(input: Message): Digest = hf.digest(input)
 }

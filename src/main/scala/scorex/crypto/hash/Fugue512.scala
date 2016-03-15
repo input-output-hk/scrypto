@@ -1,7 +1,5 @@
 package scorex.crypto.hash
 
-import fr.cryptohash.Digest
-
 object Fugue512 extends FRHash {
-  override protected def hf: Digest = new fr.cryptohash.Fugue512
+  override protected def hf: fr.cryptohash.Digest = new fr.cryptohash.Fugue512
 }
