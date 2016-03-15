@@ -7,23 +7,29 @@ import scorex.utils.ScorexLogging
 
 import scala.annotation.tailrec
 
-class MerkleTree[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
-                                         val nonEmptyBlocks: Position,
-                                         hashFunction: HashFn = DefaultHashFunction) extends ScorexLogging {
-
-  import MerkleTree._
-
+trait MerkleTree[HashFn <: CryptographicHash] {
   type Digest = HashFn#Digest
-  private lazy val emptyHash = hashFunction("")
+
+  def proofByIndex(index: Position): Option[MerkleProof[HashFn]]
+}
+
+class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
+                                                  val nonEmptyBlocks: Position,
+                                                  hashFunction: HashFn = DefaultHashFunction)
+  extends MerkleTree with ScorexLogging {
+
+  import MerkleTreeImpl._
+
+  private lazy val emptyHash = hashFunction(Array[Byte]())
   val level = calculateRequiredLevel(nonEmptyBlocks)
 
   storage.commit()
-  val rootHash: Digest = getHash((level, 0)).get
+  lazy val rootHash: Digest = getHash((level, 0)).get
 
   /**
     * Return AuthDataBlock at position $index
     */
-  def byIndex(index: Position): Option[MerkleProof[HashFn]] = {
+  override def proofByIndex(index: Position): Option[MerkleProof[HashFn]] = {
     if (index < nonEmptyBlocks && index >= 0) {
       @tailrec
       def calculateTreePath(n: Position, currentLevel: Int, acc: Seq[Digest] = Seq()): Seq[Digest] = {
@@ -73,7 +79,7 @@ class MerkleTree[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
 }
 
 
-object MerkleTree {
+object MerkleTreeImpl {
   type Block = Array[Byte]
 
   val TreeFileName = "/hashTree"
@@ -86,10 +92,10 @@ object MerkleTree {
                                        treeFolder: String,
                                        blockSize: Int,
                                        hash: H = DefaultHashFunction
-                                      ): (MerkleTree[H], SegmentsStorage) = {
+                                      ): (MerkleTreeImpl[H], SegmentsStorage) = {
     val segmentsStorage = new SegmentsStorage(treeFolder + SegmentsFileName)
     val (storage, nonEmptyBlocks) = processFile(fileName, treeFolder, blockSize, segmentsStorage, hash)
-    (new MerkleTree(storage, nonEmptyBlocks, hash), segmentsStorage)
+    (new MerkleTreeImpl(storage, nonEmptyBlocks, hash), segmentsStorage)
   }
 
   /**
@@ -146,15 +152,15 @@ object MerkleTree {
   }
 
   def fromData[Block, HashFn <: CryptographicHash](treeFolder: String,
-                                              data: Iterable[TreeSegment],
-                                              hash: HashFn = DefaultHashFunction): MerkleTree[HashFn] = {
+                                                   data: Iterable[TreeSegment],
+                                                   hash: HashFn = DefaultHashFunction): MerkleTreeImpl[HashFn] = {
     val nonEmptyBlocks: Position = data.size
     val level = calculateRequiredLevel(nonEmptyBlocks)
 
     lazy val storage = new TreeStorage[HashFn](treeFolder + TreeFileName, level)
     for ((segment, position) <- data.view.zipWithIndex) storage.set((0, position), hash(segment.bytes))
 
-    new MerkleTree[HashFn](storage, nonEmptyBlocks, hash)
+    new MerkleTreeImpl[HashFn](storage, nonEmptyBlocks, hash)
   }
 
   private def calculateRequiredLevel(numberOfDataBlocks: Position): Int = {
