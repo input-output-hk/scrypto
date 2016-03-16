@@ -16,7 +16,7 @@ trait MerkleTree[HashFn <: CryptographicHash] {
 class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
                                                   val nonEmptyBlocks: Position,
                                                   hashFunction: HashFn = DefaultHashFunction)
-  extends MerkleTree with ScorexLogging {
+  extends MerkleTree[HashFn] with Sco                                                                                                                                                                                                                                                                                                                               rexLogging {
 
   import MerkleTreeImpl._
 
