@@ -55,7 +55,7 @@ class TreeStorage[HashFunction <: CryptographicHash](fileName: String, levels: I
       Option(v)
 
     case Failure(e) =>
-      if (key._1 == 0) log.debug("Enable to load key for level 0: " + key)
+      if (key._1 == 0) log.debug("Unable to load key for level 0: " + key)
       None
   }
 }
