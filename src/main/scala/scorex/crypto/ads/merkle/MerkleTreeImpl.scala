@@ -2,16 +2,13 @@ package scorex.crypto.ads.merkle
 
 import java.io.RandomAccessFile
 
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
+import scala.util.Random
 
-trait MerkleTree[HashFn <: CryptographicHash] {
-  type Digest = HashFn#Digest
 
-  def proofByIndex(index: Position): Option[MerklePath[HashFn]]
-}
 
 class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
                                                   val nonEmptyBlocks: Position,
@@ -168,3 +165,6 @@ object MerkleTreeImpl {
     math.ceil(log2(numberOfDataBlocks)).toInt
   }
 }
+
+
+
