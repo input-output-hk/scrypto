@@ -10,15 +10,15 @@ class AuthDataBlockSpecification extends PropSpec with PropertyChecks with Gener
   val keyVal = for {
     key: Long <- Arbitrary.arbitrary[Long]
     value <- Arbitrary.arbitrary[String]
-  } yield AuthDataBlock(value.getBytes, MerkleProof(key, Seq(randomBytes(), randomBytes())))
+  } yield AuthDataBlock(value.getBytes, MerklePath(key, Seq(randomBytes(), randomBytes())))
 
   property("decode-encode roundtrip") {
     forAll(keyVal) { case b: AuthDataBlock[_] =>
       val decoded = AuthDataBlock.decode(b.bytes).get
       decoded.data shouldBe b.data
-      decoded.merklePath.size shouldBe b.merklePath.size
-      decoded.merklePath.head shouldBe b.merklePath.head
-      decoded.merklePath(1) shouldBe b.merklePath(1)
+      decoded.merklePathHashes.size shouldBe b.merklePathHashes.size
+      decoded.merklePathHashes.head shouldBe b.merklePathHashes.head
+      decoded.merklePathHashes(1) shouldBe b.merklePathHashes(1)
     }
   }
 }

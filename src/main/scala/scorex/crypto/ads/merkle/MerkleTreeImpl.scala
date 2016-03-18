@@ -10,7 +10,7 @@ import scala.annotation.tailrec
 trait MerkleTree[HashFn <: CryptographicHash] {
   type Digest = HashFn#Digest
 
-  def proofByIndex(index: Position): Option[MerkleProof[HashFn]]
+  def proofByIndex(index: Position): Option[MerklePath[HashFn]]
 }
 
 class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
@@ -29,7 +29,7 @@ class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashF
   /**
     * Return AuthDataBlock at position $index
     */
-  override def proofByIndex(index: Position): Option[MerkleProof[HashFn]] = {
+  override def proofByIndex(index: Position): Option[MerklePath[HashFn]] = {
     if (index < nonEmptyBlocks && index >= 0) {
       @tailrec
       def calculateTreePath(n: Position, currentLevel: Int, acc: Seq[Digest] = Seq()): Seq[Digest] = {
@@ -49,7 +49,7 @@ class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashF
         }
       }
 
-      Some(MerkleProof(index, calculateTreePath(index, 0)))
+      Some(MerklePath(index, calculateTreePath(index, 0)))
     } else {
       None
     }
