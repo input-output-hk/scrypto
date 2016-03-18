@@ -3,7 +3,6 @@ package scorex.crypto.ads.merkle
 import org.scalacheck.Arbitrary
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random.randomBytes
 
 class AuthDataBlockSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
