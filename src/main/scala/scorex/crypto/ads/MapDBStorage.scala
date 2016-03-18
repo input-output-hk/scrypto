@@ -3,14 +3,14 @@ package scorex.crypto.ads
 import java.io.File
 
 import org.mapdb.{DB, DBMaker, HTreeMap}
-import scorex.utils.ScorexLogging
+import scorex.utils.ScryptoLogging
 
 import scala.util.{Failure, Success, Try}
 
 /**
   * Common key-value storage kept in file
   */
-class MapDBStorage[Key, Value](fileName: String) extends Storage[Key, Value] with ScorexLogging {
+class MapDBStorage[Key, Value](fileName: String) extends Storage[Key, Value] with ScryptoLogging {
 
   protected val db: DB = DBMaker.appendFileDB(new File(fileName))
     .fileMmapEnableIfSupported()

@@ -5,12 +5,12 @@ import java.io.File
 import org.mapdb.{DBMaker, HTreeMap, Serializer}
 import scorex.crypto.ads.Storage
 import scorex.crypto.hash.CryptographicHash
-import scorex.utils.ScorexLogging
+import scorex.utils.ScryptoLogging
 
 import scala.util.{Failure, Success, Try}
 
 class TreeStorage[HashFunction <: CryptographicHash](fileName: String, levels: Int)
-  extends Storage[(TreeStorage.Level, TreeStorage.Position), HashFunction#Digest] with ScorexLogging {
+  extends Storage[(TreeStorage.Level, TreeStorage.Position), HashFunction#Digest] with ScryptoLogging {
 
   import TreeStorage._
 

@@ -3,7 +3,7 @@ package scorex.crypto.ads.merkle
 import java.io.RandomAccessFile
 
 import scorex.crypto.hash.CryptographicHash
-import scorex.utils.ScorexLogging
+import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
 
@@ -16,7 +16,7 @@ trait MerkleTree[HashFn <: CryptographicHash] {
 class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
                                                   val nonEmptyBlocks: Position,
                                                   hashFunction: HashFn = DefaultHashFunction)
-  extends MerkleTree[HashFn] with ScorexLogging {
+  extends MerkleTree[HashFn] with ScryptoLogging {
 
   import MerkleTreeImpl._
 
