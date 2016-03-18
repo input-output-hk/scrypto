@@ -10,7 +10,7 @@ import scorex.utils.ScorexLogging
 import scala.util.{Failure, Success, Try}
 
 class TreeStorage[HashFunction <: CryptographicHash](fileName: String, levels: Int)
-  extends Storage[(Int, Long), Array[Byte]] with ScorexLogging {
+  extends Storage[(TreeStorage.Level, TreeStorage.Position), HashFunction#Digest] with ScorexLogging {
 
   import TreeStorage._
 
