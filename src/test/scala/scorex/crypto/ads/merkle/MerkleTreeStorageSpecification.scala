@@ -25,7 +25,7 @@ class MerkleTreeStorageSpecification extends PropSpec with PropertyChecks with G
 
 
   property("set value and get it") {
-    lazy val storage = new TreeStorage(treeDirName + "/test_db", maxLevel)
+    lazy val storage = new MapDbTreeStorage(treeDirName + "/test_db", maxLevel)
 
     forAll(keyVal) { case(key: Key, value: Array[Byte]) =>
       whenever(key._1 >= 0.toLong && key._2 >= 0.toLong) {

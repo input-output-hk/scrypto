@@ -10,16 +10,18 @@ import scala.util.{Failure, Success, Try}
 /**
   * Common key-value storage kept in file
   */
-class MapDBStorage[Key, Value](fileName: String) extends Storage[Key, Value] with ScryptoLogging {
+trait MapDBStorage[Key, Value] extends KVStorage[Key, Value] with ScryptoLogging {
 
-  protected val db: DB = DBMaker.appendFileDB(new File(fileName))
+  val fileName: String
+
+  private val db: DB = DBMaker.appendFileDB(new File(fileName))
     .fileMmapEnableIfSupported()
     .closeOnJvmShutdown()
     .checksumEnable()
     .transactionDisable()
     .make()
 
-  protected val map: HTreeMap[Key, Value] = db.hashMapCreate("map").makeOrGet()
+  private val map: HTreeMap[Key, Value] = db.hashMapCreate("map").makeOrGet()
 
   override def set(key: Key, value: Value): Unit =
     Try(map.put(key, value)).recoverWith { case t: Throwable =>
@@ -42,5 +44,4 @@ class MapDBStorage[Key, Value](fileName: String) extends Storage[Key, Value] wit
         log.debug("Enable to get for key: " + key)
         None
     }
-
 }

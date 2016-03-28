@@ -1,5 +1,5 @@
 package scorex.crypto.ads.merkle
 
-import scorex.crypto.ads.MapDBStorage
+import scorex.crypto.ads.{MapDBStorage, LazyIndexedBlobStorage}
 
-class SegmentsStorage(fileName: String) extends MapDBStorage[Long, Array[Byte]](fileName: String)
+class SegmentsStorage(override val fileName: String) extends LazyIndexedBlobStorage with MapDBStorage[Long, Array[Byte]]

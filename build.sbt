@@ -7,6 +7,7 @@ version := "1.1.0"
 scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
+  "com.h2database" % "h2-mvstore" % "1.4.191",
   "org.mapdb" % "mapdb" % "2.+",
   "com.google.guava" % "guava" % "15.+",
   "com.typesafe.play" %% "play-json" % "2.4.+",
