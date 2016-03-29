@@ -35,7 +35,7 @@ case class MerklizedSeqRemoval(override val position: Position) extends Merklize
 trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] extends MerklizedSeq[HashFn, ST] {
   val version: Long
 
-  protected def setDataElement(index: Long, element: Array[Byte])
+  protected def setDataElement(index: Long, element: Array[Byte]) = seq.set(index, element)
 
   def update(updatePlan: Iterable[MerklizedSeqModification]): VersionedMerklizedSeq[HashFn, ST] = {
     this
