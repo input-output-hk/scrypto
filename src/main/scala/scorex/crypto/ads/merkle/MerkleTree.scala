@@ -9,8 +9,6 @@ trait MerkleTree[HashFn <: CryptographicHash] {
 }
 
 
-
-
 trait MerklizedSeq[HashFn <: CryptographicHash] {
   val tree: MerkleTree[HashFn]
 

@@ -2,7 +2,7 @@ package scorex.crypto.ads.merkle
 
 import com.google.common.primitives.{Bytes, Ints, Longs}
 import play.api.libs.json._
-import scorex.crypto.encode.{Base16, Base58}
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.CryptographicHash
 
 import scala.annotation.tailrec
@@ -38,8 +38,11 @@ case class AuthDataBlock[HashFunction <: CryptographicHash](data: Array[Byte], m
       if (path.size == 1) hash else calculateHash(idx / 2, hash, path.tail)
     }
 
-    if (merklePathHashes.isEmpty) false
-    else calculateHash(merklePath.index, hashFunction(data), merklePathHashes) sameElements rootHash
+    if (merklePathHashes.nonEmpty) {
+      calculateHash(merklePath.index, hashFunction(data), merklePathHashes) sameElements rootHash
+    } else {
+      false
+    }
   }
 }
 

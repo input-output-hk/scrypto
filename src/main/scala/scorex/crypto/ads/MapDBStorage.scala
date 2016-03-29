@@ -10,16 +10,22 @@ import scala.util.{Failure, Success, Try}
 /**
   * Common key-value storage kept in file
   */
-trait MapDBStorage[Key, Value] extends KVStorage[Key, Value] with ScryptoLogging {
+trait MapDBStorage[Key, Value] extends KVStorage[Key, Value, MapDbStorageType] with ScryptoLogging {
 
-  val fileName: String
+  val fileNameOpt: Option[String]
 
-  private val db: DB = DBMaker.appendFileDB(new File(fileName))
-    .fileMmapEnableIfSupported()
-    .closeOnJvmShutdown()
-    .checksumEnable()
-    .transactionDisable()
-    .make()
+  private val db: DB = fileNameOpt match {
+    case Some(fileName) =>
+      DBMaker
+        .appendFileDB(new File(fileName))
+        .fileMmapEnableIfSupported()
+        .closeOnJvmShutdown()
+        .checksumEnable()
+        .transactionDisable()
+        .make()
+
+    case None => DBMaker.memoryDB().make()
+  }
 
   private val map: HTreeMap[Key, Value] = db.hashMapCreate("map").makeOrGet()
 

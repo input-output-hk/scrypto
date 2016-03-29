@@ -1,7 +1,6 @@
 package scorex.crypto.ads
 
-trait KVStorage[Key, Value] {
-
+trait KVStorage[Key, Value, ST <: StorageType] {
   def set(key: Key, value: Value): Unit
 
   def get(key: Key): Option[Value]
@@ -13,7 +12,11 @@ trait KVStorage[Key, Value] {
   def containsKey(key: Key): Boolean = get(key).isDefined
 }
 
-trait LazyIndexedBlobStorage extends KVStorage[Long, Array[Byte]]
+trait LazyIndexedBlobStorage[ST <: StorageType] extends KVStorage[Long, Array[Byte], ST]
 
-class MapDbLazyIndexedBlobStorage(override val fileName: String)
-  extends LazyIndexedBlobStorage with MapDBStorage[Long, Array[Byte]]
+
+class MapDbLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
+  extends LazyIndexedBlobStorage[MapDbStorageType] with MapDBStorage[Long, Array[Byte]]
+
+class MvStoreLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
+  extends LazyIndexedBlobStorage[MvStoreStorageType] with MvStoreStorage[Long, Array[Byte]]

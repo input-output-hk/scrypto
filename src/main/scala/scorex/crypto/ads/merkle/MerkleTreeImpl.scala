@@ -2,16 +2,16 @@ package scorex.crypto.ads.merkle
 
 import java.io.RandomAccessFile
 
-import scorex.crypto.ads.LazyIndexedBlobStorage
+import scorex.crypto.ads._
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
 
 
-class MerkleTreeImpl[HashFn <: CryptographicHash](val storage: TreeStorage[HashFn],
-                                                  val nonEmptyBlocks: Position,
-                                                  hashFunction: HashFn)
+class MerkleTreeImpl[HashFn <: CryptographicHash, ST <: StorageType](val storage: TreeStorage[HashFn, ST],
+                                                                     val nonEmptyBlocks: Position,
+                                                                     hashFunction: HashFn)
   extends MerkleTree[HashFn] with ScryptoLogging {
 
   import MerkleTreeImpl._
@@ -84,23 +84,10 @@ object MerkleTreeImpl {
   /**
     * Create Merkle tree from file with data
     */
-  def fromFile[H <: CryptographicHash](fileName: String,
-                                       treeFolder: String,
-                                       blockSize: Int,
-                                       hashFn: H): (MerkleTreeImpl[H], LazyIndexedBlobStorage) = {
-    val segmentsStorage = new SegmentsStorage(treeFolder + SegmentsFileName)
-    val (treeStorage, nonEmptyBlocks) = processFile(fileName, treeFolder, blockSize, segmentsStorage, hashFn)
-    (new MerkleTreeImpl(treeStorage, nonEmptyBlocks, hashFn), segmentsStorage)
-  }
-
-  /**
-    * Process file to TreeStorage
-    */
-  def processFile[H <: CryptographicHash](fileName: String,
-                                          treeFolder: String,
-                                          blockSize: Int,
-                                          segmentsStorage: SegmentsStorage,
-                                          hash: H): (TreeStorage[H], Long) = {
+  def fromFile[H <: CryptographicHash, ST <: StorageType](fileName: String,
+                                                          treeFolder: String,
+                                                          blockSize: Int,
+                                                          hashFn: H)(implicit storageType: ST) = {
     val byteBuffer = new Array[Byte](blockSize)
 
     def readLines(bigDataFilePath: String, chunkIndex: Position): Array[Byte] = {
@@ -126,12 +113,19 @@ object MerkleTreeImpl {
 
     val level = calculateRequiredLevel(nonEmptyBlocks)
 
-    lazy val storage = new MapDbTreeStorage[H](treeFolder + TreeFileName, level)
+    val (storage, segmentsStorage) = storageType match {
+      case _:MapDbStorageType =>
+        (new MapDbTreeStorage[H](Some(treeFolder + TreeFileName), level),
+          new MapDbLazyIndexedBlobStorage(Some(treeFolder + SegmentsFileName)))
+      case _:MvStoreStorageType =>
+        (new MvStoreTreeStorage[H](Some(treeFolder + TreeFileName), level),
+          new MvStoreLazyIndexedBlobStorage(Some(treeFolder + SegmentsFileName)))
+    }
 
     def processBlocks(position: Position = 0): Unit = {
       val block: Block = readLines(fileName, position)
       segmentsStorage.set(position, block)
-      storage.set((0, position), hash(block))
+      storage.set((0, position), hashFn(block))
       if (position < nonEmptyBlocks - 1) {
         processBlocks(position + 1)
       }
@@ -142,22 +136,10 @@ object MerkleTreeImpl {
     segmentsStorage.commit()
     storage.commit()
 
-    (storage, nonEmptyBlocks)
+    (new MerkleTreeImpl(storage, nonEmptyBlocks, hashFn), segmentsStorage)
   }
 
-  def fromData[Block, HashFn <: CryptographicHash](treeFolder: String,
-                                                   data: Iterable[TreeSegment],
-                                                   hash: HashFn = DefaultHashFunction): MerkleTreeImpl[HashFn] = {
-    val nonEmptyBlocks: Position = data.size
-    val level = calculateRequiredLevel(nonEmptyBlocks)
-
-    lazy val storage = new MapDbTreeStorage[HashFn](treeFolder + TreeFileName, level)
-    for ((segment, position) <- data.view.zipWithIndex) storage.set((0, position), hash(segment.bytes))
-
-    new MerkleTreeImpl[HashFn](storage, nonEmptyBlocks, hash)
-  }
-
-  private def calculateRequiredLevel(numberOfDataBlocks: Position): Int = {
+  def calculateRequiredLevel(numberOfDataBlocks: Position): Int = {
     def log2(x: Double): Double = math.log(x) / math.log(2)
     math.ceil(log2(numberOfDataBlocks)).toInt
   }

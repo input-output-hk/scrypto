@@ -3,11 +3,12 @@ package scorex.crypto.ads
 import org.h2.mvstore.MVStore
 import scorex.utils.ScryptoLogging
 
-trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value] with ScryptoLogging {
+trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] with ScryptoLogging {
 
-  val fileName: String
+  val fileNameOpt: Option[String]
 
-  lazy val mvs = MVStore.open(fileName)
+  lazy val mvs = MVStore.open(fileNameOpt.orNull)
+
   lazy val map = mvs.openMap[Key, Value]("data")
 
   override def set(key: Key, value: Value): Unit = map.put(key, value)
