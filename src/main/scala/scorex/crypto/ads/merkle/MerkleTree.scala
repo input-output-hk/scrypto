@@ -32,6 +32,13 @@ case class MerklizedSeqAppend(override val position: Position, element: Array[By
 case class MerklizedSeqRemoval(override val position: Position) extends MerklizedSeqModification
 
 
+/*
+todo: versioned support for MapDB / MvStore
+todo: empty elements in Merkle trees
+todo: update plan processing
+todo: defragmentation?
+ */
+
 trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] extends MerklizedSeq[HashFn, ST] {
   val version: Long
 
