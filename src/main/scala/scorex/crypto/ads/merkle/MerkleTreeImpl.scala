@@ -12,7 +12,7 @@ import scala.annotation.tailrec
 class MerkleTreeImpl[HashFn <: CryptographicHash, ST <: StorageType](val storage: TreeStorage[HashFn, ST],
                                                                      val nonEmptyBlocks: Position,
                                                                      hashFunction: HashFn)
-  extends MerkleTree[HashFn] with ScryptoLogging {
+  extends MerkleTree[HashFn, ST] with ScryptoLogging {
 
   import MerkleTreeImpl._
 
