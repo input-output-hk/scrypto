@@ -50,15 +50,12 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] exte
 
   protected def setDataElement(index: Long, element: Array[Byte]) = seq.set(index, element)
 
-
-
   def update(removals: Seq[MerklizedSeqRemoval], appends: Seq[MerklizedSeqAppend]): VersionedMerklizedSeq[HashFn, ST] = {
 
     @tailrec
     def updateStep(removals: Seq[MerklizedSeqRemoval],
                    appends: Seq[MerklizedSeqAppend],
                    updatesPlan: Seq[(Position, Array[Byte])]): Seq[(Position, Array[Byte])] = {
-
       (removals, appends) match{
         case (removal :: rmTail, append :: appTail) =>
           seq.set(removal.position, append.element)
