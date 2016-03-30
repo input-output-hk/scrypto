@@ -13,6 +13,8 @@ trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageTyp
 
   override def size: Long = map.sizeAsLong()
 
+  override def unset(key: Key): Unit = map.remove(key)
+
   override def set(key: Key, value: Value): Unit = map.put(key, value)
 
   override def get(key: Key): Option[Value] = Option(map.get(key))

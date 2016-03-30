@@ -11,12 +11,10 @@ import scala.annotation.tailrec
 
 class MerkleTreeImpl[HashFn <: CryptographicHash, ST <: StorageType](val storage: TreeStorage[HashFn, ST],
                                                                      val nonEmptyBlocks: Position,
-                                                                     hashFunction: HashFn)
+                                                                     override val hashFunction: HashFn)
   extends MerkleTree[HashFn, ST] with ScryptoLogging {
 
   import MerkleTreeImpl._
-
-  private lazy val emptyHash = hashFunction(Array[Byte]())
 
   storage.commit()
 
