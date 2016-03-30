@@ -42,7 +42,6 @@ final case class MerklizedSeqRemoval(override val position: Position) extends Me
 /*
 todo: versioned support for MapDB / MvStore
 todo: empty elements in Merkle trees
-todo: defragmentation?
  */
 
 trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] extends MerklizedSeq[HashFn, ST] {
