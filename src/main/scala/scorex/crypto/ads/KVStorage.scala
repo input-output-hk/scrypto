@@ -1,6 +1,8 @@
 package scorex.crypto.ads
 
 trait KVStorage[Key, Value, ST <: StorageType] {
+  def size: Long
+
   def set(key: Key, value: Value): Unit
 
   def get(key: Key): Option[Value]

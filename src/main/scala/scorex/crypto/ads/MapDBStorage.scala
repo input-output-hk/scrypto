@@ -29,6 +29,8 @@ trait MapDBStorage[Key, Value] extends KVStorage[Key, Value, MapDbStorageType] w
 
   private val map: HTreeMap[Key, Value] = db.hashMapCreate("map").makeOrGet()
 
+  override def size: Long = map.sizeLong()
+
   override def set(key: Key, value: Value): Unit =
     Try(map.put(key, value)).recoverWith { case t: Throwable =>
       log.warn("Failed to set key:" + key, t)

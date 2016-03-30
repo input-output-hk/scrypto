@@ -19,6 +19,8 @@ trait TreeStorage[HashFunction <: CryptographicHash, ST <: StorageType]
 
   protected val maps: Map[Int, LazyIndexedBlobStorage[ST]]
 
+  override def size: Long = maps(0).size
+
   override def set(key: Key, value: Digest): Unit = Try {
     maps(key._1).set(key._2, value)
   }.recoverWith { case t: Throwable =>
