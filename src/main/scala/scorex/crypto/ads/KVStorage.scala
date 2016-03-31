@@ -1,5 +1,7 @@
 package scorex.crypto.ads
 
+import scala.util.Try
+
 trait KVStorage[Key, Value, ST <: StorageType] {
   def size: Long
 
@@ -22,9 +24,8 @@ trait VersionedKVStorage[Key, Value, ST <: StorageType] extends KVStorage[Key, V
 
   protected def currentVersion: InternalVersionTag
   protected def putVersionTag(versionTag: VersionTag, internalVersionTag: InternalVersionTag)
-  protected def getInternalVersionTag(versionTag: VersionTag): Option[InternalVersionTag]
 
-  def rollbackTo(versionTag: VersionTag): VersionedKVStorage[Key, Value, ST]
+  def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, ST]]
 
   def batchUpdate(newElements: Iterable[(Key, Value)], versionTag: VersionTag): VersionedKVStorage[Key, Value, ST] = {
     newElements.foreach { case (key, value) =>

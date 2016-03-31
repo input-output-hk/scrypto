@@ -1,15 +1,16 @@
 package scorex.crypto.ads
 
 import org.h2.mvstore.MVStore
-import scorex.utils.ScryptoLogging
 
-trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] with ScryptoLogging {
+import scala.util.{Failure, Success, Try}
+
+trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] {
 
   val fileNameOpt: Option[String]
 
-  lazy val mvs = MVStore.open(fileNameOpt.orNull)
+  protected lazy val mvs = MVStore.open(fileNameOpt.orNull)
 
-  lazy val map = mvs.openMap[Key, Value]("data")
+  protected lazy val map = mvs.openMap[Key, Value]("data")
 
   override def size: Long = map.sizeAsLong()
 
@@ -22,4 +23,30 @@ trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageTyp
   override def close(): Unit = mvs.close()
 
   override def commit(): Unit = mvs.commit()
+}
+
+trait MvStoreVersionStorage[Key, Value]
+  extends VersionedKVStorage[Key, Value, MvStoreStorageType] with MvStoreStorage[Key, Value] {
+
+  type InternalVersionTag = Long
+
+  private val versionsMap = mvs.openMap[VersionTag, InternalVersionTag]("versions")
+
+  override protected def putVersionTag(versionTag: VersionTag,
+                                       internalVersionTag: InternalVersionTag): Unit = {
+    versionsMap.put(versionTag, internalVersionTag)
+    mvs.commit()
+  }
+
+
+  override protected def currentVersion: InternalVersionTag = mvs.getCurrentVersion
+
+  override def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, MvStoreStorageType]] = {
+    Option(versionsMap.get(versionTag)) match {
+      case Some(ivt) =>
+        mvs.rollbackTo(ivt + 1)
+        Success(this)
+      case None => Failure(new Exception(s"No version $versionTag found"))
+    }
+  }
 }
