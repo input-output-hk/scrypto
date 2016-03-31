@@ -16,6 +16,26 @@ trait KVStorage[Key, Value, ST <: StorageType] {
   def containsKey(key: Key): Boolean = get(key).isDefined
 }
 
+trait VersionedKVStorage[Key, Value, ST <: StorageType] extends KVStorage[Key, Value, ST] {
+  type VersionTag = String
+  type InternalVersionTag
+
+  protected def currentVersion: InternalVersionTag
+  protected def putVersionTag(versionTag: VersionTag, internalVersionTag: InternalVersionTag)
+  protected def getInternalVersionTag(versionTag: VersionTag): Option[InternalVersionTag]
+
+  def rollbackTo(versionTag: VersionTag): VersionedKVStorage[Key, Value, ST]
+
+  def batchUpdate(newElements: Iterable[(Key, Value)], versionTag: VersionTag): VersionedKVStorage[Key, Value, ST] = {
+    newElements.foreach { case (key, value) =>
+      set(key, value)
+    }
+    commit()
+    putVersionTag(versionTag, currentVersion)
+    this
+  }
+}
+
 trait LazyIndexedBlobStorage[ST <: StorageType] extends KVStorage[Long, Array[Byte], ST]
 
 
