@@ -28,6 +28,8 @@ trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageTyp
 trait MvStoreVersionStorage[Key, Value]
   extends VersionedKVStorage[Key, Value, MvStoreStorageType] with MvStoreStorage[Key, Value] {
 
+  import scala.collection.JavaConversions._
+
   type InternalVersionTag = Long
 
   private val versionsMap = mvs.openMap[VersionTag, InternalVersionTag]("versions")
@@ -38,8 +40,9 @@ trait MvStoreVersionStorage[Key, Value]
     mvs.commit()
   }
 
-
   override protected def currentVersion: InternalVersionTag = mvs.getCurrentVersion
+
+  override def allVersions():Set[VersionTag] = versionsMap.keySet().toSet
 
   override def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, MvStoreStorageType]] = {
     Option(versionsMap.get(versionTag)) match {

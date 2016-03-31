@@ -1,6 +1,6 @@
 package scorex.crypto.ads.merkle
 
-import scorex.crypto.ads.{VersionedLazyIndexedBlobStorage, MvStoreVersionedLazyIndexedBlobStorage, LazyIndexedBlobStorage, StorageType}
+import scorex.crypto.ads.{VersionedLazyIndexedBlobStorage, LazyIndexedBlobStorage, StorageType}
 import scorex.crypto.hash.CryptographicHash
 
 import scala.annotation.tailrec
@@ -84,7 +84,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] exte
     }
 
     val updatesPlan = updateStep(removals, appends, Seq())
-    seq.batchUpdate(updatesPlan, "")
+    seq.batchUpdate(updatesPlan, "ss")
     this
   }
 }
