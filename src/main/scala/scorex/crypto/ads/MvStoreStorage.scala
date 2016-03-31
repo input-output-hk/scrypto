@@ -27,7 +27,7 @@ trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageTyp
   override def commit(): Unit = mvs.commit()
 }
 
-trait MvStoreVersionStorage[Key, Value]
+trait MvStoreVersionedStorage[Key, Value]
   extends VersionedKVStorage[Key, Value, MvStoreStorageType] with MvStoreStorage[Key, Value] {
 
   import scala.collection.JavaConversions._

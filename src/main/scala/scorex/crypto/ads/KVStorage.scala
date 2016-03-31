@@ -52,4 +52,4 @@ class MvStoreLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
   extends LazyIndexedBlobStorage[MvStoreStorageType] with MvStoreStorage[Long, Array[Byte]]
 
 class MvStoreVersionedLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
-  extends VersionedLazyIndexedBlobStorage[MvStoreStorageType] with MvStoreVersionStorage[Long, Array[Byte]]
+  extends VersionedLazyIndexedBlobStorage[MvStoreStorageType] with MvStoreVersionedStorage[Long, Array[Byte]]
