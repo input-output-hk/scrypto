@@ -4,6 +4,7 @@ import scorex.crypto.ads.{VersionedLazyIndexedBlobStorage, LazyIndexedBlobStorag
 import scorex.crypto.hash.CryptographicHash
 
 import scala.annotation.tailrec
+import scala.util.Random
 
 
 trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] {
@@ -84,7 +85,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] exte
     }
 
     val updatesPlan = updateStep(removals, appends, Seq())
-    seq.batchUpdate(updatesPlan, "ss")
+    seq.batchUpdate(updatesPlan, Random.nextInt(500).toString)
     this
   }
 }

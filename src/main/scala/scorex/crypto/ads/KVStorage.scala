@@ -26,7 +26,7 @@ trait VersionedKVStorage[Key, Value, ST <: StorageType] extends KVStorage[Key, V
 
   protected def putVersionTag(versionTag: VersionTag, internalVersionTag: InternalVersionTag)
 
-  def allVersions():Set[VersionTag]
+  def allVersions():Seq[VersionTag]
 
   def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, ST]]
 

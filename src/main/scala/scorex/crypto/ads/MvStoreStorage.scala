@@ -8,7 +8,9 @@ trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageTyp
 
   val fileNameOpt: Option[String]
 
-  protected lazy val mvs = MVStore.open(fileNameOpt.orNull)
+  protected lazy val mvs: MVStore = MVStore.open(fileNameOpt.orNull)
+
+  mvs.setVersionsToKeep(1000)//todo: fix
 
   protected lazy val map = mvs.openMap[Key, Value]("data")
 
@@ -42,7 +44,7 @@ trait MvStoreVersionStorage[Key, Value]
 
   override protected def currentVersion: InternalVersionTag = mvs.getCurrentVersion
 
-  override def allVersions():Set[VersionTag] = versionsMap.keySet().toSet
+  override def allVersions(): Seq[VersionTag] = versionsMap.toSeq.sortBy(_._2).map(_._1)
 
   override def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, MvStoreStorageType]] = {
     Option(versionsMap.get(versionTag)) match {
