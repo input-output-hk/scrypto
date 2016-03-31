@@ -1,6 +1,6 @@
 package scorex.crypto.ads.merkle
 
-import scorex.crypto.ads.{LazyIndexedBlobStorage, StorageType}
+import scorex.crypto.ads.{VersionedLazyIndexedBlobStorage, MvStoreVersionedLazyIndexedBlobStorage, LazyIndexedBlobStorage, StorageType}
 import scorex.crypto.hash.CryptographicHash
 
 import scala.annotation.tailrec
@@ -33,7 +33,6 @@ sealed trait MerklizedSeqModification {
   val position: Position
 }
 
-
 final case class MerklizedSeqAppend(override val position: Position, element: Array[Byte]) extends MerklizedSeqModification
 
 final case class MerklizedSeqRemoval(override val position: Position) extends MerklizedSeqModification
@@ -45,11 +44,17 @@ todo: empty elements in Merkle trees
  */
 
 trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] extends MerklizedSeq[HashFn, ST] {
+
+  override protected val tree: MerkleTree[HashFn, ST] //todo: versioned Merkle tree
+
+  override protected val seq: VersionedLazyIndexedBlobStorage[ST]
+
   val version: Long
 
   protected def setDataElement(index: Long, element: Array[Byte]) = seq.set(index, element)
 
-  def update(removals: Seq[MerklizedSeqRemoval], appends: Seq[MerklizedSeqAppend]): VersionedMerklizedSeq[HashFn, ST] = {
+  def update(removals: Seq[MerklizedSeqRemoval],
+             appends: Seq[MerklizedSeqAppend]): VersionedMerklizedSeq[HashFn, ST] = {
 
     @tailrec
     def updateStep(removals: Seq[MerklizedSeqRemoval],
@@ -79,7 +84,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] exte
     }
 
     val updatesPlan = updateStep(removals, appends, Seq())
-    println(s"updates plan: $updatesPlan")
+    seq.batchUpdate(updatesPlan, "")
     this
   }
 }

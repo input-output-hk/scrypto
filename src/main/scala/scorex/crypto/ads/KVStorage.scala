@@ -23,6 +23,7 @@ trait VersionedKVStorage[Key, Value, ST <: StorageType] extends KVStorage[Key, V
   type InternalVersionTag
 
   protected def currentVersion: InternalVersionTag
+
   protected def putVersionTag(versionTag: VersionTag, internalVersionTag: InternalVersionTag)
 
   def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, ST]]
@@ -39,9 +40,14 @@ trait VersionedKVStorage[Key, Value, ST <: StorageType] extends KVStorage[Key, V
 
 trait LazyIndexedBlobStorage[ST <: StorageType] extends KVStorage[Long, Array[Byte], ST]
 
+trait VersionedLazyIndexedBlobStorage[ST <: StorageType]
+  extends LazyIndexedBlobStorage[ST] with VersionedKVStorage[Long, Array[Byte], ST]
 
 class MapDbLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
   extends LazyIndexedBlobStorage[MapDbStorageType] with MapDBStorage[Long, Array[Byte]]
 
 class MvStoreLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
   extends LazyIndexedBlobStorage[MvStoreStorageType] with MvStoreStorage[Long, Array[Byte]]
+
+class MvStoreVersionedLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
+  extends VersionedLazyIndexedBlobStorage[MvStoreStorageType] with MvStoreVersionStorage[Long, Array[Byte]]
