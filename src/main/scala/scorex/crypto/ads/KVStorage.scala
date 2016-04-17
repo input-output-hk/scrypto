@@ -18,24 +18,34 @@ trait KVStorage[Key, Value, ST <: StorageType] {
   def containsKey(key: Key): Boolean = get(key).isDefined
 }
 
-trait VersionedKVStorage[Key, Value, ST <: StorageType] extends KVStorage[Key, Value, ST] {
-  type VersionTag = String
-  type InternalVersionTag
+trait VersionedStorage[ST <: StorageType] {
+  type VersionTag = Long
 
-  protected def currentVersion: InternalVersionTag
+  def putVersionTag(versionTag: VersionTag)
 
-  protected def putVersionTag(versionTag: VersionTag, internalVersionTag: InternalVersionTag)
+  def lastVersion: VersionTag = Try(allVersions().max).getOrElse(0L)
 
-  def allVersions():Seq[VersionTag]
+  def allVersions(): Seq[VersionTag]
 
-  def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, ST]]
+  def rollbackTo(versionTag: VersionTag): Try[VersionedStorage[ST]]
+}
 
-  def batchUpdate(newElements: Iterable[(Key, Value)], versionTag: VersionTag): VersionedKVStorage[Key, Value, ST] = {
-    newElements.foreach { case (key, value) =>
-      set(key, value)
-    }
+trait VersionedKVStorage[Key, Value, ST <: StorageType]
+  extends KVStorage[Key, Value, ST] with VersionedStorage[ST] {
+
+  def commitAndMark(): Unit = {
     commit()
-    putVersionTag(versionTag, currentVersion)
+    putVersionTag(lastVersion + 1)
+  }
+
+  def batchUpdate(newElements: Iterable[(Key, Option[Value])]): VersionedKVStorage[Key, Value, ST] = {
+    newElements.foreach { case (key, valueOpt) =>
+      valueOpt match {
+        case Some(value) => set(key, value)
+        case None => unset(key)
+      }
+    }
+    commitAndMark()
     this
   }
 }
@@ -45,11 +55,8 @@ trait LazyIndexedBlobStorage[ST <: StorageType] extends KVStorage[Long, Array[By
 trait VersionedLazyIndexedBlobStorage[ST <: StorageType]
   extends LazyIndexedBlobStorage[ST] with VersionedKVStorage[Long, Array[Byte], ST]
 
-class MapDbLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
-  extends LazyIndexedBlobStorage[MapDbStorageType] with MapDBStorage[Long, Array[Byte]]
-
 class MvStoreLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
-  extends LazyIndexedBlobStorage[MvStoreStorageType] with MvStoreStorage[Long, Array[Byte]]
+  extends LazyIndexedBlobStorage[MvStoreStorageType] with MvStoreKvStorage[Long, Array[Byte]]
 
 class MvStoreVersionedLazyIndexedBlobStorage(override val fileNameOpt: Option[String])
-  extends VersionedLazyIndexedBlobStorage[MvStoreStorageType] with MvStoreVersionedStorage[Long, Array[Byte]]
+  extends VersionedLazyIndexedBlobStorage[MvStoreStorageType] with MvStoreVersionedKvStorage[Long, Array[Byte]]

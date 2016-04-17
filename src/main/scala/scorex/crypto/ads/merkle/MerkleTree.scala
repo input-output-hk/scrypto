@@ -1,37 +1,47 @@
 package scorex.crypto.ads.merkle
 
-import scorex.crypto.ads.StorageType
+import scorex.crypto.ads.{LazyIndexedBlobStorage, StorageType}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Try}
+
 
 trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends ScryptoLogging {
+
   import MerkleTree._
 
+  protected type Level <: LazyIndexedBlobStorage[ST]
+  protected type LevelId = Int
+  type Position = Long
+  protected type LPos = (LevelId, Position)
   type Digest = HashFn#Digest
 
   val hashFunction: HashFn
 
-  val storage: TreeStorage[HashFn, ST]
+  protected def createLevel(level: LevelId): Try[Level]
 
-  val nonEmptyBlocks: Position
+  protected def getLevel(level: LevelId): Option[Level]
 
-  protected lazy val emptyHash = hashFunction(Array[Byte]())
+  def size: Long
 
-  lazy val level = calculateRequiredLevel(nonEmptyBlocks)
-  lazy val rootHash: Digest = getHash((level, 0)).get
+  protected lazy val emptyHash = hashFunction(Array[Byte]()).dropRight(1)
 
-  storage.commit()
+  def height: Int = calculateRequiredLevel(size)
+
+  def rootHash: Digest = getHash((height, 0)).get
 
   /**
     * Return AuthDataBlock at position $index
     */
   def proofByIndex(index: Position): Option[MerklePath[HashFn]] = {
+    val nonEmptyBlocks = size
+
     if (index < nonEmptyBlocks && index >= 0) {
       @tailrec
       def calculateTreePath(n: Position, currentLevel: Int, acc: Seq[Digest] = Seq()): Seq[Digest] = {
-        if (currentLevel < level) {
+        if (currentLevel < height) {
           val hashOpt = if (n % 2 == 0) getHash((currentLevel, n + 1)) else getHash((currentLevel, n - 1))
           hashOpt match {
             case Some(h) =>
@@ -52,8 +62,16 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
     }
   }
 
-  private def getHash(key: TreeStorage.Key): Option[Digest] = {
-    storage.get(key) match {
+  protected def setTreeElement(key: LPos, value: Digest): Unit = Try {
+    getLevel(key._1).get.set(key._2, value)
+  }.recoverWith { case t: Throwable =>
+    log.warn("Failed to set key:" + key, t)
+    Failure(t)
+  }
+
+  def getHash(key: LPos): Option[Digest] =
+    getLevel(key._1).get.get(key._2) match {
+      //todo: exception
       case None =>
         if (key._1 > 0) {
           val h1 = getHash((key._1 - 1, key._2 * 2))
@@ -64,7 +82,7 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
             case (_, Some(h)) => hashFunction(emptyHash ++ h)
             case _ => emptyHash
           }
-          storage.set(key, calculatedHash)
+          setTreeElement(key, calculatedHash)
           Some(calculatedHash)
         } else {
           None
@@ -72,7 +90,6 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
       case digest =>
         digest
     }
-  }
 }
 
 object MerkleTree {

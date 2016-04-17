@@ -4,13 +4,14 @@ import org.h2.mvstore.MVStore
 
 import scala.util.{Failure, Success, Try}
 
-trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] {
+trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] {
 
   val fileNameOpt: Option[String]
 
   protected lazy val mvs: MVStore = MVStore.open(fileNameOpt.orNull)
 
-  mvs.setVersionsToKeep(1000)//todo: fix
+  mvs.setVersionsToKeep(1000)
+  //todo: fix
 
   protected lazy val map = mvs.openMap[Key, Value]("data")
 
@@ -27,26 +28,26 @@ trait MvStoreStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageTyp
   override def commit(): Unit = mvs.commit()
 }
 
-trait MvStoreVersionedStorage[Key, Value]
-  extends VersionedKVStorage[Key, Value, MvStoreStorageType] with MvStoreStorage[Key, Value] {
+trait MvStoreVersionedStorage extends VersionedStorage[MvStoreStorageType] {
 
   import scala.collection.JavaConversions._
+
+  protected val mvs: MVStore
 
   type InternalVersionTag = Long
 
   private val versionsMap = mvs.openMap[VersionTag, InternalVersionTag]("versions")
 
-  override protected def putVersionTag(versionTag: VersionTag,
-                                       internalVersionTag: InternalVersionTag): Unit = {
-    versionsMap.put(versionTag, internalVersionTag)
+  protected def currentInternalVersion: InternalVersionTag = mvs.getCurrentVersion
+
+  override def putVersionTag(versionTag: VersionTag): Unit = {
+    versionsMap.put(versionTag, currentInternalVersion)
     mvs.commit()
   }
 
-  override protected def currentVersion: InternalVersionTag = mvs.getCurrentVersion
-
   override def allVersions(): Seq[VersionTag] = versionsMap.toSeq.sortBy(_._2).map(_._1)
 
-  override def rollbackTo(versionTag: VersionTag): Try[VersionedKVStorage[Key, Value, MvStoreStorageType]] = {
+  override def rollbackTo(versionTag: VersionTag): Try[VersionedStorage[MvStoreStorageType]] = {
     Option(versionsMap.get(versionTag)) match {
       case Some(ivt) =>
         mvs.rollbackTo(ivt + 1)
@@ -55,3 +56,9 @@ trait MvStoreVersionedStorage[Key, Value]
     }
   }
 }
+
+
+trait MvStoreVersionedKvStorage[Key, Value]
+  extends VersionedKVStorage[Key, Value, MvStoreStorageType]
+  with MvStoreKvStorage[Key, Value]
+  with MvStoreVersionedStorage
