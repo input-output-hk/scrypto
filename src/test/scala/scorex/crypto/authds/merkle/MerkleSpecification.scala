@@ -5,24 +5,23 @@ import java.io.{File, FileOutputStream}
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.authds.StorageType
-
 import scala.util.Random
 
 class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
 
-  /*
+
   property("fromFile construction") {
     for (blocksNum <- List(7, 8, 9, 128)) {
       val (treeDirName: String, _, tempFile: String) = generateFile(blocksNum)
-      val (tree, segmentsStorage) = MerkleTreeImpl.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
-      (0 to tree.nonEmptyBlocks.toInt - 1).foreach { idx =>
-        val same = DefaultHashFunction(segmentsStorage.get(idx).get) sameElements tree.storage.get(0 -> idx).get
+      val mvs = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
+      (0L to mvs.size - 1).foreach { idx =>
+        val same = DefaultHashFunction(mvs.seq.get(idx).get) sameElements mvs.tree.getHash(0 -> idx).get
         same should be(true)
       }
     }
   }
 
+  /*
   property("value returned from proofByIndex() is valid for a random dataset") {
     //fix block numbers for faster tests
     for (blocksNum <- List(7, 8, 9, 128)) {

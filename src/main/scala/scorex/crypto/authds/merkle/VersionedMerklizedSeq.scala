@@ -133,10 +133,10 @@ object MvStoreVersionedMerklizedSeq {
   /**
     * Create Merkle tree from file with data
     */
-  def fromFile[H <: CryptographicHash, ST <: StorageType](fileName: String,
-                                                          treeFolder: String,
-                                                          blockSize: Int,
-                                                          hashFn: H)(implicit storageType: ST) = {
+  def fromFile[H <: CryptographicHash](fileName: String,
+                                       treeFolder: String,
+                                       blockSize: Int,
+                                       hashFn: H): VersionedMerklizedSeq[H, MvStoreStorageType] = {
     val byteBuffer = new Array[Byte](blockSize)
 
     def readLines(bigDataFilePath: String, chunkIndex: Position): Array[Byte] = {
@@ -162,11 +162,11 @@ object MvStoreVersionedMerklizedSeq {
 
     val vms = MvStoreVersionedMerklizedSeq(Some(treeFolder + TreeFileName), Some(treeFolder + SegmentsFileName), 0, hashFn)
 
-    val appends = (0L to nonEmptyBlocks - 1)
+    val appends:Seq[MerklizedSeqAppend] = (0L to nonEmptyBlocks - 1)
       .map(position => readLines(fileName, position))
       .map(MerklizedSeqAppend)
+      .toList
 
-
-    vms.update(Nil, appends)
+    vms.update(List(), appends)
   }
 }
