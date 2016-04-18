@@ -1,4 +1,4 @@
-package scorex.crypto.ads
+package scorex.crypto.authds
 
 sealed trait StorageType
 

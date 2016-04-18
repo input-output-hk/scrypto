@@ -1,4 +1,4 @@
-package scorex.crypto.ads.merkle
+package scorex.crypto.authds.merkle
 
 trait TreeSegment {
   val bytes: Array[Byte]

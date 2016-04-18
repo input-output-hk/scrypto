@@ -1,6 +1,6 @@
-package scorex.crypto.ads.merkle
+package scorex.crypto.authds.merkle
 
-import scorex.crypto.ads._
+import scorex.crypto.authds._
 import scorex.crypto.hash.CryptographicHash
 
 

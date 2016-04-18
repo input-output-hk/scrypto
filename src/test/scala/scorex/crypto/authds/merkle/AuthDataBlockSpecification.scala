@@ -1,4 +1,4 @@
-package scorex.crypto.ads.merkle
+package scorex.crypto.authds.merkle
 
 import java.io.{FileOutputStream, File}
 import org.scalacheck.Arbitrary

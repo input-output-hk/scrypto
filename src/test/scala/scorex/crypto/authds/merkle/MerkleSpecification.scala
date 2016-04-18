@@ -1,11 +1,11 @@
-package scorex.crypto.ads.merkle
+package scorex.crypto.authds.merkle
 
 import java.io.{File, FileOutputStream}
 
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.ads.StorageType
+import scorex.crypto.authds.StorageType
 
 import scala.util.Random
 

@@ -1,4 +1,4 @@
-package scorex.crypto.ads.merkle
+package scorex.crypto.authds.merkle
 
 import scorex.crypto.encode._
 import scorex.crypto.hash.CryptographicHash

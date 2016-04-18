@@ -1,8 +1,8 @@
-package scorex.crypto.ads
+package scorex.crypto.authds
 
 import org.h2.mvstore.MVStore
 
-import scala.util.{Random, Failure, Success, Try}
+import scala.util.{Failure, Success, Try}
 
 trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] {
 

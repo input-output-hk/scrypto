@@ -1,4 +1,4 @@
-package scorex.crypto.ads
+package scorex.crypto.authds
 
 import scorex.crypto.hash.Blake2b256
 

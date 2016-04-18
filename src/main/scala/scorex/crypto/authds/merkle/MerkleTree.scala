@@ -1,6 +1,6 @@
-package scorex.crypto.ads.merkle
+package scorex.crypto.authds.merkle
 
-import scorex.crypto.ads.{VersionedStorage, LazyIndexedBlobStorage, StorageType}
+import scorex.crypto.authds.{VersionedStorage, LazyIndexedBlobStorage, StorageType}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
