@@ -2,7 +2,7 @@ package scorex.crypto.ads
 
 import org.h2.mvstore.MVStore
 
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.{Random, Failure, Success, Try}
 
 trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] {
 
@@ -29,7 +29,7 @@ trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageT
 
   override def commit(): Unit = {
     mvs.commit()
-    if (Random.nextInt(100) == 50) mvs.compactMoveChunks() // todo: magic number
+   //if (Random.nextInt(100) == 50) mvs.compact() // todo: magic number
   }
 }
 

@@ -80,6 +80,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
       case Failure(e) =>
         log.error("Seq rollback error", e)
         println("seq rollback error")
+        e.printStackTrace()
         Failure(e)
     }
   }

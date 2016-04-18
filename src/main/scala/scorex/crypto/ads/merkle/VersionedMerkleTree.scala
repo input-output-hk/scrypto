@@ -118,7 +118,7 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
 
   protected override def getLevel(level: LevelId): Option[Level] =
     levels.get(level).orElse {
-      val initialVersion = levels.get(level - 1).map(_.lastVersion).getOrElse(0L)
+      val initialVersion = levels.get(level - 1).map(_.lastVersion).getOrElse(1L)
       createLevel(level, initialVersion).toOption
     }
 
