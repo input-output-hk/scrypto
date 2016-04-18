@@ -2,7 +2,7 @@ package scorex.crypto.ads
 
 import org.h2.mvstore.MVStore
 
-import scala.util.{Random, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] {
 
@@ -29,7 +29,7 @@ trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageT
 
   override def commit(): Unit = {
     mvs.commit()
-    if (Random.nextInt(100) == 50) mvs.compactRewriteFully() // todo: magic number
+    if (Random.nextInt(100) == 50) mvs.compactMoveChunks() // todo: magic number
   }
 }
 
@@ -52,14 +52,18 @@ trait MvStoreVersionedStorage extends VersionedStorage[MvStoreStorageType] {
 
   override def allVersions(): Seq[VersionTag] = versionsMap.toSeq.sortBy(_._2).map(_._1)
 
-  override def rollbackTo(versionTag: VersionTag): Try[VersionedStorage[MvStoreStorageType]] = Try {
+  override def rollbackTo(versionTag: VersionTag): Try[VersionedStorage[MvStoreStorageType]] =
     Option(versionsMap.get(versionTag)) match {
       case Some(ivt) =>
-        mvs.rollbackTo(ivt + 1)
-        this
-      case None => throw new Exception(s"No version $versionTag found")
+        Try(mvs.rollbackTo(ivt + 1)) match {
+          case Success(_) =>
+            Success(this)
+          case Failure(e) =>
+            Failure(new Exception(s"Problem while rolling back to $versionTag, versionMap is ${versionsMap.toMap}", e))
+        }
+
+      case None => Failure(new Exception(s"No version $versionTag found; versionMap is ${versionsMap.toMap}"))
     }
-  }
 }
 
 

@@ -75,7 +75,8 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
   protected def mapLevels[T](mapFn: Level => T): Try[Seq[T]] =
     (0 to height).foldLeft(Success(Seq()): Try[Seq[T]]) { case (partialResult, i) =>
       partialResult match {
-        case f: Failure[Seq[T]] => f
+        case Failure(e) =>
+          Failure(new Exception(s"Has a problem why reverting a level $i", e))
         case Success(seq) =>
           Try(getLevel(i).get).map(mapFn).map(e => seq :+ e)
       }
@@ -104,7 +105,6 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
   extends VersionedMerkleTree[HashFn, MvStoreStorageType] {
 
   protected lazy val levels = mutable.Map[Int, VersionedLazyIndexedBlobStorage[MvStoreStorageType]]()
-
 
   protected def createLevel(level: LevelId): Try[Level] = Try {
     val res = new MvStoreVersionedLazyIndexedBlobStorage(fileNameOpt.map(_ + "-" +level + ".mapDB"))
@@ -135,7 +135,7 @@ object MvStoreVersionedMerkleTree {
     }.ensuring(_.levels(0).size == 0)
     val leafsMap = tree.levels(0)
     (0L to seq.size - 1).foreach(i => leafsMap.set(i, hashFunction(seq.get(i).get)))
-    tree.commit() //todo: version
+    tree.commit() //todo: initial version
     tree
   }
 }
