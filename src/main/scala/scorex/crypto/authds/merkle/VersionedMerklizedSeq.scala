@@ -10,8 +10,7 @@ import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 
 /*
-todo: versioned support for MvStore
-todo: empty elements in Merkle trees
+todo: repair
  */
 
 trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]

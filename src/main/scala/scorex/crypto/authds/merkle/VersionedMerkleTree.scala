@@ -95,8 +95,6 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
   override def allVersions(): Seq[VersionTag] = getLevel(0).map(_.allVersions()).getOrElse(Seq())
 
   def consistent: Boolean = mapLevels(_.lastVersion).map(_.toSet.size == 1).getOrElse(false)
-
-  def repair() = ??? //todo: implement
 }
 
 

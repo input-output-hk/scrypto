@@ -27,10 +27,7 @@ trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageT
 
   override def close(): Unit = mvs.close()
 
-  override def commit(): Unit = {
-    mvs.commit()
-   //if (Random.nextInt(100) == 50) mvs.compact() // todo: magic number
-  }
+  override def commit(): Unit = mvs.commit()
 }
 
 trait MvStoreVersionedStorage extends VersionedStorage[MvStoreStorageType] {
