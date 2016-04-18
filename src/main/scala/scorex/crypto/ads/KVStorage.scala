@@ -33,10 +33,12 @@ trait VersionedStorage[ST <: StorageType] {
 trait VersionedKVStorage[Key, Value, ST <: StorageType]
   extends KVStorage[Key, Value, ST] with VersionedStorage[ST] {
 
-  def commitAndMark(): Unit = {
+  def commitAndMark(versionOpt:Option[VersionTag]): Unit = {
     commit()
-    putVersionTag(lastVersion + 1)
+    putVersionTag(versionOpt.getOrElse(lastVersion + 1))
   }
+
+  def commitAndMark(): Unit = commitAndMark(None)
 
   def batchUpdate(newElements: Iterable[(Key, Option[Value])]): VersionedKVStorage[Key, Value, ST] = {
     newElements.foreach { case (key, valueOpt) =>

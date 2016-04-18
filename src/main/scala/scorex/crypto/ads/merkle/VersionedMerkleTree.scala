@@ -61,7 +61,7 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
     }.toSeq
 
     if (level == height) {
-      commit()
+      commit().ensuring(this.consistent)
       this
     } else {
       batchUpdate(nextLevelChanges, level + 1)
@@ -106,17 +106,21 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
 
   protected lazy val levels = mutable.Map[Int, VersionedLazyIndexedBlobStorage[MvStoreStorageType]]()
 
-  protected def createLevel(level: LevelId): Try[Level] = Try {
-    val res = new MvStoreVersionedLazyIndexedBlobStorage(fileNameOpt.map(_ + "-" +level + ".mapDB"))
+  protected override def createLevel(level: LevelId, version: VersionTag): Try[Level] = Try {
+    val res = new MvStoreVersionedLazyIndexedBlobStorage(fileNameOpt.map(_ + "-" + level + ".mapDB"))
+    res.commitAndMark(Some(version))
     levels += level -> res
     res
-  }.recoverWith{case e:Throwable =>
-      e.printStackTrace()
-      Failure(e)
+  }.recoverWith { case e: Throwable =>
+    e.printStackTrace()
+    Failure(e)
   }
 
-  protected def getLevel(level: LevelId): Option[Level] =
-    levels.get(level).orElse(createLevel(level).toOption)
+  protected override def getLevel(level: LevelId): Option[Level] =
+    levels.get(level).orElse {
+      val initialVersion = levels.get(level - 1).map(_.lastVersion).getOrElse(0L)
+      createLevel(level, initialVersion).toOption
+    }
 
   override def close(): Unit = {
     commit()

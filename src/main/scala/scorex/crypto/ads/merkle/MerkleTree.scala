@@ -1,6 +1,6 @@
 package scorex.crypto.ads.merkle
 
-import scorex.crypto.ads.{LazyIndexedBlobStorage, StorageType}
+import scorex.crypto.ads.{VersionedStorage, LazyIndexedBlobStorage, StorageType}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
@@ -20,7 +20,7 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
 
   val hashFunction: HashFn
 
-  protected def createLevel(level: LevelId): Try[Level]
+  protected def createLevel(level: LevelId, version: VersionedStorage[ST]#VersionTag): Try[Level]
 
   protected def getLevel(level: LevelId): Option[Level]
 
