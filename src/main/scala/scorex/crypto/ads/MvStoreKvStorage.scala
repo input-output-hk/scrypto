@@ -29,7 +29,7 @@ trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageT
 
   override def commit(): Unit = {
     mvs.commit()
-    if (Random.nextInt(100) == 50) mvs.compactRewriteFully()
+    if (Random.nextInt(100) == 50) mvs.compactRewriteFully() // todo: magic number
   }
 }
 
