@@ -60,9 +60,11 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
   }
 
   //todo: versions for tree
-  def allVersions() = {
+  def allVersions(): Seq[VersionedLazyIndexedBlobStorage[ST]#VersionTag] = {
     seq.allVersions()
   }
+
+  def consistent: Boolean = tree.consistent && seq.lastVersion == tree.lastVersion
 
   def rollbackTo(version: VersionedLazyIndexedBlobStorage[ST]#VersionTag): Try[VersionedMerklizedSeq[HashFn, ST]] = {
     seq.rollbackTo(version) match {
@@ -158,30 +160,13 @@ object MvStoreVersionedMerklizedSeq {
       }
     }
 
-    // val level = calculateRequiredLevel(nonEmptyBlocks)
-
     val vms = MvStoreVersionedMerklizedSeq(Some(treeFolder + TreeFileName), Some(treeFolder + SegmentsFileName), 0, hashFn)
-    //todo: finish vms
 
-    //vms.update(Nil,)
+    val appends = (0L to nonEmptyBlocks - 1)
+      .map(position => readLines(fileName, position))
+      .map(MerklizedSeqAppend)
 
 
-    /*
-    def processBlocks(position: Position = 0): Unit = {
-      val block: Block = readLines(fileName, position)
-      segmentsStorage.set(position, block)
-      storage.set((0, position), hashFn(block))
-      if (position < nonEmptyBlocks - 1) {
-        processBlocks(position + 1)
-      }
-    }
-
-    processBlocks()
-
-    segmentsStorage.commit()
-    storage.commit()
-
-    */
-    vms
+    vms.update(Nil, appends)
   }
 }
