@@ -2,16 +2,18 @@ package scorex.crypto.ads
 
 import org.h2.mvstore.MVStore
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Random, Try}
 
 trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageType] {
 
   val fileNameOpt: Option[String]
 
-  protected lazy val mvs: MVStore = MVStore.open(fileNameOpt.orNull)
-
-  mvs.setVersionsToKeep(1000)
-  //todo: fix
+  protected lazy val mvs: MVStore = {
+    val b = new MVStore.Builder()
+    fileNameOpt.foreach(filename => b.fileName(filename))
+    b.autoCommitDisabled()
+    b.open()
+  }
 
   protected lazy val map = mvs.openMap[Key, Value]("data")
 
@@ -25,7 +27,10 @@ trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageT
 
   override def close(): Unit = mvs.close()
 
-  override def commit(): Unit = mvs.commit()
+  override def commit(): Unit = {
+    mvs.commit()
+    if (Random.nextInt(100) == 50) mvs.compactRewriteFully()
+  }
 }
 
 trait MvStoreVersionedStorage extends VersionedStorage[MvStoreStorageType] {
@@ -47,12 +52,12 @@ trait MvStoreVersionedStorage extends VersionedStorage[MvStoreStorageType] {
 
   override def allVersions(): Seq[VersionTag] = versionsMap.toSeq.sortBy(_._2).map(_._1)
 
-  override def rollbackTo(versionTag: VersionTag): Try[VersionedStorage[MvStoreStorageType]] = {
+  override def rollbackTo(versionTag: VersionTag): Try[VersionedStorage[MvStoreStorageType]] = Try {
     Option(versionsMap.get(versionTag)) match {
       case Some(ivt) =>
         mvs.rollbackTo(ivt + 1)
-        Success(this)
-      case None => Failure(new Exception(s"No version $versionTag found"))
+        this
+      case None => throw new Exception(s"No version $versionTag found")
     }
   }
 }

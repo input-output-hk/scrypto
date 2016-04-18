@@ -4,15 +4,18 @@ import java.io.RandomAccessFile
 
 import scorex.crypto.ads._
 import scorex.crypto.hash.CryptographicHash
+import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
+import scala.util.{Failure, Success, Try}
 
 /*
 todo: versioned support for MvStore
 todo: empty elements in Merkle trees
  */
 
-trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] extends MerklizedSeq[HashFn, ST] {
+trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
+  extends MerklizedSeq[HashFn, ST] with ScryptoLogging {
 
   override protected[merkle] val tree: VersionedMerkleTree[HashFn, ST]
 
@@ -62,10 +65,22 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] exte
     seq.allVersions()
   }
 
-  //todo: rollback tree
-  def rollbackTo(version: VersionedLazyIndexedBlobStorage[ST]#VersionTag) = {
-    seq.rollbackTo(version)
-    tree.rollbackTo(version)
+  def rollbackTo(version: VersionedLazyIndexedBlobStorage[ST]#VersionTag): Try[VersionedMerklizedSeq[HashFn, ST]] = {
+    seq.rollbackTo(version) match {
+      case Success(_) =>
+        tree.rollbackTo(version) match {
+          case Success(_) =>
+            Success(this)
+          case Failure(e) =>
+            log.error("tree rollback error", e)
+            println("tree rollback error")
+            Failure(e)
+        }
+      case Failure(e) =>
+        log.error("Seq rollback error", e)
+        println("seq rollback error")
+        Failure(e)
+    }
   }
 
   def rootHash: HashFn#Digest = tree.rootHash
