@@ -5,10 +5,10 @@ import java.io.{File, FileOutputStream}
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
+
 import scala.util.Random
 
 class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
-
 
   property("fromFile construction") {
     for (blocksNum <- List(7, 8, 9, 128)) {
@@ -21,39 +21,37 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
     }
   }
 
-  /*
   property("value returned from proofByIndex() is valid for a random dataset") {
-    //fix block numbers for faster tests
     for (blocksNum <- List(7, 8, 9, 128)) {
-      val smallInteger = Gen.choose(0, 0) // blocksNum - 1)
+      val smallInteger = Gen.choose(0, blocksNum - 1)
       val (treeDirName: String, _, tempFile: String) = generateFile(blocksNum)
-      val (tree, segmentsStorage) = MerkleTreeImpl.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
+      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
 
       forAll(smallInteger) { (index: Int) =>
-        val leafOption = tree.proofByIndex(index).map { proof =>
-          AuthDataBlock[DefaultHashFunction.type](segmentsStorage.get(index).get, proof)
-        }
-        leafOption should not be None
-        val leaf = leafOption.get
-        val resp = leaf.check(tree.rootHash)(DefaultHashFunction)
+        println("size: " + vms.size + " index: " + index)
+        val leaf = vms.tree.proofByIndex(index).map { merklePath =>
+          merklePath.hashes.size shouldBe vms.tree.height
+          AuthDataBlock[DefaultHashFunction.type](vms.seq.get(index).get, merklePath)
+        }.get
+        val resp = leaf.check(vms.rootHash)(DefaultHashFunction)
+        if (!resp) println("!!! size: " + vms.size + " index: " + index)
         resp shouldBe true
       }
     }
   }
 
   property("hash root is the same") {
-    //fix block numbers for faster tests
     for (blocks <- List(7, 8, 9, 128)) {
       val (treeDirName: String, _, tempFile: String) = generateFile(blocks, "2")
 
-      val (fileTree, segmentsStorage) = MerkleTreeImpl.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
-      val rootHash = fileTree.rootHash
+      val mvs = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
+      val rootHash = mvs.rootHash
 
-      val tree = new MerkleTreeImpl(fileTree.storage, fileTree.nonEmptyBlocks, DefaultHashFunction)
-      val newRootHash = tree.rootHash
-      rootHash shouldBe newRootHash
+      val tree = MvStoreVersionedMerkleTree(mvs.seq, None, DefaultHashFunction)
+      val treeRootHash = tree.rootHash
+      rootHash shouldBe treeRootHash
     }
-  } */
+  }
 
   def generateFile(blocks: Int, subdir: String = "1"): (String, File, String) = {
     val treeDirName = "/tmp/scorex-test/test/" + subdir + "/"
