@@ -6,8 +6,8 @@ import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.encode.Base16
-
 import scala.util.Random
+import scorex.crypto.authds.merkle.MerkleTree.DefaultHashFunction
 
 class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
 

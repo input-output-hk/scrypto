@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds._
+import scorex.crypto.authds.merkle.MerkleTree.Position
 import scorex.crypto.authds.storage.{StorageType, BlobStorage}
 import scorex.crypto.hash.CryptographicHash
 

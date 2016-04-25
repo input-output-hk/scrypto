@@ -1,5 +1,7 @@
 package scorex.crypto.authds.merkle
 
+import scorex.crypto.authds.merkle.MerkleTree.Position
+
 sealed trait MerklizedSeqModification
 
 final case class MerklizedSeqAppend(element: Array[Byte]) extends MerklizedSeqModification

@@ -1,5 +1,6 @@
 package scorex.crypto.authds.merkle
 
+import scorex.crypto.authds.merkle.MerkleTree.Position
 import scorex.crypto.encode._
 import scorex.crypto.hash.CryptographicHash
 

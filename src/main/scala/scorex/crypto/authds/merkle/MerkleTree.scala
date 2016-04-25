@@ -1,7 +1,7 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.storage.{StorageType, BlobStorage, VersionedStorage}
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
@@ -93,6 +93,9 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
 }
 
 object MerkleTree {
+  type Position = Long
+  val DefaultHashFunction = Blake2b256
+
   def calculateRequiredLevel(numberOfDataBlocks: Position): Int = {
     def log2(x: Double): Double = math.log(x) / math.log(2)
     math.ceil(log2(numberOfDataBlocks)).toInt

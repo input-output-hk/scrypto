@@ -2,6 +2,7 @@ package scorex.crypto.authds.merkle
 
 import com.google.common.primitives.{Bytes, Ints, Longs}
 import play.api.libs.json._
+import scorex.crypto.authds.merkle.MerkleTree.Position
 import scorex.crypto.encode.{Base16, Base58}
 import scorex.crypto.hash.CryptographicHash
 
