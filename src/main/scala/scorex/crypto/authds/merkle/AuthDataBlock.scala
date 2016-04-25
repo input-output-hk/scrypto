@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import com.google.common.primitives.{Bytes, Ints, Longs}
+import com.google.common.primitives.{Ints, Longs}
 import play.api.libs.json._
 import scorex.crypto.authds.merkle.MerkleTree.Position
 import scorex.crypto.encode.{Base16, Base58}
@@ -9,7 +9,6 @@ import scorex.crypto.hash.CryptographicHash
 import scala.annotation.tailrec
 import scala.util.Try
 
-
 /**
   * @param data - data block
   * @param merklePath - segment position and merkle path, complementary to data block
@@ -17,11 +16,12 @@ import scala.util.Try
 case class AuthDataBlock[HashFunction <: CryptographicHash](data: Array[Byte], merklePath: MerklePath[HashFunction]) {
 
   type Digest = HashFunction#Digest
+
   lazy val bytes: Array[Byte] = {
     require(this.merklePathHashes.nonEmpty, "Merkle path cannot be empty")
-    val dataSize = Bytes.ensureCapacity(Ints.toByteArray(this.data.length), 4, 0)
-    val merklePathLength = Bytes.ensureCapacity(Ints.toByteArray(this.merklePathHashes.length), 4, 0)
-    val merklePathSize = Bytes.ensureCapacity(Ints.toByteArray(this.merklePathHashes.head.length), 4, 0)
+    val dataSize = Ints.toByteArray(this.data.length)
+    val merklePathLength = Ints.toByteArray(this.merklePathHashes.length)
+    val merklePathSize = Ints.toByteArray(this.merklePathHashes.head.length)
     val merklePathBytes = this.merklePathHashes.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
     dataSize ++ merklePathLength ++ merklePathSize ++ data ++ merklePathBytes ++ Longs.toByteArray(merklePath.index)
   }
@@ -84,7 +84,8 @@ object AuthDataBlock {
     ))
   }
 
-  implicit def authDataBlockWrites[T, HashFunction <: CryptographicHash](implicit fmt: Writes[T]): Writes[AuthDataBlock[HashFunction]] = new Writes[AuthDataBlock[HashFunction]] {
+  implicit def authDataBlockWrites[T, HashFunction <: CryptographicHash](implicit fmt: Writes[T]): Writes[AuthDataBlock[HashFunction]]
+  = new Writes[AuthDataBlock[HashFunction]] {
     def writes(ts: AuthDataBlock[HashFunction]) = JsObject(Seq(
       "data" -> JsString(Base58.encode(ts.data)),
       "index" -> JsNumber(ts.merklePath.index),
