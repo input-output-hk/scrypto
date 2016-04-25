@@ -1,4 +1,4 @@
-package scorex.crypto.authds
+package scorex.crypto.authds.storage
 
 import scala.util.Try
 

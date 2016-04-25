@@ -3,6 +3,7 @@ package scorex.crypto.authds.merkle
 import java.io.RandomAccessFile
 
 import scorex.crypto.authds._
+import scorex.crypto.authds.storage.{MvStoreStorageType, StorageType, MvStoreVersionedLazyIndexedBlobStorage, VersionedLazyIndexedBlobStorage}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 

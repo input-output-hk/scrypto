@@ -1,6 +1,7 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds._
+import scorex.crypto.authds.storage.{StorageType, LazyIndexedBlobStorage}
 import scorex.crypto.hash.CryptographicHash
 
 

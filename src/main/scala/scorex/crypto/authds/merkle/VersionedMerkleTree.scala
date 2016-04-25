@@ -1,6 +1,7 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds._
+import scorex.crypto.authds.storage._
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.CryptographicHash
 
