@@ -14,7 +14,7 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
 
   protected type Level <: BlobStorage[ST]
   protected type LevelId = Int
-  type Position = Long
+
   protected type LPos = (LevelId, Position)
   type Digest = HashFn#Digest
 
