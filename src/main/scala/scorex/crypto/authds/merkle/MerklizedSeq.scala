@@ -13,7 +13,7 @@ trait MerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] {
 
   def getDataElement(index: Long): Option[Array[Byte]] = seq.get(index)
 
-  def byIndex(index: Position): Option[AuthDataBlock[HashFn]] = tree.proofByIndex(index) map { proof =>
-    AuthDataBlock(getDataElement(index).get, proof)
+  def byIndex(index: Position): Option[AuthData[HashFn]] = tree.proofByIndex(index) map { proof =>
+    AuthData(getDataElement(index).get, proof)
   }
 }

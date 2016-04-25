@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds._
+import scorex.crypto.authds.merkle.MerkleTree.Position
 import scorex.crypto.authds.storage._
 import scorex.crypto.encode.Base16
 import scorex.crypto.hash.CryptographicHash
@@ -98,7 +98,7 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
 
   def consistent: Boolean = mapLevels(_.lastVersion).map(_.toSet.size == 1).getOrElse(false)
 
-  def debugOut: Unit = (0 to height).foreach { h =>
+  def debugOut(): Unit = (0 to height).foreach { h =>
     val s = getLevel(h).get.size
     val rowString = (0L to (s - 1)).map { pos =>
       s"($pos: ${Base16.encode(getHash(h -> pos).get)})"

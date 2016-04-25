@@ -31,7 +31,7 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
       forAll(smallInteger) { (index: Int) =>
         val leaf = vms.tree.proofByIndex(index).map { merklePath =>
           merklePath.hashes.size shouldBe vms.tree.height
-          AuthDataBlock[DefaultHashFunction.type](vms.seq.get(index).get, merklePath)
+          AuthData[DefaultHashFunction.type](vms.seq.get(index).get, merklePath)
         }.get
         vms.tree.debugOut
         val resp = leaf.check(vms.rootHash)(DefaultHashFunction)
