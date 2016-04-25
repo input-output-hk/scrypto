@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
 trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
   extends MerkleTree[HashFn, ST] with VersionedStorage[ST] {
 
-  override protected type Level = VersionedLazyIndexedBlobStorage[ST]
+  override protected type Level = VersionedBlobStorage[ST]
 
   private def even(l: Long) = (l % 2) == 0
 
@@ -112,10 +112,10 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
                                                                        override val hashFunction: HashFn)
   extends VersionedMerkleTree[HashFn, MvStoreStorageType] {
 
-  protected lazy val levels = mutable.Map[Int, VersionedLazyIndexedBlobStorage[MvStoreStorageType]]()
+  protected lazy val levels = mutable.Map[Int, VersionedBlobStorage[MvStoreStorageType]]()
 
   protected override def createLevel(level: LevelId, version: VersionTag): Try[Level] = Try {
-    val res = new MvStoreVersionedLazyIndexedBlobStorage(fileNameOpt.map(_ + "-" + level + ".mapDB"))
+    val res = new MvStoreVersionedBlobStorage(fileNameOpt.map(_ + "-" + level + ".mapDB"))
     res.commitAndMark(Some(version))
     levels += level -> res
     res
@@ -139,7 +139,7 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
 }
 
 object MvStoreVersionedMerkleTree {
-  def apply[HashFn <: CryptographicHash](seq: VersionedLazyIndexedBlobStorage[_],
+  def apply[HashFn <: CryptographicHash](seq: VersionedBlobStorage[_],
                                          fileNameOpt: Option[String],
                                          hashFunction: HashFn): MvStoreVersionedMerkleTree[HashFn] = {
     val tree = new MvStoreVersionedMerkleTree(fileNameOpt, hashFunction) {

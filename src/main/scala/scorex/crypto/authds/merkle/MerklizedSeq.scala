@@ -1,13 +1,13 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds._
-import scorex.crypto.authds.storage.{StorageType, LazyIndexedBlobStorage}
+import scorex.crypto.authds.storage.{StorageType, BlobStorage}
 import scorex.crypto.hash.CryptographicHash
 
 
 trait MerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] {
   protected val tree: MerkleTree[HashFn, ST]
-  protected val seq: LazyIndexedBlobStorage[ST]
+  protected val seq: BlobStorage[ST]
 
   def size: Long = seq.size
 

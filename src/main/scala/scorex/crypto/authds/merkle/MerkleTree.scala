@@ -1,7 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.storage.{StorageType, LazyIndexedBlobStorage, VersionedStorage}
-import scorex.crypto.authds.StorageType
+import scorex.crypto.authds.storage.{StorageType, BlobStorage, VersionedStorage}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
@@ -13,7 +12,7 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
 
   import MerkleTree._
 
-  protected type Level <: LazyIndexedBlobStorage[ST]
+  protected type Level <: BlobStorage[ST]
   protected type LevelId = Int
   type Position = Long
   protected type LPos = (LevelId, Position)

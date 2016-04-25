@@ -3,7 +3,7 @@ package scorex.crypto.authds.merkle
 import java.io.RandomAccessFile
 
 import scorex.crypto.authds._
-import scorex.crypto.authds.storage.{MvStoreStorageType, StorageType, MvStoreVersionedLazyIndexedBlobStorage, VersionedLazyIndexedBlobStorage}
+import scorex.crypto.authds.storage.{MvStoreStorageType, StorageType, MvStoreVersionedBlobStorage, VersionedBlobStorage}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
@@ -19,7 +19,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
 
   override protected[merkle] val tree: VersionedMerkleTree[HashFn, ST]
 
-  override protected[merkle] val seq: VersionedLazyIndexedBlobStorage[ST]
+  override protected[merkle] val seq: VersionedBlobStorage[ST]
 
   private lazy val hashFn = tree.hashFunction
 
@@ -61,13 +61,13 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
   }
 
   //todo: versions for tree
-  def allVersions(): Seq[VersionedLazyIndexedBlobStorage[ST]#VersionTag] = {
+  def allVersions(): Seq[VersionedBlobStorage[ST]#VersionTag] = {
     seq.allVersions()
   }
 
   def consistent: Boolean = tree.consistent && seq.lastVersion == tree.lastVersion
 
-  def rollbackTo(version: VersionedLazyIndexedBlobStorage[ST]#VersionTag): Try[VersionedMerklizedSeq[HashFn, ST]] = {
+  def rollbackTo(version: VersionedBlobStorage[ST]#VersionTag): Try[VersionedMerklizedSeq[HashFn, ST]] = {
     seq.rollbackTo(version) match {
       case Success(_) =>
         tree.rollbackTo(version) match {
@@ -110,18 +110,18 @@ object MvStoreVersionedMerklizedSeq {
         new MvStoreVersionedMerkleTree(treeFileNameOpt, hashFn) {
           override def size = levels(0).size
         }
-      override protected[merkle] val seq: VersionedLazyIndexedBlobStorage[MvStoreStorageType] =
-        new MvStoreVersionedLazyIndexedBlobStorage(seqFileNameOpt)
+      override protected[merkle] val seq: VersionedBlobStorage[MvStoreStorageType] =
+        new MvStoreVersionedBlobStorage(seqFileNameOpt)
       override val version: Long = initialVersion
     }
   }
 
   def apply[HashFn <: CryptographicHash](treeFileNameOpt: Option[String],
-                                         initialSeq: VersionedLazyIndexedBlobStorage[MvStoreStorageType],
+                                         initialSeq: VersionedBlobStorage[MvStoreStorageType],
                                          initialVersion: Long,
                                          hashFn: HashFn): MvStoreVersionedMerklizedSeq[HashFn] = {
     new MvStoreVersionedMerklizedSeq[HashFn] {
-      override protected[merkle] val seq: VersionedLazyIndexedBlobStorage[MvStoreStorageType] = initialSeq
+      override protected[merkle] val seq: VersionedBlobStorage[MvStoreStorageType] = initialSeq
       override protected[merkle] val tree: VersionedMerkleTree[HashFn, MvStoreStorageType] =
         new MvStoreVersionedMerkleTree(treeFileNameOpt, hashFn) {
           override def size = initialSeq.size
