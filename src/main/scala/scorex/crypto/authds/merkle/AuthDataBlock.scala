@@ -2,7 +2,7 @@ package scorex.crypto.authds.merkle
 
 import com.google.common.primitives.{Bytes, Ints, Longs}
 import play.api.libs.json._
-import scorex.crypto.encode.Base58
+import scorex.crypto.encode.{Base16, Base58}
 import scorex.crypto.hash.CryptographicHash
 
 import scala.annotation.tailrec
@@ -25,7 +25,7 @@ case class AuthDataBlock[HashFunction <: CryptographicHash](data: Array[Byte], m
     dataSize ++ merklePathLength ++ merklePathSize ++ data ++ merklePathBytes ++ Longs.toByteArray(merklePath.index)
   }
 
-  val merklePathHashes = merklePath.hashes
+  lazy val merklePathHashes = merklePath.hashes
 
   /**
     * Checks that this block is at position $index in tree with root hash = $rootHash
@@ -39,7 +39,9 @@ case class AuthDataBlock[HashFunction <: CryptographicHash](data: Array[Byte], m
     }
 
     if (merklePathHashes.nonEmpty) {
-      calculateHash(merklePath.index, hashFunction(data), merklePathHashes) sameElements rootHash
+      val calculatedRoot = calculateHash(merklePath.index, hashFunction(data), merklePathHashes)
+      println("Calculated root: " + Base16.encode(calculatedRoot))
+      calculatedRoot sameElements rootHash
     } else {
       false
     }
