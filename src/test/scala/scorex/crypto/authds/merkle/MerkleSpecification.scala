@@ -33,7 +33,7 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
           merklePath.hashes.size shouldBe vms.tree.height
           AuthData[DefaultHashFunction.type](vms.seq.get(index).get, merklePath)
         }.get
-        vms.tree.debugOut
+        vms.tree.debugOut()
         val resp = leaf.check(vms.rootHash)(DefaultHashFunction)
         if (!resp) {
           println("!!! size: " + vms.size + " index: " + index)
@@ -45,25 +45,30 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
     }
   }
 
-  ignore("hash root is the same") {
+  property("hash root is the same") {
     for (blocks <- List(/*7, 8,*/ 9 /*, 128*/)) {
       val (treeDirName: String, _, tempFile: String) = generateFile(blocks, "2")
 
       val mvs = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
       val rootHash = mvs.rootHash
 
-      mvs.tree.debugOut
+      println(s"roothash: ${Base16.encode(rootHash)}")
 
+     // mvs.tree.debugOut()
+
+    //  println(s"mvs tree size: ${mvs.tree.size}")
+
+      println()
+      println("========================================")
+      println()
 
       val tree = MvStoreVersionedMerkleTree(mvs.seq, None, DefaultHashFunction)
       val treeRootHash = tree.rootHash
 
-      println("========================================")
-      println("========================================")
-      println("========================================")
-      println()
+  //    println(s"tree size: ${tree.size}")
+    //  println(s"tree roothash: ${Base16.encode(treeRootHash)}")
 
-      tree.debugOut
+//      tree.debugOut()
 
       rootHash shouldBe treeRootHash
     }

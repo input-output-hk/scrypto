@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.storage.{StorageType, BlobStorage, VersionedStorage}
+import scorex.crypto.authds.storage.{BlobStorage, StorageType, VersionedStorage}
 import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ScryptoLogging
 
@@ -19,14 +19,13 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
   type Digest = HashFn#Digest
 
   val hashFunction: HashFn
+  protected lazy val emptyHash = hashFunction(Array[Byte]()).dropRight(1)
 
   protected def createLevel(level: LevelId, version: VersionedStorage[ST]#VersionTag): Try[Level]
 
   protected def getLevel(level: LevelId): Option[Level]
 
   def size: Long
-
-  protected lazy val emptyHash = hashFunction(Array[Byte]()).dropRight(1)
 
   def height: Int = calculateRequiredLevel(size)
 
@@ -62,14 +61,9 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
     }
   }
 
-  protected def setTreeElement(key: LPos, value: Digest): Unit = Try {
-    getLevel(key._1).get.set(key._2, value)
-  }.recoverWith { case t: Throwable =>
-    log.warn("Failed to set key:" + key, t)
-    Failure(t)
-  }
+  def getHash(key: LPos): Option[Digest] = {
+    println(s"getHash called for: $key")
 
-  def getHash(key: LPos): Option[Digest] =
     getLevel(key._1).get.get(key._2) match {
       //todo: exception
       case None =>
@@ -90,6 +84,14 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
       case digest =>
         digest
     }
+  }
+
+  protected def setTreeElement(key: LPos, value: Digest): Unit = Try {
+    getLevel(key._1).get.set(key._2, value)
+  }.recoverWith { case t: Throwable =>
+    log.warn("Failed to set key:" + key, t)
+    Failure(t)
+  }
 }
 
 object MerkleTree {

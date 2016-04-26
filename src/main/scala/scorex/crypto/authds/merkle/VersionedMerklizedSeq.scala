@@ -2,9 +2,8 @@ package scorex.crypto.authds.merkle
 
 import java.io.RandomAccessFile
 
-import scorex.crypto.authds._
 import scorex.crypto.authds.merkle.MerkleTree.Position
-import scorex.crypto.authds.storage.{MvStoreStorageType, StorageType, MvStoreVersionedBlobStorage, VersionedBlobStorage}
+import scorex.crypto.authds.storage.{MvStoreStorageType, MvStoreVersionedBlobStorage, StorageType, VersionedBlobStorage}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
@@ -135,10 +134,14 @@ object MvStoreVersionedMerklizedSeq {
   /**
     * Create Merkle tree from file with data
     */
+  //todo: pass initial version
   def fromFile[H <: CryptographicHash](fileName: String,
                                        treeFolder: String,
                                        blockSize: Int,
                                        hashFn: H): VersionedMerklizedSeq[H, MvStoreStorageType] = {
+
+    val initialVersion = 0
+
     val byteBuffer = new Array[Byte](blockSize)
 
     def readLines(bigDataFilePath: String, chunkIndex: Position): Array[Byte] = {
@@ -162,9 +165,13 @@ object MvStoreVersionedMerklizedSeq {
       }
     }
 
-    val vms = MvStoreVersionedMerklizedSeq(Some(treeFolder + TreeFileName), Some(treeFolder + SegmentsFileName), 0, hashFn)
+    val vms = MvStoreVersionedMerklizedSeq(
+      Some(treeFolder + TreeFileName),
+      Some(treeFolder + SegmentsFileName),
+      initialVersion,
+      hashFn)
 
-    val appends:Seq[MerklizedSeqAppend] = (0L to nonEmptyBlocks - 1)
+    val appends: Seq[MerklizedSeqAppend] = (0L to nonEmptyBlocks - 1)
       .map(position => readLines(fileName, position))
       .map(MerklizedSeqAppend)
       .toList
