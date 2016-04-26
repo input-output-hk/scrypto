@@ -17,13 +17,8 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
 
   private def even(l: Long) = (l % 2) == 0
 
-  @tailrec
-  final def batchUpdate(changes: Seq[(Position, Option[Digest])],
-                        level: Int = 0): VersionedMerkleTree[HashFn, ST] = {
-    val levelMap = getLevel(level).get
-
-    val pairs = mutable.Map[Position, Option[(Digest, Digest)]]()
-
+  private def applyChanges(levelMap: Level,
+                           changes: Seq[(Position, Option[Digest])]) = {
     changes.foreach { case (pos, newDigestOpt) =>
       newDigestOpt match {
         case Some(nd) =>
@@ -31,7 +26,14 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
         case None =>
           levelMap.unset(pos)
       }
+    }
+  }
 
+  private def pairsToRecalc(levelMap: Level,
+                       changes: Seq[(Position, Option[Digest])]): Map[Position, Option[(Digest, Digest)]] = {
+    val pairs = mutable.Map[Position, Option[(Digest, Digest)]]()
+
+    changes.foreach { case (pos, newDigestOpt) =>
       even(pos) match {
         //left
         case true =>
@@ -57,8 +59,18 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
           }
       }
     }
+    pairs.toMap
+  }
 
-    val nextLevelChanges = pairs.map { case (pos, dsOpt) =>
+  @tailrec
+  final def batchUpdate(changes: Seq[(Position, Option[Digest])],
+                        level: Int = 0): VersionedMerkleTree[HashFn, ST] = {
+
+    val levelMap = getLevel(level).get
+
+    applyChanges(levelMap, changes)
+
+    val nextLevelChanges = pairsToRecalc(levelMap, changes).map { case (pos, dsOpt) =>
       pos / 2 -> dsOpt.map(ds => hashFunction(ds._1 ++ ds._2))
     }.toSeq
 
