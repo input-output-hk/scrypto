@@ -5,9 +5,10 @@ import java.io.{File, FileOutputStream}
 import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.encode.Base16
-import scala.util.Random
 import scorex.crypto.authds.merkle.MerkleTree.DefaultHashFunction
+import scorex.crypto.encode.Base16
+
+import scala.util.Random
 
 class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
 
@@ -24,7 +25,7 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
 
   ignore("value returned from proofByIndex() is valid for a random dataset") {
     for (blocksNum <- List(7, 8, 9, 128)) {
-      val smallInteger = Gen.choose(7, 7)//0, blocksNum - 1)
+      val smallInteger = Gen.choose(7, 7) //0, blocksNum - 1)
       val (treeDirName: String, _, tempFile: String) = generateFile(blocksNum)
       val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
 
@@ -46,29 +47,14 @@ class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDri
   }
 
   property("hash root is the same") {
-    for (blocks <- List(/*7, 8,*/ 9 /*, 128*/)) {
+    for (blocks <- List(7, 8, 9, 128)) {
       val (treeDirName: String, _, tempFile: String) = generateFile(blocks, "2")
 
       val mvs = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
       val rootHash = mvs.rootHash
 
-      println(s"roothash: ${Base16.encode(rootHash)}")
-
-     // mvs.tree.debugOut()
-
-    //  println(s"mvs tree size: ${mvs.tree.size}")
-
-      println()
-      println("========================================")
-      println()
-
       val tree = MvStoreVersionedMerkleTree(mvs.seq, None, DefaultHashFunction)
       val treeRootHash = tree.rootHash
-
-  //    println(s"tree size: ${tree.size}")
-    //  println(s"tree roothash: ${Base16.encode(treeRootHash)}")
-
-//      tree.debugOut()
 
       rootHash shouldBe treeRootHash
     }

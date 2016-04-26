@@ -157,9 +157,8 @@ object MvStoreVersionedMerkleTree {
     val tree = new MvStoreVersionedMerkleTree(fileNameOpt, hashFunction) {
       override def size = seq.size
     }.ensuring(_.getLevel(0).get.size == 0)
-    val leafsMap = tree.getLevel(0).get
-    (0L to seq.size - 1).foreach(i => leafsMap.set(i, hashFunction(seq.get(i).get)))
-    tree.commit() //todo: initial version
+
+    tree.batchUpdate((0L to seq.size-1).map(pos => pos -> seq.get(pos).map(hashFunction.apply)))
     tree
   }
 }

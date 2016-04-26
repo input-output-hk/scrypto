@@ -62,8 +62,6 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
   }
 
   def getHash(key: LPos): Option[Digest] = {
-    println(s"getHash called for: $key")
-
     getLevel(key._1).get.get(key._2) match {
       //todo: exception
       case None =>
