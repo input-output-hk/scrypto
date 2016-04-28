@@ -5,6 +5,7 @@ import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 import scala.util.{Failure, Try}
 
 
@@ -19,7 +20,30 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
   type Digest = HashFn#Digest
 
   val hashFunction: HashFn
-  protected lazy val emptyHash = hashFunction(Array[Byte]()).dropRight(1)
+
+  //todo: change with precomputed table?
+
+  private lazy val emptyHash0 = hashFunction(Array[Byte]()).dropRight(1)
+
+  private lazy val emptyHashesCache = mutable.Map[LevelId, Digest]()
+
+  emptyHashesCache.put(0, emptyHash0)
+
+  private def emptyHashTreeRoot(height: LevelId): Digest = {
+    height match {
+      case 0 => emptyHash0
+      case _ =>
+        val h = emptyHashTreeRoot(height - 1)
+        hashFunction(h ++ h)
+    }
+  }
+
+  protected def emptyTreeHash(level: LevelId): Digest = {
+    emptyHashesCache.get(level) match {
+      case Some(hash) => hash
+      case None => emptyHashTreeRoot(level)
+    }
+  }
 
   protected def createLevel(level: LevelId, version: VersionedStorage[ST]#VersionTag): Try[Level]
 
@@ -46,7 +70,7 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
             case Some(h) =>
               calculateTreePath(n / 2, currentLevel + 1, h +: acc)
             case None if currentLevel == 0 && index == nonEmptyBlocks - 1 =>
-              calculateTreePath(n / 2, currentLevel + 1, emptyHash +: acc)
+              calculateTreePath(n / 2, currentLevel + 1, emptyTreeHash(currentLevel) +: acc)
             case None =>
               log.error(s"Unable to get hash for lev=$currentLevel, position=$n")
               acc.reverse
@@ -69,17 +93,19 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
       Failure(t)
     }
 
-    getLevel(key._1).get.get(key._2) match {
+    val level = key._1
+
+    getLevel(level).get.get(key._2) match {
       //todo: exception
       case None =>
-        if (key._1 > 0) {
-          val h1 = getHash((key._1 - 1, key._2 * 2))
-          val h2 = getHash((key._1 - 1, key._2 * 2 + 1))
+        if (level > 0) {
+          val h1 = getHash((level - 1, key._2 * 2))
+          val h2 = getHash((level - 1, key._2 * 2 + 1))
           val calculatedHash = (h1, h2) match {
             case (Some(hash1), Some(hash2)) => hashFunction(hash1 ++ hash2)
-            case (Some(h), None) => hashFunction(h ++ emptyHash)
-            case (None, Some(h)) => hashFunction(emptyHash ++ h)
-            case (None, None) => emptyHash
+            case (Some(h), None) => hashFunction(h ++ emptyTreeHash(level - 1))
+            case (None, Some(h)) => hashFunction(emptyTreeHash(level - 1) ++ h)
+            case (None, None) => emptyTreeHash(level)
           }
           setTreeElement(key, calculatedHash)
           Some(calculatedHash)

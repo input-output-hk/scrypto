@@ -29,15 +29,16 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
     }
   }
 
-  private def pairsToRecalc(levelMap: Level,
-                       changes: Seq[(Position, Option[Digest])]): Map[Position, Option[(Digest, Digest)]] = {
+  private def pairsToRecalc(level:LevelId,
+                            levelMap: Level,
+                            changes: Seq[(Position, Option[Digest])]): Map[Position, Option[(Digest, Digest)]] = {
     val pairs = mutable.Map[Position, Option[(Digest, Digest)]]()
 
     changes.foreach { case (pos, newDigestOpt) =>
       even(pos) match {
         //left
         case true =>
-          pairs.put(pos, newDigestOpt.map(newDigest => (newDigest, levelMap.get(pos + 1).getOrElse(emptyHash))))
+          pairs.put(pos, newDigestOpt.map(newDigest => (newDigest, levelMap.get(pos + 1).getOrElse(emptyTreeHash(level)))))
 
         //right
         case false =>
@@ -47,7 +48,7 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
             case Some(pairOpt) =>
               (pairOpt, newDigestOpt) match {
                 case (Some(pair), _) =>
-                  pairs.put(leftPos, Some(pair._1, newDigestOpt.getOrElse(emptyHash)))
+                  pairs.put(leftPos, Some(pair._1, newDigestOpt.getOrElse(emptyTreeHash(level))))
                 case (None, Some(newDigest)) =>
                   throw new IllegalStateException("This branch must not be reached")
                 case (None, None) => //leave None
@@ -55,7 +56,7 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
 
             case None =>
               //todo: get?
-              pairs.put(leftPos, Some(levelMap.get(leftPos).getOrElse(emptyHash), newDigestOpt.getOrElse(emptyHash)))
+              pairs.put(leftPos, Some(levelMap.get(leftPos).getOrElse(emptyTreeHash(level)), newDigestOpt.getOrElse(emptyTreeHash(0))))
           }
       }
     }
@@ -70,7 +71,7 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
 
     applyChanges(levelMap, changes)
 
-    val nextLevelChanges = pairsToRecalc(levelMap, changes).map { case (pos, dsOpt) =>
+    val nextLevelChanges = pairsToRecalc(level, levelMap, changes).map { case (pos, dsOpt) =>
       pos / 2 -> dsOpt.map(ds => hashFunction(ds._1 ++ ds._2))
     }.toSeq
 
