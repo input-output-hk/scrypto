@@ -62,6 +62,13 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
   }
 
   def getHash(key: LPos): Option[Digest] = {
+    def setTreeElement(key: LPos, value: Digest): Unit = Try {
+      getLevel(key._1).get.set(key._2, value)
+    }.recoverWith { case t: Throwable =>
+      log.warn("Failed to set key:" + key, t)
+      Failure(t)
+    }
+
     getLevel(key._1).get.get(key._2) match {
       //todo: exception
       case None =>
@@ -70,9 +77,9 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
           val h2 = getHash((key._1 - 1, key._2 * 2 + 1))
           val calculatedHash = (h1, h2) match {
             case (Some(hash1), Some(hash2)) => hashFunction(hash1 ++ hash2)
-            case (Some(h), _) => hashFunction(h ++ emptyHash)
-            case (_, Some(h)) => hashFunction(emptyHash ++ h)
-            case _ => emptyHash
+            case (Some(h), None) => hashFunction(h ++ emptyHash)
+            case (None, Some(h)) => hashFunction(emptyHash ++ h)
+            case (None, None) => emptyHash
           }
           setTreeElement(key, calculatedHash)
           Some(calculatedHash)
@@ -82,13 +89,6 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
       case digest =>
         digest
     }
-  }
-
-  protected def setTreeElement(key: LPos, value: Digest): Unit = Try {
-    getLevel(key._1).get.set(key._2, value)
-  }.recoverWith { case t: Throwable =>
-    log.warn("Failed to set key:" + key, t)
-    Failure(t)
   }
 }
 
