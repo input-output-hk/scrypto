@@ -6,10 +6,15 @@ import org.scalacheck.Gen
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.merkle.MerkleTree.DefaultHashFunction
-import scorex.crypto.authds.merkle.versioned.{MvStoreVersionedMerklizedSeq, MvStoreVersionedMerkleTree}
+import scorex.crypto.authds.merkle.versioned.{MvStoreVersionedMerkleTree, MvStoreVersionedMerklizedSeq}
 
 import scala.util.Random
 
+/**
+  * For now, the only Merkle tree option is versioned one. When a static Merkle tree will
+  * be implemented, tests for it will be here, and versioned-specific functionality should be
+  * moved to a separate class
+  */
 class MerkleSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
 
   property("fromFile construction") {
