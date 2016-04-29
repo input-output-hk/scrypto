@@ -9,7 +9,7 @@ import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
-import scala.util.{Failure, Success, Try}
+import scala.util.{Random, Failure, Success, Try}
 
 /*
 todo: repair
@@ -167,8 +167,8 @@ object MvStoreVersionedMerklizedSeq {
     }
 
     val vms = MvStoreVersionedMerklizedSeq(
-      Some(treeFolder + TreeFileName),
-      Some(treeFolder + SegmentsFileName),
+      Some(treeFolder + TreeFileName + Random.nextInt(500)),
+      Some(treeFolder + SegmentsFileName + Random.nextInt(500)),
       initialVersion,
       hashFn)
 
