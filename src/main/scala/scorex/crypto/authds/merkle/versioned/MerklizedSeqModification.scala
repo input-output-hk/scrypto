@@ -1,4 +1,4 @@
-package scorex.crypto.authds.merkle
+package scorex.crypto.authds.merkle.versioned
 
 import scorex.crypto.authds.merkle.MerkleTree.Position
 

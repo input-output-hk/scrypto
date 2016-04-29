@@ -1,8 +1,9 @@
-package scorex.crypto.authds.merkle
+package scorex.crypto.authds.merkle.versioned
 
 import java.io.RandomAccessFile
 
 import scorex.crypto.authds.merkle.MerkleTree.Position
+import scorex.crypto.authds.merkle.MerklizedSeq
 import scorex.crypto.authds.storage.{MvStoreStorageType, MvStoreVersionedBlobStorage, StorageType, VersionedBlobStorage}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
