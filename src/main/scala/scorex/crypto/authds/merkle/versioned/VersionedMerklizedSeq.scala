@@ -137,7 +137,7 @@ object MvStoreVersionedMerklizedSeq {
     */
   //todo: pass initial version
   def fromFile[H <: CryptographicHash](fileName: String,
-                                       treeFolder: String,
+                                       treeFolder: Option[String],
                                        blockSize: Int,
                                        hashFn: H): VersionedMerklizedSeq[H, MvStoreStorageType] = {
 
@@ -167,8 +167,8 @@ object MvStoreVersionedMerklizedSeq {
     }
 
     val vms = MvStoreVersionedMerklizedSeq(
-      Some(treeFolder + TreeFileName + Random.nextInt(500)),
-      Some(treeFolder + SegmentsFileName + Random.nextInt(500)),
+      treeFolder.map(_ + TreeFileName),
+      treeFolder.map(_ + SegmentsFileName),
       initialVersion,
       hashFn)
 

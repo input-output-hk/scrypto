@@ -22,7 +22,7 @@ class MerkleSpecification
   property("fromFile construction correct") {
     for (blocksNum <- List(7, 8, 9, 128)) {
       val (treeDirName: String, _, tempFile: String) = generateFile(blocksNum)
-      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
+      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, Some(treeDirName), 1024, DefaultHashFunction)
       (0L to vms.size - 1).foreach { idx =>
         val same = DefaultHashFunction(vms.seq.get(idx).get) sameElements vms.tree.getHash(0 -> idx).get
         same should be(true)
@@ -34,7 +34,7 @@ class MerkleSpecification
     for (blocksNum <- List(7, 8, 9, 128)) {
       val smallInteger = Gen.choose(0, blocksNum - 1)
       val (treeDirName: String, _, tempFile: String) = generateFile(blocksNum)
-      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
+      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
 
       forAll(smallInteger) { (index: Int) =>
         val leaf = vms.tree.proofByIndex(index).map { merklePath =>
@@ -50,7 +50,7 @@ class MerkleSpecification
     for (blocks <- List(7, 8, 9, 128)) {
       val (treeDirName: String, _, tempFile: String) = generateFile(blocks, "2")
 
-      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, treeDirName, 1024, DefaultHashFunction)
+      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, Some(treeDirName), 1024, DefaultHashFunction)
       val rootHash = vms.rootHash
 
       val tree = MvStoreVersionedMerkleTree(vms.seq, None, DefaultHashFunction)
