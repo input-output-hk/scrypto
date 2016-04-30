@@ -45,7 +45,9 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
     }
   }
 
-  protected def createLevel(level: LevelId, version: VersionedStorage[ST]#VersionTag): Try[Level]
+
+
+  protected def createLevel(level: LevelId, versionOpt: Option[VersionedStorage[ST]#VersionTag]): Try[Level]
 
   protected def getLevel(level: LevelId): Option[Level]
 

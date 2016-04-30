@@ -128,9 +128,9 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
 
   protected lazy val levels = mutable.Map[Int, VersionedBlobStorage[MvStoreStorageType]]()
 
-  protected override def createLevel(level: LevelId, version: VersionTag): Try[Level] = Try {
+  protected override def createLevel(level: LevelId, versionOpt: Option[VersionTag]): Try[Level] = Try {
     val res = new MvStoreVersionedBlobStorage(fileNameOpt.map(_ + "-" + level + ".mapDB"))
-    res.commitAndMark(Some(version))
+    res.commitAndMark(versionOpt)
     levels += level -> res
     res
   }.recoverWith { case e: Throwable =>
@@ -139,10 +139,9 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
   }
 
   protected override def getLevel(level: LevelId): Option[Level] =
-    levels.get(level).orElse {
-      val initialVersion = levels.get(level - 1).map(_.lastVersion).getOrElse(1L)
-      createLevel(level, initialVersion).toOption
-    }
+    levels
+      .get(level)
+      .orElse(createLevel(level, levels.get(level - 1).map(_.lastVersion)).toOption)
 
   override def close(): Unit = {
     commit()
