@@ -42,7 +42,7 @@ trait MvStoreVersionedStorage extends VersionedStorage[MvStoreStorageType] {
 
   protected def currentInternalVersion: InternalVersionTag = mvs.getCurrentVersion
 
-  override def putVersionTag(versionTag: VersionTag): Unit = {
+  override def putVersionTag(versionTag: VersionTag): Try[Unit] = Try {
     versionsMap.put(versionTag, currentInternalVersion)
     mvs.commit()
   }

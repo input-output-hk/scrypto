@@ -98,8 +98,13 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
       }
     }
 
-  override def putVersionTag(versionTag: VersionTag): Unit =
-    mapLevels(_.putVersionTag(versionTag)) //todo: Try[Unit] ?
+  override def putVersionTag(versionTag: VersionTag): Try[Unit] =
+    mapLevels(_.putVersionTag(versionTag)).map(_.find(_.isFailure)) match {
+      case Failure(e) => Failure(e)
+      case Success(None) => Success(Unit)
+      case Success(Some(Failure(e))) => Failure(e)
+      case _ => ???
+    }
 
   override def rollbackTo(versionTag: VersionTag): Try[VersionedMerkleTree[HashFn, ST]] =
     mapLevels(_.rollbackTo(versionTag)).flatMap(_.find(_.isFailure) match {
