@@ -92,7 +92,7 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
     (0 to height).foldLeft(Success(Seq()): Try[Seq[T]]) { case (partialResult, i) =>
       partialResult match {
         case Failure(e) =>
-          Failure(new Exception(s"Has a problem why reverting a level $i", e))
+          Failure(new Exception(s"Has a problem while mapping a level #$i", e))
         case Success(seq) =>
           Try(getLevel(i).get).map(mapFn).map(e => seq :+ e)
       }
