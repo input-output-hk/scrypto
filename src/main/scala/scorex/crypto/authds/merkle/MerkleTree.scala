@@ -87,13 +87,14 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
     }
   }
 
+  protected def setTreeElement(key: LPos, value: Digest): Unit = Try {
+    getLevel(key._1).get.set(key._2, value)
+  }.recoverWith { case t: Throwable =>
+    log.warn("Failed to set key:" + key, t)
+    Failure(t)
+  }
+
   def getHash(key: LPos): Option[Digest] = {
-    def setTreeElement(key: LPos, value: Digest): Unit = Try {
-      getLevel(key._1).get.set(key._2, value)
-    }.recoverWith { case t: Throwable =>
-      log.warn("Failed to set key:" + key, t)
-      Failure(t)
-    }
 
     val level = key._1
 

@@ -5,6 +5,9 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.merkle.MerkleTree.DefaultHashFunction
 import scorex.crypto.authds.merkle.versioned.{MvStoreVersionedMerkleTree, MvStoreVersionedMerklizedSeq}
+import scorex.crypto.authds.storage.MvStoreVersionedBlobStorage
+import scorex.crypto.encode.Base16
+import scorex.crypto.hash.Sha256
 
 /**
   * For now, the only Merkle tree option is versioned one. When a static Merkle tree will
@@ -18,6 +21,26 @@ class MerkleSpecification
   with GeneratorDrivenPropertyChecks
   with Matchers
   with CommonTreeFunctionality {
+
+  //calculates root hash of the tree consisting of
+  //4 leafs having value b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
+  property("sample with SHA-256"){
+    val value = "hello world".getBytes
+    val storage = new MvStoreVersionedBlobStorage(None)
+    storage.set(0, value)
+    storage.set(1, value)
+    storage.set(2, value)
+    storage.set(3, value)
+    storage.commit()
+
+    val vms = MvStoreVersionedMerklizedSeq.apply(None, storage, 1, Sha256)
+
+    //      0ba
+    //  47a     47a
+    // b94 b94 b94 b94
+    vms.tree.getHash(0 -> 0).get shouldBe Base16.decode("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9")
+    vms.tree.rootHash shouldBe Base16.decode("0ba8ad6fc2a7c94abcd2d4128720c5697cf147310ae82287270d56beaf8702f1")
+  }
 
   property("fromFile construction correct") {
     for (blocksNum <- List(7, 8, 9, 128)) {

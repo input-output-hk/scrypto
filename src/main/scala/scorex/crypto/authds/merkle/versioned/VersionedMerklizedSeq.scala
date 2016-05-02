@@ -126,7 +126,17 @@ object MvStoreVersionedMerklizedSeq {
       override protected[merkle] val tree: VersionedMerkleTree[HashFn, MvStoreStorageType] =
         new MvStoreVersionedMerkleTree(treeFileNameOpt, hashFn) {
           override def size = initialSeq.size
+          override def getHash(key: LPos): Option[Digest] = {
+            key._1 == 0 match {
+              case true =>
+                val value = super.getHash(key).orElse(seq.get(key._2).map(hashFn.apply))
+                value.foreach(e => setTreeElement(0 -> key._2, e))
+                value
+              case false => super.getHash(key)
+            }
+          }
         }
+
       override val version: Long = initialVersion
     }
   }
