@@ -11,10 +11,11 @@ import scala.util.{Failure, Try}
 
 class Curve25519 extends EllipticCurve {
 
+  import Curve25519._
   import SigningFunctions._
 
-  override val SignatureLength = 64
-  override val KeyLength = 32
+  override val SignatureLength = SignatureLength25519
+  override val KeyLength = KeyLength25519
 
   //todo: dirty hack, switch to logic as described in WhisperSystem's Curve25519 tutorial
   //todo: when it'll be possible to pass a random seed from outside
@@ -49,4 +50,9 @@ class Curve25519 extends EllipticCurve {
   }.getOrElse(false)
 
   protected def log = LoggerFactory.getLogger(this.getClass)
+}
+
+object Curve25519 {
+  val SignatureLength25519 = 64
+  val KeyLength25519 = 32
 }
