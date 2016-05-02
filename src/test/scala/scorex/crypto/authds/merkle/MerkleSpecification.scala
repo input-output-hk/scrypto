@@ -25,16 +25,8 @@ class MerkleSpecification
   //calculates root hash of the tree consisting of
   //4 leafs having value b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
   property("sample with SHA-256"){
-    val value = "hello world".getBytes
-    val storage = new MvStoreVersionedBlobStorage(None)
-    storage.set(0, value)
-    storage.set(1, value)
-    storage.set(2, value)
-    storage.set(3, value)
-    storage.commit()
 
-    val vms = MvStoreVersionedMerklizedSeq.apply(None, storage, 1, Sha256)
-
+    val vms = helloWorldTree
     //      0ba
     //  47a     47a
     // b94 b94 b94 b94
