@@ -9,7 +9,7 @@ import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
-import scala.util.{Random, Failure, Success, Try}
+import scala.util.{Failure, Success, Try}
 
 /*
 todo: repair
