@@ -25,7 +25,7 @@ trait CommonTreeFunctionality {
     (treeDirName, treeDir, tempFile)
   }
 
-  def helloWorldTree = {
+  def helloWorldTree() = {
     val value = "hello world".getBytes
     val storage = new MvStoreVersionedBlobStorage(None)
     storage.set(0, value)

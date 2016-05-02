@@ -18,47 +18,45 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
 
   private def even(l: Long) = (l % 2) == 0
 
-  private def applyChanges(levelMap: Level,
+  private def applyChanges(level: LevelId,
                            changes: Seq[(Position, Option[Digest])]) = {
     changes.foreach { case (pos, newDigestOpt) =>
       newDigestOpt match {
         case Some(nd) =>
-          levelMap.set(pos, nd)
+          setTreeElement(level -> pos, nd)
         case None =>
-          levelMap.unset(pos)
+          unsetTreeElement(level -> pos)
       }
     }
   }
 
-  private def pairsToRecalc(level:LevelId,
-                            levelMap: Level,
+  private def pairsToRecalc(level: LevelId,
                             changes: Seq[(Position, Option[Digest])]): Map[Position, Option[(Digest, Digest)]] = {
     val pairs = mutable.Map[Position, Option[(Digest, Digest)]]()
 
     changes.foreach { case (pos, newDigestOpt) =>
-      even(pos) match {
+
+      if (even(pos)) {
         //left
-        case true =>
-          pairs.put(pos, newDigestOpt.map(newDigest => (newDigest, levelMap.get(pos + 1).getOrElse(emptyTreeHash(level)))))
-
+        pairs.put(pos, newDigestOpt.map(newDigest => (newDigest, getHash(level -> (pos + 1)).getOrElse(emptyTreeHash(level)))))
+      } else {
         //right
-        case false =>
-          val leftPos = pos - 1
+        val leftPos = pos - 1
 
-          pairs.get(leftPos) match {
-            case Some(pairOpt) =>
-              (pairOpt, newDigestOpt) match {
-                case (Some(pair), _) =>
-                  pairs.put(leftPos, Some(pair._1, newDigestOpt.getOrElse(emptyTreeHash(level))))
-                case (None, Some(newDigest)) =>
-                  throw new IllegalStateException("This branch must not be reached")
-                case (None, None) => //leave None
-              }
+        pairs.get(leftPos) match {
+          case Some(pairOpt) =>
+            (pairOpt, newDigestOpt) match {
+              case (Some(pair), _) =>
+                pairs.put(leftPos, Some(pair._1, newDigestOpt.getOrElse(emptyTreeHash(level))))
+              case (None, Some(newDigest)) =>
+                throw new IllegalStateException("This branch must not be reached")
+              case (None, None) =>
+                None
+            }
 
-            case None =>
-              //todo: get?
-              pairs.put(leftPos, Some(levelMap.get(leftPos).getOrElse(emptyTreeHash(level)), newDigestOpt.getOrElse(emptyTreeHash(0))))
-          }
+          case None =>
+            pairs.put(leftPos, Option(getHash(level -> leftPos).get -> newDigestOpt.getOrElse(emptyTreeHash(level))))
+        }
       }
     }
     pairs.toMap
@@ -68,11 +66,9 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
   final def batchUpdate(changes: Seq[(Position, Option[Digest])],
                         level: Int = 0): VersionedMerkleTree[HashFn, ST] = {
 
-    val levelMap = getLevel(level).get
+    applyChanges(level, changes)
 
-    applyChanges(levelMap, changes)
-
-    val nextLevelChanges = pairsToRecalc(level, levelMap, changes).map { case (pos, dsOpt) =>
+    val nextLevelChanges = pairsToRecalc(level, changes).map { case (pos, dsOpt) =>
       pos / 2 -> dsOpt.map(ds => hashFunction(ds._1 ++ ds._2))
     }.toSeq
 
@@ -164,7 +160,7 @@ object MvStoreVersionedMerkleTree {
       override def size = seq.size
     }.ensuring(_.getLevel(0).get.size == 0)
 
-    tree.batchUpdate((0L to seq.size-1).map(pos => pos -> seq.get(pos).map(hashFunction.apply)))
+    tree.batchUpdate((0L to seq.size - 1).map(pos => pos -> seq.get(pos).map(hashFunction.apply)))
     tree
   }
 }

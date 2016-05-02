@@ -5,9 +5,7 @@ import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.merkle.MerkleTree.DefaultHashFunction
 import scorex.crypto.authds.merkle.versioned.{MvStoreVersionedMerkleTree, MvStoreVersionedMerklizedSeq}
-import scorex.crypto.authds.storage.MvStoreVersionedBlobStorage
 import scorex.crypto.encode.Base16
-import scorex.crypto.hash.Sha256
 
 /**
   * For now, the only Merkle tree option is versioned one. When a static Merkle tree will
@@ -26,7 +24,7 @@ class MerkleSpecification
   //4 leafs having value b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
   property("sample with SHA-256"){
 
-    val vms = helloWorldTree
+    val vms = helloWorldTree()
     //      0ba
     //  47a     47a
     // b94 b94 b94 b94
