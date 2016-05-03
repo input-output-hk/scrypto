@@ -56,7 +56,6 @@ class VersionedMerkleSpecification
     //   17a     d58     fd3     fd3
     // b94 c0e c0e b94 c0e c0e c0e c0e
 
-    vms.tree.getHash(0 -> 0).get shouldBe Base16.decode("b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9")
     vms.update(removals, appends)
 
     vms.tree.getHash(0 -> 1).get shouldBe Base16.decode("c0e6e05e8a4861c94010b6a21f3194944a5fcb469ec4c319479d65cc555281f6")
@@ -67,4 +66,12 @@ class VersionedMerkleSpecification
     vms.rootHash shouldBe Base16.decode("3287081835e28d07a13907ca35ceb02e2b2d03f41eaeb1b2f26023620da97247")
   }
 
+  property("check against manually calculated addition") {
+    val vms = helloWorldTree()
+
+    val hw = vms.seq.get(0).get
+    val appends = Seq.fill(4)(hw).map(MerklizedSeqAppend)
+    vms.update(Seq(), appends)
+    vms.rootHash shouldBe Base16.decode("87acff56319a5e7e50263a4874f44a7b21389d4a567f45da05e5fa544cb3dd49")
+  }
 }
