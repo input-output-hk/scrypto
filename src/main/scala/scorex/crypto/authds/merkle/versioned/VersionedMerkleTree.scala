@@ -65,7 +65,6 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
   @tailrec
   final def batchUpdate(changes: Seq[(Position, Option[Digest])],
                         level: Int = 0): VersionedMerkleTree[HashFn, ST] = {
-
     applyChanges(level, changes)
 
     val nextLevelChanges = pairsToRecalc(level, changes).map { case (pos, dsOpt) =>

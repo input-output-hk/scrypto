@@ -7,6 +7,8 @@ import scorex.crypto.authds.merkle.CommonTreeFunctionality
 import scorex.crypto.authds.merkle.MerkleTree._
 import scorex.crypto.encode.Base16
 
+import scala.util.Try
+
 
 class VersionedMerkleSpecification
   extends PropSpec
@@ -42,7 +44,7 @@ class VersionedMerkleSpecification
   property("check against manually calculated update sample") {
     val vms = helloWorldTree()
 
-    val removals = Seq(MerklizedSeqRemoval(1), MerklizedSeqRemoval(2))
+    val removals = Seq(MerklizedSeqRemoval(2), MerklizedSeqRemoval(1))
 
     val elem = Base16.decode("f38764ccc88c199a5633bf8186a5ec6a5f6c05493e0bd921a295414839eda757")
     val appends = Seq.fill(6)(elem).map(MerklizedSeqAppend)
@@ -73,5 +75,19 @@ class VersionedMerkleSpecification
     val appends = Seq.fill(4)(hw).map(MerklizedSeqAppend)
     vms.update(Seq(), appends)
     vms.rootHash shouldBe Base16.decode("87acff56319a5e7e50263a4874f44a7b21389d4a567f45da05e5fa544cb3dd49")
+  }
+
+  property("check against manually calculated removal - decreasing order") {
+    val vms = helloWorldTree()
+    val removals = Seq(MerklizedSeqRemoval(2), MerklizedSeqRemoval(1))
+    vms.update(removals, Seq())
+
+    vms.rootHash shouldBe Base16.decode("47a8c6f8b634e4d94a9da33e182c270fe3571f1a550d20fd93735583180c3c32")
+  }
+
+  property("check against manually calculated removal - increasing order") {
+    val vms = helloWorldTree()
+    val removals = Seq(MerklizedSeqRemoval(1), MerklizedSeqRemoval(2))
+    Try(vms.update(removals, Seq())).isFailure shouldBe true
   }
 }

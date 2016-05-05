@@ -39,12 +39,18 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
                    updatesPlan: Seq[(Position, Option[Array[Byte]])]): Seq[(Position, Option[Array[Byte]])] = {
       (removals, appends) match {
         case (removal :: rmTail, append :: appTail) =>
+          require(removal.position > rmTail.headOption.map(_.position).getOrElse(-1L),
+            "Removals short be ordered in decreasing order")
+
           updateStep(rmTail, appTail, size, updatesPlan :+ (removal.position -> Some(append.element)))
 
         case (Nil, append :: appTail) =>
           updateStep(Nil, appTail, size + 1, updatesPlan :+ (size -> Some(append.element)))
 
         case (removal :: rmTail, Nil) =>
+          require(removal.position > rmTail.headOption.map(_.position).getOrElse(-1L),
+            "Removals short be ordered in decreasing order")
+
           val p = size - 1
           val last = seq.get(p).get
           val updates = Seq(removal.position -> Some(last), p -> None)
@@ -126,6 +132,7 @@ object MvStoreVersionedMerklizedSeq {
       override protected[merkle] val tree: VersionedMerkleTree[HashFn, MvStoreStorageType] =
         new MvStoreVersionedMerkleTree(treeFileNameOpt, hashFn) {
           override def size = initialSeq.size
+
           override def getHash(key: LPos): Option[Digest] = {
             key._1 == 0 match {
               case true =>
