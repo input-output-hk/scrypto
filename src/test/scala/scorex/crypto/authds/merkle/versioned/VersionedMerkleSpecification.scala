@@ -113,4 +113,27 @@ class VersionedMerkleSpecification
 
     vms.tree.rootHash shouldBe Base16.decode("0ba8ad6fc2a7c94abcd2d4128720c5697cf147310ae82287270d56beaf8702f1")
   }
+
+  property("versioning - rollback to a smaller tree") {
+    val vms = helloWorldTree()
+
+    val versionToGoBack = vms.allVersions().last
+
+    vms.tree.rootHash shouldBe Base16.decode("0ba8ad6fc2a7c94abcd2d4128720c5697cf147310ae82287270d56beaf8702f1")
+
+    val appends = Seq.fill(4)(MerklizedSeqAppend("hello world".getBytes))
+    vms.update(Seq(), appends)
+
+    vms.rootHash shouldBe Base16.decode("87acff56319a5e7e50263a4874f44a7b21389d4a567f45da05e5fa544cb3dd49")
+
+    vms.consistent shouldBe true
+
+    val rollbackStatus = vms.rollbackTo(versionToGoBack)
+
+    rollbackStatus.isSuccess shouldBe true
+
+    vms.consistent shouldBe true
+
+    vms.tree.rootHash shouldBe Base16.decode("0ba8ad6fc2a7c94abcd2d4128720c5697cf147310ae82287270d56beaf8702f1")
+  }
 }
