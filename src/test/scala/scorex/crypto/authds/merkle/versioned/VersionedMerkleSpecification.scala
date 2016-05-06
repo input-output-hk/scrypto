@@ -90,4 +90,27 @@ class VersionedMerkleSpecification
     val removals = Seq(MerklizedSeqRemoval(1), MerklizedSeqRemoval(2))
     Try(vms.update(removals, Seq())).isFailure shouldBe true
   }
+
+  property("versioning - rollback to a bigger tree") {
+    val vms = helloWorldTree()
+
+    val versionToGoBack = vms.allVersions().last
+
+    vms.tree.rootHash shouldBe Base16.decode("0ba8ad6fc2a7c94abcd2d4128720c5697cf147310ae82287270d56beaf8702f1")
+
+    val removals = Seq(MerklizedSeqRemoval(2), MerklizedSeqRemoval(1))
+    vms.update(removals, Seq())
+
+    vms.rootHash shouldBe Base16.decode("47a8c6f8b634e4d94a9da33e182c270fe3571f1a550d20fd93735583180c3c32")
+
+    vms.consistent shouldBe true
+
+    val rollbackStatus = vms.rollbackTo(versionToGoBack)
+
+    rollbackStatus.isSuccess shouldBe true
+
+    vms.consistent shouldBe true
+
+    vms.tree.rootHash shouldBe Base16.decode("0ba8ad6fc2a7c94abcd2d4128720c5697cf147310ae82287270d56beaf8702f1")
+  }
 }

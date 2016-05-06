@@ -81,7 +81,8 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
 
   def close(): Unit
 
-  def commit(): Unit
+  def commit():Unit = commit(None)
+  def commit(versionOpt: Option[VersionTag]): Unit
 
   protected def mapLevels[T](mapFn: Level => T): Try[Seq[T]] =
     (0 to height).foldLeft(Success(Seq()): Try[Seq[T]]) { case (partialResult, i) =>
@@ -148,7 +149,7 @@ abstract class MvStoreVersionedMerkleTree[HashFn <: CryptographicHash](val fileN
     levels.foreach(_._2.close())
   }
 
-  override def commit(): Unit = levels.foreach(_._2.commitAndMark())
+  override def commit(versionOpt: Option[VersionTag]): Unit = levels.foreach(_._2.commitAndMark(versionOpt))
 }
 
 object MvStoreVersionedMerkleTree {

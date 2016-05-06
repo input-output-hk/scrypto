@@ -24,8 +24,6 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
 
   private lazy val hashFn = tree.hashFunction
 
-  val version: Long = 0
-
   protected def setDataElement(index: Long, element: Array[Byte]) = seq.set(index, element)
 
   def update(removals: Seq[MerklizedSeqRemoval],
@@ -108,6 +106,7 @@ object MvStoreVersionedMerklizedSeq {
   val TreeFileName = "/hashTree"
   val SegmentsFileName = "/segments"
 
+  //todo: initialVersion
   def apply[HashFn <: CryptographicHash](treeFileNameOpt: Option[String],
                                          seqFileNameOpt: Option[String],
                                          initialVersion: Long,
@@ -119,7 +118,6 @@ object MvStoreVersionedMerklizedSeq {
         }
       override protected[merkle] val seq: VersionedBlobStorage[MvStoreStorageType] =
         new MvStoreVersionedBlobStorage(seqFileNameOpt)
-      override val version: Long = initialVersion
     }
   }
 
@@ -144,7 +142,8 @@ object MvStoreVersionedMerklizedSeq {
           }
         }
 
-      override val version: Long = initialVersion
+      seq.commitAndMark(Some(initialVersion))
+      tree.commit(Some(initialVersion))
     }
   }
 
