@@ -38,7 +38,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
       (removals, appends) match {
         case (removal :: rmTail, append :: appTail) =>
           require(removal.position > rmTail.headOption.map(_.position).getOrElse(-1L),
-            "Removals short be ordered in decreasing order")
+            "Removals should be ordered in decreasing order")
 
           updateStep(rmTail, appTail, size, updatesPlan :+ (removal.position -> Some(append.element)))
 
@@ -47,7 +47,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
 
         case (removal :: rmTail, Nil) =>
           require(removal.position > rmTail.headOption.map(_.position).getOrElse(-1L),
-            "Removals short be ordered in decreasing order")
+            "Removals should be ordered in decreasing order")
 
           val p = size - 1
           val last = seq.get(p).get
