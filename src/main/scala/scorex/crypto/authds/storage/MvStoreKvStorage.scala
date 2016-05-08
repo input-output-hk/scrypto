@@ -15,6 +15,8 @@ trait MvStoreKvStorage[Key, Value] extends KVStorage[Key, Value, MvStoreStorageT
     b.open()
   }
 
+  mvs.setVersionsToKeep(1000)
+
   protected lazy val map = mvs.openMap[Key, Value]("data")
 
   override def size: Long = map.sizeAsLong()

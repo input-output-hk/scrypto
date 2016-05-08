@@ -136,4 +136,64 @@ class VersionedMerkleSpecification
 
     vms.tree.rootHash shouldBe Base16.decode("0ba8ad6fc2a7c94abcd2d4128720c5697cf147310ae82287270d56beaf8702f1")
   }
+
+
+  property("reversal after many appends") {
+    val vms = helloWorldTree()
+
+    val initialRoot = vms.rootHash
+
+    val versionToGoBack = vms.allVersions().last
+
+    forAll(Gen.listOf(Gen.alphaStr), minSuccessful(3), maxDiscarded(1)) { strings: List[String] =>
+      val upd = strings.map(_.getBytes).map(MerklizedSeqAppend.apply)
+      vms.update(Seq(), upd)
+    }
+
+    println(vms.seq.allVersions())
+
+    vms.consistent shouldBe true
+
+    val rollbackStatus = vms.rollbackTo(versionToGoBack)
+
+    rollbackStatus.isSuccess shouldBe true
+
+    vms.consistent shouldBe true
+
+    vms.tree.rootHash shouldBe initialRoot
+  }
+
+  /*
+  property("reversal after many appends - fromFile") {
+    for (blocks <- List(7, 128)) {
+
+      val (_, _, tempFile: String) = generateFile(blocks, "3")
+
+      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
+
+      val initialRoot = vms.rootHash
+
+      println(vms.allVersions())
+
+      val versionToGoBack = vms.allVersions().last
+
+      forAll(Gen.listOf(Gen.alphaStr), minSuccessful(10), maxDiscarded(5)) { strings: List[String] =>
+        val upd = strings.map(_.getBytes).map(MerklizedSeqAppend.apply)
+        vms.update(Seq(), upd)
+      }
+
+      println(vms.seq.allVersions())
+      println(vms.tree.allVersions())
+
+      vms.consistent shouldBe true
+
+      val rollbackStatus = vms.rollbackTo(versionToGoBack)
+
+      rollbackStatus.isSuccess shouldBe true
+
+      vms.consistent shouldBe true
+
+      vms.tree.rootHash shouldBe initialRoot
+    }
+  } */
 }

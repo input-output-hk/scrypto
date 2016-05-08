@@ -81,11 +81,12 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
 
   def close(): Unit
 
-  def commit():Unit = commit(None)
+  def commit(): Unit = commit(None)
+
   def commit(versionOpt: Option[VersionTag]): Unit
 
-  protected def mapLevels[T](mapFn: Level => T): Try[Seq[T]] =
-    (0 to height).foldLeft(Success(Seq()): Try[Seq[T]]) { case (partialResult, i) =>
+  protected def mapLevels[T](mapFn: Level => T, from: Int = 0): Try[Seq[T]] =
+    (from to height).foldLeft(Success(Seq()): Try[Seq[T]]) { case (partialResult, i) =>
       partialResult match {
         case Failure(e) =>
           Failure(new Exception(s"Has a problem while mapping a level #$i", e))
@@ -102,12 +103,19 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
       case _ => ???
     }
 
-  override def rollbackTo(versionTag: VersionTag): Try[VersionedMerkleTree[HashFn, ST]] =
-    mapLevels(_.rollbackTo(versionTag)).flatMap(_.find(_.isFailure) match {
+  override def rollbackTo(versionTag: VersionTag): Try[VersionedMerkleTree[HashFn, ST]] = {
+    println("level0: "+getLevel(0).get.size)
+    println("level0: "+getLevel(0).get)
+    println("level0: "+getLevel(0).get.allVersions())
+    println(getLevel(0).get.rollbackTo(1))
+    println("level0: "+getLevel(0).get.size)
+    println("level0: "+getLevel(0).get.allVersions())
+    mapLevels({level => println(s"${level.size}: "+level.allVersions()); level.rollbackTo(versionTag)}, 1).flatMap(_.find(_.isFailure) match {
       case Some(Failure(thr)) => Failure(thr)
       case Some(_) => Failure(new Exception("Some(_)"))
       case None => Success(this)
     })
+  }
 
   override def allVersions(): Seq[VersionTag] = getLevel(0).map(_.allVersions()).getOrElse(Seq())
 
