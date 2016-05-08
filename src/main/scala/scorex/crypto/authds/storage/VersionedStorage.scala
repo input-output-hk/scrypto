@@ -6,7 +6,7 @@ import scala.util.Try
 trait VersionedStorage[ST <: StorageType] {
   type VersionTag = Long
 
-  def putVersionTag(versionTag: VersionTag):Try[Unit]
+  def putVersionTag(versionTag: VersionTag): Try[Unit]
 
   def lastVersion: VersionTag = Try(allVersions().max).getOrElse(0L)
 
