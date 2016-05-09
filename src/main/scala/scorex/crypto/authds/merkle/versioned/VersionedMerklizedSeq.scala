@@ -106,7 +106,6 @@ object MvStoreVersionedMerklizedSeq {
   val TreeFileName = "/hashTree"
   val SegmentsFileName = "/segments"
 
-  //todo: initialVersion
   def apply[HashFn <: CryptographicHash](treeFileNameOpt: Option[String],
                                          seqFileNameOpt: Option[String],
                                          initialVersion: Long,
