@@ -16,7 +16,6 @@ class MvStoreVersionedBlobStorageSpecification
 
     bs.batchUpdate(Seq(0L -> Some(Array.fill(5)(0: Byte)), 1L -> Some(Array.fill(7)(1: Byte))))
 
-    println(bs.allVersions())
     bs.size shouldBe 2
 
     forAll(Gen.listOf(Gen.alphaStr), minSuccessful(50), maxDiscarded(1)) { strings: List[String] =>

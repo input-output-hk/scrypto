@@ -104,13 +104,8 @@ trait VersionedMerkleTree[HashFn <: CryptographicHash, ST <: StorageType]
     }
 
   override def rollbackTo(versionTag: VersionTag): Try[VersionedMerkleTree[HashFn, ST]] = {
-    println("level0: "+getLevel(0).get.size)
-    println("level0: "+getLevel(0).get)
-    println("level0: "+getLevel(0).get.allVersions())
-    println(getLevel(0).get.rollbackTo(1))
-    println("level0: "+getLevel(0).get.size)
-    println("level0: "+getLevel(0).get.allVersions())
-    mapLevels({level => println(s"${level.size}: "+level.allVersions()); level.rollbackTo(versionTag)}, 1).flatMap(_.find(_.isFailure) match {
+    getLevel(0).get.rollbackTo(versionTag)
+    mapLevels({level => level.rollbackTo(versionTag)}, 1).flatMap(_.find(_.isFailure) match {
       case Some(Failure(thr)) => Failure(thr)
       case Some(_) => Failure(new Exception("Some(_)"))
       case None => Success(this)

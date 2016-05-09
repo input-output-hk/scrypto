@@ -34,8 +34,6 @@ class MvStoreSpecification
       s.commit()
     }
 
-    println(s.getCurrentVersion)
-
     map.openVersion(initVersion).size() shouldBe 2
     s.rollbackTo(initVersion)
     map.size() shouldBe 2

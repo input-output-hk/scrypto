@@ -150,8 +150,6 @@ class VersionedMerkleSpecification
       vms.update(Seq(), upd)
     }
 
-    println(vms.seq.allVersions())
-
     vms.consistent shouldBe true
 
     val rollbackStatus = vms.rollbackTo(versionToGoBack)
@@ -163,7 +161,6 @@ class VersionedMerkleSpecification
     vms.tree.rootHash shouldBe initialRoot
   }
 
-  /*
   property("reversal after many appends - fromFile") {
     for (blocks <- List(7, 128)) {
 
@@ -173,17 +170,12 @@ class VersionedMerkleSpecification
 
       val initialRoot = vms.rootHash
 
-      println(vms.allVersions())
-
       val versionToGoBack = vms.allVersions().last
 
       forAll(Gen.listOf(Gen.alphaStr), minSuccessful(10), maxDiscarded(5)) { strings: List[String] =>
         val upd = strings.map(_.getBytes).map(MerklizedSeqAppend.apply)
         vms.update(Seq(), upd)
       }
-
-      println(vms.seq.allVersions())
-      println(vms.tree.allVersions())
 
       vms.consistent shouldBe true
 
@@ -195,5 +187,5 @@ class VersionedMerkleSpecification
 
       vms.tree.rootHash shouldBe initialRoot
     }
-  } */
+  }
 }

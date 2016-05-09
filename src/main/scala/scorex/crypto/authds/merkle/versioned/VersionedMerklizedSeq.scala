@@ -118,6 +118,9 @@ object MvStoreVersionedMerklizedSeq {
         }
       override protected[merkle] val seq: VersionedBlobStorage[MvStoreStorageType] =
         new MvStoreVersionedBlobStorage(seqFileNameOpt)
+
+      seq.commitAndMark(Some(initialVersion))
+      tree.commit(Some(initialVersion))
     }
   }
 
@@ -157,7 +160,7 @@ object MvStoreVersionedMerklizedSeq {
                                        blockSize: Int,
                                        hashFn: H): VersionedMerklizedSeq[H, MvStoreStorageType] = {
 
-    val initialVersion = 0
+    val initialVersion = 1
 
     val byteBuffer = new Array[Byte](blockSize)
 
