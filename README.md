@@ -1,7 +1,5 @@
 # Scrypto [![Build Status](http://23.94.190.226:8080/buildStatus/icon?job=scrypto)](http://23.94.190.226:8080/job/scrypto)
 
-**Please do not use Merkle trees from master branch code. Use the latest published stable version 1.1.0**
-
 Scrypto is an open source cryptographic toolkit designed to make it easier and safer for developers to use cryptography in their applications.
 
 It was extracted from [Scorex](https://github.com/ScorexProject/Scorex-Lagonaki), open-source modular blockchain & cryptocurrency framework.
