@@ -16,7 +16,7 @@ import scala.util.Try
   * @param proof - segment position and merkle path, complementary to data block
   */
 case class MerkleAuthData[HashFunction <: CryptographicHash]
-(data: Array[Byte], proof: MerklePath[HashFunction]) extends AuthData[HashFunction, MerklePath[HashFunction]] {
+(data: Array[Byte], proof: MerklePath[HashFunction]) extends AuthData[MerklePath[HashFunction]] {
 
   type Digest = HashFunction#Digest
 

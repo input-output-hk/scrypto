@@ -6,7 +6,7 @@ import scorex.crypto.hash.CryptographicHash
 
 
 trait MerklizedIndexedSeq[HashFn <: CryptographicHash, ST <: StorageType]
-  extends AuthenticatedDictionary[HashFn, MerklePath[HashFn], ST] {
+  extends AuthenticatedDictionary[MerklePath[HashFn], ST] {
 
   override type Key = Long
 
