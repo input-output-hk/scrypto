@@ -3,7 +3,7 @@ package scorex.crypto.authds.merkle.versioned
 import java.io.RandomAccessFile
 
 import scorex.crypto.authds.merkle.MerkleTree.Position
-import scorex.crypto.authds.merkle.MerklizedSeq
+import scorex.crypto.authds.merkle.MerklizedIndexedSeq
 import scorex.crypto.authds.storage.{MvStoreStorageType, MvStoreVersionedBlobStorage, StorageType, VersionedBlobStorage}
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ScryptoLogging
@@ -15,8 +15,8 @@ import scala.util.{Failure, Success, Try}
 todo: repair
  */
 
-trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
-  extends MerklizedSeq[HashFn, ST] with ScryptoLogging {
+trait VersionedMerklizedIndexedSeq[HashFn <: CryptographicHash, ST <: StorageType]
+  extends MerklizedIndexedSeq[HashFn, ST] with ScryptoLogging {
 
   override protected[merkle] val tree: VersionedMerkleTree[HashFn, ST]
 
@@ -27,7 +27,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
   protected def setDataElement(index: Long, element: Array[Byte]) = seq.set(index, element)
 
   def update(removals: Seq[MerklizedSeqRemoval],
-             appends: Seq[MerklizedSeqAppend]): VersionedMerklizedSeq[HashFn, ST] = {
+             appends: Seq[MerklizedSeqAppend]): VersionedMerklizedIndexedSeq[HashFn, ST] = {
 
     //todo: recheck
     @tailrec
@@ -72,7 +72,7 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
 
   def consistent: Boolean = tree.consistent && seq.lastVersion == tree.lastVersion
 
-  def rollbackTo(version: VersionedBlobStorage[ST]#VersionTag): Try[VersionedMerklizedSeq[HashFn, ST]] = {
+  def rollbackTo(version: VersionedBlobStorage[ST]#VersionTag): Try[VersionedMerklizedIndexedSeq[HashFn, ST]] = {
     seq.rollbackTo(version) match {
       case Success(_) =>
         tree.rollbackTo(version) match {
@@ -96,10 +96,10 @@ trait VersionedMerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType]
 }
 
 
-trait MvStoreVersionedMerklizedSeq[HashFn <: CryptographicHash]
-  extends VersionedMerklizedSeq[HashFn, MvStoreStorageType]
+trait MvStoreVersionedMerklizedIndexedSeq[HashFn <: CryptographicHash]
+  extends VersionedMerklizedIndexedSeq[HashFn, MvStoreStorageType]
 
-object MvStoreVersionedMerklizedSeq {
+object MvStoreVersionedMerklizedIndexedSeq {
 
   type Block = Array[Byte]
 
@@ -109,8 +109,8 @@ object MvStoreVersionedMerklizedSeq {
   def apply[HashFn <: CryptographicHash](treeFileNameOpt: Option[String],
                                          seqFileNameOpt: Option[String],
                                          initialVersion: Long,
-                                         hashFn: HashFn): MvStoreVersionedMerklizedSeq[HashFn] = {
-    new MvStoreVersionedMerklizedSeq[HashFn] {
+                                         hashFn: HashFn): MvStoreVersionedMerklizedIndexedSeq[HashFn] = {
+    new MvStoreVersionedMerklizedIndexedSeq[HashFn] {
       override protected[merkle] val tree: VersionedMerkleTree[HashFn, MvStoreStorageType] =
         new MvStoreVersionedMerkleTree(treeFileNameOpt, hashFn) {
           override def size = levels(0).size
@@ -126,8 +126,8 @@ object MvStoreVersionedMerklizedSeq {
   def apply[HashFn <: CryptographicHash](treeFileNameOpt: Option[String],
                                          initialSeq: VersionedBlobStorage[MvStoreStorageType],
                                          initialVersion: Long,
-                                         hashFn: HashFn): MvStoreVersionedMerklizedSeq[HashFn] = {
-    new MvStoreVersionedMerklizedSeq[HashFn] {
+                                         hashFn: HashFn): MvStoreVersionedMerklizedIndexedSeq[HashFn] = {
+    new MvStoreVersionedMerklizedIndexedSeq[HashFn] {
       override protected[merkle] val seq: VersionedBlobStorage[MvStoreStorageType] = initialSeq
       override protected[merkle] val tree: VersionedMerkleTree[HashFn, MvStoreStorageType] =
         new MvStoreVersionedMerkleTree(treeFileNameOpt, hashFn) {
@@ -157,7 +157,7 @@ object MvStoreVersionedMerklizedSeq {
   def fromFile[H <: CryptographicHash](fileName: String,
                                        treeFolder: Option[String],
                                        blockSize: Int,
-                                       hashFn: H): VersionedMerklizedSeq[H, MvStoreStorageType] = {
+                                       hashFn: H): VersionedMerklizedIndexedSeq[H, MvStoreStorageType] = {
 
     val initialVersion = 1
 
@@ -184,7 +184,7 @@ object MvStoreVersionedMerklizedSeq {
       }
     }
 
-    val vms = MvStoreVersionedMerklizedSeq(
+    val vms = MvStoreVersionedMerklizedIndexedSeq(
       treeFolder.map(_ + TreeFileName),
       treeFolder.map(_ + SegmentsFileName),
       initialVersion,

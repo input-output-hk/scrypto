@@ -13,7 +13,7 @@ import scala.util.Try
   * @param data - data block
   * @param merklePath - segment position and merkle path, complementary to data block
   */
-case class AuthData[HashFunction <: CryptographicHash](data: Array[Byte], merklePath: MerklePath[HashFunction]) {
+case class MerkleAuthData[HashFunction <: CryptographicHash](data: Array[Byte], merklePath: MerklePath[HashFunction]) {
 
   type Digest = HashFunction#Digest
 
@@ -48,8 +48,8 @@ case class AuthData[HashFunction <: CryptographicHash](data: Array[Byte], merkle
   }
 }
 
-object AuthData {
-  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): Try[AuthData[HashFunction]] = Try {
+object MerkleAuthData {
+  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): Try[MerkleAuthData[HashFunction]] = Try {
     val dataSize = Ints.fromByteArray(bytes.slice(0, 4))
     val merklePathLength = Ints.fromByteArray(bytes.slice(4, 8))
     val merklePathSize = Ints.fromByteArray(bytes.slice(8, 12))
@@ -59,12 +59,12 @@ object AuthData {
       bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)
     }
     val index = Longs.fromByteArray(bytes.takeRight(8))
-    AuthData(data, MerklePath(index, merklePath))
+    MerkleAuthData(data, MerklePath(index, merklePath))
   }
 
   implicit def authDataBlockReads[T, HashFunction <: CryptographicHash]
-  (implicit fmt: Reads[T]): Reads[AuthData[HashFunction]] = new Reads[AuthData[HashFunction]] {
-    def reads(json: JsValue): JsResult[AuthData[HashFunction]] = JsSuccess(AuthData[HashFunction](
+  (implicit fmt: Reads[T]): Reads[MerkleAuthData[HashFunction]] = new Reads[MerkleAuthData[HashFunction]] {
+    def reads(json: JsValue): JsResult[MerkleAuthData[HashFunction]] = JsSuccess(MerkleAuthData[HashFunction](
       Base58.decode((json \ "data").as[String]).get,
       MerklePath(
         (json \ "index").as[Long],
@@ -83,9 +83,9 @@ object AuthData {
     ))
   }
 
-  implicit def authDataBlockWrites[T, HashFunction <: CryptographicHash](implicit fmt: Writes[T]): Writes[AuthData[HashFunction]]
-  = new Writes[AuthData[HashFunction]] {
-    def writes(ts: AuthData[HashFunction]) = JsObject(Seq(
+  implicit def authDataBlockWrites[T, HashFunction <: CryptographicHash](implicit fmt: Writes[T]): Writes[MerkleAuthData[HashFunction]]
+  = new Writes[MerkleAuthData[HashFunction]] {
+    def writes(ts: MerkleAuthData[HashFunction]) = JsObject(Seq(
       "data" -> JsString(Base58.encode(ts.data)),
       "index" -> JsNumber(ts.merklePath.index),
       "merklePath" -> JsArray(

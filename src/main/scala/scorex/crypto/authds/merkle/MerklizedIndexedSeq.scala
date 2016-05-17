@@ -5,7 +5,9 @@ import scorex.crypto.authds.storage.{StorageType, BlobStorage}
 import scorex.crypto.hash.CryptographicHash
 
 
-trait MerklizedSeq[HashFn <: CryptographicHash, ST <: StorageType] {
+trait Authenticated
+
+trait MerklizedIndexedSeq[HashFn <: CryptographicHash, ST <: StorageType] {
   protected val tree: MerkleTree[HashFn, ST]
   protected val seq: BlobStorage[ST]
 
