@@ -22,8 +22,8 @@ class VersionedMerkleSpecification
 
       val (_, _, tempFile: String) = generateFile(blocks, "3")
 
-      val vms1 = MvStoreVersionedMerklizedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
-      val vms2 = MvStoreVersionedMerklizedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
+      val vms1 = MvStoreVersionedMerklizedIndexedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
+      val vms2 = MvStoreVersionedMerklizedIndexedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
 
       vms1.rootHash shouldBe vms2.rootHash
 
@@ -166,7 +166,7 @@ class VersionedMerkleSpecification
 
       val (_, _, tempFile: String) = generateFile(blocks, "3")
 
-      val vms = MvStoreVersionedMerklizedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
+      val vms = MvStoreVersionedMerklizedIndexedSeq.fromFile(tempFile, None, 1024, DefaultHashFunction)
 
       val initialRoot = vms.rootHash
 

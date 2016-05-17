@@ -57,7 +57,7 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
   def rootHash: Digest = getHash((height, 0)).get
 
   /**
-    * Return AuthData at position $index
+    * Return MerkleAuthData at position $index
     */
   def proofByIndex(index: Position): Option[MerklePath[HashFn]] = {
     val nonEmptyBlocks = size

@@ -2,6 +2,7 @@ package scorex.crypto.authds.merkle
 
 import com.google.common.primitives.{Ints, Longs}
 import play.api.libs.json._
+import scorex.crypto.authds.AuthData
 import scorex.crypto.authds.merkle.MerkleTree.Position
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.CryptographicHash
@@ -9,11 +10,13 @@ import scorex.crypto.hash.CryptographicHash
 import scala.annotation.tailrec
 import scala.util.Try
 
+
 /**
   * @param data - data block
-  * @param merklePath - segment position and merkle path, complementary to data block
+  * @param proof - segment position and merkle path, complementary to data block
   */
-case class MerkleAuthData[HashFunction <: CryptographicHash](data: Array[Byte], merklePath: MerklePath[HashFunction]) {
+case class MerkleAuthData[HashFunction <: CryptographicHash]
+(data: Array[Byte], proof: MerklePath[HashFunction]) extends AuthData[HashFunction, MerklePath[HashFunction]] {
 
   type Digest = HashFunction#Digest
 
@@ -23,10 +26,10 @@ case class MerkleAuthData[HashFunction <: CryptographicHash](data: Array[Byte], 
     val merklePathLength = Ints.toByteArray(this.merklePathHashes.length)
     val merklePathSize = Ints.toByteArray(this.merklePathHashes.head.length)
     val merklePathBytes = this.merklePathHashes.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
-    dataSize ++ merklePathLength ++ merklePathSize ++ data ++ merklePathBytes ++ Longs.toByteArray(merklePath.index)
+    dataSize ++ merklePathLength ++ merklePathSize ++ data ++ merklePathBytes ++ Longs.toByteArray(proof.index)
   }
 
-  lazy val merklePathHashes = merklePath.hashes
+  lazy val merklePathHashes = proof.hashes
 
   /**
     * Checks that this block is at position $index in tree with root hash = $rootHash
@@ -40,7 +43,7 @@ case class MerkleAuthData[HashFunction <: CryptographicHash](data: Array[Byte], 
     }
 
     if (merklePathHashes.nonEmpty) {
-      val calculatedRoot = calculateHash(merklePath.index, hashFunction(data), merklePathHashes)
+      val calculatedRoot = calculateHash(proof.index, hashFunction(data), merklePathHashes)
       calculatedRoot sameElements rootHash
     } else {
       false
@@ -87,7 +90,7 @@ object MerkleAuthData {
   = new Writes[MerkleAuthData[HashFunction]] {
     def writes(ts: MerkleAuthData[HashFunction]) = JsObject(Seq(
       "data" -> JsString(Base58.encode(ts.data)),
-      "index" -> JsNumber(ts.merklePath.index),
+      "index" -> JsNumber(ts.proof.index),
       "merklePath" -> JsArray(
         ts.merklePathHashes.map(digest => JsString(Base58.encode(digest)))
       )

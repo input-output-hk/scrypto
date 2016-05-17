@@ -2,7 +2,7 @@ package scorex.crypto.authds.merkle
 
 import java.io.{File, FileOutputStream}
 
-import scorex.crypto.authds.merkle.versioned.MvStoreVersionedMerklizedSeq
+import scorex.crypto.authds.merkle.versioned.MvStoreVersionedMerklizedIndexedSeq
 import scorex.crypto.authds.storage.MvStoreVersionedBlobStorage
 import scorex.crypto.hash.Sha256
 
@@ -34,6 +34,6 @@ trait CommonTreeFunctionality {
     storage.set(3, value)
     storage.commit()
 
-    MvStoreVersionedMerklizedSeq.apply(None, storage, 1, Sha256)
+    MvStoreVersionedMerklizedIndexedSeq.apply(None, storage, 1, Sha256)
   }
 }

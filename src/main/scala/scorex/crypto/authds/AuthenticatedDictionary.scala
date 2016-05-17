@@ -1,13 +1,10 @@
 package scorex.crypto.authds
 
-import scorex.crypto.authds.merkle.MerkleAuthData
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
 import scorex.crypto.hash.CryptographicHash
 
-/**
-  * Created by kushti on 17.05.16.
-  */
-trait AuthenticatedDictionary[HashFn <: CryptographicHash, ST <: StorageType] {
+
+trait AuthenticatedDictionary[HashFn <: CryptographicHash, Proof <: DataProof, ST <: StorageType] {
   type Key
   type Value = Array[Byte]
 
@@ -17,5 +14,5 @@ trait AuthenticatedDictionary[HashFn <: CryptographicHash, ST <: StorageType] {
 
   def element(index: Key): Option[Array[Byte]] = seq.get(index)
 
-  def elementAndProof(index: Key): Option[MerkleAuthData[HashFn]]
+  def elementAndProof(index: Key): Option[AuthData[HashFn, Proof]]
 }

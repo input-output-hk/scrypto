@@ -13,11 +13,11 @@ class AuthDataBlockSpecification extends PropSpec with PropertyChecks with Gener
   val keyVal = for {
     key: Long <- Arbitrary.arbitrary[Long]
     value <- Arbitrary.arbitrary[String]
-  } yield AuthData(value.getBytes, MerklePath(key, Seq(randomBytes(), randomBytes())))
+  } yield MerkleAuthData(value.getBytes, MerklePath(key, Seq(randomBytes(), randomBytes())))
 
   property("decode-encode roundtrip") {
-    forAll(keyVal) { case b: AuthData[_] =>
-      val decoded = AuthData.decode(b.bytes).get
+    forAll(keyVal) { case b: MerkleAuthData[_] =>
+      val decoded = MerkleAuthData.decode(b.bytes).get
       decoded.data shouldBe b.data
       decoded.merklePathHashes.size shouldBe b.merklePathHashes.size
       decoded.merklePathHashes.head shouldBe b.merklePathHashes.head
