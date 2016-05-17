@@ -1,10 +1,8 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.AuthenticatedDictionary
-import scorex.crypto.authds.storage.{StorageType, BlobStorage}
+import scorex.crypto.authds.storage.{BlobStorage, StorageType}
 import scorex.crypto.hash.CryptographicHash
-
-
 
 
 trait MerklizedIndexedSeq[HashFn <: CryptographicHash, ST <: StorageType]
