@@ -62,6 +62,11 @@ val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Kecca
 ```
 Note, that hash chain will be as good as the [strongest](https://en.wikipedia.org/wiki/Cryptographic_hash_function#Concatenation_of_cryptographic_hash_functions) of the algorithms included in the chain.
 
+### Commutative hash
+
+You can create commutative hash from any hash function with `CommutativeHash` case class like `CommutativeHash(Sha256)`.
+A hash function h is commutative if h(x,y)==h(y,x) , for all x and y.
+
 ### Binary-to-text Encoding Schemes
 
 Scrypto has implementations of few binary-to-text encoding schemes:
@@ -100,6 +105,9 @@ Whisper Systems, so has the same security properties. JDK's SecureRandom used to
 
 Scrypto supports following authenticated data structure:
 
+- Merkle tree
+- Skip list
+
 Example:
 
 ```scala
@@ -108,7 +116,7 @@ TODO
 
 # Tests
 
-Run 'sbt test' from a folder contains the framework to launch tests.
+Run `sbt test` from a folder contains the framework to launch tests.
 
 # License
 
