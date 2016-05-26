@@ -26,4 +26,8 @@ package object crypto {
     require(hashes.forall(_.DigestSize == hashes.head.DigestSize), "Use hash algorithms with the same digest size")
     hashes.foldLeft(input)((bytes, hashFunction) => hashFunction.hash(bytes))
   }
+
+  //TODO replace to fast implementation
+  def compare(a1: Array[Byte], a2: Array[Byte]): Int = BigInt((0: Byte) +: a1).compare(BigInt((0: Byte) +: a2))
+
 }

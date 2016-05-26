@@ -3,13 +3,8 @@ package scorex.crypto.authds.skiplist
 sealed trait SLElement extends Ordered[SLElement] {
   val key: Array[Byte]
   val value: Array[Byte]
-  lazy val intKey = BigInt(key)
 
-  override def compare(that: SLElement): Int = {
-    if (intKey < that.intKey) -1
-    else if (intKey > that.intKey) 1
-    else 0
-  }
+  override def compare(that: SLElement): Int = scorex.crypto.compare(key, that.key)
 }
 
 case class NormalSLElement(key: Array[Byte], value: Array[Byte]) extends SLElement {

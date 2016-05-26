@@ -1,5 +1,7 @@
 package scorex.crypto.authds.skiplist
 
+import scorex.crypto.encode.Base64
+
 import scala.annotation.tailrec
 import scala.util.Random
 
@@ -71,7 +73,7 @@ class SkipList {
   //select level where element e will be putted
   private def selectLevel(e: SLElement) = {
     val r = Random
-    r.setSeed(e.intKey.toLong) //TODO check
+    r.setSeed((BigInt(e.key) % Long.MaxValue).toLong) //TODO check
     @tailrec
     def loop(lev: Int = 0): Int = {
       if (lev == topNode.level || r.nextDouble() > 0.5) lev
@@ -107,7 +109,7 @@ class SkipList {
       case None => n +: acc
     }
     val levs = tower() map { leftNode =>
-      leftNode.level + ": " + lev(leftNode).reverse.map(_.el.intKey % Int.MaxValue).mkString(", ")
+      leftNode.level + ": " + lev(leftNode).reverse.map(n => Base64.encode(n.el.key)).mkString(", ")
     }
     levs.mkString("\n")
   }

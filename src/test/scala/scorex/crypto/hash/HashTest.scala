@@ -33,7 +33,7 @@ with Matchers {
     property(s"${hash.getClass.getSimpleName} no collisions") {
       forAll { (x: Array[Byte], y: Array[Byte]) =>
         whenever(!x.sameElements(y)) {
-          hash.hash(x) should not equal Sha256.hash(y)
+          hash.hash(x) should not equal hash.hash(y)
         }
       }
     }
