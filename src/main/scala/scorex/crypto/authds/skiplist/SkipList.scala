@@ -1,14 +1,15 @@
 package scorex.crypto.authds.skiplist
 
 import scorex.crypto.encode.Base64
+import scorex.crypto.hash.CommutativeHash
 
 import scala.annotation.tailrec
 import scala.util.Random
 
-class SkipList {
+class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
 
   //top left node
-  private var topNode: SLNode = SLNode(MinSLElement, Some(SLNode(MaxSLElement, None, None, 0, true)), None, 0, true)
+  var topNode: SLNode = SLNode(MinSLElement, Some(SLNode(MaxSLElement, None, None, 0, true)), None, 0, true)
 
   private def leftAt(l: Int): Option[SLNode] = {
     require(l <= topNode.level)
@@ -17,17 +18,21 @@ class SkipList {
 
   def contains(e: SLElement): Boolean = find(e).isDefined
 
-  // find top node with current element
-  private def find(e: SLElement): Option[SLNode] = {
+  def elementProof(e: SLElement): Option[SLAuthData] = find(e).map { n =>
+    SLAuthData(e.bytes, SLPath(topNode.hashTrack(e)))
+  }
+
+  // find bottom node with current element
+  def find(e: SLElement): Option[(SLNode, Seq[SLNode])] = {
     @tailrec
-    def loop(node: SLNode): Option[SLNode] = {
+    def loop(node: SLNode, visited: Seq[SLNode] = Seq()): Option[(SLNode, Seq[SLNode])] = {
       val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
       require(prevNodeOpt.isDefined, "Non-infinite element should have right node")
-      val prevNode = prevNodeOpt.get
-      if (prevNode.el == e) prevNodeOpt
-      else prevNode.down match {
-        case Some(dn) => loop(dn)
-        case _ => None
+      val prevNode = prevNodeOpt.map(_._1).get
+      val pvVisited: Seq[SLNode] = prevNodeOpt.get._2
+      prevNode.down match {
+        case Some(dn) => loop(dn, node +: (pvVisited ++ visited))
+        case _ => if (prevNode.el == e) Some((node, node +: visited)) else None
       }
     }
     loop(topNode)
@@ -40,7 +45,7 @@ class SkipList {
     if (eLevel == topNode.level) newTopLevel()
     def insertOne(lev: Int, down: Option[SLNode]): Unit = if (lev <= eLevel) {
       val startNode: SLNode = leftAt(lev).get //TODO get
-      val prev = startNode.rightUntil(_.right.get.el > e).get //TODO get
+      val prev = startNode.rightUntil(_.right.get.el > e).get._1 //TODO get
       val newNode = SLNode(e, prev.right, down, lev, lev != eLevel)
       insertNode(newNode)
       updateNode(prev, Some(newNode))
@@ -53,14 +58,14 @@ class SkipList {
   private def newTopLevel(): Unit = {
     val prevNode = topNode
     val newLev = topNode.level + 1
-    val topRight = topNode.rightUntil(_.right.isEmpty).get
+    val topRight = topNode.rightUntil(_.right.isEmpty).get._1
     val newRight = SLNode(MaxSLElement, None, Some(topRight), newLev, true)
     topNode = SLNode(MinSLElement, Some(newRight), Some(prevNode), newLev, true)
   }
 
   def delete(e: SLElement): Boolean = if (contains(e)) {
     tower() foreach { leftNode =>
-      leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).foreach { n =>
+      leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).map(_._1).foreach { n =>
         updateNode(n, n.right.flatMap(_.right))
         n.right.foreach(deleteNode)
       }
@@ -95,8 +100,8 @@ class SkipList {
   }
 
   /**
-    * All nodes in a tower
-    */
+   * All nodes in a tower
+   */
   @tailrec
   private def tower(n: SLNode = topNode, acc: Seq[SLNode] = Seq(topNode)): Seq[SLNode] = n.down match {
     case Some(downNode) => tower(downNode, downNode +: acc)
