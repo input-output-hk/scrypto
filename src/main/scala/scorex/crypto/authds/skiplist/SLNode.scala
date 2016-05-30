@@ -2,7 +2,7 @@ package scorex.crypto.authds.skiplist
 
 import scala.annotation.tailrec
 
-case class SLNode(el: SLElement, var right: Option[SLNode], down: Option[SLNode], level: Int) {
+case class SLNode(el: SLElement, var right: Option[SLNode], down: Option[SLNode], level: Int, isTower: Boolean) {
 
   def rightUntil(p: SLNode => Boolean): Option[SLNode] = {
     @tailrec

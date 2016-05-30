@@ -8,7 +8,7 @@ import scala.util.Random
 class SkipList {
 
   //top left node
-  private var topNode: SLNode = SLNode(MinSLElement, Some(SLNode(MaxSLElement, None, None, 0)), None, 0)
+  private var topNode: SLNode = SLNode(MinSLElement, Some(SLNode(MaxSLElement, None, None, 0, true)), None, 0, true)
 
   private def leftAt(l: Int): Option[SLNode] = {
     require(l <= topNode.level)
@@ -41,7 +41,7 @@ class SkipList {
     def insertOne(lev: Int, down: Option[SLNode]): Unit = if (lev <= eLevel) {
       val startNode: SLNode = leftAt(lev).get //TODO get
       val prev = startNode.rightUntil(_.right.get.el > e).get //TODO get
-      val newNode = SLNode(e, prev.right, down, lev)
+      val newNode = SLNode(e, prev.right, down, lev, lev != eLevel)
       insertNode(newNode)
       updateNode(prev, Some(newNode))
       if (lev < eLevel) insertOne(lev + 1, Some(newNode))
@@ -54,8 +54,8 @@ class SkipList {
     val prevNode = topNode
     val newLev = topNode.level + 1
     val topRight = topNode.rightUntil(_.right.isEmpty).get
-    val newRight = SLNode(MaxSLElement, None, Some(topRight), newLev)
-    topNode = SLNode(MinSLElement, Some(newRight), Some(prevNode), newLev)
+    val newRight = SLNode(MaxSLElement, None, Some(topRight), newLev, true)
+    topNode = SLNode(MinSLElement, Some(newRight), Some(prevNode), newLev, true)
   }
 
   def delete(e: SLElement): Boolean = if (contains(e)) {
