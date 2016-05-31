@@ -23,16 +23,15 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
   }
 
   // find bottom node with current element
-  def find(e: SLElement): Option[(SLNode, Seq[SLNode])] = {
+  def find(e: SLElement): Option[SLNode] = {
     @tailrec
-    def loop(node: SLNode, visited: Seq[SLNode] = Seq()): Option[(SLNode, Seq[SLNode])] = {
+    def loop(node: SLNode): Option[SLNode] = {
       val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
       require(prevNodeOpt.isDefined, "Non-infinite element should have right node")
-      val prevNode = prevNodeOpt.map(_._1).get
-      val pvVisited: Seq[SLNode] = prevNodeOpt.get._2
+      val prevNode = prevNodeOpt.get
       prevNode.down match {
-        case Some(dn) => loop(dn, node +: (pvVisited ++ visited))
-        case _ => if (prevNode.el == e) Some((node, node +: visited)) else None
+        case Some(dn) => loop(dn)
+        case _ => if (prevNode.el == e) Some(node) else None
       }
     }
     loop(topNode)
@@ -45,7 +44,7 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
     if (eLevel == topNode.level) newTopLevel()
     def insertOne(lev: Int, down: Option[SLNode]): Unit = if (lev <= eLevel) {
       val startNode: SLNode = leftAt(lev).get //TODO get
-      val prev = startNode.rightUntil(_.right.get.el > e).get._1 //TODO get
+      val prev = startNode.rightUntil(_.right.get.el > e).get //TODO get
       val newNode = SLNode(e, prev.right, down, lev, lev != eLevel)
       insertNode(newNode)
       updateNode(prev, Some(newNode))
@@ -58,14 +57,14 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
   private def newTopLevel(): Unit = {
     val prevNode = topNode
     val newLev = topNode.level + 1
-    val topRight = topNode.rightUntil(_.right.isEmpty).get._1
+    val topRight = topNode.rightUntil(_.right.isEmpty).get
     val newRight = SLNode(MaxSLElement, None, Some(topRight), newLev, true)
     topNode = SLNode(MinSLElement, Some(newRight), Some(prevNode), newLev, true)
   }
 
   def delete(e: SLElement): Boolean = if (contains(e)) {
     tower() foreach { leftNode =>
-      leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).map(_._1).foreach { n =>
+      leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).foreach { n =>
         updateNode(n, n.right.flatMap(_.right))
         n.right.foreach(deleteNode)
       }

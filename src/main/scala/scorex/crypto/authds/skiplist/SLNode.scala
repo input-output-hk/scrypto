@@ -42,13 +42,13 @@ case class SLNode(el: SLElement, var right: Option[SLNode], down: Option[SLNode]
   }
 
 
-  def rightUntil(p: SLNode => Boolean): Option[(SLNode, Seq[SLNode])] = {
+  def rightUntil(p: SLNode => Boolean): Option[SLNode] = {
     @tailrec
-    def loop(node: SLNode = this, visited: Seq[SLNode] = Seq()): Option[(SLNode, Seq[SLNode])] = if (p(node)) {
-      Some((node, node +: visited))
+    def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
+      Some(node)
     } else {
       node.right match {
-        case Some(rn) => loop(rn, visited)
+        case Some(rn) => loop(rn)
         case None => None
       }
     }
