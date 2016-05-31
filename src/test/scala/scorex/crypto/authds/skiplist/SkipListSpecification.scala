@@ -40,8 +40,10 @@ class SkipListSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         sl.insert(newSE) shouldBe true
         sl.contains(newSE) shouldBe true
         val proof = sl.elementProof(newSE).get
-        val rootHash = sl.topNode.hash
-        proof.check(rootHash) shouldBe true
+        proof.check(sl.topNode.hash) shouldBe true
+
+        sl.delete(newSE)
+        proof.check(sl.topNode.hash) shouldBe false
       }
     }
   }

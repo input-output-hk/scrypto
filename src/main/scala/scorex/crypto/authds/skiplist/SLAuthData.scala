@@ -32,7 +32,7 @@ case class SLAuthData(data: Array[Byte], proof: SLPath) extends AuthData[SLPath]
    * Checks that this block is at position $index in tree with root hash = $rootHash
    */
   def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
-    proof.hashes.reverse.foldLeft(data)((x, y) => hashFunction.hash(x, y)).sameElements(rootHash)
+    proof.hashes.reverse.foldLeft(hashFunction.hash(data))((x, y) => hashFunction.hash(x, y)).sameElements(rootHash)
   }
 
 }
