@@ -1,5 +1,7 @@
 package scorex.crypto.authds.skiplist
 
+import scorex.crypto.authds.skiplist.SkipList.{NodeValue, NodeKey, SLValue, SLKey}
+import scorex.crypto.authds.storage.{StorageType, KVStorage}
 import scorex.crypto.encode.Base64
 import scorex.crypto.hash.CommutativeHash
 
@@ -117,4 +119,13 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
     }
     levs.mkString("\n")
   }
+}
+
+object SkipList {
+  type SLKey = Array[Byte]
+  type SLValue = Array[Byte]
+
+  type NodeKey = Array[Byte]
+  type NodeValue = Array[Byte]
+
 }
