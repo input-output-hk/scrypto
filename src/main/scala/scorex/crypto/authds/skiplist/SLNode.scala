@@ -1,17 +1,22 @@
 package scorex.crypto.authds.skiplist
 
 import com.google.common.primitives.Ints
-import scorex.crypto.authds.skiplist.SLNode.SLNodeKey
+import scorex.crypto.authds.skiplist.SLNode._
+import scorex.crypto.authds.storage.{KVStorage, StorageType}
 import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 import scorex.utils.Booleans
 
 import scala.annotation.tailrec
+import scala.util.Try
 
 case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SLNodeKey], level: Int, isTower: Boolean) {
 
 
-  lazy val down: Option[SLNode] = ???
-  var right: Option[SLNode] = None
+  def down[ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] =
+    downKey.flatMap(key => storage.get(key)).flatMap(b => SLNode.parseBytes(b).toOption)
+
+  def right[ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] =
+    rightKey.flatMap(key => storage.get(key)).flatMap(b => SLNode.parseBytes(b).toOption)
 
   val nodeKey: Array[Byte] = el.key ++ Ints.toByteArray(level)
   val bytes: Array[Byte] = el.bytes ++ Ints.toByteArray(level) ++ Booleans.toByteArray(isTower) ++
@@ -20,7 +25,7 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
 
   private val emptyHash: Array[Byte] = Array(0: Byte)
 
-  def hashTrack(trackElement: SLElement)(implicit hf: CommutativeHash[_]): Seq[CryptographicHash#Digest] = right match {
+  def hashTrack[ST <: StorageType](trackElement: SLElement)(implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Seq[CryptographicHash#Digest] = right match {
     case Some(rn) =>
       down match {
         case Some(dn) =>
@@ -40,7 +45,7 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
   }
 
 
-  def hash(implicit hf: CommutativeHash[_]): CryptographicHash#Digest = right match {
+  def hash[ST <: StorageType](implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): CryptographicHash#Digest = right match {
     case Some(rn) =>
       down match {
         case Some(dn) =>
@@ -54,7 +59,7 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
   }
 
 
-  def rightUntil(p: SLNode => Boolean): Option[SLNode] = {
+  def rightUntil[ST <: StorageType](p: SLNode => Boolean)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
     @tailrec
     def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
       Some(node)
@@ -67,7 +72,7 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
     loop()
   }
 
-  def downUntil(p: SLNode => Boolean): Option[SLNode] = {
+  def downUntil[ST <: StorageType](p: SLNode => Boolean)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
     @tailrec
     def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
       Some(node)
@@ -84,8 +89,10 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
 
 object SLNode {
   type SLNodeKey = Array[Byte]
+  type SLNodeValue = Array[Byte]
 
-  def parseBytes(bytes: Array[Byte]): SLNode = {
+  def parseBytes[ST <: StorageType](bytes: Array[Byte])
+                                   (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Try[SLNode] = Try {
     val keySize = Ints.fromByteArray(bytes.slice(0, 4))
     val valueSize = Ints.fromByteArray(bytes.slice(4, 8))
     val el = SLElement.parseBytes(bytes.slice(0, 8 + keySize + valueSize))

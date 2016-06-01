@@ -1,17 +1,22 @@
 package scorex.crypto.authds.skiplist
 
-import scorex.crypto.authds.skiplist.SkipList.{NodeValue, NodeKey, SLValue, SLKey}
-import scorex.crypto.authds.storage.{StorageType, KVStorage}
+import scorex.crypto.authds.skiplist.SLNode.{SLNodeKey, SLNodeValue}
+import scorex.crypto.authds.storage.{KVStorage, StorageType}
 import scorex.crypto.encode.Base64
 import scorex.crypto.hash.CommutativeHash
 
 import scala.annotation.tailrec
 import scala.util.Random
 
-class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
+class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST],
+                                                            hf: HF) {
 
   //top left node
-  var topNode: SLNode = SLNode(MinSLElement, Some(SLNode(MaxSLElement, None, None, 0, true).nodeKey), None, 0, true)
+  val topRight: SLNode = SLNode(MaxSLElement, None, None, 0, true)
+  var topNode: SLNode = SLNode(MinSLElement, Some(topRight.nodeKey), None, 0, true)
+  storage.set(topRight.nodeKey, topRight.bytes)
+  storage.set(topNode.nodeKey, topNode.bytes)
+  storage.commit()
 
   private def leftAt(l: Int): Option[SLNode] = {
     require(l <= topNode.level)
@@ -32,7 +37,7 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
       require(prevNodeOpt.isDefined, "Non-infinite element should have right node")
       val prevNode = prevNodeOpt.get
       prevNode.down match {
-        case Some(dn) => loop(dn)
+        case Some(dn: SLNode) => loop(dn)
         case _ => if (prevNode.el == e) Some(node) else None
       }
     }
@@ -45,11 +50,13 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
     val eLevel = selectLevel(e)
     if (eLevel == topNode.level) newTopLevel()
     def insertOne(lev: Int, down: Option[SLNode]): Unit = if (lev <= eLevel) {
-      val startNode: SLNode = leftAt(lev).get //TODO get
+      val startNode = leftAt(lev).get //TODO get
       val prev = startNode.rightUntil(_.right.get.el > e).get //TODO get
       val newNode = SLNode(e, prev.right.map(_.nodeKey), down.map(_.nodeKey), lev, lev != eLevel)
-      insertNode(newNode)
-      updateNode(prev, Some(newNode))
+      storage.set(newNode.nodeKey, newNode.bytes)
+      val prevUpdated = prev.copy(rightKey = Some(newNode.nodeKey))
+      storage.unset(prev.nodeKey)
+      storage.set(prevUpdated.nodeKey, prevUpdated.bytes)
       if (lev < eLevel) insertOne(lev + 1, Some(newNode))
     }
     insertOne(0, None)
@@ -62,13 +69,18 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
     val topRight = topNode.rightUntil(_.right.isEmpty).get
     val newRight = SLNode(MaxSLElement, None, Some(topRight.nodeKey), newLev, true)
     topNode = SLNode(MinSLElement, Some(newRight.nodeKey), Some(prevNode.nodeKey), newLev, true)
+    storage.set(newRight.nodeKey, newRight.bytes)
+    storage.set(topNode.nodeKey, topNode.bytes)
+    storage.commit()
   }
 
   def delete(e: SLElement): Boolean = if (contains(e)) {
     tower() foreach { leftNode =>
       leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).foreach { n =>
-        updateNode(n, n.right.flatMap(_.right))
-        n.right.foreach(deleteNode)
+        val newNode = n.copy(rightKey = n.right.flatMap(_.rightKey))
+        storage.unset(n.nodeKey)
+        storage.set(newNode.nodeKey, newNode.bytes)
+        n.right.foreach(nr => storage.unset(nr.nodeKey))
       }
     }
     true
@@ -86,18 +98,6 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
       else loop(lev + 1)
     }
     loop()
-  }
-
-  private def deleteNode(node: SLNode): Unit = {
-    //TODO delete from DB
-  }
-
-  private def insertNode(node: SLNode): Unit = {
-    //TODO insert to DB
-  }
-
-  private def updateNode(node: SLNode, newRightNode: Option[SLNode]): Unit = {
-    node.right = newRightNode
   }
 
   /**
@@ -124,8 +124,4 @@ class SkipList[HF <: CommutativeHash[_]](implicit hf: HF) {
 object SkipList {
   type SLKey = Array[Byte]
   type SLValue = Array[Byte]
-
-  type NodeKey = Array[Byte]
-  type NodeValue = Array[Byte]
-
 }
