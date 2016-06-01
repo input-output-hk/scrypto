@@ -4,7 +4,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.hash.{Blake2b256, CommutativeHash}
 
-class SkipListSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with SLElementGen {
+class SkipListSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with SLGenerators {
 
   val sl = new SkipList
   implicit val hf: CommutativeHash[Blake2b256.type] = CommutativeHash(Blake2b256)
