@@ -17,6 +17,7 @@ class SLElementSpecification extends PropSpec with GeneratorDrivenPropertyChecks
     forAll(slelementGenerator, slelementGenerator) { (se1: SLElement, se2: SLElement) =>
       whenever(!(se1.key sameElements se2.key)) {
         se1.compare(se2) should not be 0
+        se1 == se2 shouldBe false
       }
     }
 
@@ -25,6 +26,7 @@ class SLElementSpecification extends PropSpec with GeneratorDrivenPropertyChecks
   property("SLElement serialization") {
     forAll(slelementGenerator) { se: SLElement =>
       SLElement.parseBytes(se.bytes).compare(se) shouldBe 0
+      SLElement.parseBytes(se.bytes) == se shouldBe true
     }
     SLElement.parseBytes(MinSLElement.bytes).compare(MinSLElement) shouldBe 0
     SLElement.parseBytes(MaxSLElement.bytes).compare(MaxSLElement) shouldBe 0

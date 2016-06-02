@@ -9,6 +9,8 @@ sealed trait SLElement extends Ordered[SLElement] {
   lazy val bytes = Ints.toByteArray(key.length) ++ Ints.toByteArray(value.length) ++ key ++ value
 
   override def compare(that: SLElement): Int = scorex.crypto.compare(key, that.key)
+
+  def ==(that: SLElement): Boolean = compare(that) == 0
 }
 
 case class NormalSLElement(key: Array[Byte], value: Array[Byte]) extends SLElement {

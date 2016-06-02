@@ -2,7 +2,7 @@ package scorex.crypto.authds.skiplist
 
 import scorex.crypto.authds.skiplist.SLNode.{SLNodeKey, SLNodeValue}
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
-import scorex.crypto.encode.Base64
+import scorex.crypto.encode.{Base58, Base64}
 import scorex.crypto.hash.CommutativeHash
 
 import scala.annotation.tailrec
@@ -38,7 +38,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       val prevNode = prevNodeOpt.get
       prevNode.down match {
         case Some(dn: SLNode) => loop(dn)
-        case _ => if (prevNode.el.compare(e) == 0) Some(node) else None
+        case _ => if (prevNode.el == e) Some(node) else None
       }
     }
     loop(topNode)
@@ -101,8 +101,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-   * All nodes in a tower
-   */
+    * All nodes in a tower
+    */
   @tailrec
   private def tower(n: SLNode = topNode, acc: Seq[SLNode] = Seq(topNode)): Seq[SLNode] = n.down match {
     case Some(downNode) => tower(downNode, downNode +: acc)
@@ -115,7 +115,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       case None => n +: acc
     }
     val levs = tower() map { leftNode =>
-      leftNode.level + ": " + lev(leftNode).reverse.map(n => Base64.encode(n.el.key)).mkString(", ")
+      leftNode.level + ": " + lev(leftNode).reverse.map(n => Base58.encode(n.el.key)).mkString(", ")
     }
     levs.mkString("\n")
   }
