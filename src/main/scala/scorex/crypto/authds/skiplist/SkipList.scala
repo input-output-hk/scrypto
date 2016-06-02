@@ -38,7 +38,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       val prevNode = prevNodeOpt.get
       prevNode.down match {
         case Some(dn: SLNode) => loop(dn)
-        case _ => if (prevNode.el == e) Some(node) else None
+        case _ => if (prevNode.el.compare(e) == 0) Some(node) else None
       }
     }
     loop(topNode)
