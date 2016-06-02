@@ -3,6 +3,7 @@ package scorex.crypto.authds.skiplist
 import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SLNode._
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 import scorex.utils.Booleans
 
@@ -18,12 +19,38 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
   def right[ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] =
     rightKey.flatMap(key => storage.get(key)).flatMap(b => SLNode.parseBytes(b).toOption)
 
-  val nodeKey: Array[Byte] = el.key ++ Ints.toByteArray(level)
-  val bytes: Array[Byte] = el.bytes ++ Ints.toByteArray(level) ++ Booleans.toByteArray(isTower) ++
-    Ints.toByteArray(rightKey.map(_.length).getOrElse(0)) ++ rightKey.getOrElse(Array()) ++
-    Ints.toByteArray(downKey.map(_.length).getOrElse(0)) ++ downKey.getOrElse(Array())
+  var hash: CryptographicHash#Digest = Array.empty
+  def setHash(h: CryptographicHash#Digest): Unit = hash = h
+  def recomputeHash[ST <: StorageType](implicit hf: CommutativeHash[_],
+                                       storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Unit = {
+    hash = computeHash
+  }
 
-  private val emptyHash: Array[Byte] = Array(0: Byte)
+  val nodeKey: Array[Byte] = el.key ++ Ints.toByteArray(level)
+  def bytes: Array[Byte] = el.bytes ++ Ints.toByteArray(level) ++ Booleans.toByteArray(isTower) ++
+    Ints.toByteArray(rightKey.map(_.length).getOrElse(0)) ++ rightKey.getOrElse(Array()) ++
+    Ints.toByteArray(downKey.map(_.length).getOrElse(0)) ++ downKey.getOrElse(Array()) ++
+    Ints.toByteArray(hash.length) ++ hash
+
+  private val emptyHash: Array[Byte] = Array.fill(32)(0: Byte)
+
+  def affectedNodes[ST <: StorageType](trackElement: SLElement)(implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Seq[SLNode] = right match {
+    case Some(rn) =>
+      down match {
+        case Some(dn) =>
+          if (rn.isTower) this +: dn.affectedNodes(trackElement)
+          else if (rn.el > trackElement) this +: dn.affectedNodes(trackElement)
+          else this +: rn.affectedNodes(trackElement)
+        case None =>
+          if (rn.el > trackElement) {
+            Seq(this)
+          } else {
+            this +: rn.affectedNodes(trackElement)
+          }
+      }
+    case None => Seq.empty
+  }
+
 
   def hashTrack[ST <: StorageType](trackElement: SLElement)(implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Seq[CryptographicHash#Digest] = right match {
     case Some(rn) =>
@@ -44,8 +71,9 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
     case None => Seq(emptyHash)
   }
 
-
-  def hash[ST <: StorageType](implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): CryptographicHash#Digest = right match {
+  private def computeHash[ST <: StorageType](implicit hf: CommutativeHash[_],
+                                             storage: KVStorage[SLNodeKey, SLNodeValue, ST]): CryptographicHash#Digest
+  = right match {
     case Some(rn) =>
       down match {
         case Some(dn) =>
@@ -103,6 +131,10 @@ object SLNode {
     val dkStart = 17 + keySize + valueSize + rkSize
     val dkSize = Ints.fromByteArray(bytes.slice(dkStart, dkStart + 4))
     val dKey = if (dkSize == 0) None else Some(bytes.slice(dkStart + 4, dkStart + 4 + dkSize))
-    SLNode(el, rKey, dKey, level, isTower)
+    val hashSize = Ints.fromByteArray(bytes.slice(dkStart + 4 + dkSize, dkStart + 8 + dkSize))
+    val hash = bytes.slice(dkStart + 8 + dkSize, dkStart + 8 + dkSize + hashSize)
+    val node = SLNode(el, rKey, dKey, level, isTower)
+    node.setHash(hash)
+    node
   }
 }

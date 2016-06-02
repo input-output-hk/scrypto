@@ -7,5 +7,5 @@ import scorex.crypto.hash.CryptographicHash
 
 
 case class SLPath(hashes: Seq[CryptographicHash#Digest]) extends DataProof {
-  override def toString: String = s"(hashes: ${hashes.map(Base16.encode)})"
+  override def toString: String = s"(hashes: ${hashes.map(Base58.encode)})"
 }

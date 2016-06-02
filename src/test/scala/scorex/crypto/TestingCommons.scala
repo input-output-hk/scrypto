@@ -7,4 +7,10 @@ trait TestingCommons {
   val treeDir = new File(dirName)
   treeDir.mkdirs()
 
+  def profile[R](block: => R): Long = {
+    val start = System.currentTimeMillis()
+    block
+    System.currentTimeMillis() - start
+  }
+
 }

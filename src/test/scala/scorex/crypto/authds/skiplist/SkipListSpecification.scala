@@ -2,10 +2,12 @@ package scorex.crypto.authds.skiplist
 
 import java.io.File
 
+import com.google.common.primitives.Ints
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, CommutativeHash}
 import scorex.utils.Random.randomBytes
 
@@ -17,6 +19,36 @@ with TestingCommons {
   implicit val hf: CommutativeHash[Blake2b256.type] = CommutativeHash(Blake2b256)
 
   val sl = new SkipList()(storage, hf)
+
+  def getNewEl = NormalSLElement(randomBytes(), randomBytes())
+
+
+  property("SkipList rightNode hash") {
+    sl.topNode.right.get.hash.length shouldBe hf.DigestSize
+  }
+
+  property("SkipList hash") {
+    println(sl)
+
+    (0 until 2) foreach { i =>
+      val newSE = NormalSLElement(Ints.toByteArray(i), Ints.toByteArray(i))
+      sl.insert(newSE) shouldBe true
+      println("====")
+      println(sl)
+      val proof = sl.elementProof(newSE).get
+      proof.check(sl.rootHash) shouldBe true
+    }
+
+    val newSE2 = NormalSLElement(Array.fill(32)(2: Byte), Array.fill(32)(-2: Byte))
+    sl.insert(newSE2) shouldBe true
+    println("====")
+    println(sl)
+    val proof2 = sl.elementProof(newSE2).get
+    proof2.check(sl.rootHash) shouldBe true
+
+
+  }
+
 
   property("SkipList should contain inserted element") {
     forAll(slelementGenerator) { newSE: SLElement =>
