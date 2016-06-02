@@ -17,8 +17,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   var topNode: SLNode = storage.get(TopNodeKey).flatMap(bytes => SLNode.parseBytes(bytes).toOption) match {
     case Some(tn) => tn
     case None =>
-      val topRight: SLNode = SLNode(MaxSLElement, None, None, 0, true)
-      val topNode: SLNode = SLNode(MinSLElement, Some(topRight.nodeKey), None, 0, true)
+      val topRight: SLNode = SLNode(MaxSLElement, None, None, 0, isTower = true)
+      val topNode: SLNode = SLNode(MinSLElement, Some(topRight.nodeKey), None, 0, isTower = true)
       storage.set(topRight.nodeKey, topRight.bytes)
       storage.set(topNode.nodeKey, topNode.bytes)
       storage.set(TopNodeKey, topNode.bytes)
@@ -78,8 +78,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     val prevNode = topNode
     val newLev = topNode.level + 1
     val topRight = topNode.rightUntil(_.right.isEmpty).get
-    val newRight = SLNode(MaxSLElement, None, Some(topRight.nodeKey), newLev, true)
-    topNode = SLNode(MinSLElement, Some(newRight.nodeKey), Some(prevNode.nodeKey), newLev, true)
+    val newRight = SLNode(MaxSLElement, None, Some(topRight.nodeKey), newLev, isTower = true)
+    topNode = SLNode(MinSLElement, Some(newRight.nodeKey), Some(prevNode.nodeKey), newLev, isTower = true)
     storage.set(newRight.nodeKey, newRight.bytes)
     storage.set(topNode.nodeKey, topNode.bytes)
     storage.set(TopNodeKey, topNode.bytes)
@@ -106,8 +106,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     r.setSeed((BigInt(e.key) % Long.MaxValue).toLong) //TODO check
     @tailrec
     def loop(lev: Int = 0): Int = {
-      if (lev == topNode.level || r.nextDouble() > 0.5) lev
-      else loop(lev + 1)
+      if (lev == topNode.level || r.nextDouble() > 0.5) lev else loop(lev + 1)
     }
     loop()
   }
