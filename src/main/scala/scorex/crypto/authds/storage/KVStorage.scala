@@ -21,3 +21,5 @@ trait BlobStorage[ST <: StorageType] extends KVStorage[Long, Array[Byte], ST]
 
 class MvStoreBlobStorage(override val fileNameOpt: Option[String])
   extends BlobStorage[MvStoreStorageType] with MvStoreKvStorage[Long, Array[Byte]]
+
+class MvStoreBlobBlobStorage(override val fileNameOpt: Option[String]) extends MvStoreKvStorage[Array[Byte], Array[Byte]]

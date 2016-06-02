@@ -1,33 +1,55 @@
 package scorex.crypto.authds.skiplist
 
-import scorex.crypto.encode.Base64
+import scorex.crypto.authds.skiplist.SLNode.{SLNodeKey, SLNodeValue}
+import scorex.crypto.authds.storage.{KVStorage, StorageType}
+import scorex.crypto.encode.Base58
+import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 
 import scala.annotation.tailrec
 import scala.util.Random
 
-class SkipList {
+class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST],
+                                                            hf: HF) {
+
+  private val TopNodeKey: SLNodeKey = Array(-128: Byte)
 
   //top left node
-  private var topNode: SLNode = SLNode(MinSLElement, Some(SLNode(MaxSLElement, None, None, 0)), None, 0)
+  var topNode: SLNode = storage.get(TopNodeKey).flatMap(bytes => SLNode.parseBytes(bytes).toOption) match {
+    case Some(tn) => tn
+    case None =>
+      val topRight: SLNode = SLNode(MaxSLElement, None, None, 0, true)
+      val topNode: SLNode = SLNode(MinSLElement, Some(topRight.nodeKey), None, 0, true)
+      storage.set(topRight.nodeKey, topRight.bytes)
+      storage.set(topNode.nodeKey, topNode.bytes)
+      storage.set(TopNodeKey, topNode.bytes)
+      storage.commit()
+      topNode
+  }
+
 
   private def leftAt(l: Int): Option[SLNode] = {
     require(l <= topNode.level)
     topNode.downUntil(_.level == l)
   }
 
+  def rootHash: CryptographicHash#Digest = topNode.hash
+
   def contains(e: SLElement): Boolean = find(e).isDefined
 
-  // find top node with current element
-  private def find(e: SLElement): Option[SLNode] = {
+  def elementProof(e: SLElement): Option[SLAuthData] = find(e).map { n =>
+    SLAuthData(e.bytes, SLPath(topNode.hashTrack(e)))
+  }
+
+  // find bottom node with current element
+  def find(e: SLElement): Option[SLNode] = {
     @tailrec
     def loop(node: SLNode): Option[SLNode] = {
       val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
       require(prevNodeOpt.isDefined, "Non-infinite element should have right node")
       val prevNode = prevNodeOpt.get
-      if (prevNode.el == e) prevNodeOpt
-      else prevNode.down match {
-        case Some(dn) => loop(dn)
-        case _ => None
+      prevNode.down match {
+        case Some(dn: SLNode) => loop(dn)
+        case _ => if (prevNode.el == e) Some(node) else None
       }
     }
     loop(topNode)
@@ -39,11 +61,13 @@ class SkipList {
     val eLevel = selectLevel(e)
     if (eLevel == topNode.level) newTopLevel()
     def insertOne(lev: Int, down: Option[SLNode]): Unit = if (lev <= eLevel) {
-      val startNode: SLNode = leftAt(lev).get //TODO get
+      val startNode = leftAt(lev).get //TODO get
       val prev = startNode.rightUntil(_.right.get.el > e).get //TODO get
-      val newNode = SLNode(e, prev.right, down, lev)
-      insertNode(newNode)
-      updateNode(prev, Some(newNode))
+      val newNode = SLNode(e, prev.right.map(_.nodeKey), down.map(_.nodeKey), lev, lev != eLevel)
+      storage.set(newNode.nodeKey, newNode.bytes)
+      val prevUpdated = prev.copy(rightKey = Some(newNode.nodeKey))
+      storage.unset(prev.nodeKey)
+      storage.set(prevUpdated.nodeKey, prevUpdated.bytes)
       if (lev < eLevel) insertOne(lev + 1, Some(newNode))
     }
     insertOne(0, None)
@@ -54,15 +78,21 @@ class SkipList {
     val prevNode = topNode
     val newLev = topNode.level + 1
     val topRight = topNode.rightUntil(_.right.isEmpty).get
-    val newRight = SLNode(MaxSLElement, None, Some(topRight), newLev)
-    topNode = SLNode(MinSLElement, Some(newRight), Some(prevNode), newLev)
+    val newRight = SLNode(MaxSLElement, None, Some(topRight.nodeKey), newLev, true)
+    topNode = SLNode(MinSLElement, Some(newRight.nodeKey), Some(prevNode.nodeKey), newLev, true)
+    storage.set(newRight.nodeKey, newRight.bytes)
+    storage.set(topNode.nodeKey, topNode.bytes)
+    storage.set(TopNodeKey, topNode.bytes)
+    storage.commit()
   }
 
   def delete(e: SLElement): Boolean = if (contains(e)) {
     tower() foreach { leftNode =>
       leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).foreach { n =>
-        updateNode(n, n.right.flatMap(_.right))
-        n.right.foreach(deleteNode)
+        val newNode = n.copy(rightKey = n.right.flatMap(_.rightKey))
+        storage.unset(n.nodeKey)
+        storage.set(newNode.nodeKey, newNode.bytes)
+        n.right.foreach(nr => storage.unset(nr.nodeKey))
       }
     }
     true
@@ -82,18 +112,6 @@ class SkipList {
     loop()
   }
 
-  private def deleteNode(node: SLNode): Unit = {
-    //TODO delete from DB
-  }
-
-  private def insertNode(node: SLNode): Unit = {
-    //TODO insert to DB
-  }
-
-  private def updateNode(node: SLNode, newRightNode: Option[SLNode]): Unit = {
-    node.right = newRightNode
-  }
-
   /**
     * All nodes in a tower
     */
@@ -109,8 +127,13 @@ class SkipList {
       case None => n +: acc
     }
     val levs = tower() map { leftNode =>
-      leftNode.level + ": " + lev(leftNode).reverse.map(n => Base64.encode(n.el.key)).mkString(", ")
+      leftNode.level + ": " + lev(leftNode).reverse.map(n => Base58.encode(n.el.key)).mkString(", ")
     }
     levs.mkString("\n")
   }
+}
+
+object SkipList {
+  type SLKey = Array[Byte]
+  type SLValue = Array[Byte]
 }

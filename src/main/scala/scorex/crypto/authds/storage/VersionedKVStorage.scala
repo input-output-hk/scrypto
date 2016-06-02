@@ -29,4 +29,3 @@ trait VersionedBlobStorage[ST <: StorageType]
 
 class MvStoreVersionedBlobStorage(override val fileNameOpt: Option[String])
   extends VersionedBlobStorage[MvStoreStorageType] with MvStoreVersionedKvStorage[Long, Array[Byte]]
-
