@@ -2,8 +2,8 @@ package scorex.crypto.authds.skiplist
 
 import scorex.crypto.authds.skiplist.SLNode.{SLNodeKey, SLNodeValue}
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
-import scorex.crypto.encode.{Base58, Base64}
-import scorex.crypto.hash.CommutativeHash
+import scorex.crypto.encode.Base58
+import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 
 import scala.annotation.tailrec
 import scala.util.Random
@@ -11,17 +11,28 @@ import scala.util.Random
 class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST],
                                                             hf: HF) {
 
+  private val TopNodeKey: SLNodeKey = Array(-128: Byte)
+
   //top left node
-  val topRight: SLNode = SLNode(MaxSLElement, None, None, 0, true)
-  var topNode: SLNode = SLNode(MinSLElement, Some(topRight.nodeKey), None, 0, true)
-  storage.set(topRight.nodeKey, topRight.bytes)
-  storage.set(topNode.nodeKey, topNode.bytes)
-  storage.commit()
+  var topNode: SLNode = storage.get(TopNodeKey).flatMap(bytes => SLNode.parseBytes(bytes).toOption) match {
+    case Some(tn) => tn
+    case None =>
+      val topRight: SLNode = SLNode(MaxSLElement, None, None, 0, true)
+      val topNode: SLNode = SLNode(MinSLElement, Some(topRight.nodeKey), None, 0, true)
+      storage.set(topRight.nodeKey, topRight.bytes)
+      storage.set(topNode.nodeKey, topNode.bytes)
+      storage.set(TopNodeKey, topNode.bytes)
+      storage.commit()
+      topNode
+  }
+
 
   private def leftAt(l: Int): Option[SLNode] = {
     require(l <= topNode.level)
     topNode.downUntil(_.level == l)
   }
+
+  def rootHash: CryptographicHash#Digest = topNode.hash
 
   def contains(e: SLElement): Boolean = find(e).isDefined
 
@@ -71,6 +82,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     topNode = SLNode(MinSLElement, Some(newRight.nodeKey), Some(prevNode.nodeKey), newLev, true)
     storage.set(newRight.nodeKey, newRight.bytes)
     storage.set(topNode.nodeKey, topNode.bytes)
+    storage.set(TopNodeKey, topNode.bytes)
     storage.commit()
   }
 

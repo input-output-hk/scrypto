@@ -5,16 +5,15 @@ import java.io.File
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
+import scorex.crypto.TestingCommons
 
 
-class MerkleTreeStorageSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks with Matchers {
+class MerkleTreeStorageSpecification extends PropSpec with PropertyChecks with GeneratorDrivenPropertyChecks
+with Matchers with TestingCommons {
 
-  val treeDirName = "/tmp/scorex-test/test/MapDBStorageSpecification/"
-  val treeDir = new File(treeDirName)
-  treeDir.mkdirs()
-  val dbFile = new File(treeDirName + "/db.file")
+  val dbFile = new File(dirName + "/MapDBStorageSpecification.file")
   val maxLevel = 50
-  dbFile.delete()
+  dbFile.deleteOnExit()
 
   val keyVal = for {
     level: Int <- Gen.choose(1, maxLevel)
