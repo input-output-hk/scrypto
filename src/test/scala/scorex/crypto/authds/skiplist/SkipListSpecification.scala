@@ -7,6 +7,7 @@ import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
 import scorex.crypto.hash.{Blake2b256, CommutativeHash}
+import scorex.utils.Random.randomBytes
 
 class SkipListSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with SLGenerators
 with TestingCommons {

@@ -2,13 +2,14 @@ package scorex.crypto.authds.skiplist
 
 import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SkipList.{SLKey, SLValue}
+import scorex.utils.ByteArray
 
 sealed trait SLElement extends Ordered[SLElement] {
   val key: SLKey
   val value: SLValue
   lazy val bytes = Ints.toByteArray(key.length) ++ Ints.toByteArray(value.length) ++ key ++ value
 
-  override def compare(that: SLElement): Int = scorex.crypto.compare(key, that.key)
+  override def compare(that: SLElement): Int = ByteArray.compare(key, that.key)
 
   def ==(that: SLElement): Boolean = compare(that) == 0
 }
