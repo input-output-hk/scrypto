@@ -136,14 +136,10 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   //select level where element e will be putted
   private def selectLevel(e: SLElement) = {
-    def isNow(lev: Int): Boolean = {
-      (BigInt(hf.hash(e.key ++ Ints.toByteArray(lev))) % Int.MaxValue).toInt % 2 == 0
-    }
-
     @tailrec
     def loop(lev: Int = 0): Int = {
       if (lev == topNode.level) lev
-      else if (isNow(lev)) lev
+      else if (hf.hash(e.key ++ Ints.toByteArray(lev)).head.toInt < 0) lev
       else loop(lev + 1)
     }
     loop()
