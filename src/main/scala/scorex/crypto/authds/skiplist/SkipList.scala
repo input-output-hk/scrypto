@@ -23,8 +23,6 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       saveNode(topNode, isTop = true)
       topNode
   }
-  //TODO remove
-  topNode.recomputeHash
 
   private def leftAt(l: Int): Option[SLNode] = {
     require(l <= topNode.level)
@@ -108,6 +106,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
           topNode = dn
           oldTop.rightKey.foreach(key => storage.unset(key))
           storage.unset(oldTop.nodeKey)
+          topNode.recomputeHash
           storage.set(TopNodeKey, topNode.bytes)
           storage.commit()
           deleteEmptyTopeLevels()
@@ -121,6 +120,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       n.recomputeHash
       storage.set(n.nodeKey, n.bytes)
     }
+    topNode.recomputeHash
+    storage.set(TopNodeKey, topNode.bytes)
     storage.commit()
   }
 
