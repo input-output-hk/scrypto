@@ -1,5 +1,6 @@
 package scorex.crypto.authds.skiplist
 
+import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SLNode.{SLNodeKey, SLNodeValue}
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
 import scorex.crypto.encode.Base58
@@ -135,11 +136,15 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   //select level where element e will be putted
   private def selectLevel(e: SLElement) = {
-    val r = Random
-    r.setSeed((BigInt(e.key) % Long.MaxValue).toLong) //TODO check
+    def isNow(lev: Int): Boolean = {
+      (BigInt(hf.hash(e.key ++ Ints.toByteArray(lev))) % Int.MaxValue).toInt % 2 == 0
+    }
+
     @tailrec
     def loop(lev: Int = 0): Int = {
-      if (lev == topNode.level || r.nextDouble() > 0.5) lev else loop(lev + 1)
+      if (lev == topNode.level) lev
+      else if (isNow(lev)) lev
+      else loop(lev + 1)
     }
     loop()
   }

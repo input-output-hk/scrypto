@@ -20,8 +20,6 @@ with TestingCommons {
 
   val sl = new SkipList()(storage, hf)
 
-  def getNewEl = NormalSLElement(randomBytes(), randomBytes())
-
   property("SkipList rightNode hash") {
     sl.topNode.right.get.hash.length shouldBe hf.DigestSize
   }
@@ -77,6 +75,14 @@ with TestingCommons {
 
       }
     }
+  }
+
+  property("SkipList should be deterministic") {
+    val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
+    (1 to 32).foreach{ i =>
+      sl2.insert(NormalSLElement(Ints.toByteArray(i), Ints.toByteArray(i)))
+    }
+    Base58.encode(sl2.rootHash) shouldBe "4TEjyKN1REZGLWeT2Wgsbp3VFZHRwDjw4RzG6fWGazTs"
   }
 
 
