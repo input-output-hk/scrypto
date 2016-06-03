@@ -20,17 +20,21 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
     rightKey.flatMap(key => storage.get(key)).flatMap(b => SLNode.parseBytes(b).toOption)
 
   var hash: CryptographicHash#Digest = Array.empty
+
   def setHash(h: CryptographicHash#Digest): Unit = hash = h
+
   def recomputeHash[ST <: StorageType](implicit hf: CommutativeHash[_],
                                        storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Unit = {
     hash = computeHash
   }
 
   val nodeKey: Array[Byte] = el.key ++ Ints.toByteArray(level)
+
   def bytes: Array[Byte] = el.bytes ++ Ints.toByteArray(level) ++ Booleans.toByteArray(isTower) ++
     Ints.toByteArray(rightKey.map(_.length).getOrElse(0)) ++ rightKey.getOrElse(Array()) ++
     Ints.toByteArray(downKey.map(_.length).getOrElse(0)) ++ downKey.getOrElse(Array()) ++
     Ints.toByteArray(hash.length) ++ hash
+
 
   private val emptyHash: Array[Byte] = Array.fill(32)(0: Byte)
 
@@ -119,16 +123,14 @@ object SLNode {
   type SLNodeKey = Array[Byte]
   type SLNodeValue = Array[Byte]
 
-  def parseBytes[ST <: StorageType](bytes: Array[Byte])
-                                   (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Try[SLNode] = Try {
-    val keySize = Ints.fromByteArray(bytes.slice(0, 4))
-    val valueSize = Ints.fromByteArray(bytes.slice(4, 8))
-    val el = SLElement.parseBytes(bytes.slice(0, 8 + keySize + valueSize))
-    val level = Ints.fromByteArray(bytes.slice(8 + keySize + valueSize, 12 + keySize + valueSize))
-    val isTower = Booleans.fromByteArray(bytes.slice(12 + keySize + valueSize, 13 + keySize + valueSize))
-    val rkSize = Ints.fromByteArray(bytes.slice(13 + keySize + valueSize, 17 + keySize + valueSize))
-    val rKey = if (rkSize == 0) None else Some(bytes.slice(17 + keySize + valueSize, 17 + keySize + valueSize + rkSize))
-    val dkStart = 17 + keySize + valueSize + rkSize
+  def parseBytes(bytes: Array[Byte]): Try[SLNode] = Try {
+    val el = SLElement.parseBytes(bytes)
+    val startFrom = el.bytes.length
+    val level = Ints.fromByteArray(bytes.slice(startFrom, startFrom + 4))
+    val isTower = Booleans.fromByteArray(bytes.slice(startFrom + 4, startFrom + 5))
+    val rkSize = Ints.fromByteArray(bytes.slice(startFrom + 5, startFrom + 9))
+    val dkStart = startFrom + 9 + rkSize
+    val rKey = if (rkSize == 0) None else Some(bytes.slice(startFrom + 9, dkStart))
     val dkSize = Ints.fromByteArray(bytes.slice(dkStart, dkStart + 4))
     val dKey = if (dkSize == 0) None else Some(bytes.slice(dkStart + 4, dkStart + 4 + dkSize))
     val hashSize = Ints.fromByteArray(bytes.slice(dkStart + 4 + dkSize, dkStart + 8 + dkSize))

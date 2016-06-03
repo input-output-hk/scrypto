@@ -14,8 +14,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   private val TopNodeKey: SLNodeKey = Array(-128: Byte)
 
   //top left node
-  var topNode: SLNode = storage.get(TopNodeKey).flatMap(bytes => SLNode.parseBytes(bytes).toOption) match {
-    case Some(tn) => tn
+  var topNode: SLNode = storage.get(TopNodeKey) match {
+    case Some(tn) => SLNode.parseBytes(tn).get
     case None =>
       val topRight: SLNode = SLNode(MaxSLElement, None, None, 0, isTower = true)
       val topNode: SLNode = SLNode(MinSLElement, Some(topRight.nodeKey), None, 0, isTower = true)
@@ -23,7 +23,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       saveNode(topNode, isTop = true)
       topNode
   }
-
+  //TODO remove
+  topNode.recomputeHash
 
   private def leftAt(l: Int): Option[SLNode] = {
     require(l <= topNode.level)
@@ -92,10 +93,27 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
         n.right.foreach(nr => storage.unset(nr.nodeKey))
       }
     }
+    deleteEmptyTopeLevels()
     recomputeHashesForAffected(e)
     true
   } else {
     false
+  }
+
+  private def deleteEmptyTopeLevels(): Unit = {
+    topNode.down match {
+      case Some(dn) =>
+        if (dn.right.map(n => n.el == MaxSLElement).getOrElse(true)) {
+          val oldTop = topNode
+          topNode = dn
+          oldTop.rightKey.foreach(key => storage.unset(key))
+          storage.unset(oldTop.nodeKey)
+          storage.set(TopNodeKey, topNode.bytes)
+          storage.commit()
+          deleteEmptyTopeLevels()
+        }
+      case None =>
+    }
   }
 
   private def recomputeHashesForAffected(e: SLElement): Unit = {
@@ -126,8 +144,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-    * All nodes in a tower
-    */
+   * All nodes in a tower
+   */
   @tailrec
   private def tower(n: SLNode = topNode, acc: Seq[SLNode] = Seq(topNode)): Seq[SLNode] = n.down match {
     case Some(downNode) => tower(downNode, downNode +: acc)

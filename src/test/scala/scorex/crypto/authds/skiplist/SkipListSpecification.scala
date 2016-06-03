@@ -22,33 +22,9 @@ with TestingCommons {
 
   def getNewEl = NormalSLElement(randomBytes(), randomBytes())
 
-
   property("SkipList rightNode hash") {
     sl.topNode.right.get.hash.length shouldBe hf.DigestSize
   }
-
-  property("SkipList hash") {
-    println(sl)
-
-    (0 until 2) foreach { i =>
-      val newSE = NormalSLElement(Ints.toByteArray(i), Ints.toByteArray(i))
-      sl.insert(newSE) shouldBe true
-      println("====")
-      println(sl)
-      val proof = sl.elementProof(newSE).get
-      proof.check(sl.rootHash) shouldBe true
-    }
-
-    val newSE2 = NormalSLElement(Array.fill(32)(2: Byte), Array.fill(32)(-2: Byte))
-    sl.insert(newSE2) shouldBe true
-    println("====")
-    println(sl)
-    val proof2 = sl.elementProof(newSE2).get
-    proof2.check(sl.rootHash) shouldBe true
-
-
-  }
-
 
   property("SkipList should contain inserted element") {
     forAll(slelementGenerator) { newSE: SLElement =>
@@ -66,6 +42,7 @@ with TestingCommons {
         sl.contains(newSE) shouldBe true
         sl.delete(newSE) shouldBe true
         sl.contains(newSE) shouldBe false
+        sl.topNode.down.get.right.get.el should not be MaxSLElement
       }
     }
   }
@@ -97,6 +74,7 @@ with TestingCommons {
         val sl2 = new SkipList()(storage, hf)
         sl2.contains(newSE) shouldBe true
         (sl2.rootHash sameElements rh) shouldBe true
+
       }
     }
   }

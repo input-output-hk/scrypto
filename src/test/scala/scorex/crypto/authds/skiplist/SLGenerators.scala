@@ -25,4 +25,5 @@ trait SLGenerators {
     level: Int <- Arbitrary.arbitrary[Int] if level >= 0
     isTower: Boolean <- Arbitrary.arbitrary[Boolean]
   } yield SLNode(el, rightKey, downKey, level, isTower: Boolean)
+
 }
