@@ -3,7 +3,6 @@ package scorex.crypto.authds.skiplist
 import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SLNode._
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 import scorex.utils.Booleans
 
@@ -37,24 +36,6 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
 
 
   private val emptyHash: Array[Byte] = Array.fill(32)(0: Byte)
-
-  def affectedNodes[ST <: StorageType](trackElement: SLElement)(implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Seq[SLNode] = right match {
-    case Some(rn) =>
-      down match {
-        case Some(dn) =>
-          if (rn.isTower) this +: dn.affectedNodes(trackElement)
-          else if (rn.el > trackElement) this +: dn.affectedNodes(trackElement)
-          else this +: rn.affectedNodes(trackElement)
-        case None =>
-          if (rn.el > trackElement) {
-            Seq(this)
-          } else {
-            this +: rn.affectedNodes(trackElement)
-          }
-      }
-    case None => Seq.empty
-  }
-
 
   def hashTrack[ST <: StorageType](trackElement: SLElement)(implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Seq[CryptographicHash#Digest] = right match {
     case Some(rn) =>

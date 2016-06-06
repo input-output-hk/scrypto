@@ -7,7 +7,6 @@ import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 
 import scala.annotation.tailrec
-import scala.util.Random
 
 class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST],
                                                             hf: HF) {
@@ -116,8 +115,26 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     }
   }
 
+  private def affectedNodes(trackElement: SLElement, node: SLNode = topNode): Seq[SLNode] = node.right match {
+    case Some(rn) =>
+      node.down match {
+        case Some(dn) =>
+          if (rn.isTower) node +: affectedNodes(trackElement, dn)
+          else if (rn.el > trackElement) node +: affectedNodes(trackElement, dn)
+          else node +: affectedNodes(trackElement, rn)
+        case None =>
+          if (rn.el > trackElement) {
+            Seq(node)
+          } else {
+            node +: affectedNodes(trackElement, rn)
+          }
+      }
+    case None => Seq.empty
+  }
+
+
   private def recomputeHashesForAffected(e: SLElement): Unit = {
-    topNode.affectedNodes(e).reverse.foreach { n =>
+    affectedNodes(e).reverse.foreach { n =>
       n.recomputeHash
       storage.set(n.nodeKey, n.bytes)
     }
