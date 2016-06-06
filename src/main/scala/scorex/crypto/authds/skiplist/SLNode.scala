@@ -35,27 +35,6 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
     Ints.toByteArray(hash.length) ++ hash
 
 
-  private val emptyHash: Array[Byte] = Array.fill(32)(0: Byte)
-
-  def hashTrack[ST <: StorageType](trackElement: SLElement)(implicit hf: CommutativeHash[_], storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Seq[CryptographicHash#Digest] = right match {
-    case Some(rn) =>
-      down match {
-        case Some(dn) =>
-          if (rn.isTower) dn.hashTrack(trackElement)
-          else if (rn.el > trackElement) rn.hash +: dn.hashTrack(trackElement)
-          else dn.hash +: rn.hashTrack(trackElement)
-        case None =>
-          if (rn.el > trackElement) {
-            if (rn.isTower) Seq(hf.hash(rn.el.bytes))
-            else Seq(rn.hash)
-          } else {
-            hf.hash(el.bytes) +: rn.hashTrack(trackElement)
-          }
-
-      }
-    case None => Seq(emptyHash)
-  }
-
   private def computeHash[ST <: StorageType](implicit hf: CommutativeHash[_],
                                              storage: KVStorage[SLNodeKey, SLNodeValue, ST]): CryptographicHash#Digest
   = right match {
@@ -120,4 +99,7 @@ object SLNode {
     node.setHash(hash)
     node
   }
+
+  val emptyHash: Array[Byte] = Array.fill(32)(0: Byte)
+
 }
