@@ -51,7 +51,8 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
   }
 
 
-  def rightUntil[ST <: StorageType](p: SLNode => Boolean)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
+  def rightUntil[ST <: StorageType](p: SLNode => Boolean)
+                                   (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
     @tailrec
     def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
       Some(node)
@@ -64,7 +65,8 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
     loop()
   }
 
-  def downUntil[ST <: StorageType](p: SLNode => Boolean)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
+  def downUntil[ST <: StorageType](p: SLNode => Boolean)
+                                  (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
     @tailrec
     def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
       Some(node)
