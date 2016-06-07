@@ -7,7 +7,7 @@ trait SLGenerators {
   implicit val storage:MvStoreBlobBlobStorage
 
   val noneEmptyBytes: Gen[Array[Byte]] = for {
-    key: Array[Byte] <- Arbitrary.arbitrary[Array[Byte]] if key.length < SLElement.MaxKeySize && key.length > 0
+    key: Array[Byte] <- Arbitrary.arbitrary[Array[Byte]] if key.length < SLElement.MaxKeySize && key.length > 1
   } yield key
 
   val optionBytes: Gen[Option[Array[Byte]]] = for {

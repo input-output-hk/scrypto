@@ -25,14 +25,14 @@ case class NormalSLElement(key: Array[Byte], value: Array[Byte]) extends SLEleme
 }
 
 case object MaxSLElement extends SLElement {
-  override val key: Array[Byte] = Array.fill(SLElement.MaxKeySize)(127: Byte)
+  override val key: Array[Byte] = Array.fill(SLElement.MaxKeySize)(-1: Byte)
   override val value: Array[Byte] = Array(127: Byte)
 
   override lazy val bytes = Ints.toByteArray(-1)
 }
 
 case object MinSLElement extends SLElement {
-  override val key: Array[Byte] = Array.fill(SLElement.MaxKeySize)(-128: Byte)
+  override val key: Array[Byte] = Array.fill(1)(0: Byte)
   override val value: Array[Byte] = Array(-128: Byte)
   override lazy val bytes = Ints.toByteArray(-2)
 }

@@ -20,25 +20,25 @@ with TestingCommons {
 
   val sl = new SkipList()(storage, hf)
 
-  property("SkipList performance") {
-    val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
-    val NumberOfElements = 500
-    val elements: Seq[SLElement] = genEl(NumberOfElements)
-
-    val insertTime = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements)))
-    //    insertTime should be <= 10000L
-
-    val elements2: Seq[SLElement] = genEl(NumberOfElements)
-    val insertTime2 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements2)))
-    //    (insertTime2 - insertTime) should be <= insertTime
-
-    val elements3: Seq[SLElement] = genEl(NumberOfElements)
-    val insertTime3 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements3)))
-    //    (insertTime3 - insertTime2) should be <= insertTime
-
-    println(s"$insertTime/$insertTime2/$insertTime3")
-    //1551/3529/6147
-  }
+//  property("SkipList performance") {
+//    val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
+//    val NumberOfElements = 500
+//    val elements: Seq[SLElement] = genEl(NumberOfElements)
+//
+//    val insertTime = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements)))
+//    //    insertTime should be <= 10000L
+//
+//    val elements2: Seq[SLElement] = genEl(NumberOfElements)
+//    val insertTime2 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements2)))
+//    //    (insertTime2 - insertTime) should be <= insertTime
+//
+//    val elements3: Seq[SLElement] = genEl(NumberOfElements)
+//    val insertTime3 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements3)))
+//    //    (insertTime3 - insertTime2) should be <= insertTime
+//
+//    println(s"$insertTime/$insertTime2/$insertTime3")
+//    //1551/3529/6147
+//  }
 
   property("SkipList mass update ") {
     val elements: Seq[SLElement] = genEl(100)
@@ -124,7 +124,7 @@ with TestingCommons {
     (1 to 64).foreach { i =>
       sl2.insert(NormalSLElement(Ints.toByteArray(i), Ints.toByteArray(i)))
     }
-    Base58.encode(sl2.rootHash) shouldBe "AgWUNSemho4LgUECCftLftvqybhaCETrMtXhem2P3vvu"
+    Base58.encode(sl2.rootHash) shouldBe "6yf5oM2U2ub3AtjTCNWtL8ua7e2ubkUUMoRLtK8L83fX"
   }
 
   def genEl(howMany: Int = 1): Seq[SLElement] = (1 to howMany) map (i => SLElement(randomBytes(), randomBytes()))
