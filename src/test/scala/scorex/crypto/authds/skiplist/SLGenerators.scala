@@ -1,8 +1,10 @@
 package scorex.crypto.authds.skiplist
 
 import org.scalacheck.{Arbitrary, Gen}
+import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
 
 trait SLGenerators {
+  implicit val storage:MvStoreBlobBlobStorage
 
   val noneEmptyBytes: Gen[Array[Byte]] = for {
     key: Array[Byte] <- Arbitrary.arbitrary[Array[Byte]] if key.length < SLElement.MaxKeySize && key.length > 0

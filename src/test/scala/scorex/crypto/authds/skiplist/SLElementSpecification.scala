@@ -3,8 +3,10 @@ package scorex.crypto.authds.skiplist
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
+import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
 
 class SLElementSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with SLGenerators {
+  implicit val storage = new MvStoreBlobBlobStorage(None)
 
   property("SLElement creation") {
     forAll(slelementGenerator) { se: SLElement =>

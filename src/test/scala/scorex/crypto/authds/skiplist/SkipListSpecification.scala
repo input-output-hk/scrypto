@@ -20,25 +20,47 @@ with TestingCommons {
 
   val sl = new SkipList()(storage, hf)
 
+  property("SkipList performance") {
+    val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
+    val NumberOfElements = 500
+    val elements: Seq[SLElement] = genEl(NumberOfElements)
+
+    val insertTime = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements)))
+    //    insertTime should be <= 10000L
+
+    val elements2: Seq[SLElement] = genEl(NumberOfElements)
+    val insertTime2 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements2)))
+    //    (insertTime2 - insertTime) should be <= insertTime
+
+    val elements3: Seq[SLElement] = genEl(NumberOfElements)
+    val insertTime3 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements3)))
+    //    (insertTime3 - insertTime2) should be <= insertTime
+
+    println(s"$insertTime/$insertTime2/$insertTime3")
+    //1551/3529/6147
+  }
+
   property("SkipList mass update ") {
     val elements: Seq[SLElement] = genEl(100)
     sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
-    elements.foreach(e =>
+    val rh = sl.rootHash
+    elements.foreach { e =>
       sl.contains(e) shouldBe true
-    )
+      sl.elementProof(e).get.check(rh) shouldBe true
+    }
 
     val toInsert: Seq[SLElement] = genEl(100)
     val toDelete = elements.take(10)
     sl.update(SkipListUpdate(toDelete = toDelete, toInsert = toInsert))
-    toInsert.foreach(e =>
+    toInsert.foreach { e =>
       sl.contains(e) shouldBe true
-    )
-    toDelete.foreach(e =>
+      sl.elementProof(e).get.check(sl.rootHash) shouldBe true
+    }
+    toDelete.foreach { e =>
       sl.contains(e) shouldBe false
-    )
+    }
 
   }
-
 
   property("SkipList rightNode hash") {
     sl.topNode.right.get.hash.length shouldBe hf.DigestSize
@@ -105,6 +127,6 @@ with TestingCommons {
     Base58.encode(sl2.rootHash) shouldBe "AgWUNSemho4LgUECCftLftvqybhaCETrMtXhem2P3vvu"
   }
 
-  def genEl(howMany: Int = 1): Seq[SLElement] = (1 to howMany) map ( i => SLElement(randomBytes(), randomBytes()))
+  def genEl(howMany: Int = 1): Seq[SLElement] = (1 to howMany) map (i => SLElement(randomBytes(), randomBytes()))
 
 }

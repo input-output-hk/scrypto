@@ -63,7 +63,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       val newNode = SLNode(e, prev.right.map(_.nodeKey), down.map(_.nodeKey), lev, lev != eLevel)
       saveNode(newNode, singleInsert)
       val prevUpdated = prev.copy(rightKey = Some(newNode.nodeKey))
-      storage.unset(prev.nodeKey)
+      SLNode.unset(prev.nodeKey)
       saveNode(prevUpdated, singleInsert)
       if (lev < eLevel) insertOne(lev + 1, Some(newNode))
     }
@@ -76,10 +76,10 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     updates.toDelete foreach (n => delete(n, singleUpdate = false))
     deleteEmptyTopLevels()
 
-    updates.toInsert foreach { e => insert(e, singleInsert = false) }
+    updates.toInsert.sorted.reverse foreach { e => insert(e, singleInsert = false) }
 
     topNode.recomputeHash
-    storage.set(TopNodeKey, topNode.bytes)
+    SLNode.set(TopNodeKey, topNode)
     storage.commit()
   }
 
@@ -87,9 +87,9 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     tower() foreach { leftNode =>
       leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).foreach { n =>
         val newNode = n.copy(rightKey = n.right.flatMap(_.rightKey))
-        storage.unset(n.nodeKey)
+        SLNode.unset(n.nodeKey)
         saveNode(newNode, commit = singleUpdate)
-        n.right.foreach(nr => storage.unset(nr.nodeKey))
+        n.right.foreach(nr => SLNode.unset(nr.nodeKey))
       }
     }
     if (singleUpdate) deleteEmptyTopLevels()
@@ -115,10 +115,10 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
         if (dn.right.map(n => n.el == MaxSLElement).getOrElse(true)) {
           val oldTop = topNode
           topNode = dn
-          oldTop.rightKey.foreach(key => storage.unset(key))
-          storage.unset(oldTop.nodeKey)
+          oldTop.rightKey.foreach(key => SLNode.unset(key))
+          SLNode.unset(oldTop.nodeKey)
           topNode.recomputeHash
-          storage.set(TopNodeKey, topNode.bytes)
+          SLNode.set(TopNodeKey, topNode)
           storage.commit()
           deleteEmptyTopLevels()
         }
@@ -166,17 +166,17 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   private def recomputeHashesForAffected(e: SLElement, commit: Boolean = true): Unit = {
     affectedNodes(e).reverse.foreach { n =>
       n.recomputeHash
-      storage.set(n.nodeKey, n.bytes)
+      SLNode.set(n.nodeKey, n)
     }
     topNode.recomputeHash
-    storage.set(TopNodeKey, topNode.bytes)
+    SLNode.set(TopNodeKey, topNode)
     storage.commit()
   }
 
   private def saveNode(node: SLNode, isTop: Boolean = false, commit: Boolean = true): Unit = {
     node.recomputeHash
-    storage.set(node.nodeKey, node.bytes)
-    if (isTop) storage.set(TopNodeKey, node.bytes)
+    SLNode.set(node.nodeKey, node)
+    if (isTop) SLNode.set(TopNodeKey, node)
     if (commit) storage.commit()
   }
 

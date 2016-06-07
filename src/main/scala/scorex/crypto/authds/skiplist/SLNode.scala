@@ -3,20 +3,21 @@ package scorex.crypto.authds.skiplist
 import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SLNode._
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 import scorex.utils.Booleans
 
 import scala.annotation.tailrec
+import scala.collection.concurrent.TrieMap
 import scala.util.Try
 
-case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SLNodeKey], level: Int, isTower: Boolean) {
+case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SLNodeKey], level: Int, isTower: Boolean)
+                 (implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]) {
 
 
-  def down[ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] =
-    downKey.flatMap(key => storage.get(key)).flatMap(b => SLNode.parseBytes(b).toOption)
+  def down: Option[SLNode] = SLNode(downKey)
 
-  def right[ST <: StorageType](implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] =
-    rightKey.flatMap(key => storage.get(key)).flatMap(b => SLNode.parseBytes(b).toOption)
+  def right: Option[SLNode] = SLNode(rightKey)
 
   var hash: CryptographicHash#Digest = Array.empty
 
@@ -85,7 +86,25 @@ object SLNode {
   type SLNodeKey = Array[Byte]
   type SLNodeValue = Array[Byte]
 
-  def parseBytes(bytes: Array[Byte]): Try[SLNode] = Try {
+  private val slnodeCache: TrieMap[BigInt, Option[SLNode]] = TrieMap.empty
+
+  def apply(keyOpt: Option[SLNodeKey])(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Option[SLNode] = {
+    keyOpt.flatMap { key =>
+      slnodeCache.getOrElseUpdate(BigInt(key), storage.get(key).flatMap(b => SLNode.parseBytes(b).toOption))
+    }
+  }
+
+  def unset(key: SLNodeKey)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Unit = {
+    storage.unset(key)
+    slnodeCache.remove(BigInt(key))
+  }
+
+  def set(key: SLNodeKey, node: SLNode)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Unit = {
+    slnodeCache.put(BigInt(key), Some(node))
+    storage.set(key, node.bytes)
+  }
+
+  def parseBytes(bytes: Array[Byte])(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Try[SLNode] = Try {
     val el = SLElement.parseBytes(bytes)
     val startFrom = el.bytes.length
     val level = Ints.fromByteArray(bytes.slice(startFrom, startFrom + 4))
