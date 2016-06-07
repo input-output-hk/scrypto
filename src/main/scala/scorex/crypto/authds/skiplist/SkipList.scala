@@ -52,7 +52,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     loop(topNode)
   }
 
-  def insert(e: SLElement): Boolean = if (contains(e)) {
+  def insert(e: SLElement, singleInsert: Boolean = true): Boolean = if (contains(e)) {
     false
   } else {
     val eLevel = selectLevel(e)
@@ -61,15 +61,42 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       val startNode = leftAt(lev).get //TODO get
       val prev = startNode.rightUntil(_.right.get.el > e).get //TODO get
       val newNode = SLNode(e, prev.right.map(_.nodeKey), down.map(_.nodeKey), lev, lev != eLevel)
-      saveNode(newNode)
+      saveNode(newNode, singleInsert)
       val prevUpdated = prev.copy(rightKey = Some(newNode.nodeKey))
       storage.unset(prev.nodeKey)
-      saveNode(prevUpdated)
+      saveNode(prevUpdated, singleInsert)
       if (lev < eLevel) insertOne(lev + 1, Some(newNode))
     }
     insertOne(0, None)
-    recomputeHashesForAffected(e)
+    recomputeHashesForAffected(e, singleInsert)
     true
+  }
+
+  def update(updates: SkipListUpdate): Unit = {
+    updates.toDelete foreach (n => delete(n, singleUpdate = false))
+    deleteEmptyTopLevels()
+
+    updates.toInsert foreach { e => insert(e, singleInsert = false) }
+
+    topNode.recomputeHash
+    storage.set(TopNodeKey, topNode.bytes)
+    storage.commit()
+  }
+
+  def delete(e: SLElement, singleUpdate: Boolean = true): Boolean = if (contains(e)) {
+    tower() foreach { leftNode =>
+      leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).foreach { n =>
+        val newNode = n.copy(rightKey = n.right.flatMap(_.rightKey))
+        storage.unset(n.nodeKey)
+        saveNode(newNode, commit = singleUpdate)
+        n.right.foreach(nr => storage.unset(nr.nodeKey))
+      }
+    }
+    if (singleUpdate) deleteEmptyTopLevels()
+    recomputeHashesForAffected(e, singleUpdate)
+    true
+  } else {
+    false
   }
 
   private def newTopLevel(): Unit = {
@@ -82,23 +109,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     saveNode(topNode, isTop = true)
   }
 
-  def delete(e: SLElement): Boolean = if (contains(e)) {
-    tower() foreach { leftNode =>
-      leftNode.rightUntil(n => n.right.exists(nr => nr.el == e)).foreach { n =>
-        val newNode = n.copy(rightKey = n.right.flatMap(_.rightKey))
-        storage.unset(n.nodeKey)
-        saveNode(newNode)
-        n.right.foreach(nr => storage.unset(nr.nodeKey))
-      }
-    }
-    deleteEmptyTopeLevels()
-    recomputeHashesForAffected(e)
-    true
-  } else {
-    false
-  }
-
-  private def deleteEmptyTopeLevels(): Unit = {
+  private def deleteEmptyTopLevels(): Unit = {
     topNode.down match {
       case Some(dn) =>
         if (dn.right.map(n => n.el == MaxSLElement).getOrElse(true)) {
@@ -109,7 +120,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
           topNode.recomputeHash
           storage.set(TopNodeKey, topNode.bytes)
           storage.commit()
-          deleteEmptyTopeLevels()
+          deleteEmptyTopLevels()
         }
       case None =>
     }
@@ -152,7 +163,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
 
-  private def recomputeHashesForAffected(e: SLElement): Unit = {
+  private def recomputeHashesForAffected(e: SLElement, commit: Boolean = true): Unit = {
     affectedNodes(e).reverse.foreach { n =>
       n.recomputeHash
       storage.set(n.nodeKey, n.bytes)
@@ -162,11 +173,11 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     storage.commit()
   }
 
-  private def saveNode(node: SLNode, isTop: Boolean = false): Unit = {
+  private def saveNode(node: SLNode, isTop: Boolean = false, commit: Boolean = true): Unit = {
     node.recomputeHash
     storage.set(node.nodeKey, node.bytes)
     if (isTop) storage.set(TopNodeKey, node.bytes)
-    storage.commit()
+    if (commit) storage.commit()
   }
 
 

@@ -20,6 +20,26 @@ with TestingCommons {
 
   val sl = new SkipList()(storage, hf)
 
+  property("SkipList mass update ") {
+    val elements: Seq[SLElement] = genEl(100)
+    sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
+    elements.foreach(e =>
+      sl.contains(e) shouldBe true
+    )
+
+    val toInsert: Seq[SLElement] = genEl(100)
+    val toDelete = elements.take(10)
+    sl.update(SkipListUpdate(toDelete = toDelete, toInsert = toInsert))
+    toInsert.foreach(e =>
+      sl.contains(e) shouldBe true
+    )
+    toDelete.foreach(e =>
+      sl.contains(e) shouldBe false
+    )
+
+  }
+
+
   property("SkipList rightNode hash") {
     sl.topNode.right.get.hash.length shouldBe hf.DigestSize
   }
@@ -79,11 +99,12 @@ with TestingCommons {
 
   property("SkipList should be deterministic") {
     val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
-    (1 to 64).foreach{ i =>
+    (1 to 64).foreach { i =>
       sl2.insert(NormalSLElement(Ints.toByteArray(i), Ints.toByteArray(i)))
     }
     Base58.encode(sl2.rootHash) shouldBe "AgWUNSemho4LgUECCftLftvqybhaCETrMtXhem2P3vvu"
   }
 
+  def genEl(howMany: Int = 1): Seq[SLElement] = (1 to howMany) map ( i => SLElement(randomBytes(), randomBytes()))
 
 }
