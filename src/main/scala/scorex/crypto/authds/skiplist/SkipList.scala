@@ -80,6 +80,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
     topNode.recomputeHash
     SLNode.set(TopNodeKey, topNode)
+    SLNode.cleanCache()
     storage.commit()
   }
 

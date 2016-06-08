@@ -87,6 +87,7 @@ object SLNode {
   type SLNodeValue = Array[Byte]
 
   private val slnodeCache: TrieMap[String, Option[SLNode]] = TrieMap.empty
+  private val CacheSize: Int = 10000
 
   def apply(keyOpt: Option[SLNodeKey])(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Option[SLNode] = {
     keyOpt.flatMap { key =>
@@ -103,6 +104,8 @@ object SLNode {
     slnodeCache.put(Base64.encode(key), Some(node))
     storage.set(key, node.bytes)
   }
+
+  def cleanCache(): Unit = if(slnodeCache.size > CacheSize) slnodeCache.clear()
 
   def parseBytes(bytes: Array[Byte])(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Try[SLNode] = Try {
     val el = SLElement.parseBytes(bytes)
