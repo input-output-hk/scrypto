@@ -3,7 +3,7 @@ package scorex.crypto.authds.skiplist
 import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SLNode._
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
-import scorex.crypto.encode.Base58
+import scorex.crypto.encode.{Base64, Base58}
 import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 import scorex.utils.Booleans
 
@@ -86,21 +86,21 @@ object SLNode {
   type SLNodeKey = Array[Byte]
   type SLNodeValue = Array[Byte]
 
-  private val slnodeCache: TrieMap[BigInt, Option[SLNode]] = TrieMap.empty
+  private val slnodeCache: TrieMap[String, Option[SLNode]] = TrieMap.empty
 
   def apply(keyOpt: Option[SLNodeKey])(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Option[SLNode] = {
     keyOpt.flatMap { key =>
-      slnodeCache.getOrElseUpdate(BigInt(key), storage.get(key).flatMap(b => SLNode.parseBytes(b).toOption))
+      slnodeCache.getOrElseUpdate(Base64.encode(key), storage.get(key).flatMap(b => SLNode.parseBytes(b).toOption))
     }
   }
 
   def unset(key: SLNodeKey)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Unit = {
     storage.unset(key)
-    slnodeCache.remove(BigInt(key))
+    slnodeCache.remove(Base64.encode(key))
   }
 
   def set(key: SLNodeKey, node: SLNode)(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Unit = {
-    slnodeCache.put(BigInt(key), Some(node))
+    slnodeCache.put(Base64.encode(key), Some(node))
     storage.set(key, node.bytes)
   }
 
