@@ -80,7 +80,7 @@ with TestingCommons {
       whenever(!sl.contains(newSE)) {
         sl.insert(newSE) shouldBe true
         sl.contains(newSE) shouldBe true
-        sl.delete(newSE) shouldBe true
+        sl.delete(newSE)
         sl.contains(newSE) shouldBe false
         sl.topNode.down.get.right.get.el should not be MaxSLElement
       }
