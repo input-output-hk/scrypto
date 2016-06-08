@@ -57,17 +57,17 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   } else {
     val eLevel = selectLevel(e)
     if (eLevel == topNode.level) newTopLevel()
-    def insertOne(lev: Int, down: Option[SLNode]): Unit = if (lev <= eLevel) {
-      val startNode = leftAt(lev).get //TODO get
-      val prev = startNode.rightUntil(_.right.get.el > e).get //TODO get
-      val newNode = SLNode(e, prev.right.map(_.nodeKey), down.map(_.nodeKey), lev, lev != eLevel)
+    def insertOne(levNode: SLNode): SLNode = {
+      val prev = levNode.rightUntil(_.right.get.el > e).get
+      lazy val downNode: Option[SLNode] = prev.down.map(dn => insertOne(dn))
+      val newNode = SLNode(e, prev.right.map(_.nodeKey), downNode.map(_.nodeKey), levNode.level, levNode.level != eLevel)
       saveNode(newNode, singleInsert)
       val prevUpdated = prev.copy(rightKey = Some(newNode.nodeKey))
       SLNode.unset(prev.nodeKey)
       saveNode(prevUpdated, singleInsert)
-      if (lev < eLevel) insertOne(lev + 1, Some(newNode))
+      newNode
     }
-    insertOne(0, None)
+    insertOne(leftAt(eLevel).get)
     recomputeHashesForAffected(e, singleInsert)
     true
   }
