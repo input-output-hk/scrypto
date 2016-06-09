@@ -9,10 +9,12 @@ import scorex.crypto.hash.Sha256
 import scala.util.{Failure, Try}
 
 
-class Curve25519 extends EllipticCurve {
+object Curve25519 extends EllipticCurve {
 
-  import Curve25519._
   import SigningFunctions._
+
+  val SignatureLength25519 = 64
+  val KeyLength25519 = 32
 
   override val SignatureLength = SignatureLength25519
   override val KeyLength = KeyLength25519
@@ -49,10 +51,5 @@ class Curve25519 extends EllipticCurve {
     Failure(e)
   }.getOrElse(false)
 
-  protected def log = LoggerFactory.getLogger(this.getClass)
-}
-
-object Curve25519 {
-  val SignatureLength25519 = 64
-  val KeyLength25519 = 32
+  protected lazy val log = LoggerFactory.getLogger(this.getClass)
 }
