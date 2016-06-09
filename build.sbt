@@ -2,12 +2,12 @@ organization := "org.consensusresearch"
 
 name := "scrypto"
 
-version := "1.2.0-M6"
+version := "1.2.0-RC1"
 
 scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
-  "com.h2database" % "h2-mvstore" % "1.4.191",
+  "com.h2database" % "h2-mvstore" % "1.+",
   "com.google.guava" % "guava" % "15.+",
   "com.typesafe.play" %% "play-json" % "2.4.+",
   "io.spray" %% "spray-testkit" % "1.+" % "test",

@@ -8,7 +8,7 @@ dependencyOverrides in ThisBuild ++= Set(
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.5.4",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.5.4",
   "com.google.guava" % "guava" % "15.0",
-  "com.h2database" % "h2-mvstore" % "1.4.191",
+  "com.h2database" % "h2-mvstore" % "1.4.192",
   "com.typesafe" % "config" % "1.3.0",
   "com.typesafe.akka" % "akka-actor_2.11" % "2.3.9",
   "com.typesafe.akka" % "akka-testkit_2.11" % "2.3.9",
@@ -29,4 +29,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.whispersystems" % "curve25519-java" % "0.2.4"
 )
-// LIBRARY_DEPENDENCIES_HASH c0a93bc1b408dbf40e89eb9e1873f579e3867426
+// LIBRARY_DEPENDENCIES_HASH 9083f8324409c0b798a3c41265b2e086e6700f42
