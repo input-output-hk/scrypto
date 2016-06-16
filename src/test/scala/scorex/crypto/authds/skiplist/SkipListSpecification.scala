@@ -20,26 +20,6 @@ with TestingCommons {
 
   val sl = new SkipList()(storage, hf)
 
-//  property("SkipList performance") {
-//    val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
-//    val NumberOfElements = 500
-//    val elements: Seq[SLElement] = genEl(NumberOfElements)
-//
-//    val insertTime = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements)))
-//    //    insertTime should be <= 10000L
-//
-//    val elements2: Seq[SLElement] = genEl(NumberOfElements)
-//    val insertTime2 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements2)))
-//    //    (insertTime2 - insertTime) should be <= insertTime
-//
-//    val elements3: Seq[SLElement] = genEl(NumberOfElements)
-//    val insertTime3 = profile(sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements3)))
-//    //    (insertTime3 - insertTime2) should be <= insertTime
-//
-//    println(s"$insertTime/$insertTime2/$insertTime3")
-//    //1551/3529/6147
-//  }
-
   property("SkipList mass update ") {
     val elements: Seq[SLElement] = genEl(100)
     sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
