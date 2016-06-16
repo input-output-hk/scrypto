@@ -49,6 +49,14 @@ with Matchers {
       val multiThreadHashes = Future.sequence((0 until 100).map(i => Future(hash.hash(i.toString))))
       singleThreadHashes.map(bytes2hex(_)) shouldBe Await.result(multiThreadHashes, 1.minute).map(bytes2hex(_))
     }
+
+    property(s"${hash.getClass.getSimpleName} apply method") {
+      forAll { (string: String, bytes: Array[Byte]) =>
+        hash(string) shouldEqual hash.hash(string)
+        hash(string) shouldEqual hash(string.getBytes)
+        hash(bytes) shouldEqual hash.hash(bytes)
+      }
+    }
   }
 
 }
