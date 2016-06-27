@@ -51,5 +51,9 @@ object Curve25519 extends EllipticCurve {
     Failure(e)
   }.getOrElse(false)
 
+  override def createSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): SharedSecret = {
+    provider.calculateAgreement(privateKey, publicKey)
+  }
+
   protected lazy val log = LoggerFactory.getLogger(this.getClass)
 }
