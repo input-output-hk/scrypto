@@ -20,6 +20,8 @@ trait SigningFunctions {
   def sign(privateKey: PrivateKey, message: MessageToSign): Signature
 
   def verify(signature: Signature, message: MessageToSign, publicKey: PublicKey): Boolean
+
+  def createSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): SharedSecret
 }
 
 object SigningFunctions {
@@ -27,4 +29,5 @@ object SigningFunctions {
   type PublicKey = Array[Byte]
   type Signature = Array[Byte]
   type MessageToSign = Array[Byte]
+  type SharedSecret = Array[Byte]
 }
