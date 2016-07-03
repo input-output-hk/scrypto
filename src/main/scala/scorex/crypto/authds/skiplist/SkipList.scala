@@ -33,8 +33,9 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   def contains(e: SLElement): Boolean = find(e).isDefined
 
-  def elementProof(e: SLElement): Option[SLAuthData] = find(e).map { n =>
-    SLAuthData(e.bytes, SLPath(hashTrack(e)))
+  def elementProof(e: SLElement): SLProof = find(e) match {
+    case Some(n) => SLExistenceProof(e.bytes, SLPath(hashTrack(e)))
+    case None => SLNonExistenceProof(e.bytes, SLPath(hashTrack(e)))
   }
 
   // find bottom node with current element
@@ -195,8 +196,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-   * All nodes in a tower
-   */
+    * All nodes in a tower
+    */
   @tailrec
   private def tower(n: SLNode = topNode, acc: Seq[SLNode] = Seq(topNode)): Seq[SLNode] = n.down match {
     case Some(downNode) => tower(downNode, downNode +: acc)

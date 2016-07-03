@@ -26,7 +26,10 @@ with TestingCommons {
     val rh = sl.rootHash
     elements.foreach { e =>
       sl.contains(e) shouldBe true
-      sl.elementProof(e).get.check(rh) shouldBe true
+      sl.elementProof(e) match {
+        case p: SLExistenceProof => p.check(rh) shouldBe true
+        case p: SLNonExistenceProof => assert(false)
+      }
     }
 
     val toInsert: Seq[SLElement] = genEl(100)
@@ -34,7 +37,10 @@ with TestingCommons {
     sl.update(SkipListUpdate(toDelete = toDelete, toInsert = toInsert))
     toInsert.foreach { e =>
       sl.contains(e) shouldBe true
-      sl.elementProof(e).get.check(sl.rootHash) shouldBe true
+      sl.elementProof(e) match {
+        case p: SLExistenceProof => p.check(sl.rootHash) shouldBe true
+        case p: SLNonExistenceProof => assert(false)
+      }
     }
     toDelete.foreach { e =>
       sl.contains(e) shouldBe false
@@ -76,11 +82,17 @@ with TestingCommons {
       whenever(!sl.contains(newSE)) {
         sl.insert(newSE) shouldBe true
         sl.contains(newSE) shouldBe true
-        val proof = sl.elementProof(newSE).get
-        proof.check(sl.rootHash) shouldBe true
+        val proof = sl.elementProof(newSE)
+        proof match {
+          case p: SLExistenceProof => p.check(sl.rootHash) shouldBe true
+          case p: SLNonExistenceProof => assert(false)
+        }
 
         sl.delete(newSE)
-        proof.check(sl.rootHash) shouldBe false
+        proof match {
+          case p: SLExistenceProof => p.check(sl.rootHash) shouldBe false
+          case p: SLNonExistenceProof => assert(false)
+        }
       }
     }
   }
