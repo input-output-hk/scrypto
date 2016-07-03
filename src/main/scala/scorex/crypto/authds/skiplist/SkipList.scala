@@ -33,25 +33,41 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   def contains(e: SLElement): Boolean = find(e).isDefined
 
-  def elementProof(e: SLElement): SLProof = find(e) match {
-    case Some(n) => SLExistenceProof(e, SLPath(hashTrack(e)))
-    case None => SLNonExistenceProof(e, SLPath(hashTrack(e)))
+  def elementProof(e: SLElement): SLProof = {
+    val leftNode = findLeft(topNode, e)
+    if(leftNode.el == e) SLExistenceProof(e, SLPath(hashTrack(e)))
+    else {
+      val leftProof =   SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
+      val rightProof = SLExistenceProof(leftNode.right.get.el, SLPath(hashTrack(leftNode.right.get.el)))
+      SLNonExistenceProof(e, leftProof, rightProof)
+    }
   }
+//  find(e) match {
+//      case Some(n) => SLExistenceProof(e, SLPath(hashTrack(e)))
+//      case None => ???
+//    }
+//  }
 
   // find bottom node with current element
   def find(e: SLElement): Option[SLNode] = {
-    @tailrec
-    def loop(node: SLNode): Option[SLNode] = {
-      val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
-      require(prevNodeOpt.isDefined, "Non-infinite element should have right node")
-      val prevNode = prevNodeOpt.get
-      prevNode.down match {
-        case Some(dn: SLNode) => loop(dn)
-        case _ => if (prevNode.el == e) Some(node) else None
-      }
-    }
-    loop(topNode)
+    val leftNode = findLeft(topNode, e)
+    if(leftNode.el == e) Some(leftNode) else None
   }
+
+  /**
+    * find first bottom node which element is bugger then current element
+    */
+  @tailrec
+  private def findLeft(node: SLNode, e: SLElement): SLNode = {
+    val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
+    require(prevNodeOpt.isDefined, "Non-infinite element should have right node")
+    val prevNode = prevNodeOpt.get
+    prevNode.down match {
+      case Some(dn: SLNode) => findLeft(dn, e)
+      case _ => prevNode
+    }
+  }
+
 
   def insert(e: SLElement, singleInsert: Boolean = true): Boolean = if (contains(e)) {
     false

@@ -10,30 +10,20 @@ import scala.util.Try
 
 sealed trait SLProof extends AuthData[SLPath] {
   type Digest = CryptographicHash#Digest
-  val e: SLElement
-  val proof: SLPath
 
   def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean
 
-  lazy val data: Array[Byte] = e.bytes
-  lazy val bytes: Array[Byte] = {
-    require(proof.hashes.nonEmpty, "Merkle path cannot be empty")
-    val dataSize = Ints.toByteArray(data.length)
-    val proofLength = Ints.toByteArray(proof.hashes.length)
-    val proofSize = Ints.toByteArray(proof.hashes.head.length)
-    val proofBytes = proof.hashes.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
-    dataSize ++ proofLength ++ proofSize ++ data ++ proofBytes
-  }
+  def bytes: Array[Byte]
 
 }
 
-case class SLNonExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
-  ???
+case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: SLExistenceProof) extends SLProof {
+  lazy val data = e.bytes
+  lazy val bytes: Array[Byte] = ???
 
   override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
-    proof.hashes.reverse.foldLeft(hashFunction.hash(data)) { (x, y) =>
-      hashFunction.hash(x, y)
-    }.sameElements(rootHash)
+    val linked = true //TODO ???
+    linked && e < right.e && e > left.e && right.check(rootHash) && left.check(rootHash)
   }
 }
 
@@ -42,6 +32,17 @@ case class SLNonExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
   * @param proof - skiplist path, complementary to data block
   */
 case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
+
+  private lazy val data = e.bytes
+
+  lazy val bytes: Array[Byte] = {
+    require(proof.hashes.nonEmpty, "Merkle path cannot be empty")
+    val dataSize = Ints.toByteArray(data.length)
+    val proofLength = Ints.toByteArray(proof.hashes.length)
+    val proofSize = Ints.toByteArray(proof.hashes.head.length)
+    val proofBytes = proof.hashes.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
+    dataSize ++ proofLength ++ proofSize ++ data ++ proofBytes
+  }
 
   /**
     * Checks that this block is at position $index in tree with root hash = $rootHash

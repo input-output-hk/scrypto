@@ -77,6 +77,32 @@ with TestingCommons {
     sl.rootHash.length shouldBe hf.DigestSize
   }
 
+  property("SkipList non-existent") {
+    sl.update(SkipListUpdate(toDelete = Seq(), toInsert = genEl(100)))
+
+    forAll(slelementGenerator) { newSE: SLElement =>
+      whenever(!sl.contains(newSE)) {
+        sl.insert(newSE) shouldBe true
+        sl.contains(newSE) shouldBe true
+        val proof = sl.elementProof(newSE)
+        proof match {
+          case p: SLExistenceProof => p.check(sl.rootHash) shouldBe true
+          case p: SLNonExistenceProof => assert(false)
+        }
+
+        sl.delete(newSE)
+        sl.elementProof(newSE) match {
+          case p: SLExistenceProof => assert(false)
+          case p: SLNonExistenceProof =>
+            if(!p.check(sl.rootHash)) {
+              p.check(sl.rootHash)
+            }
+            p.check(sl.rootHash) shouldBe true
+        }
+      }
+    }
+  }
+
   property("SkipList proof is valid") {
     forAll(slelementGenerator) { newSE: SLElement =>
       whenever(!sl.contains(newSE)) {
