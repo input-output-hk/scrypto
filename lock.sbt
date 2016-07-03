@@ -12,10 +12,10 @@ dependencyOverrides in ThisBuild ++= Set(
   "com.typesafe" % "config" % "1.3.0",
   "com.typesafe.akka" % "akka-actor_2.11" % "2.3.9",
   "com.typesafe.akka" % "akka-testkit_2.11" % "2.3.9",
-  "com.typesafe.play" % "play-datacommons_2.11" % "2.4.6",
-  "com.typesafe.play" % "play-functional_2.11" % "2.4.6",
-  "com.typesafe.play" % "play-iteratees_2.11" % "2.4.6",
-  "com.typesafe.play" % "play-json_2.11" % "2.4.6",
+  "com.typesafe.play" % "play-datacommons_2.11" % "2.4.8",
+  "com.typesafe.play" % "play-functional_2.11" % "2.4.8",
+  "com.typesafe.play" % "play-iteratees_2.11" % "2.4.8",
+  "com.typesafe.play" % "play-json_2.11" % "2.4.8",
   "io.spray" % "spray-testkit_2.11" % "1.3.3",
   "io.spray" % "spray-util_2.11" % "1.3.3",
   "joda-time" % "joda-time" % "2.8.1",
@@ -26,7 +26,9 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.scalacheck" % "scalacheck_2.11" % "1.12.5",
   "org.scalactic" % "scalactic_2.11" % "2.3.0-SNAP2",
   "org.scalatest" % "scalatest_2.11" % "2.3.0-SNAP2",
+  "org.scoverage" % "scalac-scoverage-plugin_2.11" % "1.1.1",
+  "org.scoverage" % "scalac-scoverage-runtime_2.11" % "1.1.1",
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.whispersystems" % "curve25519-java" % "0.2.4"
 )
-// LIBRARY_DEPENDENCIES_HASH 9083f8324409c0b798a3c41265b2e086e6700f42
+// LIBRARY_DEPENDENCIES_HASH 5921207fc87c37368ca789e3b6b1c647db3e3caa
