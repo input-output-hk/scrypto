@@ -108,7 +108,7 @@ object SLNode {
   def cleanCache(): Unit = if(slnodeCache.size > CacheSize) slnodeCache.clear()
 
   def parseBytes(bytes: Array[Byte])(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Try[SLNode] = Try {
-    val el = SLElement.parseBytes(bytes)
+    val el = SLElement.parseBytes(bytes).get
     val startFrom = el.bytes.length
     val level = Ints.fromByteArray(bytes.slice(startFrom, startFrom + 4))
     val isTower = Booleans.fromByteArray(bytes.slice(startFrom + 4, startFrom + 5))

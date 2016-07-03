@@ -27,11 +27,11 @@ class SLElementSpecification extends PropSpec with GeneratorDrivenPropertyChecks
 
   property("SLElement serialization") {
     forAll(slelementGenerator) { se: SLElement =>
-      SLElement.parseBytes(se.bytes).compare(se) shouldBe 0
-      SLElement.parseBytes(se.bytes) == se shouldBe true
+      SLElement.parseBytes(se.bytes).get.compare(se) shouldBe 0
+      SLElement.parseBytes(se.bytes).get == se shouldBe true
     }
-    SLElement.parseBytes(MinSLElement.bytes).compare(MinSLElement) shouldBe 0
-    SLElement.parseBytes(MaxSLElement.bytes).compare(MaxSLElement) shouldBe 0
+    SLElement.parseBytes(MinSLElement.bytes).get.compare(MinSLElement) shouldBe 0
+    SLElement.parseBytes(MaxSLElement.bytes).get.compare(MaxSLElement) shouldBe 0
   }
 
 

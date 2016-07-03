@@ -4,6 +4,8 @@ import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SkipList.{SLKey, SLValue}
 import scorex.utils.ByteArray
 
+import scala.util.Try
+
 sealed trait SLElement extends Ordered[SLElement] {
   val key: SLKey
   val value: SLValue
@@ -43,7 +45,7 @@ object SLElement {
 
   def apply(key: Array[Byte], value: Array[Byte]): NormalSLElement = NormalSLElement(key, value)
 
-  def parseBytes(bytes: Array[Byte]): SLElement = {
+  def parseBytes(bytes: Array[Byte]): Try[SLElement] = Try {
     val keySize = Ints.fromByteArray(bytes.slice(0, 4))
     if (keySize == -1) MaxSLElement
     else if (keySize == -2) MinSLElement
