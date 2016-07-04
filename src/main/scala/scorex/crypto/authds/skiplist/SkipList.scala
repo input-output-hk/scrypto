@@ -35,18 +35,50 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   def elementProof(e: SLElement): SLProof = {
     val leftNode = findLeft(topNode, e)
-    if (leftNode.el == e) SLExistenceProof(e, SLPath(hashTrack(e)))
-    else {
+    val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
+    if (leftNode.el.key sameElements e.key) {
+      require(leftNode.el == e, "Can't generate proof for element with existing key but different value")
+      leftProof
+    } else {
       val rightNode = leftNode.right.get
+      rightNode.recomputeHash
       val rightProof = if (rightNode.el < MaxSLElement) {
-        Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
+        Some(elementProof(rightNode.el).asInstanceOf[SLExistenceProof])
       } else {
         None
       }
-      val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
+
+      if (!SLNonExistenceProof(e, leftProof, rightProof).check(rootHash)) {
+        rightProof match {
+          case Some(rp) =>
+            val left = leftProof
+            val tower = left.proof.hashes.last sameElements hf(rp.e.bytes)
+            val nonTower = left.proof.hashes.last sameElements hf.hash(hf(rp.e.bytes), rp.proof.hashes.last)
+            val lpv = leftProof.check(rootHash)
+            val rpv = rp.check(rootHash)
+            if (!(tower || nonTower)) {
+              val rrnHash = Base58.encode(rightNode.right.get.hash)
+              val rnHash = Base58.encode(rightNode.hash)
+              val rnHashCalc = Base58.encode(hf.hash(hf.hash(rightNode.el.bytes), rightNode.right.get.hash))
+              val renHashCalc = Base58.encode(rightNode.recomputeHash)
+            }
+            if (!lpv) {
+              val p2 = elementProof(leftNode.el)
+              val t = p2.check(rootHash)
+              val fuck = ""
+
+            }
+          case _ =>
+        }
+      }
+
+
+
       SLNonExistenceProof(e, leftProof, rightProof)
     }
-  }.ensuring(_.check(rootHash))
+  }
+
+  //  }.ensuring(_.check(rootHash))
 
   // find bottom node with current element
   def find(e: SLElement): Option[SLNode] = {
@@ -55,16 +87,27 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-   * find first bottom node which element is bugger then current element
+   * find first BOTTOM node which element is bigger then current element
+   */
+  private def findLeft(node: SLNode, e: SLElement): SLNode = {
+    findLeftTop(node, e).downUntil(_.down.isEmpty).get
+  }
+
+  /**
+   * find first TOP node which element is bigger then current element
    */
   @tailrec
-  private def findLeft(node: SLNode, e: SLElement): SLNode = {
+  private def findLeftTop(node: SLNode, e: SLElement): SLNode = {
     val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
-    require(prevNodeOpt.isDefined, "Non-infinite element should have right node")
+    require(prevNodeOpt.isDefined, s"Non-infinite element should have right node, $node")
     val prevNode = prevNodeOpt.get
-    prevNode.down match {
-      case Some(dn: SLNode) => findLeft(dn, e)
-      case _ => prevNode
+    if (prevNode.el == e) {
+      prevNode
+    } else {
+      prevNode.down match {
+        case Some(dn: SLNode) => findLeftTop(dn, e)
+        case _ => prevNode
+      }
     }
   }
 
@@ -164,26 +207,27 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
 
-  private def affectedNodes(trackElement: SLElement, node: SLNode = topNode): Seq[SLNode] = node.right match {
-    case Some(rn) =>
-      node.down match {
-        case Some(dn) =>
-          if (rn.isTower) node +: affectedNodes(trackElement, dn)
-          else if (rn.el > trackElement) node +: affectedNodes(trackElement, dn)
-          else node +: affectedNodes(trackElement, rn)
-        case None =>
-          if (rn.el > trackElement) {
-            Seq(node)
-          } else {
-            node +: affectedNodes(trackElement, rn)
-          }
+  private def affectedNodes(trackElement: SLElement, node: SLNode = topNode): Seq[SLNode] = {
+    val prevElement = topNode.downUntil(_.down.isEmpty).get.rightUntil(n => n.right.get.el >= trackElement).map(_.el).get
+    require(prevElement < trackElement)
+    @tailrec
+    def trackLeft(node: SLNode, e: SLElement, acc: Seq[SLNode]): Seq[SLNode] = {
+      val affected = node.rightUntilTrack(n => n.el >= e)
+      val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
+      require(prevNodeOpt.isDefined, s"Non-infinite element should have right node, $node")
+      val prevNode = prevNodeOpt.get
+      prevNode.down match {
+        case Some(dn: SLNode) => trackLeft(dn, e, (node +: affected) ++ acc)
+        case _ => (node +: affected) ++ acc
       }
-    case None => Seq.empty
+    }
+    trackLeft(topNode, prevElement, Seq())
   }
 
 
   private def recomputeHashesForAffected(e: SLElement, commit: Boolean = true): Unit = {
-    affectedNodes(e).reverse.foreach { n =>
+    val a = affectedNodes(e).map(n => Base58.encode(n.el.bytes).take(12) + "|" + n.level)
+    affectedNodes(e).foreach { n =>
       n.recomputeHash
       SLNode.set(n.nodeKey, n)
     }
@@ -225,8 +269,12 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       case Some(rn) => lev(rn, n +: acc)
       case None => n +: acc
     }
+    val elements = topNode.downUntil(_.down.isEmpty).get.rightUntilTrack(n => n.right.isEmpty).map(_.el).sorted
+    val Size = 12
     val levs = tower() map { leftNode =>
-      leftNode.level + ": " + lev(leftNode).reverse.map(n => Base58.encode(n.hash).take(8)).mkString(", ")
+      leftNode.level + ": " + elements.map { e =>
+        leftNode.rightUntil(n => n.el == e).map(el => Base58.encode(e.bytes).take(Size)).getOrElse("            ")
+      }.mkString(", ")
     }
     levs.reverse.mkString("\n")
   }

@@ -24,8 +24,9 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
   def setHash(h: CryptographicHash#Digest): Unit = hash = h
 
   def recomputeHash[ST <: StorageType](implicit hf: CommutativeHash[_],
-                                       storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Unit = {
+                                       storage: KVStorage[SLNodeKey, SLNodeValue, ST]): CryptographicHash#Digest = {
     hash = computeHash
+    hash
   }
 
   val nodeKey: Array[Byte] = el.key ++ Ints.toByteArray(level)
@@ -54,17 +55,22 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
 
   def rightUntil[ST <: StorageType](p: SLNode => Boolean)
                                    (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
-    @tailrec
-    def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
-      Some(node)
+    rightUntilTrack(p).headOption
+  }
+
+  def rightUntilTrack[ST <: StorageType](p: SLNode => Boolean)
+                                        (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Seq[SLNode] = {
+    def loop(node: SLNode = this, acc: Seq[SLNode] = Seq()): Seq[SLNode] = if (p(node)) {
+      node +: acc
     } else {
       node.right match {
-        case Some(rn) => loop(rn)
-        case None => None
+        case Some(rn) => loop(rn, node +: acc)
+        case None => acc
       }
     }
     loop()
   }
+
 
   def downUntil[ST <: StorageType](p: SLNode => Boolean)
                                   (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
@@ -105,7 +111,7 @@ object SLNode {
     storage.set(key, node.bytes)
   }
 
-  def cleanCache(): Unit = if(slnodeCache.size > CacheSize) slnodeCache.clear()
+  def cleanCache(): Unit = if (slnodeCache.size > CacheSize) slnodeCache.clear()
 
   def parseBytes(bytes: Array[Byte])(implicit storage: KVStorage[SLNodeKey, SLNodeValue, _]): Try[SLNode] = Try {
     val el = SLElement.parseBytes(bytes).get

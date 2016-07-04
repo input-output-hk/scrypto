@@ -27,12 +27,16 @@ case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: Opti
   lazy val data = e.bytes
   lazy val bytes: Array[Byte] = ???
 
-  override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
+  override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hf: HF): Boolean = {
     val linked: Boolean = right match {
-      case None => left.proof.hashes.last sameElements hashFunction(MaxSLElement.bytes)
-      case Some(rp) => true
+      case None => left.proof.hashes.last sameElements hf(MaxSLElement.bytes)
+      case Some(rp) =>
+        val tower = left.proof.hashes.last sameElements hf(rp.e.bytes)
+        val nonTower = left.proof.hashes.last sameElements hf.hash(hf(rp.e.bytes), rp.proof.hashes.last)
+        tower || nonTower
     }
     val rightCheck = right.map(rp => e < rp.e && rp.check(rootHash)).getOrElse(true)
+
     linked && e > left.e && left.check(rootHash)
   }
 }

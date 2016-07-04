@@ -11,6 +11,8 @@ import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, CommutativeHash}
 import scorex.utils.Random.randomBytes
 
+import scala.util.Random
+
 class SkipListSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with SLGenerators
 with TestingCommons {
   val fileName = dirName + "SkipListSpecification.storage"
@@ -19,6 +21,20 @@ with TestingCommons {
   implicit val hf: CommutativeHash[Blake2b256.type] = CommutativeHash(Blake2b256)
 
   val sl = new SkipList()(storage, hf)
+
+  property("SkipList special case") {
+    val elements = genEl(100, Some(0))
+    var oldE: Seq[SLElement] = Seq.empty
+    elements.foreach { newE =>
+      sl.insert(newE)
+      oldE = newE +: oldE
+      oldE.foreach { e =>
+        assert(sl.elementProof(e).check(sl.rootHash))
+      }
+    }
+  }
+
+
 
   property("SkipList mass update ") {
     val elements: Seq[SLElement] = genEl(100)
@@ -94,11 +110,6 @@ with TestingCommons {
         sl.elementProof(newSE) match {
           case p: SLExistenceProof => assert(false)
           case p: SLNonExistenceProof =>
-            if (!p.check(sl.rootHash)) {
-              val h = sl.rootHash
-              val proof2 = sl.elementProof(newSE)
-              p.check(h)
-            }
             p.check(sl.rootHash) shouldBe true
         }
       }
@@ -106,14 +117,11 @@ with TestingCommons {
   }
 
   property("SkipList proof is valid") {
-    val oldElements = genEl(100)
+    val oldElements = genEl(5)
     sl.update(SkipListUpdate(toDelete = Seq(), toInsert = oldElements))
 
     forAll(slelementGenerator) { newSE: SLElement =>
       whenever(!sl.contains(newSE)) {
-        oldElements.foreach {e =>
-          sl.elementProof(e).check(sl.rootHash) shouldBe true
-        }
 
         sl.insert(newSE) shouldBe true
         sl.contains(newSE) shouldBe true
@@ -128,9 +136,15 @@ with TestingCommons {
           case p: SLExistenceProof => p.check(sl.rootHash) shouldBe false
           case p: SLNonExistenceProof => assert(false)
         }
+
+        oldElements.foreach { e =>
+          sl.elementProof(e).check(sl.rootHash) shouldBe true
+        }
       }
     }
+
   }
+
 
   property("SkipList reopening") {
     forAll(slelementGenerator) { newSE: SLElement =>
@@ -141,7 +155,6 @@ with TestingCommons {
         val sl2 = new SkipList()(storage, hf)
         sl2.contains(newSE) shouldBe true
         (sl2.rootHash sameElements rh) shouldBe true
-
       }
     }
   }
@@ -151,9 +164,13 @@ with TestingCommons {
     (1 to 64).foreach { i =>
       sl2.insert(NormalSLElement(Ints.toByteArray(i), Ints.toByteArray(i)))
     }
-    Base58.encode(sl2.rootHash) shouldBe "6yf5oM2U2ub3AtjTCNWtL8ua7e2ubkUUMoRLtK8L83fX"
+    Base58.encode(sl2.rootHash) shouldBe "7nAJBhC1WWGBuFky3xiMfBKiQSrJEcdsgjxM2apgXoGE"
   }
 
-  def genEl(howMany: Int = 1): Seq[SLElement] = (1 to howMany) map (i => SLElement(randomBytes(), randomBytes()))
+  def genEl(howMany: Int = 1, seed: Option[Int] = None): Seq[SLElement] = {
+    val r = new Random
+    seed.foreach(s => r.setSeed(s))
+    (1 to howMany) map (i => SLElement(r.nextString(32).getBytes, r.nextString(32).getBytes))
+  }
 
 }
