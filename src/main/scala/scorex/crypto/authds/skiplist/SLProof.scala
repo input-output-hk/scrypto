@@ -28,7 +28,10 @@ case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: Opti
   lazy val bytes: Array[Byte] = ???
 
   override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
-    val linked = true //TODO ???
+    val linked: Boolean = right match {
+      case None => left.proof.hashes.last sameElements hashFunction(MaxSLElement.bytes)
+      case Some(rp) => true
+    }
     val rightCheck = right.map(rp => e < rp.e && rp.check(rootHash)).getOrElse(true)
     linked && e > left.e && left.check(rootHash)
   }
