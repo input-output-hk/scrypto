@@ -94,8 +94,10 @@ with TestingCommons {
         sl.elementProof(newSE) match {
           case p: SLExistenceProof => assert(false)
           case p: SLNonExistenceProof =>
-            if(!p.check(sl.rootHash)) {
-              p.check(sl.rootHash)
+            if (!p.check(sl.rootHash)) {
+              val h = sl.rootHash
+              val proof2 = sl.elementProof(newSE)
+              p.check(h)
             }
             p.check(sl.rootHash) shouldBe true
         }
@@ -104,8 +106,15 @@ with TestingCommons {
   }
 
   property("SkipList proof is valid") {
+    val oldElements = genEl(100)
+    sl.update(SkipListUpdate(toDelete = Seq(), toInsert = oldElements))
+
     forAll(slelementGenerator) { newSE: SLElement =>
       whenever(!sl.contains(newSE)) {
+        oldElements.foreach {e =>
+          sl.elementProof(e).check(sl.rootHash) shouldBe true
+        }
+
         sl.insert(newSE) shouldBe true
         sl.contains(newSE) shouldBe true
         val proof = sl.elementProof(newSE)

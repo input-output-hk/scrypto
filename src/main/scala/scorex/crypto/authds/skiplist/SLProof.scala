@@ -17,20 +17,27 @@ sealed trait SLProof extends AuthData[SLPath] {
 
 }
 
-case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: SLExistenceProof) extends SLProof {
+/**
+ *
+ * @param e
+ * @param left
+ * @param right - None for MaxSlElement, Some for others
+ */
+case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: Option[SLExistenceProof]) extends SLProof {
   lazy val data = e.bytes
   lazy val bytes: Array[Byte] = ???
 
   override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
     val linked = true //TODO ???
-    linked && e < right.e && e > left.e && right.check(rootHash) && left.check(rootHash)
+    val rightCheck = right.map(rp => e < rp.e && rp.check(rootHash)).getOrElse(true)
+    linked && e > left.e && left.check(rootHash)
   }
 }
 
 /**
-  * @param e - element to proof
-  * @param proof - skiplist path, complementary to data block
-  */
+ * @param e - element to proof
+ * @param proof - skiplist path, complementary to data block
+ */
 case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
 
   private lazy val data = e.bytes
@@ -45,8 +52,8 @@ case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
   }
 
   /**
-    * Checks that this block is at position $index in tree with root hash = $rootHash
-    */
+   * Checks that this block is at position $index in tree with root hash = $rootHash
+   */
   def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
     proof.hashes.reverse.foldLeft(hashFunction.hash(data)) { (x, y) =>
       hashFunction.hash(x, y)

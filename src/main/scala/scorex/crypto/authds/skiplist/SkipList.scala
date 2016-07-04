@@ -35,28 +35,26 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   def elementProof(e: SLElement): SLProof = {
     val leftNode = findLeft(topNode, e)
-    if(leftNode.el == e) SLExistenceProof(e, SLPath(hashTrack(e)))
+    if (leftNode.el == e) SLExistenceProof(e, SLPath(hashTrack(e)))
     else {
-      val leftProof =   SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
-      val rightProof = SLExistenceProof(leftNode.right.get.el, SLPath(hashTrack(leftNode.right.get.el)))
+      val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
+      val rightNode = leftNode.right.get
+      val rightProof =
+        if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
+        else None
       SLNonExistenceProof(e, leftProof, rightProof)
     }
-  }
-//  find(e) match {
-//      case Some(n) => SLExistenceProof(e, SLPath(hashTrack(e)))
-//      case None => ???
-//    }
-//  }
+  }.ensuring(_.check(rootHash))
 
   // find bottom node with current element
   def find(e: SLElement): Option[SLNode] = {
     val leftNode = findLeft(topNode, e)
-    if(leftNode.el == e) Some(leftNode) else None
+    if (leftNode.el == e) Some(leftNode) else None
   }
 
   /**
-    * find first bottom node which element is bugger then current element
-    */
+   * find first bottom node which element is bugger then current element
+   */
   @tailrec
   private def findLeft(node: SLNode, e: SLElement): SLNode = {
     val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
@@ -212,8 +210,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-    * All nodes in a tower
-    */
+   * All nodes in a tower
+   */
   @tailrec
   private def tower(n: SLNode = topNode, acc: Seq[SLNode] = Seq(topNode)): Seq[SLNode] = n.down match {
     case Some(downNode) => tower(downNode, downNode +: acc)
