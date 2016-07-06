@@ -167,10 +167,4 @@ with TestingCommons {
     Base58.encode(sl2.rootHash) shouldBe "7nAJBhC1WWGBuFky3xiMfBKiQSrJEcdsgjxM2apgXoGE"
   }
 
-  def genEl(howMany: Int = 1, seed: Option[Int] = None): Seq[SLElement] = {
-    val r = new Random
-    seed.foreach(s => r.setSeed(s))
-    (1 to howMany) map (i => SLElement(r.nextString(32).getBytes, r.nextString(32).getBytes))
-  }
-
 }

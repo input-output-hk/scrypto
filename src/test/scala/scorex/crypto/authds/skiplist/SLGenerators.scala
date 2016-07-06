@@ -3,6 +3,8 @@ package scorex.crypto.authds.skiplist
 import org.scalacheck.{Arbitrary, Gen}
 import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
 
+import scala.util.Random
+
 trait SLGenerators {
   implicit val storage:MvStoreBlobBlobStorage
 
@@ -28,4 +30,9 @@ trait SLGenerators {
     isTower: Boolean <- Arbitrary.arbitrary[Boolean]
   } yield SLNode(el, rightKey, downKey, level, isTower: Boolean)
 
+  def genEl(howMany: Int = 1, seed: Option[Int] = None): Seq[SLElement] = {
+    val r = new Random
+    seed.foreach(s => r.setSeed(s))
+    (1 to howMany) map (i => SLElement(r.nextString(32).getBytes, r.nextString(32).getBytes))
+  }
 }

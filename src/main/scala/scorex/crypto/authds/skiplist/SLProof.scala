@@ -15,17 +15,30 @@ sealed trait SLProof extends AuthData[SLPath] {
 
   def bytes: Array[Byte]
 
+  /**
+    * Returns false if the element is in skiplist, true otherwise.
+    */
+  def isEmpty: Boolean
+
+  /**
+    * Returns true if the element is in skiplist, false otherwise.
+    */
+  def isDefined: Boolean = !isEmpty
+
+
 }
 
 /**
- *
- * @param e
- * @param left
- * @param right - None for MaxSlElement, Some for others
- */
+  *
+  * @param e
+  * @param left
+  * @param right - None for MaxSlElement, Some for others
+  */
 case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: Option[SLExistenceProof]) extends SLProof {
   lazy val data = e.bytes
   lazy val bytes: Array[Byte] = ???
+
+  override def isEmpty: Boolean = true
 
   override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hf: HF): Boolean = {
     val linked: Boolean = right match {
@@ -42,10 +55,12 @@ case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: Opti
 }
 
 /**
- * @param e - element to proof
- * @param proof - skiplist path, complementary to data block
- */
+  * @param e - element to proof
+  * @param proof - skiplist path, complementary to data block
+  */
 case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
+
+  override def isEmpty: Boolean = false
 
   private lazy val data = e.bytes
 
@@ -59,8 +74,8 @@ case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
   }
 
   /**
-   * Checks that this block is at position $index in tree with root hash = $rootHash
-   */
+    * Checks that this block is at position $index in tree with root hash = $rootHash
+    */
   def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
     proof.hashes.reverse.foldLeft(hashFunction.hash(data)) { (x, y) =>
       hashFunction.hash(x, y)
@@ -69,7 +84,8 @@ case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
 
 }
 
-object SLExistenceProof {
+
+object SLProof {
   def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): Try[SLExistenceProof] = Try {
     val dataSize = Ints.fromByteArray(bytes.slice(0, 4))
     val merklePathLength = Ints.fromByteArray(bytes.slice(4, 8))
@@ -82,7 +98,9 @@ object SLExistenceProof {
     }
     SLExistenceProof(e, SLPath(merklePath))
   }
+}
 
+object SLExistenceProof {
   implicit def authDataBlockReads[T, HashFunction <: CryptographicHash]
   (implicit fmt: Reads[T]): Reads[SLExistenceProof] = new Reads[SLExistenceProof] {
     def reads(json: JsValue): JsResult[SLExistenceProof] = JsSuccess(SLExistenceProof(
