@@ -14,16 +14,30 @@ class SLProofSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   val nonIncludedElements = genEl(101).diff(elements)
   sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
 
-  property("SLExistanceProof serialization") {
+  property("SLExistenceProof serialization") {
     elements.foreach { e =>
-      val proof = sl.elementProof(e)
-      proof.isDefined shouldBe true
-      proof.check(sl.rootHash) shouldBe true
-
-      val decoded = SLProof.decode(proof.bytes)
-      decoded.isSuccess shouldBe true
-      decoded.get.isDefined shouldBe true
+      proofCheck(e, defined = true)
     }
   }
+
+
+  property("SLNoneExistanceProof serialization") {
+    nonIncludedElements.foreach { e =>
+      proofCheck(e, defined = false)
+    }
+  }
+
+  def proofCheck(e: SLElement, defined: Boolean): Unit = {
+    val proof = sl.elementProof(e)
+    proof.isDefined shouldBe defined
+    proof.check(sl.rootHash) shouldBe true
+
+    val decoded = SLProof.decode(proof.bytes).get
+    decoded.isDefined shouldBe defined
+    decoded.check(sl.rootHash) shouldBe true
+
+    decoded.bytes shouldEqual proof.bytes
+  }
+
 
 }
