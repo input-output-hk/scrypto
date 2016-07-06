@@ -41,44 +41,13 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       leftProof
     } else {
       val rightNode = leftNode.right.get
-      rightNode.recomputeHash
-      val rightProof = if (rightNode.el < MaxSLElement) {
-        Some(elementProof(rightNode.el).asInstanceOf[SLExistenceProof])
-      } else {
-        None
-      }
-
-      if (!SLNonExistenceProof(e, leftProof, rightProof).check(rootHash)) {
-        rightProof match {
-          case Some(rp) =>
-            val left = leftProof
-            val tower = left.proof.hashes.last sameElements hf(rp.e.bytes)
-            val nonTower = left.proof.hashes.last sameElements hf.hash(hf(rp.e.bytes), rp.proof.hashes.last)
-            val lpv = leftProof.check(rootHash)
-            val rpv = rp.check(rootHash)
-            if (!(tower || nonTower)) {
-              val rrnHash = Base58.encode(rightNode.right.get.hash)
-              val rnHash = Base58.encode(rightNode.hash)
-              val rnHashCalc = Base58.encode(hf.hash(hf.hash(rightNode.el.bytes), rightNode.right.get.hash))
-              val renHashCalc = Base58.encode(rightNode.recomputeHash)
-            }
-            if (!lpv) {
-              val p2 = elementProof(leftNode.el)
-              val t = p2.check(rootHash)
-              val fuck = ""
-
-            }
-          case _ =>
-        }
-      }
-
-
+      val rightProof =
+        if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
+        else None
 
       SLNonExistenceProof(e, leftProof, rightProof)
     }
-  }
-
-  //  }.ensuring(_.check(rootHash))
+  }.ensuring(_.check(rootHash))
 
   // find bottom node with current element
   def find(e: SLElement): Option[SLNode] = {
@@ -87,15 +56,15 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-   * find first BOTTOM node which element is bigger then current element
-   */
+    * find first BOTTOM node which element is bigger then current element
+    */
   private def findLeft(node: SLNode, e: SLElement): SLNode = {
     findLeftTop(node, e).downUntil(_.down.isEmpty).get
   }
 
   /**
-   * find first TOP node which element is bigger then current element
-   */
+    * find first TOP node which element is bigger then current element
+    */
   @tailrec
   private def findLeftTop(node: SLNode, e: SLElement): SLNode = {
     val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
@@ -256,8 +225,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-   * All nodes in a tower
-   */
+    * All nodes in a tower
+    */
   @tailrec
   private def tower(n: SLNode = topNode, acc: Seq[SLNode] = Seq(topNode)): Seq[SLNode] = n.down match {
     case Some(downNode) => tower(downNode, downNode +: acc)
