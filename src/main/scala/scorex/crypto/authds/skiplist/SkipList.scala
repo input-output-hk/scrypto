@@ -4,7 +4,7 @@ import com.google.common.primitives.Ints
 import scorex.crypto.authds.skiplist.SLNode.{SLNodeKey, SLNodeValue}
 import scorex.crypto.authds.storage.{KVStorage, StorageType}
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
+import scorex.crypto.hash.{CommutativeHash, CryptographicHash, Sha256}
 
 import scala.annotation.tailrec
 
@@ -56,15 +56,15 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   /**
-    * find first BOTTOM node which element is bigger then current element
-    */
+   * find first BOTTOM node which element is bigger then current element
+   */
   private def findLeft(node: SLNode, e: SLElement): SLNode = {
     findLeftTop(node, e).downUntil(_.down.isEmpty).get
   }
 
   /**
-    * find first TOP node which element is bigger then current element
-    */
+   * find first TOP node which element is bigger then current element
+   */
   @tailrec
   private def findLeftTop(node: SLNode, e: SLElement): SLNode = {
     val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
@@ -84,7 +84,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   def insert(e: SLElement, singleInsert: Boolean = true): Boolean = if (contains(e)) {
     false
   } else {
-    val eLevel = selectLevel(e)
+    val eLevel = SkipList.selectLevel(e, topNode.level)
     if (eLevel == topNode.level) newTopLevel()
     def insertOne(levNode: SLNode): SLNode = {
       val prev = levNode.rightUntil(_.right.get.el > e).get
@@ -212,21 +212,9 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     if (commit) storage.commit()
   }
 
-
-  //select level where element e will be putted
-  private def selectLevel(e: SLElement) = {
-    @tailrec
-    def loop(lev: Int = 0): Int = {
-      if (lev == topNode.level) lev
-      else if (hf.hash(e.key ++ Ints.toByteArray(lev)).head.toInt < 0) lev
-      else loop(lev + 1)
-    }
-    loop()
-  }
-
   /**
-    * All nodes in a tower
-    */
+   * All nodes in a tower
+   */
   @tailrec
   private def tower(n: SLNode = topNode, acc: Seq[SLNode] = Seq(topNode)): Seq[SLNode] = n.down match {
     case Some(downNode) => tower(downNode, downNode +: acc)
@@ -252,4 +240,16 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 object SkipList {
   type SLKey = Array[Byte]
   type SLValue = Array[Byte]
+
+  //select level where element e will be putted
+  def selectLevel(e: SLElement, maxLev: Int) = {
+    @tailrec
+    def loop(lev: Int = 0): Int = {
+      if (lev == maxLev) lev
+      else if (Sha256(e.key ++ Ints.toByteArray(lev)).head.toInt < 0) lev
+      else loop(lev + 1)
+    }
+    loop()
+  }
+
 }

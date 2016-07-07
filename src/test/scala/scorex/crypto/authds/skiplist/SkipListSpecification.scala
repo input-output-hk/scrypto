@@ -161,10 +161,8 @@ with TestingCommons {
 
   property("SkipList should be deterministic") {
     val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
-    (1 to 64).foreach { i =>
-      sl2.insert(NormalSLElement(Ints.toByteArray(i), Ints.toByteArray(i)))
-    }
-    Base58.encode(sl2.rootHash) shouldBe "7nAJBhC1WWGBuFky3xiMfBKiQSrJEcdsgjxM2apgXoGE"
+    sl2.update(SkipListUpdate(toDelete = Seq(), toInsert = genEl(100, Some(0))))
+    Base58.encode(sl2.rootHash) shouldBe "Ewcvs6SqFUQyBRnjep3AV8Rhz6KE8jgxP2RnPe2dM5cJ"
   }
 
 }
