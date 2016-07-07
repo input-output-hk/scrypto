@@ -47,10 +47,10 @@ case class SLNonExistenceProof(e: SLElement, left: SLExistenceProof, right: Opti
 
   override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hf: HF): Boolean = {
     val linked: Boolean = right match {
-      case None => left.proof.hashes.last sameElements hf(MaxSLElement.bytes)
+      case None => left.proof.hashes.head sameElements hf(MaxSLElement.bytes)
       case Some(rp) =>
-        val tower = left.proof.hashes.last sameElements hf(rp.e.bytes)
-        val nonTower = left.proof.hashes.last sameElements hf.hash(hf(rp.e.bytes), rp.proof.hashes.last)
+        val tower = left.proof.hashes.head sameElements hf(rp.e.bytes)
+        val nonTower = left.proof.hashes.head sameElements hf.hash(hf(rp.e.bytes), rp.proof.hashes.head)
         tower || nonTower
     }
     val rightCheck = right.map(rp => e < rp.e && rp.check(rootHash)).getOrElse(true)
@@ -80,7 +80,7 @@ case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
    * Checks that this block is at position $index in tree with root hash = $rootHash
    */
   def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
-    proof.hashes.reverse.foldLeft(hashFunction.hash(e.bytes)) { (x, y) =>
+    proof.hashes.foldLeft(hashFunction.hash(e.bytes)) { (x, y) =>
       hashFunction.hash(x, y)
     }.sameElements(rootHash)
   }

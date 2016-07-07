@@ -35,14 +35,14 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   def elementProof(e: SLElement): SLProof = {
     val leftNode = findLeft(topNode, e)
-    val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
+    val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el).reverse))
     if (leftNode.el.key sameElements e.key) {
       require(leftNode.el == e, "Can't generate proof for element with existing key but different value")
       leftProof
     } else {
       val rightNode = leftNode.right.get
       val rightProof =
-        if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
+        if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el).reverse)))
         else None
 
       SLNonExistenceProof(e, leftProof, rightProof)
