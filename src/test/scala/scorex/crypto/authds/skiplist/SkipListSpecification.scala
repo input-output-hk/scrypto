@@ -18,7 +18,7 @@ with TestingCommons {
   val fileName = dirName + "SkipListSpecification.storage"
   new File(fileName).deleteOnExit()
   implicit val storage = new MvStoreBlobBlobStorage(Some(fileName))
-  implicit val hf: CommutativeHash[Blake2b256.type] = CommutativeHash(Blake2b256)
+  implicit val hf: CommutativeHash[Blake2b256.type] = new CommutativeHash(Blake2b256)
 
   val sl = new SkipList()(storage, hf)
 
@@ -77,6 +77,28 @@ with TestingCommons {
     }
   }
 
+  property("SkipList should update element") {
+    forAll(slelementGenerator) { newSE: NormalSLElement =>
+      whenever(!sl.contains(newSE)) {
+        sl.insert(newSE) shouldBe true
+        sl.contains(newSE) shouldBe true
+        val rh = sl.rootHash
+
+        sl.update(newSE)
+        sl.rootHash shouldEqual rh
+
+        val sameKeyE = newSE.copy(value = (2: Byte) +: newSE.value)
+        sl.update(sameKeyE)
+        sl.rootHash should not equal rh
+
+        val proof = sl.elementProof(sameKeyE).asInstanceOf[SLExistenceProof]
+        proof.e == sameKeyE
+        proof.check(sl.rootHash) shouldBe true
+      }
+    }
+  }
+
+
   property("SkipList should not contain deleted element") {
     forAll(slelementGenerator) { newSE: SLElement =>
       whenever(!sl.contains(newSE)) {
@@ -127,7 +149,9 @@ with TestingCommons {
         sl.contains(newSE) shouldBe true
         val proof = sl.elementProof(newSE)
         proof match {
-          case p: SLExistenceProof => p.check(sl.rootHash) shouldBe true
+          case p: SLExistenceProof =>
+            p.rootHash() shouldEqual sl.rootHash
+            p.check(sl.rootHash) shouldBe true
           case p: SLNonExistenceProof => assert(false)
         }
 

@@ -8,7 +8,7 @@ import scorex.crypto.hash.{Blake2b256, CommutativeHash}
 class SLNodeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with SLGenerators {
 
   implicit val storage = new MvStoreBlobBlobStorage(None)
-  implicit val hf: CommutativeHash[Blake2b256.type] = CommutativeHash(Blake2b256)
+  implicit val hf: CommutativeHash[Blake2b256.type] = new CommutativeHash(Blake2b256)
 
   property("SLNode serialization") {
     forAll(slnodeGenerator) { sn: SLNode =>

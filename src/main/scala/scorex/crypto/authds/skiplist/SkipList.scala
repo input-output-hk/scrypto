@@ -33,21 +33,39 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
   def contains(e: SLElement): Boolean = find(e).isDefined
 
+  def extendedElementProof(e: SLElement): ExtendedSLProof = {
+    val leftNode = findLeft(topNode, e, includeEquals = false)
+    val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
+    val rightNode = leftNode.right.get
+    if (rightNode.el.key sameElements e.key) {
+      ExtendedSLExistenceProof(leftProof, SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
+    } else {
+      val rightProof =
+        if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
+        else None
+
+      SLNonExistenceProof(e, leftProof, rightProof)
+    }
+  }
+
+
   def elementProof(e: SLElement): SLProof = {
     val leftNode = findLeft(topNode, e)
-    val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el).reverse))
+    val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
     if (leftNode.el.key sameElements e.key) {
       require(leftNode.el == e, "Can't generate proof for element with existing key but different value")
       leftProof
     } else {
       val rightNode = leftNode.right.get
       val rightProof =
-        if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el).reverse)))
+        if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
         else None
 
       SLNonExistenceProof(e, leftProof, rightProof)
     }
-  }.ensuring(_.check(rootHash))
+  }
+
+  //  }.ensuring(_.check(rootHash))
 
   // find bottom node with current element
   def find(e: SLElement): Option[SLNode] = {
@@ -58,33 +76,54 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   /**
    * find first BOTTOM node which element is bigger then current element
    */
-  private def findLeft(node: SLNode, e: SLElement): SLNode = {
-    findLeftTop(node, e).downUntil(_.down.isEmpty).get
+  private def findLeft(node: SLNode, e: SLElement, includeEquals: Boolean = true): SLNode = {
+    findLeftTop(node, e, includeEquals).downUntil(_.down.isEmpty).get
   }
 
   /**
-   * find first TOP node which element is bigger then current element
+   * find first TOP node which element is lower or equal to current element
    */
   @tailrec
-  private def findLeftTop(node: SLNode, e: SLElement): SLNode = {
-    val prevNodeOpt = node.rightUntil(n => n.right.exists(rn => rn.el > e))
+  private def findLeftTop(node: SLNode, e: SLElement, includeEquals: Boolean = true): SLNode = {
+    val prevNodeOpt = if (includeEquals) node.rightUntil(n => n.right.exists(rn => rn.el > e))
+    else node.rightUntil(n => n.right.exists(rn => rn.el >= e))
+
     require(prevNodeOpt.isDefined, s"Non-infinite element should have right node, $node")
     val prevNode = prevNodeOpt.get
     if (prevNode.el == e) {
       prevNode
     } else {
       prevNode.down match {
-        case Some(dn: SLNode) => findLeftTop(dn, e)
+        case Some(dn: SLNode) => findLeftTop(dn, e, includeEquals)
         case _ => prevNode
       }
     }
   }
 
+  def update(updates: SkipListUpdate): Unit = {
+    updates.toDelete foreach (n => delete(n, singleUpdate = false))
+    deleteEmptyTopLevels()
 
-  def insert(e: SLElement, singleInsert: Boolean = true): Boolean = if (contains(e)) {
+    updates.toInsert.sorted.reverse foreach { e => insert(e, singleInsert = false) }
+
+    topNode.recomputeHash
+    SLNode.set(TopNodeKey, topNode)
+    SLNode.cleanCache()
+    storage.commit()
+  }
+
+  //Delete element with such a key and insert newE with the same height
+  def update(newE: SLElement, singleInsert: Boolean = true): Unit = {
+    val n = findLeftTop(topNode, newE)
+    val lev = n.level
+    delete(newE)
+    insert(newE, singleInsert, Some(lev))
+  }
+
+  def insert(e: SLElement, singleInsert: Boolean = true, levOpt: Option[Int] = None): Boolean = if (contains(e)) {
     false
   } else {
-    val eLevel = SkipList.selectLevel(e, topNode.level)
+    val eLevel = levOpt.getOrElse(SkipList.selectLevel(e, topNode.level))
     if (eLevel == topNode.level) newTopLevel()
     def insertOne(levNode: SLNode): SLNode = {
       val prev = levNode.rightUntil(_.right.get.el > e).get
@@ -99,18 +138,6 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     insertOne(leftAt(eLevel).get)
     recomputeHashesForAffected(e, singleInsert)
     true
-  }
-
-  def update(updates: SkipListUpdate): Unit = {
-    updates.toDelete foreach (n => delete(n, singleUpdate = false))
-    deleteEmptyTopLevels()
-
-    updates.toInsert.sorted.reverse foreach { e => insert(e, singleInsert = false) }
-
-    topNode.recomputeHash
-    SLNode.set(TopNodeKey, topNode)
-    SLNode.cleanCache()
-    storage.commit()
   }
 
   def delete(e: SLElement, singleUpdate: Boolean = true): Unit = {
@@ -157,22 +184,27 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     }
   }
 
-  private def hashTrack(trackElement: SLElement, n: SLNode = topNode): Seq[CryptographicHash#Digest] = n.right match {
-    case Some(rn) =>
-      n.down match {
-        case Some(dn) =>
-          if (rn.isTower) hashTrack(trackElement, dn)
-          else if (rn.el > trackElement) rn.hash +: hashTrack(trackElement, dn)
-          else dn.hash +: hashTrack(trackElement, rn)
-        case None =>
-          if (rn.el > trackElement) {
-            if (rn.isTower) Seq(hf.hash(rn.el.bytes))
-            else Seq(rn.hash)
-          } else {
-            hf.hash(n.el.bytes) +: hashTrack(trackElement, rn)
+  private def hashTrack(trackElement: SLElement, n: SLNode = topNode): Seq[LevHash] = {
+    def hashTrackLoop(n: SLNode = topNode): Seq[LevHash] = {
+      n.right match {
+        case Some(rn) =>
+          n.down match {
+            case Some(dn) =>
+              if (rn.isTower) hashTrackLoop(dn)
+              else if (rn.el > trackElement) LevHash(rn.hash, n.level) +: hashTrackLoop(dn)
+              else LevHash(dn.hash, n.level) +: hashTrackLoop(rn)
+            case None =>
+              if (rn.el > trackElement) {
+                if (rn.isTower) Seq(LevHash(hf.hash(rn.el.bytes), n.level))
+                else Seq(LevHash(rn.hash, n.level))
+              } else {
+                LevHash(hf.hash(n.el.bytes), n.level) +: hashTrackLoop(rn)
+              }
           }
+        case None => Seq(LevHash(SLNode.emptyHash, 0))
       }
-    case None => Seq(SLNode.emptyHash)
+    }
+    hashTrackLoop().reverse
   }
 
 
@@ -230,10 +262,11 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     val Size = 12
     val levs = tower() map { leftNode =>
       leftNode.level + ": " + elements.map { e =>
-        leftNode.rightUntil(n => n.el == e).map(el => Base58.encode(e.bytes).take(Size)).getOrElse("            ")
+        leftNode.rightUntil(n => n.el == e).map(n => Base58.encode(n.hash).substring(0, Size)).getOrElse("            ")
       }.mkString(", ")
     }
-    levs.reverse.mkString("\n")
+    val elementsS = "e: " + elements.map(e => Base58.encode(hf(e.bytes)).take(Size)).mkString(", ")
+    (elementsS +: levs).reverse.mkString("\n")
   }
 }
 
@@ -241,8 +274,10 @@ object SkipList {
   type SLKey = Array[Byte]
   type SLValue = Array[Byte]
 
-  //select level where element e will be putted
-  def selectLevel(e: SLElement, maxLev: Int) = {
+  /**
+   * Select a level where element e will be putted
+   */
+  def selectLevel(e: SLElement, maxLev: Int): Int = {
     @tailrec
     def loop(lev: Int = 0): Int = {
       if (lev == maxLev) lev

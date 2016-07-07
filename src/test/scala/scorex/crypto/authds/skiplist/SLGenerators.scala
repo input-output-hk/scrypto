@@ -17,7 +17,7 @@ trait SLGenerators {
     op: Boolean <- Arbitrary.arbitrary[Boolean]
   } yield if (op) Some(bytes) else None
 
-  val slelementGenerator: Gen[SLElement] = for {
+  val slelementGenerator: Gen[NormalSLElement] = for {
     key: Array[Byte] <- noneEmptyBytes
     value: Array[Byte] <- Arbitrary.arbitrary[Array[Byte]]
   } yield SLElement(key, value)
@@ -30,7 +30,7 @@ trait SLGenerators {
     isTower: Boolean <- Arbitrary.arbitrary[Boolean]
   } yield SLNode(el, rightKey, downKey, level, isTower: Boolean)
 
-  def genEl(howMany: Int = 1, seed: Option[Int] = None): Seq[SLElement] = {
+  def genEl(howMany: Int = 1, seed: Option[Int] = None): Seq[NormalSLElement] = {
     val r = new Random
     seed.foreach(s => r.setSeed(s))
     (1 to howMany) map (i => SLElement(r.nextString(32).getBytes, r.nextString(32).getBytes))

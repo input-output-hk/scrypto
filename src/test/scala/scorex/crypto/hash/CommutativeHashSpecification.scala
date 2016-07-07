@@ -2,7 +2,7 @@ package scorex.crypto.hash
 
 class CommutativeHashSpecification extends HashTest {
 
-  val hash = CommutativeHash(Sha256)
+  val hash = new CommutativeHash(Sha256)
 
   property(s"CommutativeHash(Sha256) is CryptographicHash") {
     forAll { data: Array[Byte] =>
