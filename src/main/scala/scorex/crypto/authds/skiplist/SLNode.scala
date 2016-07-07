@@ -55,7 +55,12 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
 
   def rightUntil[ST <: StorageType](p: SLNode => Boolean)
                                    (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
-    rightUntilTrack(p).headOption
+    def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
+      Some(node)
+    } else {
+      node.right.flatMap(rn => loop(rn))
+    }
+    loop()
   }
 
   def rightUntilTrack[ST <: StorageType](p: SLNode => Boolean)
