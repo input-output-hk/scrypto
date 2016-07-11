@@ -1,5 +1,6 @@
 package scorex.crypto.authds.skiplist
 
+import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
@@ -10,22 +11,25 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
   implicit val storage = new MvStoreBlobBlobStorage(None)
   implicit val hf: CommutativeHash[Blake2b256.type] = new CommutativeHash(Blake2b256)
   val sl = new SkipList()(storage, hf)
-  val elements = genEl(3, Some(11))
+  val elements = genEl(100, Some(11))
   sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
 
   property("Update elements") {
-    val forUpdate = elements.take(3)
+    forAll(Gen.choose(1, 10)) { i: Int =>
+      val forUpdate = genEl(i)
+      sl.update(SkipListUpdate(toDelete = Seq(), toInsert = forUpdate))
 
-    val proofsForUpdate = forUpdate map { e =>
-      val proof = sl.extendedElementProof(e).asInstanceOf[ExtendedSLExistenceProof]
-      proof.check(sl.rootHash) shouldBe true
-      ProofToRecalculate(updatedElement(e), proof)
+      val proofsForUpdate = forUpdate map { e =>
+        val proof = sl.extendedElementProof(e).asInstanceOf[ExtendedSLExistenceProof]
+        proof.check(sl.rootHash) shouldBe true
+        ProofToRecalculate(updatedElement(e), proof)
+      }
+
+      proofsForUpdate.foreach(p => sl.update(p.newEl))
+
+      val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate)
+      recalculatedHash shouldEqual sl.rootHash
     }
-
-    proofsForUpdate.foreach(p => sl.update(p.newEl))
-
-    val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate)
-    recalculatedHash shouldEqual sl.rootHash
   }
 
 
