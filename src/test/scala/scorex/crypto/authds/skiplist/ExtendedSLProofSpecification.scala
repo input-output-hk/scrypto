@@ -20,7 +20,7 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
       sl.update(SkipListUpdate(toDelete = Seq(), toInsert = forUpdate))
 
       val proofsForUpdate = forUpdate map { e =>
-        val proof = sl.extendedElementProof(e).asInstanceOf[ExtendedSLExistenceProof]
+        val proof = sl.extendedElementProof(e)
         proof.check(sl.rootHash) shouldBe true
         ProofToRecalculate(updatedElement(e), proof)
       }
@@ -32,23 +32,15 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
     }
   }
 
-
-  property("SLExtended: recalculate rootHash when update 1 element") {
-    elements.foreach { e =>
-      sl.contains(e) shouldBe true
-      val oldProof = sl.extendedElementProof(e).asInstanceOf[ExtendedSLExistenceProof]
-      oldProof.check(sl.rootHash) shouldBe true
-      val newE = updatedElement(e)
-
-      sl.contains(newE) shouldBe true
-      sl.update(newE)
-
-      val proofForUpdate = ProofToRecalculate(newE, oldProof)
-      val recalculatedHash = ExtendedSLProof.recalculate(Seq(proofForUpdate))
-
-      recalculatedHash shouldEqual sl.rootHash
+  property("Insert 1 element") {
+    forAll(slelementGenerator) { e: NormalSLElement =>
+      whenever(! sl.contains(e)) {
+        val proof = sl.extendedElementProof(e)
+        ProofToRecalculate(e, proof)
+      }
     }
   }
+
 
   def updatedElement(e: NormalSLElement): NormalSLElement = {
     val newE = e.copy(value = (1: Byte) +: e.value)

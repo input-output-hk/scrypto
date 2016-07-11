@@ -31,27 +31,19 @@ sealed trait SLProof extends AuthData[SLPath] {
 
 /**
  * SLProof that is enough to recalculate root hash without whole skiplist
+ * @param e - element to proof
+ * @param l - proof of the element left to e 
+ * @param r - proof of the element e if it's in skiplist, or proof right to it if it is not
  */
-sealed trait ExtendedSLProof extends SLProof {
-  val newEl: SLElement
-  val l: SLExistenceProof
-  val r: Option[SLExistenceProof]
-}
-
-/**
- * r should be defined for existence proof
- */
-case class ExtendedSLExistenceProof(l: SLExistenceProof, r: Option[SLExistenceProof]) extends ExtendedSLProof {
-  lazy val newEl = r.get.e
+case class ExtendedSLProof(e: SLElement, l: SLExistenceProof, r: Option[SLExistenceProof]) extends SLProof {
 
   override def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
-    r.map(r => l.leftNeighborTo(r) && r.check(rootHash)).getOrElse(true) && l.check(rootHash)
-
+    r.map(r => l.leftNeighborTo(r) && r.check(rootHash) && e <= r.e).getOrElse(true) && l.check(rootHash) && e > l.e
   }
 
   override def bytes: Array[Byte] = ???
 
-  override def isEmpty: Boolean = false
+  override def isEmpty: Boolean = r.exists(r => r.e != e)
 }
 
 object ExtendedSLProof {
@@ -100,10 +92,10 @@ object ExtendedSLProof {
       val (toReplaceR, headReplace) = rightProof.proof.r match {
         case Some(r) =>
 
-          val elHashesR = (LevHash(hf(rightProof.proof.newEl.bytes), 0), LevHash(hf(rightProof.newEl.bytes), 0))
+          val elHashesR = (LevHash(hf(rightProof.proof.e.bytes), 0), LevHash(hf(rightProof.newEl.bytes), 0))
           val toReplaceR = calcNewSelfElements(elHashesR._1.h, elHashesR._2.h, r.proof.levHashes, Seq(elHashesR))
 
-          val headReplace = if (rightProof.proof.l.proof.hashes.head sameElements hf(rightProof.proof.newEl.bytes)) {
+          val headReplace = if (rightProof.proof.l.proof.hashes.head sameElements hf(rightProof.proof.e.bytes)) {
             hf(rightProof.newEl.bytes)
           } else {
             hf(hf(rightProof.newEl.bytes), r.proof.hashes.head)
@@ -121,7 +113,7 @@ object ExtendedSLProof {
         newLeftHash, newLRproof.proof.levHashes.tail, Seq(elHashesL)).filter(tr => !(tr._1.h sameElements tr._2.h))
 
       val newRRproof = rightProof.proof.r.map(_.copy(e = rightProof.newEl)).map(recalcOne(_, toReplaceL))
-      val newRightProof = rightProof.copy(proof = ExtendedSLExistenceProof(newLRproof, newRRproof))
+      val newRightProof = rightProof.copy(proof = ExtendedSLProof(rightProof.newEl, newLRproof, newRRproof))
       val toReplace = toReplaceL ++ toReplaceR
 
       val recalculated: Seq[ProofToRecalculate] = leftProofs map { p =>
@@ -146,22 +138,21 @@ object ExtendedSLProof {
  * @param newEl - element to put to that position
  * @param proof - proof of newEl and element left to it
  */
-case class ProofToRecalculate(newEl: SLElement, proof: ExtendedSLExistenceProof)
+case class ProofToRecalculate(newEl: SLElement, proof: ExtendedSLProof)
 
 /**
  *
- * @param newEl
+ * @param e
  * @param l
  * @param r - None for MaxSlElement, Some for others
  */
-case class SLNonExistenceProof(newEl: SLElement, l: SLExistenceProof, r: Option[SLExistenceProof]) extends SLProof
-with ExtendedSLProof {
+case class SLNonExistenceProof(e: SLElement, l: SLExistenceProof, r: Option[SLExistenceProof]) extends SLProof {
   lazy val bytes: Array[Byte] = {
-    val eSize = Ints.toByteArray(newEl.bytes.length)
+    val eSize = Ints.toByteArray(e.bytes.length)
     val leftSize = Ints.toByteArray(l.bytes.length)
     val rightSize = Ints.toByteArray(r.map(r => r.bytes.length).getOrElse(0))
 
-    Array(0: Byte) ++ eSize ++ leftSize ++ rightSize ++ newEl.bytes ++ l.bytes ++ r.map(_.bytes).getOrElse(Array())
+    Array(0: Byte) ++ eSize ++ leftSize ++ rightSize ++ e.bytes ++ l.bytes ++ r.map(_.bytes).getOrElse(Array())
   }
 
   override def isEmpty: Boolean = true
@@ -171,9 +162,9 @@ with ExtendedSLProof {
       case None => l.proof.hashes.head sameElements hf(MaxSLElement.bytes)
       case Some(rp) => l.leftNeighborTo(rp)
     }
-    val rightCheck = r.map(rp => newEl < rp.e && rp.check(rootHash)).getOrElse(true)
+    val rightCheck = r.map(rp => e < rp.e && rp.check(rootHash)).getOrElse(true)
 
-    linked && newEl > l.e && l.check(rootHash)
+    linked && e > l.e && l.check(rootHash)
   }
 }
 
