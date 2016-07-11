@@ -11,8 +11,63 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
   implicit val storage = new MvStoreBlobBlobStorage(None)
   implicit val hf: CommutativeHash[Blake2b256.type] = new CommutativeHash(Blake2b256)
   val sl = new SkipList()(storage, hf)
-  val elements = genEl(100, Some(11))
+  val elements = genEl(21, Some(11))
   sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
+
+
+
+  property("Insert 1 element") {
+    forAll(slelementGenerator) { e: NormalSLElement =>
+      whenever(!sl.contains(e)) {
+        val proofsForUpdate = Seq(ProofToRecalculate(e, sl.extendedElementProof(e)))
+        proofsForUpdate.head.proof.isEmpty shouldBe true
+
+        val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate, sl.topNode.level)
+        sl.insert(e)
+        recalculatedHash shouldEqual sl.rootHash
+      }
+    }
+  }
+
+  //TODO fix
+/*
+  property("Insert elements") {
+    forAll(Gen.choose(2, 2), Gen.choose(100, 1000)) { (i: Int, j: Int) =>
+      val toInsert = genEl(i)
+      val ch = sl.topNode.level
+      toInsert.foreach(e => sl.contains(e) shouldBe false)
+
+      val proofsForUpdate = toInsert.map(e => ProofToRecalculate(e, sl.extendedElementProof(e)))
+
+      val sorted = if (toInsert.head > toInsert.last) toInsert else toInsert.reverse
+      sl.insert(sorted.head)
+      sl.insert(sorted.last)
+
+
+      val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate, ch)
+      recalculatedHash shouldEqual sl.rootHash
+    }
+  }
+
+  property("Insert 1 and update 1 element") {
+    forAll(slelementGenerator) { e: NormalSLElement =>
+      whenever(!sl.contains(e)) {
+        val forUpdate = genEl(1)
+        sl.update(SkipListUpdate(toDelete = Seq(), toInsert = forUpdate))
+        val proof = ProofToRecalculate(updatedElement(forUpdate.head), sl.extendedElementProof(forUpdate.head))
+
+        val proofsForUpdate = Seq(ProofToRecalculate(e, sl.extendedElementProof(e)), proof)
+        proofsForUpdate.head.proof.isEmpty shouldBe true
+
+        val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate, sl.topNode.level)
+        sl.insert(e)
+        recalculatedHash shouldEqual sl.rootHash
+      }
+    }
+  }
+*/
+
+
 
   property("Update elements") {
     forAll(Gen.choose(1, 10)) { i: Int =>
@@ -27,20 +82,10 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
 
       proofsForUpdate.foreach(p => sl.update(p.newEl))
 
-      val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate)
+      val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate, sl.topNode.level)
       recalculatedHash shouldEqual sl.rootHash
     }
   }
-
-  property("Insert 1 element") {
-    forAll(slelementGenerator) { e: NormalSLElement =>
-      whenever(! sl.contains(e)) {
-        val proof = sl.extendedElementProof(e)
-        ProofToRecalculate(e, proof)
-      }
-    }
-  }
-
 
   def updatedElement(e: NormalSLElement): NormalSLElement = {
     val newE = e.copy(value = (1: Byte) +: e.value)

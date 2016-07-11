@@ -100,7 +100,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     updates.toDelete foreach (n => delete(n, singleUpdate = false))
     deleteEmptyTopLevels()
 
-    updates.toInsert.sorted.reverse foreach { e => insert(e, singleInsert = false) }
+    updates.toInsert foreach { e => insert(e, singleInsert = false) }
 
     topNode.recomputeHash
     SLNode.set(TopNodeKey, topNode)
@@ -187,17 +187,17 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
           n.down match {
             case Some(dn) =>
               if (rn.isTower) hashTrackLoop(dn)
-              else if (rn.el > trackElement) LevHash(rn.hash, n.level) +: hashTrackLoop(dn)
-              else LevHash(dn.hash, n.level) +: hashTrackLoop(rn)
+              else if (rn.el > trackElement) LevHash(rn.hash, n.level, Right) +: hashTrackLoop(dn)
+              else LevHash(dn.hash, n.level, Down) +: hashTrackLoop(rn)
             case None =>
               if (rn.el > trackElement) {
-                if (rn.isTower) Seq(LevHash(hf.hash(rn.el.bytes), n.level))
-                else Seq(LevHash(rn.hash, n.level))
+                if (rn.isTower) Seq(LevHash(hf.hash(rn.el.bytes), n.level, Right))
+                else Seq(LevHash(rn.hash, n.level, Right))
               } else {
-                LevHash(hf.hash(n.el.bytes), n.level) +: hashTrackLoop(rn)
+                LevHash(hf.hash(n.el.bytes), n.level, Down) +: hashTrackLoop(rn)
               }
           }
-        case None => Seq(LevHash(SLNode.emptyHash, 0))
+        case None => Seq(LevHash(SLNode.emptyHash, 0, Down))
       }
     }
     hashTrackLoop().reverse

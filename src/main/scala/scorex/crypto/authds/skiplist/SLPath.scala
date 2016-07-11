@@ -14,6 +14,11 @@ case class SLPath(levHashes: Seq[LevHash]) extends DataProof {
   override def toString: String = levHashes.mkString(", ")
 }
 
-case class LevHash(h: CryptographicHash#Digest, l: Int) {
-  override def toString: String = s"${Base58.encode(h).take(12)}|$l"
+case class LevHash(h: CryptographicHash#Digest, l: Int, d: Direction) {
+  override def toString: String = s"${Base58.encode(h).take(12)}|$l|$d"
 }
+
+sealed trait Direction
+
+case object Right extends Direction
+case object Down extends Direction
