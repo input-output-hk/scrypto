@@ -38,7 +38,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     val leftProof = SLExistenceProof(leftNode.el, SLPath(hashTrack(leftNode.el)))
     val rightNode = leftNode.right.get
     if (rightNode.el.key sameElements e.key) {
-      ExtendedSLExistenceProof(leftProof, SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
+      ExtendedSLExistenceProof(leftProof, Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el)))))
     } else {
       val rightProof =
         if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
