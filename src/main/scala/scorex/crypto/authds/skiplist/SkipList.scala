@@ -100,7 +100,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     updates.toDelete foreach (n => delete(n, singleUpdate = false))
     deleteEmptyTopLevels()
 
-    updates.toInsert foreach { e => insert(e, singleInsert = false) }
+    updates.toInsert.sorted.reverse foreach { e => insert(e, singleInsert = false) }
 
     topNode.recomputeHash
     SLNode.set(TopNodeKey, topNode)
