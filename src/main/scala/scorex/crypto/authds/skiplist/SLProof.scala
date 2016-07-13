@@ -87,7 +87,7 @@ object SLProof {
     }
   }
 
-  private def decodeNonExistenceProof[HashFunction <: CryptographicHash](bytes: Array[Byte]): SLNonExistenceProof = {
+  def decodeNonExistenceProof[HashFunction <: CryptographicHash](bytes: Array[Byte]): SLNonExistenceProof = {
     val eSize = Ints.fromByteArray(bytes.slice(0, 4))
     val leftSize = Ints.fromByteArray(bytes.slice(4, 8))
     val rightSize = Ints.fromByteArray(bytes.slice(8, 12))
@@ -98,7 +98,7 @@ object SLProof {
     SLNonExistenceProof(e, left, right)
   }
 
-  private def decodeExistenceProof[HashFunction <: CryptographicHash](bytes: Array[Byte]): SLExistenceProof = {
+  def decodeExistenceProof[HashFunction <: CryptographicHash](bytes: Array[Byte]): SLExistenceProof = {
     val dataSize = Ints.fromByteArray(bytes.slice(0, 4))
     val merklePathLength = Ints.fromByteArray(bytes.slice(4, 8))
     val merklePathSize = Ints.fromByteArray(bytes.slice(8, 12))

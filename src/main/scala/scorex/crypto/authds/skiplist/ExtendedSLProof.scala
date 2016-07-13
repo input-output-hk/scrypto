@@ -1,5 +1,6 @@
 package scorex.crypto.authds.skiplist
 
+import com.google.common.primitives.Ints
 import scorex.crypto.hash.{CryptographicHash, CommutativeHash}
 
 import scala.annotation.tailrec
@@ -16,7 +17,13 @@ case class ExtendedSLProof(e: SLElement, l: SLExistenceProof, r: Option[SLExiste
     r.map(r => l.leftNeighborTo(r) && r.check(rootHash) && e <= r.e).getOrElse(true) && l.check(rootHash) && e > l.e
   }
 
-  def bytes: Array[Byte] = ???
+  lazy val bytes: Array[Byte] = {
+    val eSize = Ints.toByteArray(e.bytes.length)
+    val leftSize = Ints.toByteArray(l.bytes.length)
+    val rightSize = Ints.toByteArray(r.map(r => r.bytes.length).getOrElse(0))
+
+    eSize ++ leftSize ++ rightSize ++ e.bytes ++ l.bytes ++ r.map(_.bytes).getOrElse(Array())
+  }
 
   def isEmpty: Boolean = !r.exists(r => r.e == e)
 }
@@ -196,6 +203,17 @@ object ExtendedSLProof {
     }
 
     loop(proofs.sortBy(_.newEl).reverse, height, Seq())
+  }
+
+  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): SLNonExistenceProof = {
+    val eSize = Ints.fromByteArray(bytes.slice(0, 4))
+    val leftSize = Ints.fromByteArray(bytes.slice(4, 8))
+    val rightSize = Ints.fromByteArray(bytes.slice(8, 12))
+    val e = SLElement.parseBytes(bytes.slice(12, 12 + eSize)).get
+    val left = SLProof.decodeExistenceProof(bytes.slice(12 + eSize, 12 + eSize + leftSize).tail)
+    val right = if (rightSize == 0) None
+    else Some(SLProof.decodeExistenceProof(bytes.slice(12 + eSize + leftSize, 12 + eSize + leftSize + rightSize).tail))
+    SLNonExistenceProof(e, left, right)
   }
 }
 

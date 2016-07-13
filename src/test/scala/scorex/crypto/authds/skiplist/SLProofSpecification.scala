@@ -16,18 +16,18 @@ class SLProofSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
 
   property("SLExistenceProof serialization") {
     elements.foreach { e =>
-      proofCheck(e, defined = true)
+      proofSerializationCheck(e, defined = true)
     }
   }
 
 
   property("SLNoneExistanceProof serialization") {
     nonIncludedElements.foreach { e =>
-      proofCheck(e, defined = false)
+      proofSerializationCheck(e, defined = false)
     }
   }
 
-  def proofCheck(e: SLElement, defined: Boolean): Unit = {
+  def proofSerializationCheck(e: SLElement, defined: Boolean): Unit = {
     val proof = sl.elementProof(e)
     proof.isDefined shouldBe defined
     proof.check(sl.rootHash) shouldBe true
