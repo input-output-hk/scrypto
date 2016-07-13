@@ -80,14 +80,10 @@ trait VersionedMerklizedIndexedSeq[HashFn <: CryptographicHash, ST <: StorageTyp
             Success(this)
           case Failure(e) =>
             log.error("tree rollback error", e)
-            println("tree rollback error")
-            e.printStackTrace()
             Failure(e)
         }
       case Failure(e) =>
         log.error("Seq rollback error", e)
-        println("seq rollback error")
-        e.printStackTrace()
         Failure(e)
     }
   }
@@ -151,8 +147,8 @@ object MvStoreVersionedMerklizedIndexedSeq {
 
 
   /**
-    * Create Merkle tree from file with data
-    */
+   * Create Merkle tree from file with data
+   */
   //todo: pass initial version
   def fromFile[H <: CryptographicHash](fileName: String,
                                        treeFolder: Option[String],
