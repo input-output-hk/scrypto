@@ -4,6 +4,7 @@ import com.google.common.primitives.Ints
 import scorex.crypto.hash.{CryptographicHash, CommutativeHash}
 
 import scala.annotation.tailrec
+import scala.util.Try
 
 /**
  * SLProof that is enough to recalculate root hash without whole skiplist
@@ -205,7 +206,7 @@ object ExtendedSLProof {
     loop(proofs.sortBy(_.newEl).reverse, height, Seq())
   }
 
-  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): SLNonExistenceProof = {
+  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): Try[ExtendedSLProof] = Try {
     val eSize = Ints.fromByteArray(bytes.slice(0, 4))
     val leftSize = Ints.fromByteArray(bytes.slice(4, 8))
     val rightSize = Ints.fromByteArray(bytes.slice(8, 12))
@@ -213,7 +214,7 @@ object ExtendedSLProof {
     val left = SLProof.decodeExistenceProof(bytes.slice(12 + eSize, 12 + eSize + leftSize).tail)
     val right = if (rightSize == 0) None
     else Some(SLProof.decodeExistenceProof(bytes.slice(12 + eSize + leftSize, 12 + eSize + leftSize + rightSize).tail))
-    SLNonExistenceProof(e, left, right)
+    ExtendedSLProof(e, left, right)
   }
 }
 

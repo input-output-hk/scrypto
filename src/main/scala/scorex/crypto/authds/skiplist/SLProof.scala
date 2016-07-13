@@ -56,9 +56,9 @@ case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
   lazy val bytes: Array[Byte] = {
     require(proof.hashes.nonEmpty, "Merkle path cannot be empty")
     val dataSize = Ints.toByteArray(e.bytes.length)
-    val proofLength = Ints.toByteArray(proof.hashes.length)
-    val proofSize = Ints.toByteArray(proof.hashes.head.length)
-    val proofBytes = proof.hashes.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp)
+    val proofLength = Ints.toByteArray(proof.levHashes.length)
+    val proofSize = Ints.toByteArray(proof.levHashes.head.bytes.length)
+    val proofBytes = proof.levHashes.foldLeft(Array.empty: Array[Byte])((b, mp) => b ++ mp.bytes)
     Array(1: Byte) ++ dataSize ++ proofLength ++ proofSize ++ e.bytes ++ proofBytes
   }
 
@@ -105,11 +105,11 @@ object SLProof {
     val data = bytes.slice(12, 12 + dataSize)
     val e = SLElement.parseBytes(data).get
     val merklePathStart = 12 + dataSize
-    val merklePath = (0 until merklePathLength).map { i =>
-      bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)
+    val levHashes: Seq[LevHash] = (0 until merklePathLength).map { i =>
+      LevHash.decode(bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)).get
     }
     //TODO parse levels and directions
-    SLExistenceProof(e, SLPath(merklePath.map(h => LevHash(h, -1, Down))))
+    SLExistenceProof(e, SLPath(levHashes))
   }
 }
 

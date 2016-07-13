@@ -24,19 +24,6 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
     }
   }
 
-  def proofSerializationCheck(e: SLElement, defined: Boolean): Unit = {
-    val proof = sl.elementProof(e)
-    proof.isDefined shouldBe defined
-    proof.check(sl.rootHash) shouldBe true
-
-    val decoded = SLProof.decode(proof.bytes).get
-    decoded.isDefined shouldBe defined
-    decoded.check(sl.rootHash) shouldBe true
-
-    decoded.bytes shouldEqual proof.bytes
-  }
-
-
   property("Insert 1 element") {
     forAll(slelementGenerator) { e: NormalSLElement =>
       whenever(!sl.contains(e)) {
@@ -107,6 +94,22 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
   */
 
 
+  def proofSerializationCheck(e: SLElement, defined: Boolean): Unit = {
+    val proof = sl.extendedElementProof(e)
+    proof.isDefined shouldBe defined
+    proof.check(sl.rootHash) shouldBe true
+
+    val decoded = ExtendedSLProof.decode(proof.bytes).get
+    decoded.isDefined shouldBe defined
+    decoded.check(sl.rootHash) shouldBe true
+    decoded.l.proof.levHashes foreach { lh =>
+      val sameLevHash = proof.l.proof.levHashes.find(_.h sameElements lh.h).get
+      sameLevHash.l shouldBe lh.l
+      sameLevHash.d shouldBe lh.d
+    }
+
+    decoded.bytes shouldEqual proof.bytes
+  }
 
   def updatedElement(e: NormalSLElement): NormalSLElement = {
     val newE = e.copy(value = (1: Byte) +: e.value)
