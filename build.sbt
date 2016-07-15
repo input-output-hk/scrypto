@@ -7,8 +7,9 @@ version := "1.2.0-RC1"
 scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
+  "com.chuusai" %% "shapeless" % "2.+",
   "com.h2database" % "h2-mvstore" % "1.+",
-  "com.google.guava" % "guava" % "15.+",
+  "com.google.guava" % "guava" % "19.+",
   "com.typesafe.play" %% "play-json" % "2.4.+",
   "io.spray" %% "spray-testkit" % "1.+" % "test",
   "org.scalatest" %% "scalatest" % "2.+" % "test",
@@ -21,9 +22,6 @@ libraryDependencies ++= Seq(
 licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
 
 homepage := Some(url("https://github.com/ScorexProject/scrypto"))
-
-resolvers ++= Seq("Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases/",
-  "Typesafe maven releases" at "http://repo.typesafe.com/typesafe/maven-releases/")
 
 publishMavenStyle := true
 
