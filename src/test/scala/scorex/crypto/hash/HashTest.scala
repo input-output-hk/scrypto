@@ -18,11 +18,6 @@ with Matchers {
     hashCheck(hash, external.map(x => (x._1.getBytes -> x._2)))
 
   def hashCheck(hash: CryptographicHash, external: Map[Array[Byte], String]): Unit = {
-    property(s"${hash.getClass.getSimpleName} doublehash(x) is hash(hash(x))") {
-      forAll { data: Array[Byte] =>
-        hash.doubleHash(data) should equal(hash.hash(hash.hash(data)))
-      }
-    }
 
     property(s"${hash.getClass.getSimpleName} size of hash should be DigestSize") {
       forAll { data: Array[Byte] =>

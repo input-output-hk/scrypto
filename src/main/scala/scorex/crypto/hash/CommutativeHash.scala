@@ -1,6 +1,5 @@
 package scorex.crypto.hash
 
-import scorex.crypto.hash.CryptographicHash.Message
 import scorex.utils.ByteArray
 
 class CommutativeHash[HashFn <: CryptographicHash](hf: HashFn) extends CryptographicHash {

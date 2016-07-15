@@ -1,7 +1,6 @@
 package scorex.crypto.hash
 
-trait FRHash extends CryptographicHash {
-  override lazy val DigestSize: Int = hf.getDigestLength
+trait FRHash64 extends CryptographicHash64 {
 
   override def hash(input: Message): Digest = hf.digest(input)
 

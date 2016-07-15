@@ -1,11 +1,11 @@
 package scorex.crypto.hash
 
 /**
-  * From Wikipedia (https://en.wikipedia.org/wiki/Cryptographic_hash_function):
-  * "A cryptographic hash function is a hash function which is considered practically impossible to invert,
-  * that is, to recreate the input data from its hash value alone. These one-way hash functions have been
-  * called "the workhorses of modern cryptography". The input data is often called the message, and
-  * the hash value is often called the message digest or simply the digest.
+ * From Wikipedia (https://en.wikipedia.org/wiki/Cryptographic_hash_function):
+ * "A cryptographic hash function is a hash function which is considered practically impossible to invert,
+ * that is, to recreate the input data from its hash value alone. These one-way hash functions have been
+ * called "the workhorses of modern cryptography". The input data is often called the message, and
+ * the hash value is often called the message digest or simply the digest.
 
  
   The ideal cryptographic hash function has four main properties:
@@ -14,14 +14,14 @@ package scorex.crypto.hash
     it is infeasible to modify a message without changing the hash
     it is infeasible to find two different messages with the same hash.
 "
-  */
+ */
 
 trait CryptographicHash {
 
-  import CryptographicHash._
-
   type Digest = Array[Byte]
-  val DigestSize: Int //in bytes
+  type Message = Array[Byte]
+
+  val DigestSize: Int // in bytes
 
   def apply(input: Message): Digest = hash(input)
 
@@ -31,13 +31,5 @@ trait CryptographicHash {
 
   def hash(input: String): Digest = hash(input.getBytes)
 
-  /**
-    * May be useful sometimes, but it's better to use chain of different hash algorithms
-    */
-  @deprecated
-  def doubleHash(input: Message): Digest = hash(hash(input))
 }
 
-object CryptographicHash {
-  type Message = Array[Byte]
-}

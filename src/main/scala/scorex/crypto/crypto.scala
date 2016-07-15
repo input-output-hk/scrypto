@@ -1,7 +1,7 @@
 package scorex
 
 import scorex.crypto.hash.CryptographicHash
-import scorex.crypto.hash.CryptographicHash._
+import shapeless.{Nat, Succ}
 
 package object crypto {
   def bytes2hex(bytes: Array[Byte]): String = bytes2hex(bytes, None)
@@ -26,5 +26,18 @@ package object crypto {
     require(hashes.forall(_.DigestSize == hashes.head.DigestSize), "Use hash algorithms with the same digest size")
     hashes.foldLeft(input)((bytes, hashFunction) => hashFunction.hash(bytes))
   }
+
+  type Message = Array[Byte]
+
+  type Nat32 = Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Nat._22]]]]]]]]]]
+
+  type Nat40 = Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Nat32]]]]]]]]
+
+  type Nat50 = Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Nat40]]]]]]]]]]
+
+  type Nat60 = Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Succ[Nat50]]]]]]]]]]
+
+  type Nat64 = Succ[Succ[Succ[Succ[Nat60]]]]
+
 
 }
