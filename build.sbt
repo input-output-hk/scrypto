@@ -2,7 +2,7 @@ organization := "org.consensusresearch"
 
 name := "scrypto"
 
-version := "1.2.0-RC1"
+version := "1.2.0-RC2"
 
 scalaVersion := "2.11.8"
 
