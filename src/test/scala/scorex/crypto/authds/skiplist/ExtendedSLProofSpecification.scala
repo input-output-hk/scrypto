@@ -48,7 +48,7 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
         ProofToRecalculate(updatedElement(e), proof)
       }
 
-      proofsForUpdate.foreach(p => sl.update(p.newEl))
+      proofsForUpdate.foreach(p => sl.updateOne(p.newEl))
 
       val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate, sl.topNode.level)
       recalculatedHash shouldEqual sl.rootHash

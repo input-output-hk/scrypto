@@ -61,8 +61,6 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     }
   }
 
-  //  }.ensuring(_.check(rootHash))
-
   // find bottom node with current element
   def find(e: SLElement): Option[SLNode] = {
     val leftNode = findLeft(topNode, e)
@@ -96,22 +94,35 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     }
   }
 
-  def update(updates: SkipListUpdate): Unit = {
-    updates.toDelete foreach (n => delete(n, singleUpdate = false))
-    deleteEmptyTopLevels()
+  def update(updates: SkipListUpdate, withProofs: Boolean = false): Seq[ProofToRecalculate] = {
 
-    updates.toUpdate foreach (n => update(n, singleUpdate = false))
+    if (updates.toDelete.nonEmpty) {
+      require(!withProofs, "Proofs are not supported for delete operations")
+      updates.toDelete foreach (n => delete(n, singleUpdate = false))
+      deleteEmptyTopLevels()
+    }
 
-    updates.toInsert.sorted.reverse foreach { e => insert(e, singleInsert = false) }
+    val toUpdateProofs: Seq[ProofToRecalculate] = updates.toUpdate.sorted.reverse flatMap { e =>
+      val proof = if (withProofs) Some(ProofToRecalculate(e, extendedElementProof(e))) else None
+      updateOne(e, singleUpdate = false)
+      proof
+    }
+
+    val toInsertProofs: Seq[ProofToRecalculate] = updates.toInsert.sorted.reverse flatMap { e =>
+      val proof = if (withProofs) Some(ProofToRecalculate(e, extendedElementProof(e))) else None
+      insert(e, singleInsert = false)
+      proof
+    }
 
     topNode.recomputeHash
     SLNode.set(TopNodeKey, topNode)
     SLNode.cleanCache()
     storage.commit()
+    toUpdateProofs ++ toInsertProofs
   }
 
   //Delete element with such a key and insert newE with the same height
-  def update(newE: SLElement, singleUpdate: Boolean = true): Boolean = if (contains(newE)) {
+  def updateOne(newE: SLElement, singleUpdate: Boolean = true): Boolean = if (contains(newE)) {
     val n = findLeftTop(topNode, newE)
     val lev = n.level
     delete(newE)

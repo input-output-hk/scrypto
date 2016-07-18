@@ -92,11 +92,11 @@ with TestingCommons {
         sl.contains(newSE) shouldBe true
         val rh = sl.rootHash
 
-        sl.update(newSE)
+        sl.updateOne(newSE)
         sl.rootHash shouldEqual rh
 
         val sameKeyE = newSE.copy(value = (2: Byte) +: newSE.value)
-        sl.update(sameKeyE)
+        sl.updateOne(sameKeyE)
         sl.rootHash should not equal rh
 
         val proof = sl.elementProof(sameKeyE).asInstanceOf[SLExistenceProof]
