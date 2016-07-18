@@ -11,27 +11,9 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
   implicit val storage = new MvStoreBlobBlobStorage(None)
   implicit val hf: CommutativeHash[Blake2b256.type] = new CommutativeHash(Blake2b256)
   val sl = new SkipList()(storage, hf)
-  val elements = genEl(21, Some(11))
-  sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
 
-
-  property("One by one insert") {
-    forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int]) { (i: Int, seed: Int) =>
-      val toInsert = genEl(i, Some(seed))
-      whenever(toInsert.forall(e => !sl.contains(e))) {
-        val height = sl.topNode.level
-        val rootHash = sl.rootHash
-        val proofSeq = sl.update(SkipListUpdate(toInsert = toInsert), withProofs = true)
-        proofSeq.proofs.size shouldEqual toInsert.size
-
-        proofSeq.check(rootHash) shouldBe true
-      }
-    }
-  }
-
-
-  property("One by one update") {
-    forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int]) { (i: Int, seed: Int) =>
+  property("One by one update and insert") {
+    forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int], Arbitrary.arbitrary[Int]) { (i: Int, seed: Int, seed2: Int) =>
       val toInsert = genEl(i, Some(seed))
       val height = sl.topNode.level
       sl.update(SkipListUpdate(toInsert = toInsert))
@@ -39,13 +21,14 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
       val rootHash = sl.rootHash
       val toUpdate = toInsert.map(e => updatedElement(e))
 
-      val proofSeq = sl.update(SkipListUpdate(toUpdate = toUpdate), withProofs = true)
-      proofSeq.proofs.size shouldEqual toInsert.size
-      proofSeq.check(rootHash) shouldBe true
+      val toInsertWith = genEl(i, Some(seed2))
+      whenever(toInsertWith.forall(e => !sl.contains(e))) {
+        val proofSeq = sl.update(SkipListUpdate(toUpdate = toUpdate), withProofs = true)
+        proofSeq.proofs.size shouldEqual toInsert.size
+        proofSeq.check(rootHash) shouldBe true
+      }
     }
   }
-
-
 
   property("ExtendedSLProof serialization") {
     forAll(slelementGenerator) { e: NormalSLElement =>
