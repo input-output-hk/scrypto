@@ -34,10 +34,8 @@ with TestingCommons {
     }
   }
 
-
-
   property("SkipList mass update ") {
-    val elements: Seq[SLElement] = genEl(100)
+    val elements: Seq[NormalSLElement] = genEl(100)
     sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
     val rh = sl.rootHash
     elements.foreach { e =>
@@ -50,11 +48,21 @@ with TestingCommons {
 
     val toInsert: Seq[SLElement] = genEl(100)
     val toDelete = elements.take(10)
-    sl.update(SkipListUpdate(toDelete = toDelete, toInsert = toInsert))
+    val toUpdate = elements.takeRight(10).map(e => updatedElement(e))
+    sl.update(SkipListUpdate(toDelete = toDelete, toInsert = toInsert, toUpdate = toUpdate))
     toInsert.foreach { e =>
       sl.contains(e) shouldBe true
       sl.elementProof(e) match {
         case p: SLExistenceProof => p.check(sl.rootHash) shouldBe true
+        case p: SLNonExistenceProof => assert(false)
+      }
+    }
+    toUpdate.foreach { e =>
+      sl.contains(e) shouldBe true
+      sl.elementProof(e) match {
+        case p: SLExistenceProof =>
+          p.e.bytes shouldEqual e.bytes
+          p.check(sl.rootHash) shouldBe true
         case p: SLNonExistenceProof => assert(false)
       }
     }

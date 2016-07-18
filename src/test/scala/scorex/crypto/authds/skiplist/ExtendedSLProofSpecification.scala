@@ -111,13 +111,4 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
     decoded.bytes shouldEqual proof.bytes
   }
 
-  def updatedElement(e: NormalSLElement): NormalSLElement = {
-    val newE = e.copy(value = (1: Byte) +: e.value)
-
-    e.key shouldEqual newE.key
-    e.value should not equal newE.value
-    newE
-
-  }
-
 }

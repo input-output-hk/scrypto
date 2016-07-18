@@ -100,6 +100,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     updates.toDelete foreach (n => delete(n, singleUpdate = false))
     deleteEmptyTopLevels()
 
+    updates.toUpdate foreach (n => update(n, singleUpdate = false))
+
     updates.toInsert.sorted.reverse foreach { e => insert(e, singleInsert = false) }
 
     topNode.recomputeHash
@@ -109,12 +111,12 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   //Delete element with such a key and insert newE with the same height
-  def update(newE: SLElement, singleInsert: Boolean = true): Unit = {
+  def update(newE: SLElement, singleUpdate: Boolean = true): Boolean = if (contains(newE)) {
     val n = findLeftTop(topNode, newE)
     val lev = n.level
     delete(newE)
-    insert(newE, singleInsert, Some(lev))
-  }
+    insert(newE, singleUpdate, Some(lev))
+  } else false
 
   def insert(e: SLElement, singleInsert: Boolean = true, levOpt: Option[Int] = None): Boolean = if (contains(e)) {
     false
