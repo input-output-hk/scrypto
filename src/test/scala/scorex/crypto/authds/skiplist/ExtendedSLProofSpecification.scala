@@ -1,6 +1,6 @@
 package scorex.crypto.authds.skiplist
 
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
@@ -13,6 +13,39 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
   val sl = new SkipList()(storage, hf)
   val elements = genEl(21, Some(11))
   sl.update(SkipListUpdate(toDelete = Seq(), toInsert = elements))
+
+
+  property("One by one insert") {
+    forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int]) { (i: Int, seed: Int) =>
+      val toInsert = genEl(i, Some(seed))
+      whenever(toInsert.forall(e => !sl.contains(e))) {
+        val height = sl.topNode.level
+        val rootHash = sl.rootHash
+        val proofSeq = sl.update(SkipListUpdate(toInsert = toInsert), withProofs = true)
+        proofSeq.proofs.size shouldEqual toInsert.size
+
+        proofSeq.check(rootHash) shouldBe true
+      }
+    }
+  }
+
+
+  property("One by one update") {
+    forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int]) { (i: Int, seed: Int) =>
+      val toInsert = genEl(i, Some(seed))
+      val height = sl.topNode.level
+      sl.update(SkipListUpdate(toInsert = toInsert))
+
+      val rootHash = sl.rootHash
+      val toUpdate = toInsert.map(e => updatedElement(e))
+
+      val proofSeq = sl.update(SkipListUpdate(toUpdate = toUpdate), withProofs = true)
+      proofSeq.proofs.size shouldEqual toInsert.size
+      proofSeq.check(rootHash) shouldBe true
+    }
+  }
+
+
 
   property("ExtendedSLProof serialization") {
     forAll(slelementGenerator) { e: NormalSLElement =>
@@ -47,13 +80,16 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
         proof.check(sl.rootHash) shouldBe true
         ProofToRecalculate(updatedElement(e), proof)
       }
+      val oldRH = sl.rootHash
 
       proofsForUpdate.foreach(p => sl.updateOne(p.newEl))
 
       val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate, sl.topNode.level)
+      oldRH should not equal sl.rootHash
       recalculatedHash shouldEqual sl.rootHash
     }
   }
+
 
   //TODO fix
   /*

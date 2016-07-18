@@ -37,8 +37,8 @@ object ExtendedSLProof {
     recalculateProofs(proofs, height).head.proof.l.rootHash()
   }
 
-  def recalculateProof[HF <: CommutativeHash[_]](p: ProofToRecalculate, lev: Int)(implicit hf: HF): (Digest, Int) = {
-    val r = recalculateOneProof(p, lev)
+  def recalculateProof[HF <: CommutativeHash[_]](p: ProofToRecalculate, height: Int)(implicit hf: HF): (Digest, Int) = {
+    val r = recalculateOneProof(p, height)
     (r._3.proof.l.rootHash(), r._1)
   }
 
@@ -155,7 +155,7 @@ object ExtendedSLProof {
         val newRightProof = rightProof.copy(proof = ExtendedSLProof(rightProof.newEl, newLRproof, newRRproof))
         val toReplace = toReplaceL ++ toReplaceR
         val toInsertForAll = toInsert.filter(ti => !toReplaceL.map(_._1).exists(_.h sameElements ti._1.h))
-        (insertLevel, toReplace, newRightProof, toInsertForAll, toRemove)
+        (Math.max(insertLevel + 1, lev), toReplace, newRightProof, toInsertForAll, toRemove)
     }
   }
 

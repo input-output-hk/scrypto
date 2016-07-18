@@ -41,8 +41,9 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       if (rightNode.el < MaxSLElement) Some(SLExistenceProof(rightNode.el, SLPath(hashTrack(rightNode.el))))
       else None
 
-    ExtendedSLProof(e, leftProof, rightProof)
-  }
+    val rightNodeEl = if (rightNode.el.key sameElements e.key) rightNode.el else e
+    ExtendedSLProof(rightNodeEl, leftProof, rightProof)
+  }.ensuring(_.check(rootHash))
 
 
   def elementProof(e: SLElement): SLProof = {
@@ -94,23 +95,26 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     }
   }
 
-  def update(updates: SkipListUpdate, withProofs: Boolean = false): Seq[ProofToRecalculate] = {
+  def update(updates: SkipListUpdate, withProofs: Boolean = false): SLProofSeq = {
+    val height = topNode.level
 
     if (updates.toDelete.nonEmpty) {
       require(!withProofs, "Proofs are not supported for delete operations")
-      updates.toDelete foreach (n => delete(n, singleUpdate = false))
+      updates.toDelete foreach (n => delete(n, singleUpdate = withProofs))
       deleteEmptyTopLevels()
     }
 
     val toUpdateProofs: Seq[ProofToRecalculate] = updates.toUpdate.sorted.reverse flatMap { e =>
-      val proof = if (withProofs) Some(ProofToRecalculate(e, extendedElementProof(e))) else None
-      updateOne(e, singleUpdate = false)
+      val proof = if (withProofs) {
+        Some(ProofToRecalculate(e, extendedElementProof(e)))
+      } else None
+      updateOne(e, singleUpdate = withProofs)
       proof
     }
 
     val toInsertProofs: Seq[ProofToRecalculate] = updates.toInsert.sorted.reverse flatMap { e =>
       val proof = if (withProofs) Some(ProofToRecalculate(e, extendedElementProof(e))) else None
-      insert(e, singleInsert = false)
+      insert(e, singleInsert = withProofs)
       proof
     }
 
@@ -118,7 +122,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     SLNode.set(TopNodeKey, topNode)
     SLNode.cleanCache()
     storage.commit()
-    toUpdateProofs ++ toInsertProofs
+    SLProofSeq(height, toUpdateProofs ++ toInsertProofs)
   }
 
   //Delete element with such a key and insert newE with the same height
