@@ -1,17 +1,13 @@
 package scorex.crypto.authds.skiplist
 
 import java.io.File
-
-import com.google.common.primitives.Ints
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, CommutativeHash}
-import scorex.utils.Random.randomBytes
 
-import scala.util.Random
 
 class SkipListSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with SLGenerators
 with TestingCommons {
