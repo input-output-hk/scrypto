@@ -7,23 +7,23 @@ import scorex.crypto.authds.storage.MvStoreBlobBlobStorage
 import scala.util.Random
 
 trait SLGenerators extends Matchers {
-  implicit val storage: MvStoreBlobBlobStorage
+  implicit def storage: MvStoreBlobBlobStorage
 
-  val noneEmptyBytes: Gen[Array[Byte]] = for {
+  lazy val noneEmptyBytes: Gen[Array[Byte]] = for {
     key: Array[Byte] <- Arbitrary.arbitrary[Array[Byte]] if key.length < SLElement.MaxKeySize && key.length > 1
   } yield key
 
-  val optionBytes: Gen[Option[Array[Byte]]] = for {
+  lazy val optionBytes: Gen[Option[Array[Byte]]] = for {
     bytes: Array[Byte] <- noneEmptyBytes
     op: Boolean <- Arbitrary.arbitrary[Boolean]
   } yield if (op) Some(bytes) else None
 
-  val slelementGenerator: Gen[NormalSLElement] = for {
+  lazy val slelementGenerator: Gen[NormalSLElement] = for {
     key: Array[Byte] <- noneEmptyBytes
     value: Array[Byte] <- Arbitrary.arbitrary[Array[Byte]]
   } yield SLElement(key, value)
 
-  val slnodeGenerator: Gen[SLNode] = for {
+  lazy val slnodeGenerator: Gen[SLNode] = for {
     el <- slelementGenerator
     rightKey: Option[Array[Byte]] <- optionBytes
     downKey: Option[Array[Byte]] <- optionBytes
