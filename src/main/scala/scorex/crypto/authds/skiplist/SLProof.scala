@@ -108,7 +108,6 @@ object SLProof {
     val levHashes: Seq[LevHash] = (0 until merklePathLength).map { i =>
       LevHash.parseBytes(bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)).get
     }
-    //TODO parse levels and directions
     SLExistenceProof(e, SLPath(levHashes))
   }
 }
@@ -128,7 +127,6 @@ object SLExistenceProof {
                 throw new RuntimeException("MerklePath MUST be array of strings" + m + " given")
             }
           }.map(h => LevHash(h.get, -1, Down))
-          //TODO parse levels
           case m =>
             throw new RuntimeException("MerklePath MUST be a list " + m + " given")
         })

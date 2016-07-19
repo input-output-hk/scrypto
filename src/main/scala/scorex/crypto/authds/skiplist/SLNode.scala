@@ -55,10 +55,16 @@ case class SLNode(el: SLElement, rightKey: Option[SLNodeKey], downKey: Option[SL
 
   def rightUntil[ST <: StorageType](p: SLNode => Boolean)
                                    (implicit storage: KVStorage[SLNodeKey, SLNodeValue, ST]): Option[SLNode] = {
-    def loop(node: SLNode = this): Option[SLNode] = if (p(node)) {
-      Some(node)
-    } else {
-      node.right.flatMap(rn => loop(rn))
+    @tailrec
+    def loop(node: SLNode = this): Option[SLNode] = {
+      if (p(node)) {
+        Some(node)
+      } else {
+        node.right match {
+          case Some(rn) => loop(rn)
+          case None => None
+        }
+      }
     }
     loop()
   }
