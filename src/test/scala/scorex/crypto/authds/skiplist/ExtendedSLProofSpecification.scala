@@ -15,7 +15,7 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
   property("SLProofSeq serialization") {
     forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int]) { (i: Int, seed: Int) =>
       val elements = genEl(i, Some(seed))
-      val p = sl.update(SkipListUpdate(toInsert = elements),  withProofs = true)
+      val p = sl.update(SkipListUpdate(toInsert = elements), withProofs = true)
       val decoded = SLProofSeq.parseBytes(p.bytes).get
 
       decoded.bytes shouldEqual p.bytes
@@ -35,7 +35,7 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
       whenever(toInsertWith.forall(e => !sl.contains(e))) {
         val proofSeq = sl.update(SkipListUpdate(toUpdate = toUpdate), withProofs = true)
         proofSeq.proofs.size shouldEqual toInsert.size
-        proofSeq.check(rootHash) shouldBe true
+        proofSeq.check(rootHash, sl.rootHash) shouldBe true
       }
     }
   }

@@ -1,21 +1,22 @@
 package scorex.crypto.authds.skiplist
 
 import com.google.common.primitives.Ints
-import scorex.crypto.hash.CommutativeHash
+import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
 
 import scala.util.Try
 
 
-case class SLProofSeq(height: Int, proofs: Seq[ProofToRecalculate]) extends SLProofI {
+case class SLProofSeq(height: Int, proofs: Seq[ProofToRecalculate]) {
+  type Digest = CryptographicHash#Digest
 
-  def check[HF <: CommutativeHash[_]](rootHash: Digest)(implicit hashFunction: HF): Boolean = {
+  def check[HF <: CommutativeHash[_]](rootHash: Digest, newRootHash: Digest)(implicit hashFunction: HF): Boolean = {
     def loop(rProofs: Seq[ProofToRecalculate], curRootHash: Digest, curHeight: Int): Boolean = rProofs.headOption match {
       case Some(proofToRecalculate) =>
         if (proofToRecalculate.proof.check(curRootHash)) {
           val (newRH, newLev) = ExtendedSLProof.recalculateProof(proofToRecalculate, curHeight)
           loop(rProofs.tail, newRH, newLev)
         } else false
-      case None => true
+      case None => curRootHash sameElements newRootHash
     }
     loop(proofs, rootHash, height)
   }
@@ -30,7 +31,6 @@ case class SLProofSeq(height: Int, proofs: Seq[ProofToRecalculate]) extends SLPr
     hb ++ pb
   }
 
-  def isEmpty: Boolean = proofs.isEmpty
 }
 
 object SLProofSeq {
