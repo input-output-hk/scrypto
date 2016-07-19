@@ -222,7 +222,7 @@ object ExtendedSLProof {
     p.copy(proof = newPath)
   }
 
-  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): Try[ExtendedSLProof] = Try {
+  def parseBytes(bytes: Array[Byte]): Try[ExtendedSLProof] = Try {
     val eSize = Ints.fromByteArray(bytes.slice(0, 4))
     val leftSize = Ints.fromByteArray(bytes.slice(4, 8))
     val rightSize = Ints.fromByteArray(bytes.slice(8, 12))

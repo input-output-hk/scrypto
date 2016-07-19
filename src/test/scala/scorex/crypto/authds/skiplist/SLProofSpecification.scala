@@ -32,7 +32,7 @@ class SLProofSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     proof.isDefined shouldBe defined
     proof.check(sl.rootHash) shouldBe true
 
-    val decoded = SLProof.decode(proof.bytes).get
+    val decoded = SLProof.parseBytes(proof.bytes).get
     decoded.isDefined shouldBe defined
     decoded.check(sl.rootHash) shouldBe true
 

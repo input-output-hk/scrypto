@@ -79,7 +79,7 @@ case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
 
 
 object SLProof {
-  def decode[HashFunction <: CryptographicHash](bytes: Array[Byte]): Try[SLProof] = Try {
+  def parseBytes(bytes: Array[Byte]): Try[SLProof] = Try {
     if (bytes.head == (1: Byte)) {
       decodeExistenceProof(bytes.tail)
     } else {
@@ -106,7 +106,7 @@ object SLProof {
     val e = SLElement.parseBytes(data).get
     val merklePathStart = 12 + dataSize
     val levHashes: Seq[LevHash] = (0 until merklePathLength).map { i =>
-      LevHash.decode(bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)).get
+      LevHash.parseBytes(bytes.slice(merklePathStart + i * merklePathSize, merklePathStart + (i + 1) * merklePathSize)).get
     }
     //TODO parse levels and directions
     SLExistenceProof(e, SLPath(levHashes))

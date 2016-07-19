@@ -26,7 +26,7 @@ case class LevHash(h: CryptographicHash#Digest, l: Int, d: Direction) {
 }
 
 object LevHash {
-  def decode(bytes: Array[Byte]): Try[LevHash] = Try {
+  def parseBytes(bytes: Array[Byte]): Try[LevHash] = Try {
     val lev = Ints.fromByteArray(bytes.slice(0, 4))
     val d = if (bytes.slice(4, 5).head == (0: Byte)) Right else Down
     val hash = bytes.slice(5, bytes.length)
