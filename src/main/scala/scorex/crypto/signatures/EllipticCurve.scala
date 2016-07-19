@@ -1,3 +1,3 @@
 package scorex.crypto.signatures
 
-trait EllipticCurve extends SigningFunctions
+trait EllipticCurve[SizeT <: shapeless.Nat] extends SigningFunctions[SizeT]

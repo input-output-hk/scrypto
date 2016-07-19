@@ -2,9 +2,13 @@ package scorex.crypto.signatures
 
 import java.security.SecureRandom
 
-trait SigningFunctions {
+import shapeless.Sized
+
+trait SigningFunctions[SizeT <: shapeless.Nat] {
 
   import SigningFunctions._
+
+  type SignedSignature = Sized[Array[Byte], SizeT]
 
   val SignatureLength: Int
   val KeyLength: Int
@@ -19,7 +23,13 @@ trait SigningFunctions {
 
   def sign(privateKey: PrivateKey, message: MessageToSign): Signature
 
+  def signSized(privateKey: PrivateKey, message: MessageToSign): SignedSignature = Sized.wrap(sign(privateKey, message))
+
   def verify(signature: Signature, message: MessageToSign, publicKey: PublicKey): Boolean
+
+  def verify(signature: SignedSignature, message: MessageToSign, publicKey: PublicKey): Boolean = {
+    verify(signature.unsized, message, publicKey)
+  }
 
   def createSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): SharedSecret
 }

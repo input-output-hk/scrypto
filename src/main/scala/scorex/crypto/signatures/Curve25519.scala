@@ -4,12 +4,13 @@ import java.lang.reflect.Constructor
 
 import org.slf4j.LoggerFactory
 import org.whispersystems.curve25519.OpportunisticCurve25519Provider
+import scorex.crypto.Nat32
 import scorex.crypto.hash.Sha256
 
 import scala.util.{Failure, Try}
 
 
-object Curve25519 extends EllipticCurve {
+object Curve25519 extends EllipticCurve[Nat32] {
 
   import SigningFunctions._
 
