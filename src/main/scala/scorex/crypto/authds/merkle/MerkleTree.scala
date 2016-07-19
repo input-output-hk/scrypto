@@ -59,7 +59,7 @@ trait MerkleTree[HashFn <: CryptographicHash, ST <: StorageType] extends Scrypto
   /**
     * Return MerkleAuthData at position $index
     */
-  def proofByIndex(index: Position): Option[MerklePath[HashFn]] = {
+  def proofByIndex(index: Position): Option[MerklePath] = {
     val nonEmptyBlocks = size
 
     if (index < nonEmptyBlocks && index >= 0) {
