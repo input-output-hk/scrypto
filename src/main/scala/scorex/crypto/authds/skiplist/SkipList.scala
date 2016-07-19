@@ -180,6 +180,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     saveNode(topNode, isTop = true)
   }
 
+  @tailrec
   private def deleteEmptyTopLevels(): Unit = {
     topNode.down match {
       case Some(dn) =>
@@ -267,6 +268,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   }
 
   override def toString: String = {
+    @tailrec
     def lev(n: SLNode, acc: Seq[SLNode] = Seq()): Seq[SLNode] = n.right match {
       case Some(rn) => lev(rn, n +: acc)
       case None => n +: acc
