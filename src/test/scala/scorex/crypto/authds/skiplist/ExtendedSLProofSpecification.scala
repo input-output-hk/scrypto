@@ -12,15 +12,6 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
   implicit val hf: CommutativeHash[Blake2b256.type] = new CommutativeHash(Blake2b256)
   val sl = new SkipList()(storage, hf)
 
-  property("SLProofSeq serialization") {
-    forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int]) { (i: Int, seed: Int) =>
-      val elements = genEl(i, Some(seed))
-      val p = sl.update(SkipListUpdate(toInsert = elements), withProofs = true)
-      val decoded = SLProofSeq.parseBytes(p.bytes).get
-
-      decoded.bytes shouldEqual p.bytes
-    }
-  }
 
   property("One by one update and insert") {
     forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int], Arbitrary.arbitrary[Int]) { (i: Int, seed: Int, seed2: Int) =>
@@ -80,6 +71,16 @@ class ExtendedSLProofSpecification extends PropSpec with GeneratorDrivenProperty
       val recalculatedHash = ExtendedSLProof.recalculate(proofsForUpdate, sl.topNode.level)
       oldRH should not equal sl.rootHash
       recalculatedHash shouldEqual sl.rootHash
+    }
+  }
+
+  property("SLProofSeq serialization") {
+    forAll(Gen.choose(1, 10), Arbitrary.arbitrary[Int]) { (i: Int, seed: Int) =>
+      val elements = genEl(i, Some(seed))
+      val p = sl.update(SkipListUpdate(toInsert = elements), withProofs = true)
+      val decoded = SLProofSeq.parseBytes(p.bytes).get
+
+      decoded.bytes shouldEqual p.bytes
     }
   }
 
