@@ -117,12 +117,9 @@ object ExtendedSLProof {
         val toRemove = if (topTaken.l == insertLevel && insertLevel > 0) takenByNewElement.filter(_.l < insertLevel)
         else takenByNewElement
 
-        //first level hash of new elements
-        val rightSelfHash = hf(hf(rightProof.newEl.bytes), rightProof.proof.l.proof.hashes.head)
         //top level ()in a tower hash of new element
-        val newElHash: LevHash = LevHash(hashesFromRight.foldLeft(hf(rightProof.newEl.bytes)) { (x, y) =>
-          if (y.l > insertLevel) x
-          else hf(x, y.h)
+        val newElHash: LevHash = LevHash(takenByNewElement.foldLeft(hf(rightProof.newEl.bytes)) { (x, y) =>
+          hf(x, y.h)
         }, insertLevel, Right)
 
         val toInsert: Seq[(LevHash, LevHash)] = if (insertLevel > 0 && topTaken.l != insertLevel) {
@@ -132,6 +129,9 @@ object ExtendedSLProof {
             (LevHash(hash, toCalc.last.l, toCalc.last.d), newElHash)
           })
         } else Seq()
+
+        //first level hash of new elements
+        val rightSelfHash = hf(hf(rightProof.newEl.bytes), rightProof.proof.l.proof.hashes.head)
 
         val headReplace = if (insertLevel == 0) {
           rightSelfHash
