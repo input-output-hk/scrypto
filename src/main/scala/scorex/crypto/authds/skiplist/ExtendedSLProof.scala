@@ -1,5 +1,7 @@
 package scorex.crypto.authds.skiplist
 
+import java.nio.ByteBuffer
+
 import com.google.common.primitives.Ints
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CommutativeHash, CryptographicHash}
@@ -80,14 +82,14 @@ object ExtendedSLProof {
 
   private def recalculateOneProof[HF <: CommutativeHash[_]](rightProof: ProofToRecalculate, lev: Int)
                                                            (implicit hf: HF):
-  (Int, Map[String, LevHash], ProofToRecalculate, Seq[(LevHash, LevHash)], Seq[LevHash]) = {
+  (Int, Map[ByteBuffer, LevHash], ProofToRecalculate, Seq[(LevHash, LevHash)], Seq[LevHash]) = {
 
     rightProof.proof.r match {
       case Some(r) if rightProof.proof.isDefined =>
         // update
 
         val elHashesR = (LevHash(hf(rightProof.proof.e.bytes), 0, Down), LevHash(hf(rightProof.newEl.bytes), 0, Down))
-        val toReplaceR = calcNewSelfElements(elHashesR._1.h, elHashesR._2.h, r.proof.levHashes, Map(Base58.encode(elHashesR._1.h) -> elHashesR._2))
+        val toReplaceR = calcNewSelfElements(elHashesR._1.h, elHashesR._2.h, r.proof.levHashes, Map(ByteBuffer.wrap(elHashesR._1.h) -> elHashesR._2))
 
         val headReplace = if (rightProof.proof.l.proof.hashes.head sameElements hf(rightProof.proof.e.bytes)) {
           hf(rightProof.newEl.bytes)
@@ -96,11 +98,11 @@ object ExtendedSLProof {
         }
 
         val newLRproof = recalcOne(rightProof.proof.l, toReplaceR)
-        val elHashesL = Map(Base58.encode(newLRproof.proof.hashes.head) -> LevHash(headReplace, 0, Right))
+        val elHashesL = Map(ByteBuffer.wrap(newLRproof.proof.hashes.head) -> LevHash(headReplace, 0, Right))
         val oldLeftHash = hf(hf(rightProof.proof.l.e.bytes), rightProof.proof.l.proof.hashes.head)
         val newLeftHash = hf(hf(rightProof.proof.l.e.bytes), headReplace)
 
-        val toReplaceL:Map[String, LevHash] = Map(Base58.encode(oldLeftHash) -> LevHash(newLeftHash, 0, Right)) ++
+        val toReplaceL: Map[ByteBuffer, LevHash] = Map(ByteBuffer.wrap(oldLeftHash) -> LevHash(newLeftHash, 0, Right)) ++
           calcNewSelfElements(oldLeftHash, newLeftHash, newLRproof.proof.levHashes.tail, elHashesL)
 
         val newRRproof = rightProof.proof.r.map(_.copy(e = rightProof.newEl)).map(recalcOne(_, toReplaceL))
@@ -141,15 +143,15 @@ object ExtendedSLProof {
         }
 
         val leftHead = rightProof.proof.l.proof.levHashes.head
-        val sameLevel = if (topTaken.l == insertLevel && insertLevel > 0) Map(Base58.encode(topTaken.h) -> newElHash) else Map()
-        val toReplaceR:Map[String, LevHash] = sameLevel ++ Map(Base58.encode(leftHead.h) -> LevHash(headReplace, 0, Right))
+        val sameLevel = if (topTaken.l == insertLevel && insertLevel > 0) Map(ByteBuffer.wrap(topTaken.h) -> newElHash) else Map()
+        val toReplaceR: Map[ByteBuffer, LevHash] = sameLevel ++ Map(ByteBuffer.wrap(leftHead.h) -> LevHash(headReplace, 0, Right))
 
         val newLRproof = recalcOne(rightProof.proof.l, toReplaceR, toRemove.tail, toInsert)
 
-        val elHashesL = Map(Base58.encode(leftHead.h) -> LevHash(rightSelfHash, leftHead.l, leftHead.d))
+        val elHashesL = Map(ByteBuffer.wrap(leftHead.h) -> LevHash(rightSelfHash, leftHead.l, leftHead.d))
         val oldLeftHash = hf(hf(rightProof.proof.l.e.bytes), leftHead.h)
         val newLeftHash = hf(hf(rightProof.proof.l.e.bytes), headReplace)
-        val toReplaceL:Map[String, LevHash] = Map(Base58.encode(oldLeftHash) -> LevHash(newLeftHash, 0, leftHead.d)) ++
+        val toReplaceL: Map[ByteBuffer, LevHash] = Map(ByteBuffer.wrap(oldLeftHash) -> LevHash(newLeftHash, 0, leftHead.d)) ++
           calcNewSelfElements(oldLeftHash, newLeftHash, rightProof.proof.l.proof.levHashes.tail, elHashesL ++ toReplaceR, toInsert = toInsert)
 
         val newRRproof = rightProof.proof.r.map(_.copy(e = rightProof.newEl)).map(recalcOne(_, toReplaceL))
@@ -162,11 +164,11 @@ object ExtendedSLProof {
   //pairs of old and rew elements in self chain
   @tailrec
   def calcNewSelfElements[HF <: CommutativeHash[_]](vOld: Digest, vNew: Digest, restProofs: Seq[LevHash],
-                                                    acc: Map[String, LevHash],
+                                                    acc: Map[ByteBuffer, LevHash],
                                                     toInsert: Seq[(LevHash, LevHash)] = Seq())
-                                                   (implicit hf: HF): Map[String, LevHash] = {
+                                                   (implicit hf: HF): Map[ByteBuffer, LevHash] = {
     if (restProofs.nonEmpty) {
-      val current = acc.getOrElse(Base58.encode(restProofs.head.h), restProofs.head)
+      val current = acc.getOrElse(ByteBuffer.wrap(restProofs.head.h), restProofs.head)
       val oldSelf = hf(vOld, restProofs.head.h)
       val oldLH = LevHash(oldSelf, current.l, current.d)
       val pair: Seq[(LevHash, LevHash)] = toInsert.find(t => (t._1.h sameElements current.h) || (t._1.h sameElements oldSelf)) match {
@@ -182,19 +184,19 @@ object ExtendedSLProof {
           val newLevHash: LevHash = LevHash(hf(vNew, current.h), current.l, current.d)
           Seq((oldLH, newLevHash))
       }
-      val newacc: Map[String, LevHash] = (pair.map(p => Base58.encode(p._1.h) -> p._2) ++ acc).toMap
+      val newacc: Map[ByteBuffer, LevHash] = (pair.map(p => ByteBuffer.wrap(p._1.h) -> p._2) ++ acc).toMap
       calcNewSelfElements[HF](oldSelf, pair.last._2.h, restProofs.tail, newacc ++  acc, toInsert)
     } else {
       acc
     }
   }
 
-  def recalcOne[HF <: CommutativeHash[_]](p: SLExistenceProof, toReplace: Map[String, LevHash],
+  def recalcOne[HF <: CommutativeHash[_]](p: SLExistenceProof, toReplace: Map[ByteBuffer, LevHash],
                                           toRemove: Seq[LevHash] = Seq(),
                                           toInsert: Seq[(LevHash, LevHash)] = Seq())
                                          (implicit hf: HF): SLExistenceProof = {
-    val filtered = toReplace.filter(e => e._1 != Base58.encode(e._2.h))
-     val (inserted, _) = p.proof.levHashes.foldLeft((Seq[LevHash](), hf(p.e.bytes))) { (pair, y) =>
+    val filtered = toReplace.filter(e => e._1 != ByteBuffer.wrap(e._2.h))
+    val (inserted, _) = p.proof.levHashes.foldLeft((Seq[LevHash](), hf(p.e.bytes))) { (pair, y) =>
       val hash = hf(pair._2, y.h)
       toInsert.find(ti => (ti._1.h sameElements hash) || (ti._1.h sameElements y.h)) match {
         case None => (y +: pair._1, hash)
@@ -211,7 +213,7 @@ object ExtendedSLProof {
 
     val newHashes: Seq[LevHash] = inserted.reverse.flatMap { lh =>
       def r(h: Digest, l: Int, d: Direction): Seq[LevHash] = {
-        filtered.get(Base58.encode(h)) match {
+        filtered.get(ByteBuffer.wrap(h)) match {
           case Some(repl) => r(repl.h, l, d)
           case None => Seq(LevHash(h, l, d))
         }
