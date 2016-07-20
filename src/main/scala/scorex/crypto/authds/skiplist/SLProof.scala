@@ -47,7 +47,7 @@ case class SLExistenceProof(e: SLElement, proof: SLPath) extends SLProof {
 
   def leftNeighborTo[HF <: CommutativeHash[_]](that: SLExistenceProof)(implicit hf: HF): Boolean = {
     val tower = proof.hashes.head sameElements hf(that.e.bytes)
-    val nonTower = proof.hashes.head sameElements hf(hf(that.e.bytes), that.proof.hashes.head)
+    lazy val nonTower = proof.hashes.head sameElements hf(hf(that.e.bytes), that.proof.hashes.head)
     tower || nonTower
   }
 
