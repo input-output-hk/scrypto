@@ -24,11 +24,6 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       topNode
   }
 
-  private def leftAt(l: Int): Option[SLNode] = {
-    require(l <= topNode.level)
-    topNode.downUntil(_.level == l)
-  }
-
   def rootHash: CryptographicHash#Digest = topNode.hash
 
   def contains(e: SLElement): Boolean = find(e).isDefined
@@ -79,7 +74,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
    * find first TOP node which element is lower or equal to current element
    */
   @tailrec
-  private def findLeftTop(node: SLNode, e: SLElement, includeEquals: Boolean = true): SLNode = {
+  private def findLeftTop(node: SLNode, e: SLElement, includeEquals: Boolean = true, minLev: Int = 0): SLNode = {
     val prevNodeOpt = if (includeEquals) node.rightUntil(n => n.right.exists(rn => rn.el > e))
     else node.rightUntil(n => n.right.exists(rn => rn.el >= e))
 
@@ -89,7 +84,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       prevNode
     } else {
       prevNode.down match {
-        case Some(dn: SLNode) => findLeftTop(dn, e, includeEquals)
+        case Some(dn: SLNode) if dn.level >= minLev => findLeftTop(dn, e, includeEquals, minLev)
         case _ => prevNode
       }
     }
@@ -147,8 +142,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       saveNode(prevUpdated, singleInsert)
       newNode
     }
-    //TODO SLOW!!
-    insertOne(leftAt(eLevel).get)
+
+    insertOne(findLeftTop(topNode, e, includeEquals = true, minLev = eLevel))
 
     recomputeHashesForAffected(e, singleInsert)
 
@@ -243,7 +238,6 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
 
   private def recomputeHashesForAffected(e: SLElement, commit: Boolean = true): Unit = {
-    val a = affectedNodes(e).map(n => Base58.encode(n.el.bytes).take(12) + "|" + n.level)
     affectedNodes(e).foreach { n =>
       n.recomputeHash
       SLNode.set(n.nodeKey, n)
