@@ -139,7 +139,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
     if (eLevel == topNode.level) newTopLevel()
     def insertOne(levNode: SLNode): SLNode = {
       val prev = levNode.rightUntil(_.right.get.el > e).get
-      lazy val downNode: Option[SLNode] = prev.down.map(dn => insertOne(dn))
+      val downNode: Option[SLNode] = prev.down.map(dn => insertOne(dn))
       val newNode = SLNode(e, prev.right.map(_.nodeKey), downNode.map(_.nodeKey), levNode.level, levNode.level != eLevel)
       saveNode(newNode, singleInsert)
       val prevUpdated = prev.copy(rightKey = Some(newNode.nodeKey))
@@ -147,8 +147,11 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
       saveNode(prevUpdated, singleInsert)
       newNode
     }
+    //TODO SLOW!!
     insertOne(leftAt(eLevel).get)
+
     recomputeHashesForAffected(e, singleInsert)
+
     true
   }
 
@@ -222,7 +225,7 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 
 
   private def affectedNodes(trackElement: SLElement, node: SLNode = topNode): Seq[SLNode] = {
-    val prevElement = topNode.downUntil(_.down.isEmpty).get.rightUntil(n => n.right.get.el >= trackElement).map(_.el).get
+    val prevElement = findLeft(topNode, trackElement, includeEquals = false).el
     require(prevElement < trackElement)
     @tailrec
     def trackLeft(node: SLNode, e: SLElement, acc: Seq[SLNode]): Seq[SLNode] = {
