@@ -1,12 +1,11 @@
 package scorex.crypto.authds.binary
 
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.Sha256
 import scorex.utils.ByteArray
 
-import scala.util.Random
+import scala.annotation.tailrec
 
 object SLTree {
-  type Label = CryptographicHash#Digest
 
   def label(n: Option[NodeI]): Label = n.map(_.label).getOrElse(Array())
 
@@ -31,9 +30,7 @@ object SLTree {
         case None =>
           // No need to set maxLevel here -- we don’t risk anything by having a
           // a very high level, because data structure size remains the same
-          //TODO make deterministic
-          var level = 0
-          while (Random.nextBoolean()) level = level + 1
+          val level = computeLevel(x, value)
           // Create a new node without computing its hash, because its hash will change
           val n = new Node(x, value, level, None, None, LabelOfNone)
           (n, true)
@@ -112,7 +109,16 @@ object SLTree {
       if (newRight.level > root.level) root.level = newRight.level
       root.label = root.computeLabel
     }
-    (success, SLTProof(proofStream))
+    (success, SLTInsertProof(proofStream))
+  }
+
+  def computeLevel(key: SLTKey, value: SLTValue): Int = {
+    @tailrec
+    def loop(lev: Int = 0): Int = {
+      if (Sha256(key ++ value).head.toInt < 0) lev
+      else loop(lev + 1)
+    }
+    loop()
   }
 
 }

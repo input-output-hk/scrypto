@@ -1,7 +1,6 @@
 package scorex.crypto.authds.binary
 
 import com.google.common.primitives.Ints
-import scorex.crypto.authds.binary.SLTree._
 
 trait NodeI {
 
@@ -21,7 +20,12 @@ class Node(val key: SLTKey, val value: SLTKey, var level: Int, var left: Option[
   override def computeLabel: Label = Hash(key ++ value ++ Ints.toByteArray(level) ++ label(left) ++ label(right))
 }
 
-case class FlatNode(key: SLTKey, value: SLTKey, level: Int, left: Label, right: Label, label: Label) extends NodeI {
-  override def computeLabel: Label = Hash(key ++ value ++ Ints.toByteArray(level) ++ left ++ right)
+class FlatNode(val key: SLTKey, val value: SLTKey, var level: Int, var leftLabel: Label, var rightLabel: Label,
+               val labelOpt: Option[Label]) extends NodeI {
+
+
+  override var label: Label = labelOpt.getOrElse(computeLabel)
+
+  override def computeLabel: Label = Hash(key ++ value ++ Ints.toByteArray(level) ++ leftLabel ++ rightLabel)
 }
 
