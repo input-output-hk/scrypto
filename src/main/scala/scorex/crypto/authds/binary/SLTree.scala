@@ -54,7 +54,7 @@ object SLTree {
                 // compute its hash if needed,
                 // because it’s not going to move up
                 val newR = if (newLeft.level < r.level) {
-                  if (newLeft.label == LabelOfNone) {
+                  if (newLeft.label sameElements LabelOfNone) {
                     newLeft.label = newLeft.computeLabel
                   }
                   r.left = Some(newLeft)
@@ -71,34 +71,33 @@ object SLTree {
                 (newR, true)
               } else (r, false)
             case _ =>
-            // Everything symmetric, except replace newLeft.level<r.level with
-            // newRight.level<= r.level TODO newRight is not defined here
-            // (because on the right level is allowed to be the same as of the child,
-            // but on the left the child has to be smaller)
+              // Everything symmetric, except replace newLeft.level<r.level with
+              // newRight.level<= r.level TODO newRight is not defined here
+              // (because on the right level is allowed to be the same as of the child,
+              // but on the left the child has to be smaller)
               proofStream.enqueue(SLTProofRightLabel(label(r.right)))
-              val (newLeft: Node, success: Boolean) = InsertHelper(r.left, x, value)
+              val (newRight: Node, success: Boolean) = InsertHelper(r.left, x, value)
               if (success) {
                 // Attach the newLeft if its level is smaller than our level;
                 // compute its hash if needed,
                 // because it’s not going to move up
-                val newR = if (newLeft.level <= r.level) {
-                  if (newLeft.label == LabelOfNone) {
-                    newLeft.label = newLeft.computeLabel
+                val newR = if (newRight.level <= r.level) {
+                  if (newRight.label sameElements LabelOfNone) {
+                    newRight.label = newRight.computeLabel
                   }
-                  r.left = Some(newLeft)
+                  r.right = Some(newRight)
                   r.label = r.computeLabel
                   r
                 } else {
                   // We need to rotate r with newLeft
-                  r.left = newLeft.right
+                  r.right = newRight.right
                   r.label = r.computeLabel
-                  newLeft.right = Some(r)
-                  newLeft
+                  newRight.left = Some(r)
+                  newRight
                   // don’t compute the label of newR, because it may still change
                 }
                 (newR, true)
               } else (r, false)
-
           }
       }
     }
