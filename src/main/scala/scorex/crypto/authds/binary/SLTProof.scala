@@ -7,6 +7,48 @@ import scala.util.Try
 
 sealed trait SLTProof
 
+case class SLTLookupProof(x: SLTKey, proof: mutable.Queue[SLTProofElement]) extends SLTProof {
+
+}
+
+case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proof: mutable.Queue[SLTProofElement]) extends SLTProof {
+
+  def verifyUpdate(digest: Label): (Boolean, Option[Boolean], Option[Label]) = {
+    val (h, v, n) = verifyUpdateRecursive()
+    if (h sameElements digest) {
+      (true, v, n)
+    } else {
+      (false, None, None)
+    }
+  }
+
+  def verifyUpdateRecursive(): (Label, Option[Boolean], Option[Label]) = ???
+
+  /*
+    def verifyUpdateRecursive(node: FlatNode): (Label, Option[Boolean], Option[Label]) = {
+      val nKey = proof.dequeue().asInstanceOf[SLTProofKey].e
+      val nValue = proof.dequeue().asInstanceOf[SLTProofValue].e
+      val nLevel = proof.dequeue().asInstanceOf[SLTProofLevel].e
+
+      var found = false
+      ByteArray.compare(x, nKey) match {
+        case 0 =>
+          val nLeft = proof.dequeue().asInstanceOf[SLTProofLeftLabel].e
+          val nRight = proof.dequeue().asInstanceOf[SLTProofRightLabel].e
+          val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
+          n.label = n.computeLabel
+          n.value = newVal
+          found = true
+        case i if i < 0 =>
+          ???
+        case _ =>
+          ???
+      }
+      ???
+    }
+  */
+}
+
 case class SLTInsertProof(key: SLTKey, value: SLTValue, proof: mutable.Queue[SLTProofElement]) extends SLTProof {
 
   def verifyInsert(digest: Label): (Boolean, Option[Boolean], Option[Label]) = Try {

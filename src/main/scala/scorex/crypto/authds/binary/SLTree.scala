@@ -9,12 +9,21 @@ import scala.annotation.tailrec
 class SLTree(rootOpt: Option[Node] = None) {
 
   var rootNode: Node = rootOpt.getOrElse(Sentinel)
+
   def rootHash(): Label = rootNode.label
 
   def insert(key: SLTKey, value: SLTValue): (Boolean, SLTInsertProof) = {
     val (newRoot, isSuccess, proof) = SLTree.insert(rootNode, key, value)
     if (isSuccess) rootNode = newRoot
     (isSuccess, proof)
+  }
+
+  def update(key: SLTKey, value: SLTValue): (Boolean, SLTUpdateProof) = {
+    SLTree.update(rootNode, key, value)
+  }
+
+  def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
+    SLTree.lookup(rootNode, key)
   }
 
 }
@@ -24,6 +33,68 @@ object SLTree {
 
 
   def label(n: Option[NodeI]): Label = n.map(_.label).getOrElse(Array())
+
+  def lookup(top: Node, key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
+    val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
+    @tailrec
+    def lookupLoop(r: Node, x: SLTKey): Option[SLTValue] = {
+      proofStream.enqueue(SLTProofKey(r.key))
+      proofStream.enqueue(SLTProofValue(r.value))
+      proofStream.enqueue(SLTProofLevel(r.level))
+      ByteArray.compare(x, r.key) match {
+        case 0 =>
+          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
+          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          Some(r.value)
+        case o if o < 0 =>
+          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          r.left match {
+            case None => None
+            case Some(leftNode) => lookupLoop(leftNode, x)
+          }
+        case _ =>
+          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
+          r.right match {
+            case None => None
+            case Some(rightNode) => lookupLoop(rightNode, x)
+          }
+      }
+    }
+    (lookupLoop(top, key), SLTLookupProof(key, proofStream))
+  }
+
+  def update(root: Node, key: SLTKey, value: SLTValue): (Boolean, SLTUpdateProof) = {
+    val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
+    def updateLoop(r: Node, x: SLTKey, newVal: SLTValue): Boolean = {
+      proofStream.enqueue(SLTProofKey(r.key))
+      proofStream.enqueue(SLTProofValue(r.value))
+      proofStream.enqueue(SLTProofLevel(r.level))
+
+      var found = false
+      ByteArray.compare(x, r.key) match {
+        case 0 =>
+          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
+          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          r.value = newVal
+          found = true
+        case o if o < 0 =>
+          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          r.left match {
+            case None => found = false
+            case Some(leftNode) => found = updateLoop(leftNode, x, newVal)
+            case _ =>
+              proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
+              r.right match {
+                case None => found = false
+                case Some(rightNode) => found = updateLoop(rightNode, x, newVal)
+              }
+          }
+      }
+      if (found) r.label = r.computeLabel
+      found
+    }
+    (updateLoop(root, key, value), SLTUpdateProof(key, value, proofStream))
+  }
 
   /**
     *
@@ -120,6 +191,8 @@ object SLTree {
       if (newRight.label sameElements LabelOfNone) {
         newRight.label = newRight.computeLabel
       }
+      //TODO set right ??
+//      root.right = Some(newRight)
       // Elevate the level of the sentinel tower to the level of the newly inserted element,
       // if it’s higher
       if (newRight.level > root.level) root.level = newRight.level

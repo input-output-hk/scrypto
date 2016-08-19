@@ -8,19 +8,19 @@ trait NodeI {
 
   var label: Label
   val key: SLTKey
-  val value: SLTValue
+  var value: SLTValue
   var level: Int
 
   def computeLabel: Label
 }
 
-class Node(val key: SLTKey, val value: SLTKey, var level: Int, var left: Option[Node], var right: Option[Node],
+class Node(val key: SLTKey, var value: SLTKey, var level: Int, var left: Option[Node], var right: Option[Node],
            var label: Label) extends NodeI {
 
   override def computeLabel: Label = Hash(key ++ value ++ Ints.toByteArray(level) ++ label(left) ++ label(right))
 }
 
-class FlatNode(val key: SLTKey, val value: SLTKey, var level: Int, var leftLabel: Label, var rightLabel: Label,
+class FlatNode(val key: SLTKey, var value: SLTKey, var level: Int, var leftLabel: Label, var rightLabel: Label,
                val labelOpt: Option[Label]) extends NodeI {
 
 

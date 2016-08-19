@@ -8,9 +8,10 @@ package object binary {
   type Label = CryptographicHash#Digest
 
   val Hash = Blake2b256
+//  val LabelOfNone:Array[Byte] = Array.fill(1)(0: Byte)
   val LabelOfNone:Array[Byte] = Array()
   val Sentinel = {
-    val r = new Node(Array(), Array(), 0, None, None, Array())
+    val r = new Node(Array(), Array(), 0, None, None, LabelOfNone)
     r.label = r.computeLabel
     r
   }
