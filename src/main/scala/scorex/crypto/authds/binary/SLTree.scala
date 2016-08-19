@@ -35,9 +35,6 @@ class SLTree(rootOpt: Option[Node] = None) {
 
 object SLTree {
 
-
-  def label(n: Option[NodeI]): Label = n.map(_.label).getOrElse(Array())
-
   def lookup(top: Node, key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     @tailrec
@@ -47,17 +44,17 @@ object SLTree {
       proofStream.enqueue(SLTProofLevel(r.level))
       ByteArray.compare(x, r.key) match {
         case 0 =>
-          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
-          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
           Some(r.value)
         case o if o < 0 =>
-          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
           r.left match {
             case None => None
             case Some(leftNode) => lookupLoop(leftNode, x)
           }
         case _ =>
-          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
           r.right match {
             case None => None
             case Some(rightNode) => lookupLoop(rightNode, x)
@@ -77,18 +74,18 @@ object SLTree {
       var found = false
       ByteArray.compare(x, r.key) match {
         case 0 =>
-          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
-          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
           r.value = newVal
           found = true
         case o if o < 0 =>
-          proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
           r.left match {
             case None => found = false
             case Some(leftNode) => found = updateLoop(leftNode, x, newVal)
           }
         case _ =>
-          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
           r.right match {
             case None => found = false
             case Some(rightNode) => found = updateLoop(rightNode, x, newVal)
@@ -110,7 +107,7 @@ object SLTree {
     proofStream.enqueue(SLTProofKey(root.key))
     proofStream.enqueue(SLTProofValue(root.value))
     proofStream.enqueue(SLTProofLevel(root.level))
-    proofStream.enqueue(SLTProofLeftLabel(label(root.left)))
+    proofStream.enqueue(SLTProofLeftLabel(root.leftLabel))
 
     // The newly returned node may not have its label computed yet,
     // so it’s up to the caller to compute it if it is equal tmo labelOfNone
@@ -131,11 +128,11 @@ object SLTree {
           proofStream.enqueue(SLTProofLevel(r.level))
           ByteArray.compare(x, r.key) match {
             case 0 =>
-              proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
-              proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+              proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+              proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
               (r, false)
             case o if o < 0 =>
-              proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+              proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
               val (newLeft: Node, success: Boolean) = InsertHelper(r.left, x, value)
               if (success) {
                 // Attach the newLeft if its level is smaller than our level;
@@ -163,7 +160,7 @@ object SLTree {
               // newRight.level<= r.level TODO newRight is not defined here
               // (because on the right level is allowed to be the same as of the child,
               // but on the left the child has to be smaller)
-              proofStream.enqueue(SLTProofRightLabel(label(r.right)))
+              proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
               val (newRight: Node, success: Boolean) = InsertHelper(r.left, x, value)
               if (success) {
                 // Attach the newLeft if its level is smaller than our level;
