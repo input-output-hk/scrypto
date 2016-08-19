@@ -27,37 +27,57 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val digest = slt.rootHash()
         val (success, proof) = slt.insert(key, value)
         success shouldBe true
+        proof.verifyInsert(digest)._1 shouldBe true
       }
     }
   }
 
-    property("SLTree insert") {
-      val slt = new SLTree()
-      forAll { (key: Array[Byte], value: Array[Byte]) =>
-        whenever(key.nonEmpty && value.nonEmpty) {
-          val digest = slt.rootHash()
-          val (success, proof) = slt.insert(key, value)
-          success shouldBe true
-          proof.verifyInsert(digest)._1 shouldBe true
-          proof.copy(key = proof.key ++ Array(0: Byte)).verifyInsert(digest)._1 shouldBe false
-          proof.copy(value = proof.value ++ Array(0: Byte)).verifyInsert(digest)._1 shouldBe false
-        }
+  property("SLTree lookup one") {
+    forAll { (key: Array[Byte], value: Array[Byte]) =>
+      whenever(key.nonEmpty && value.nonEmpty) {
+        val slt = new SLTree()
+        val digest = slt.rootHash()
+        val (success, proof) = slt.insert(key, value)
+        success shouldBe true
+        proof.verifyInsert(digest)._1 shouldBe true
+
+        val digest2 = slt.rootHash()
+        val (valueOpt, lookupProof) = slt.lookup(key)
+        valueOpt.get shouldBe value
+
       }
     }
-/*
-    property("SLTree lookup") {
-      val slt = new SLTree()
-      forAll { (key: Array[Byte], value: Array[Byte]) =>
-        whenever(key.nonEmpty && value.nonEmpty) {
-          slt.insert(key, value)._1 shouldBe true
+  }
 
-          val digest = slt.rootHash()
-          val (valueOpt, proof) = slt.lookup(key)
-          valueOpt.get shouldBe value
+  /*
+
+      property("SLTree insert") {
+        val slt = new SLTree()
+        forAll { (key: Array[Byte], value: Array[Byte]) =>
+          whenever(key.nonEmpty && value.nonEmpty) {
+            val digest = slt.rootHash()
+            val (success, proof) = slt.insert(key, value)
+            success shouldBe true
+            proof.verifyInsert(digest)._1 shouldBe true
+            proof.copy(key = proof.key ++ Array(0: Byte)).verifyInsert(digest)._1 shouldBe false
+            proof.copy(value = proof.value ++ Array(0: Byte)).verifyInsert(digest)._1 shouldBe false
+          }
         }
       }
-    }
 
-  */
+      property("SLTree lookup") {
+        val slt = new SLTree()
+        forAll { (key: Array[Byte], value: Array[Byte]) =>
+          whenever(key.nonEmpty && value.nonEmpty) {
+            slt.insert(key, value)._1 shouldBe true
+
+            val digest = slt.rootHash()
+            val (valueOpt, proof) = slt.lookup(key)
+            valueOpt.get shouldBe value
+          }
+        }
+      }
+
+    */
 
 }

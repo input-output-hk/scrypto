@@ -192,7 +192,7 @@ object SLTree {
         newRight.label = newRight.computeLabel
       }
       //TODO set right ??
-//      root.right = Some(newRight)
+      root.right = Some(newRight)
       // Elevate the level of the sentinel tower to the level of the newly inserted element,
       // if it’s higher
       if (newRight.level > root.level) root.level = newRight.level
