@@ -5,7 +5,22 @@ import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
 
+class SLTree(rootOpt: Option[Node] = None) {
+
+  var rootNode: Node = rootOpt.getOrElse(Sentinel)
+  def rootHash(): Label = rootNode.label
+
+  def insert(key: SLTKey, value: SLTValue): (Boolean, SLTInsertProof) = {
+    val (newRoot, isSuccess, proof) = SLTree.insert(rootNode, key, value)
+    if (isSuccess) rootNode = newRoot
+    (isSuccess, proof)
+  }
+
+}
+
+
 object SLTree {
+
 
   def label(n: Option[NodeI]): Label = n.map(_.label).getOrElse(Array())
 
@@ -13,7 +28,7 @@ object SLTree {
     *
     * @return (new root node, whether element was inserted, insertProof)
     */
-  def insert(root: Node, key: SLTKey, value: SLTValue): (Boolean, SLTProof) = {
+  def insert(root: Node, key: SLTKey, value: SLTValue): (Node, Boolean, SLTInsertProof) = {
 
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     proofStream.enqueue(SLTProofKey(root.key))
@@ -109,7 +124,7 @@ object SLTree {
       if (newRight.level > root.level) root.level = newRight.level
       root.label = root.computeLabel
     }
-    (success, SLTInsertProof(proofStream))
+    (root, success, SLTInsertProof(key, value, proofStream))
   }
 
   def computeLevel(key: SLTKey, value: SLTValue): Int = {

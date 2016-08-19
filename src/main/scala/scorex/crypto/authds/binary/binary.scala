@@ -9,5 +9,10 @@ package object binary {
 
   val Hash = Blake2b256
   val LabelOfNone:Array[Byte] = Array()
+  val Sentinel = {
+    val r = new Node(Array(), Array(), 0, None, None, Array())
+    r.label = r.computeLabel
+    r
+  }
 
 }

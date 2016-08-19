@@ -9,7 +9,7 @@ trait NodeI {
   var label: Label
   val key: SLTKey
   val value: SLTValue
-  val level: Int
+  var level: Int
 
   def computeLabel: Label
 }

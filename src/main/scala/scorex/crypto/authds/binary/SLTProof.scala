@@ -5,21 +5,19 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-sealed trait SLTProof {
-}
+sealed trait SLTProof
 
-case class SLTInsertProof(proof: mutable.Queue[SLTProofElement]) extends SLTProof {
+case class SLTInsertProof(key: SLTKey, value: SLTValue, proof: mutable.Queue[SLTProofElement]) extends SLTProof {
 
-  def VerifyInsert(key: SLTKey, value: SLTValue): (Boolean, Option[Boolean], Option[Label]) = Try {
-    val digest = ???
+  def verifyInsert(digest: Label): (Boolean, Option[Boolean], Option[Label]) = Try {
 
     val rootKey = proof.dequeue().asInstanceOf[SLTProofKey].e
     val rootValue = proof.dequeue().asInstanceOf[SLTProofValue].e
     val rootLevel = proof.dequeue().asInstanceOf[SLTProofLevel].e
     val rootLeftLabel = proof.dequeue().asInstanceOf[SLTProofLeftLabel].e
-    val (rootRightLabel, newRight, success) = VerifyInsertHelper(key, value)
+    val (rootRightLabel, newRight, success) = verifyInsertHelper(key, value)
     val root = new FlatNode(rootKey, rootValue, rootLevel, rootLeftLabel, rootRightLabel, None)
-    if (root.label != digest) {
+    if (!(root.label sameElements digest)) {
       (false, None, None)
     } else {
       if (success) {
@@ -35,7 +33,7 @@ case class SLTInsertProof(proof: mutable.Queue[SLTProofElement]) extends SLTProo
     }
   }.getOrElse((false, None, None))
 
-  def VerifyInsertHelper(x: SLTKey, value: SLTValue): (Label, FlatNode, Boolean) = {
+  private def verifyInsertHelper(x: SLTKey, value: SLTValue): (Label, FlatNode, Boolean) = {
     if (proof.isEmpty) {
       val level = SLTree.computeLevel(x, value)
       // this coinflip needs to be the same as in the prover’s case --
@@ -54,7 +52,7 @@ case class SLTInsertProof(proof: mutable.Queue[SLTProofElement]) extends SLTProo
           (r.label, r, false)
         case i if i < 0 =>
           val rRightLabel = proof.dequeue().asInstanceOf[SLTProofRightLabel].e
-          val (rLeftLabel, newLeft, success) = VerifyInsertHelper(x, value)
+          val (rLeftLabel, newLeft, success) = verifyInsertHelper(x, value)
           val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
           val oldLabel = r.label
           if (success) {
@@ -86,7 +84,7 @@ case class SLTInsertProof(proof: mutable.Queue[SLTProofElement]) extends SLTProo
           // (because on the right level is allowed to be the same as of the child,
           // but on the left the child has to be smaller)
           val rRightLabel = proof.dequeue().asInstanceOf[SLTProofRightLabel].e
-          val (rLeftLabel, newRight, success) = VerifyInsertHelper(x, value)
+          val (rLeftLabel, newRight, success) = verifyInsertHelper(x, value)
           val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
           val oldLabel = r.label
           if (success) {
