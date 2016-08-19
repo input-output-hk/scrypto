@@ -1,6 +1,6 @@
 package scorex.crypto.authds
 
-import scorex.crypto.hash.{CryptographicHash, Blake2b256}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 
 package object binary {
   type SLTKey = Array[Byte]
@@ -8,12 +8,7 @@ package object binary {
   type Label = CryptographicHash#Digest
 
   val Hash = Blake2b256
-//  val LabelOfNone:Array[Byte] = Array.fill(1)(0: Byte)
-  val LabelOfNone:Array[Byte] = Array()
-  val Sentinel = {
-    val r = new Node(Array(), Array(), 0, None, None, LabelOfNone)
-    r.label = r.computeLabel
-    r
-  }
+  //  val LabelOfNone:Array[Byte] = Array.fill(1)(0: Byte)
+  val LabelOfNone: Array[Byte] = Array()
 
 }

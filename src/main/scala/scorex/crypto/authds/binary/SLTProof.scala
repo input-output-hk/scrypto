@@ -12,14 +12,14 @@ sealed trait SLTProof {
 case class SLTLookupProof(x: SLTKey, proof: mutable.Queue[SLTProofElement]) extends SLTProof {
 
 
-  override def isValid(digest: Label): Boolean = verifyLookup(digest)._1
+  override def isValid(digest: Label): Boolean = verifyLookup(digest).map(_._1).getOrElse(false)
 
-  def verifyLookup(digest: Label): (Boolean, Option[SLTValue]) = {
+  def verifyLookup(digest: Label): Try[(Boolean, Option[SLTValue])] = Try {
     val (h, v) = verifyLookupRecursive()
     if (h sameElements digest) (true, v) else (false, None)
   }
 
-  def verifyLookupRecursive(): (Label, Option[SLTValue]) = {
+  private def verifyLookupRecursive(): (Label, Option[SLTValue]) = {
     val nKey = proof.dequeue().asInstanceOf[SLTProofKey].e
     val nValue = proof.dequeue().asInstanceOf[SLTProofValue].e
     val nLevel = proof.dequeue().asInstanceOf[SLTProofLevel].e
@@ -57,45 +57,63 @@ case class SLTLookupProof(x: SLTKey, proof: mutable.Queue[SLTProofElement]) exte
 
 case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proof: mutable.Queue[SLTProofElement]) extends SLTProof {
 
-  override def isValid(digest: Label): Boolean = verifyUpdate(digest)._1
+  override def isValid(digest: Label): Boolean = verifyUpdate(digest).map(_._1).getOrElse(false)
 
-  def verifyUpdate(digest: Label): (Boolean, Option[Boolean], Option[Label]) = {
+  def verifyUpdate(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
     val (h, v, n) = verifyUpdateRecursive()
-    if (h sameElements digest) (true, v, n) else (false, None, None)
+    if (h sameElements digest) (true, v, n) else (false, false, None)
   }
 
-  def verifyUpdateRecursive(): (Label, Option[Boolean], Option[Label]) = ???
+  private def verifyUpdateRecursive(): (Label, Boolean, Option[Label]) = {
+    val nKey = proof.dequeue().asInstanceOf[SLTProofKey].e
+    val nValue = proof.dequeue().asInstanceOf[SLTProofValue].e
+    val nLevel = proof.dequeue().asInstanceOf[SLTProofLevel].e
 
-  /*
-    def verifyUpdateRecursive(node: FlatNode): (Label, Option[Boolean], Option[Label]) = {
-      val nKey = proof.dequeue().asInstanceOf[SLTProofKey].e
-      val nValue = proof.dequeue().asInstanceOf[SLTProofValue].e
-      val nLevel = proof.dequeue().asInstanceOf[SLTProofLevel].e
-
-      var found = false
-      ByteArray.compare(x, nKey) match {
-        case 0 =>
-          val nLeft = proof.dequeue().asInstanceOf[SLTProofLeftLabel].e
-          val nRight = proof.dequeue().asInstanceOf[SLTProofRightLabel].e
+    val (n: FlatNode, found: Boolean) = ByteArray.compare(x, nKey) match {
+      case 0 =>
+        val nLeft = proof.dequeue().asInstanceOf[SLTProofLeftLabel].e
+        val nRight = proof.dequeue().asInstanceOf[SLTProofRightLabel].e
+        val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
+        n.label = n.computeLabel
+        n.value = newVal
+        (n, true)
+      case i if i < 0 =>
+        val nRight = proof.dequeue().asInstanceOf[SLTProofRightLabel].e
+        if (proof.isEmpty) {
+          val (nLeft, found) = (LabelOfNone, false)
           val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
           n.label = n.computeLabel
-          n.value = newVal
-          found = true
-        case i if i < 0 =>
-          ???
-        case _ =>
-          ???
-      }
-      ???
+          (n, found)
+        } else {
+          val (nLeft, found, newLabelLeft) = verifyUpdateRecursive()
+          val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
+          n.label = n.computeLabel
+          if (found) n.leftLabel = newLabelLeft.get
+          (n, found)
+        }
+      case _ =>
+        val nLeft = proof.dequeue().asInstanceOf[SLTProofLeftLabel].e
+        if (proof.isEmpty) {
+          val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, LabelOfNone, None)
+          n.label = n.computeLabel
+          (n, false)
+        } else {
+          val (nRight, found, newLabelRight) = verifyUpdateRecursive()
+          val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, LabelOfNone, None)
+          if (found) n.rightLabel = newLabelRight.get
+          (n, found)
+        }
     }
-  */
+    val newLabel = if (found) Some(n.computeLabel) else None
+    (n.label, found, newLabel)
+  }
 }
 
 case class SLTInsertProof(key: SLTKey, value: SLTValue, proof: mutable.Queue[SLTProofElement]) extends SLTProof {
 
-  override def isValid(digest: Label): Boolean = verifyInsert(digest)._1
+  override def isValid(digest: Label): Boolean = verifyInsert(digest).map(_._1).getOrElse(false)
 
-  def verifyInsert(digest: Label): (Boolean, Option[Boolean], Option[Label]) = Try {
+  def verifyInsert(digest: Label): Try[(Boolean, Option[Boolean], Option[Label])] = Try {
 
     val rootKey = proof.dequeue().asInstanceOf[SLTProofKey].e
     val rootValue = proof.dequeue().asInstanceOf[SLTProofValue].e
@@ -117,7 +135,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proof: mutable.Queue[SLT
       }
       (true, Some(success), Some(root.label))
     }
-  }.getOrElse((false, None, None))
+  }
 
   private def verifyInsertHelper(x: SLTKey, value: SLTValue): (Label, FlatNode, Boolean) = {
     if (proof.isEmpty) {

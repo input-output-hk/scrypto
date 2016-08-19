@@ -8,7 +8,11 @@ import scala.annotation.tailrec
 
 class SLTree(rootOpt: Option[Node] = None) {
 
-  var rootNode: Node = rootOpt.getOrElse(Sentinel)
+  var rootNode: Node = rootOpt.getOrElse {
+    val r = new Node(Array(), Array(), 0, None, None, LabelOfNone)
+    r.label = r.computeLabel
+    r
+  }
 
   def rootHash(): Label = rootNode.label
 
@@ -82,12 +86,12 @@ object SLTree {
           r.left match {
             case None => found = false
             case Some(leftNode) => found = updateLoop(leftNode, x, newVal)
-            case _ =>
-              proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
-              r.right match {
-                case None => found = false
-                case Some(rightNode) => found = updateLoop(rightNode, x, newVal)
-              }
+          }
+        case _ =>
+          proofStream.enqueue(SLTProofLeftLabel(label(r.left)))
+          r.right match {
+            case None => found = false
+            case Some(rightNode) => found = updateLoop(rightNode, x, newVal)
           }
       }
       if (found) r.label = r.computeLabel
