@@ -1,5 +1,6 @@
 package scorex.crypto.authds.binary
 
+import com.google.common.primitives.Ints
 import scorex.crypto.hash.Sha256
 import scorex.utils.ByteArray
 
@@ -130,7 +131,7 @@ object SLTree {
   def computeLevel(key: SLTKey, value: SLTValue): Int = {
     @tailrec
     def loop(lev: Int = 0): Int = {
-      if (Sha256(key ++ value).head.toInt < 0) lev
+      if (Sha256(key ++ value ++ Ints.toByteArray(lev)).head.toInt < 0) lev
       else loop(lev + 1)
     }
     loop()
