@@ -8,6 +8,30 @@ import scorex.crypto.authds.binary.SLTree
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
+  property("SLTree proof double check") {
+    val slt = new SLTree()
+    forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
+      whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty && slt.lookup(key)._1.isEmpty) {
+        val digest = slt.rootHash()
+        val (success, proof) = slt.insert(key, value)
+        success shouldBe true
+        proof.isValid(digest) shouldBe true
+        proof.isValid(digest) shouldBe true
+        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
+        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
+
+        val digest2 = slt.rootHash()
+        val (successUpdate, updateProof) = slt.update(key, newVal)
+        successUpdate shouldBe true
+        slt.lookup(key)._1.get shouldBe newVal
+        slt.lookup(key)._2.isValid(digest2) shouldBe true
+        slt.lookup(key)._2.isValid(digest2) shouldBe true
+        updateProof.isValid(digest2) shouldBe true
+        updateProof.isValid(digest2) shouldBe true
+      }
+    }
+  }
+
   property("SLTree insert one") {
     forAll { (key: Array[Byte], value: Array[Byte]) =>
       whenever(key.nonEmpty && value.nonEmpty) {
