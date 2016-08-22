@@ -66,13 +66,13 @@ object SLTree {
 
   def update(root: Node, key: SLTKey, value: SLTValue): (Boolean, SLTUpdateProof) = {
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
-    def updateLoop(r: Node, x: SLTKey, newVal: SLTValue): Boolean = {
+    def updateLoop(r: Node, newVal: SLTValue): Boolean = {
       proofStream.enqueue(SLTProofKey(r.key))
       proofStream.enqueue(SLTProofValue(r.value))
       proofStream.enqueue(SLTProofLevel(r.level))
 
       var found = false
-      ByteArray.compare(x, r.key) match {
+      ByteArray.compare(key, r.key) match {
         case 0 =>
           proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
           proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
@@ -82,19 +82,19 @@ object SLTree {
           proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
           r.left match {
             case None => found = false
-            case Some(leftNode) => found = updateLoop(leftNode, x, newVal)
+            case Some(leftNode) => found = updateLoop(leftNode, newVal)
           }
         case _ =>
           proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
           r.right match {
             case None => found = false
-            case Some(rightNode) => found = updateLoop(rightNode, x, newVal)
+            case Some(rightNode) => found = updateLoop(rightNode, newVal)
           }
       }
       if (found) r.label = r.computeLabel
       found
     }
-    (updateLoop(root, key, value), SLTUpdateProof(key, value, proofStream))
+    (updateLoop(root, value), SLTUpdateProof(key, value, proofStream))
   }
 
   /**
