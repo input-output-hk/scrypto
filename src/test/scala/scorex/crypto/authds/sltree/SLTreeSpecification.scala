@@ -3,7 +3,7 @@ package scorex.crypto.authds.sltree
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.binary.SLTree
+import scorex.crypto.authds.binary.{SLTValue, SLTKey, SLTree}
 
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
@@ -17,15 +17,16 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         success shouldBe true
         proof.isValid(digest) shouldBe true
         proof.isValid(digest) shouldBe true
-        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
-        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
 
         val digest2 = slt.rootHash()
+        val (valueOpt, lookupProof) = slt.lookup(key)
+        valueOpt.get shouldBe value
+        lookupProof.isValid(digest2) shouldBe true
+        lookupProof.isValid(digest2) shouldBe true
+
         val (successUpdate, updateProof) = slt.update(key, newVal)
         successUpdate shouldBe true
         slt.lookup(key)._1.get shouldBe newVal
-        slt.lookup(key)._2.isValid(digest2) shouldBe true
-        slt.lookup(key)._2.isValid(digest2) shouldBe true
         updateProof.isValid(digest2) shouldBe true
         updateProof.isValid(digest2) shouldBe true
       }
@@ -52,8 +53,8 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (success, proof) = slt.insert(key, value)
         success shouldBe true
         proof.isValid(digest) shouldBe true
-        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
-        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
       }
     }
   }
@@ -83,8 +84,8 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (success, proof) = slt.insert(key, value)
         success shouldBe true
         proof.isValid(digest) shouldBe true
-        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
-        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
 
         val digest2 = slt.rootHash()
         val (valueOpt, lookupProof) = slt.lookup(key)
@@ -116,8 +117,8 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (success, proof) = slt.insert(key, value)
         success shouldBe true
         proof.isValid(digest) shouldBe true
-        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
-        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
 
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, newVal)
@@ -136,8 +137,8 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (success, proof) = slt.insert(key, value)
         success shouldBe true
         proof.isValid(digest) shouldBe true
-        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
-        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(key = proof.key ++ Array(0: Byte)).isValid(digest) shouldBe false
+//        proof.copy(value = proof.value ++ Array(0: Byte)).isValid(digest) shouldBe false
 
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, newVal)
