@@ -6,9 +6,40 @@ import scorex.crypto.TestingCommons
 import scorex.crypto.authds.binary.{SLTValue, SLTKey, SLTree}
 import scorex.crypto.encode.Base58
 
+import scala.util.{Try, Random}
+
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
+
+  property("SLTree update minimal case") {
+
+    t(4)
+    def t(seed: Long): Unit = {
+      val slt = new SLTree()
+      val r = Random
+      r.setSeed(seed)
+      (1 to 100).foreach { t =>
+        val key: Array[Byte] = Random.nextString(32).getBytes
+        val value: Array[Byte] = Random.nextString(32).getBytes
+        val newVal: Array[Byte] = Random.nextString(32).getBytes
+        val digest = slt.rootHash()
+        val (success, proof) = slt.insert(key, value)
+        success shouldBe true
+        proof.isValid(digest) shouldBe true
+
+        val digest2 = slt.rootHash()
+        val (successUpdate, updateProof) = slt.update(key, newVal)
+        successUpdate shouldBe true
+        slt.lookup(key)._1.get shouldBe newVal
+        val (verifies, found, newDigest) = updateProof.verifyUpdate(digest2).get
+        verifies shouldBe true
+        found shouldBe true
+        newDigest.get shouldEqual slt.rootHash()
+
+      }
+    }
+  }
 
   property("SLTree insert minimal case") {
     val slt = new SLTree()
