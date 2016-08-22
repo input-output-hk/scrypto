@@ -99,7 +99,7 @@ case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proof: mutable.Queue[SLTP
           (n, false)
         } else {
           val (nRight, found, newLabelRight) = verifyUpdateRecursive()
-          val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, LabelOfNone, None)
+          val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
           if (found) n.rightLabel = newLabelRight.get
           (n, found)
         }

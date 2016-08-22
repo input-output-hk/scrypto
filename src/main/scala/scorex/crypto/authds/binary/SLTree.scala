@@ -98,9 +98,9 @@ object SLTree {
   }
 
   /**
-    *
-    * @return (new root node, whether element was inserted, insertProof)
-    */
+   *
+   * @return (new root node, whether element was inserted, insertProof)
+   */
   def insert(root: Node, key: SLTKey, value: SLTValue): (Node, Boolean, SLTInsertProof) = {
 
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
