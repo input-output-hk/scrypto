@@ -148,8 +148,6 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
         // this coinflip needs to be the same as in the prover’s case --
         // the strategy used for skip lists will work here, too
         val n = new FlatNode(key, value, level, LabelOfNone, LabelOfNone, None)
-        require(key sameElements key)
-        require(value sameElements value)
         (LabelOfNone, n, true)
       } else {
         val rKey = dequeueKey(proof)
@@ -229,9 +227,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
       (false, false, None)
     } else {
       if (success) {
-        if (newRight.label sameElements LabelOfNone) {
-          root.rightLabel = newRight.computeLabel
-        }
+        root.rightLabel = newRight.computeLabel
         // Elevate the level of the sentinel tower to the level of the newly inserted element,
         // if it’s higher
         if (newRight.level > root.level) root.level = newRight.level
