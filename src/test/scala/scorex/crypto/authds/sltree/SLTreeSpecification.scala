@@ -94,6 +94,19 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     }
   }
 
+  property("SLTree non-existent lookup") {
+    val slt = new SLTree()
+    forAll { (key: Array[Byte]) =>
+      whenever(key.nonEmpty && slt.lookup(key)._1.isEmpty) {
+        val digest = slt.rootHash()
+
+        val (valueOpt, lookupProof) = slt.lookup(key)
+        valueOpt shouldBe None
+        lookupProof.isValid(digest) shouldBe true
+      }
+    }
+  }
+
   property("SLTree update one ") {
     forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
       whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty) {
