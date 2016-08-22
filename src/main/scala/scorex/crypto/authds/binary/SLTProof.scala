@@ -135,25 +135,27 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
 
   override def isValid(digest: Label): Boolean = verifyInsert(digest).map(_._1).getOrElse(false)
 
-  def verifyInsert(digest: Label): Try[(Boolean, Option[Boolean], Option[Label])] = Try {
+  def verifyInsert(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
     val rootKey = dequeueKey(proof)
     val rootValue = dequeueValue(proof)
     val rootLevel = dequeueLevel(proof)
     val rootLeftLabel = dequeueLeftLabel(proof)
 
-    def verifyInsertHelper(x: SLTKey, value: SLTValue): (Label, FlatNode, Boolean) = {
+    def verifyInsertHelper(): (Label, FlatNode, Boolean) = {
       if (proof.isEmpty) {
-        val level = SLTree.computeLevel(x, value)
+        val level = SLTree.computeLevel(key, value)
         // this coinflip needs to be the same as in the prover’s case --
         // the strategy used for skip lists will work here, too
-        val n = new FlatNode(x, value, level, LabelOfNone, LabelOfNone, None)
+        val n = new FlatNode(key, value, level, LabelOfNone, LabelOfNone, None)
+        require(key sameElements key)
+        require(value sameElements value)
         (LabelOfNone, n, true)
       } else {
         val rKey = dequeueKey(proof)
         val rValue = dequeueValue(proof)
         val rLevel = dequeueLevel(proof)
-        ByteArray.compare(x, rKey) match {
+        ByteArray.compare(key, rKey) match {
           case 0 =>
             val rLeftLabel = dequeueLeftLabel(proof)
             val rRightLabel = dequeueRightLevel(proof)
@@ -161,7 +163,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
             (r.label, r, false)
           case i if i < 0 =>
             val rRightLabel = dequeueRightLevel(proof)
-            val (rLeftLabel, newLeft, success) = verifyInsertHelper(x, value)
+            val (rLeftLabel, newLeft, success) = verifyInsertHelper()
             val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
             val oldLabel = r.label
             if (success) {
@@ -193,7 +195,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
             // (because on the right level is allowed to be the same as of the child,
             // but on the left the child has to be smaller)
             val rRightLabel = dequeueRightLevel(proof)
-            val (rLeftLabel, newRight, success) = verifyInsertHelper(x, value)
+            val (rLeftLabel, newRight, success) = verifyInsertHelper()
             val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
             val oldLabel = r.label
             if (success) {
@@ -221,10 +223,10 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
         }
       }
     }
-    val (rootRightLabel, newRight, success) = verifyInsertHelper(key, value)
+    val (rootRightLabel, newRight, success) = verifyInsertHelper()
     val root = new FlatNode(rootKey, rootValue, rootLevel, rootLeftLabel, rootRightLabel, None)
     if (!(root.label sameElements digest)) {
-      (false, None, None)
+      (false, false, None)
     } else {
       if (success) {
         if (newRight.label sameElements LabelOfNone) {
@@ -235,7 +237,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
         if (newRight.level > root.level) root.level = newRight.level
         root.label = root.computeLabel
       }
-      (true, Some(success), Some(root.label))
+      (true, success, Some(root.label))
     }
   }
 
