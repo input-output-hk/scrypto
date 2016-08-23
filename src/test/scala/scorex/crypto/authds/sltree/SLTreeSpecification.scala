@@ -11,44 +11,6 @@ import scala.util.{Try, Random}
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
-
-
-  property("SLTree insert1") {
-    val slt = new SLTree()
-
-    def t(key: Array[Byte], value: Array[Byte]): Unit = {
-      val digest = slt.rootHash()
-      val (success, proof) = slt.insert(key, value)
-      success shouldBe true
-      val (verifies, insertSuccess, newDigest) = proof.verifyInsert(digest).get
-      verifies shouldBe true
-      insertSuccess shouldBe true
-      newDigest.get shouldEqual slt.rootHash()
-    }
-    t(Array(10: Byte),Array(10: Byte))
-    t(Array(2: Byte),Array(2: Byte))
-    t(Array(4: Byte),Array(4: Byte))
-    println("================")
-
-    t(Array(5: Byte),Array(5: Byte))
-  }
-
-
-  property("SLTree insert stream") {
-    val slt = new SLTree()
-    var digest: Array[Byte] = slt.rootHash()
-    forAll { (key: Array[Byte], value: Array[Byte]) =>
-      whenever(key.nonEmpty && value.nonEmpty && slt.lookup(key)._1.isEmpty) {
-        val (success, proof) = slt.insert(key, value)
-        success shouldBe true
-        val (verifies, insertSuccess, newDigest) = proof.verifyInsert(digest).get
-        insertSuccess shouldBe true
-        verifies shouldBe true
-        digest = newDigest.get
-      }
-    }
-  }
-
   property("SLTree stream") {
     val slt = new SLTree()
     var digest: Array[Byte] = slt.rootHash()
