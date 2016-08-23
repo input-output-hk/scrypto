@@ -11,42 +11,11 @@ import scala.util.{Try, Random}
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
-
-  property("SLTree update minimal case") {
-
-    t(4)
-    def t(seed: Long): Unit = {
-      val slt = new SLTree()
-      val r = Random
-      r.setSeed(seed)
-      (1 to 100).foreach { t =>
-        val key: Array[Byte] = Random.nextString(32).getBytes
-        val value: Array[Byte] = Random.nextString(32).getBytes
-        val newVal: Array[Byte] = Random.nextString(32).getBytes
-        val digest = slt.rootHash()
-        val (success, proof) = slt.insert(key, value)
-        success shouldBe true
-        proof.isValid(digest) shouldBe true
-
-        val digest2 = slt.rootHash()
-        val (successUpdate, updateProof) = slt.update(key, newVal)
-        successUpdate shouldBe true
-        slt.lookup(key)._1.get shouldBe newVal
-        val (verifies, found, newDigest) = updateProof.verifyUpdate(digest2).get
-        verifies shouldBe true
-        found shouldBe true
-        newDigest.get shouldEqual slt.rootHash()
-
-      }
-    }
-  }
-
   property("SLTree insert minimal case") {
     val slt = new SLTree()
     slt.insert(Base58.decode("kD1f").get, Base58.decode("Y7wC").get)
     slt.insert(Base58.decode("iy4A").get, Base58.decode("HMx").get)
     slt.insert(Base58.decode("VpBpsmh").get, Base58.decode("3CEV9pvxo").get)
-    slt.insert(Base58.decode("LSF").get, Base58.decode("274imoPEf").get)
 
     val digest = slt.rootHash()
     val (success, proof) = slt.insert(Base58.decode("5Q").get, Base58.decode("pf7A").get)
