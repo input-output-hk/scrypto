@@ -32,9 +32,9 @@ sealed trait SLTProof {
 case class SLTLookupProof(x: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTProof {
 
 
-  override def isValid(digest: Label): Boolean = verifyLookup(digest).map(_._1).getOrElse(false)
+  override def isValid(digest: Label): Boolean = verify(digest).map(_._1).getOrElse(false)
 
-  def verifyLookup(digest: Label): Try[(Boolean, Option[SLTValue])] = Try {
+  def verify(digest: Label): Try[(Boolean, Option[SLTValue])] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
     def verifyLookupRecursive(): (Label, Option[SLTValue]) = {
       val nKey = dequeueKey(proof)
@@ -77,9 +77,9 @@ case class SLTLookupProof(x: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLT
 }
 
 case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
-  override def isValid(digest: Label): Boolean = verifyUpdate(digest).map(_._1).getOrElse(false)
+  override def isValid(digest: Label): Boolean = verify(digest).map(v => v._1 && v._2).getOrElse(false)
 
-  def verifyUpdate(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
+  def verify(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
     def verifyUpdateRecursive(): (Label, Boolean, Option[Label]) = {
       val nKey = dequeueKey(proof)
@@ -135,9 +135,9 @@ case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofEle
 
 case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
 
-  override def isValid(digest: Label): Boolean = verifyInsert(digest).map(_._1).getOrElse(false)
+  override def isValid(digest: Label): Boolean = verify(digest).map(v => v._1 && v._2).getOrElse(false)
 
-  def verifyInsert(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
+  def verify(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
     val rootKey = dequeueKey(proof)
     val rootValue = dequeueValue(proof)
