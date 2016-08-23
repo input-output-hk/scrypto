@@ -7,7 +7,7 @@ trait NodeI {
 
   protected def label(n: Option[NodeI]): Label = n.map(_.label).getOrElse(LabelOfNone)
 
-  var label: Label
+  def label: Label
   val key: SLTKey
   var value: SLTValue
   var level: Int
@@ -38,7 +38,7 @@ class FlatNode(val key: SLTKey, var value: SLTKey, var level: Int, var leftLabel
                val labelOpt: Option[Label]) extends NodeI {
 
 
-  override var label: Label = labelOpt.getOrElse(computeLabel)
+  def label: Label = labelOpt.getOrElse(computeLabel)
 
 }
 

@@ -86,12 +86,13 @@ case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofEle
       val nValue = dequeueValue(proof)
       val nLevel = dequeueLevel(proof)
 
+      var oldLabel: Label = LabelOfNone
       val (n: FlatNode, found: Boolean) = ByteArray.compare(x, nKey) match {
         case 0 =>
           val nLeft = dequeueLeftLabel(proof)
           val nRight = dequeueRightLabel(proof)
           val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
-          n.label = n.computeLabel
+          oldLabel = n.computeLabel
           n.value = newVal
           (n, true)
         case i if i < 0 =>
@@ -99,12 +100,12 @@ case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofEle
           if (proof.isEmpty) {
             val (nLeft, found) = (LabelOfNone, false)
             val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
-            n.label = n.computeLabel
+            oldLabel = n.computeLabel
             (n, found)
           } else {
             val (nLeft, found, newLabelLeft) = verifyUpdateRecursive()
             val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
-            n.label = n.computeLabel
+            oldLabel = n.computeLabel
             if (found) n.leftLabel = newLabelLeft.get
             (n, found)
           }
@@ -112,17 +113,18 @@ case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofEle
           val nLeft = dequeueLeftLabel(proof)
           if (proof.isEmpty) {
             val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, LabelOfNone, None)
-            n.label = n.computeLabel
+            oldLabel = n.computeLabel
             (n, false)
           } else {
             val (nRight, found, newLabelRight) = verifyUpdateRecursive()
             val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
+            oldLabel = n.computeLabel
             if (found) n.rightLabel = newLabelRight.get
             (n, found)
           }
       }
       val newLabel = if (found) Some(n.computeLabel) else None
-      (n.label, found, newLabel)
+      (oldLabel, found, newLabel)
     }
 
     val (h, v, n) = verifyUpdateRecursive()
@@ -169,16 +171,11 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
               // compute its hash if needed,
               // because it’s not going to move up
               val newR = if (newLeft.level < r.level) {
-//                if (newLeft.label sameElements LabelOfNone) {
-                  newLeft.label = newLeft.computeLabel
-//                }
                 r.leftLabel = newLeft.label
-                r.label = r.computeLabel
                 r
               } else {
                 // We need to rotate r with newLeft
                 r.leftLabel = newLeft.rightLabel
-                r.label = r.computeLabel
                 newLeft.rightLabel = r.label
                 newLeft
                 // don’t compute the label of newR, because it may still change
@@ -201,16 +198,11 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
               // compute its hash if needed,
               // because it’s not going to move up
               val newR = if (newRight.level <= r.level) {
-//                if (newRight.label sameElements LabelOfNone) {
-                  newRight.label = newRight.computeLabel
-//                }
                 r.rightLabel = newRight.label
-                r.label = r.computeLabel
                 r
               } else {
                 // We need to rotate r with newLeft
                 r.rightLabel = newRight.leftLabel
-                r.label = r.computeLabel
                 newRight.leftLabel = r.label
                 newRight
                 // don’t compute the label of newR, because it may still change
@@ -231,7 +223,6 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
         // Elevate the level of the sentinel tower to the level of the newly inserted element,
         // if it’s higher
         if (newRight.level > root.level) root.level = newRight.level
-        root.label = root.computeLabel
       }
       (true, success, Some(root.label))
     }
