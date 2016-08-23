@@ -11,21 +11,46 @@ import scala.util.{Try, Random}
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
-  property("SLTree insert minimal case") {
+  property("SLTree insert stream") {
     val slt = new SLTree()
-    slt.insert(Base58.decode("kD1f").get, Base58.decode("Y7wC").get)
-    slt.insert(Base58.decode("iy4A").get, Base58.decode("HMx").get)
-    slt.insert(Base58.decode("VpBpsmh").get, Base58.decode("3CEV9pvxo").get)
-    println(slt)
+    var digest: Array[Byte] = slt.rootHash()
+    forAll { (key: Array[Byte], value: Array[Byte]) =>
+      whenever(key.nonEmpty && value.nonEmpty && slt.lookup(key)._1.isEmpty) {
+        val (success, proof) = slt.insert(key, value)
+        success shouldBe true
+        val (verifies, insertSuccess, newDigest) = proof.verifyInsert(digest).get
+        insertSuccess shouldBe true
+        verifies shouldBe true
+        digest = newDigest.get
+      }
+    }
+  }
 
-    val digest = slt.rootHash()
-    val (success, proof) = slt.insert(Base58.decode("5Q").get, Base58.decode("pf7A").get)
-    println(slt)
-    success shouldBe true
-    val (verifies, insertSuccess, newDigest) = proof.verifyInsert(digest).get
-    verifies shouldBe true
-    insertSuccess shouldBe true
-    newDigest.get shouldEqual slt.rootHash()
+  property("SLTree stream") {
+    val slt = new SLTree()
+    var digest: Array[Byte] = slt.rootHash()
+    var keys: Seq[Array[Byte]] = Seq()
+
+    forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
+      whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty && slt.lookup(key)._1.isEmpty) {
+        keys = key +: keys
+        val (success, proof) = slt.insert(key, value)
+        success shouldBe true
+        val (verifies, insertSuccess, newDigest) = proof.verifyInsert(digest).get
+        insertSuccess shouldBe true
+        verifies shouldBe true
+        digest = newDigest.get
+
+        val uKey = keys(Random.nextInt(keys.length))
+        val (successUpdate, updateProof) = slt.update(uKey, newVal)
+        successUpdate shouldBe true
+        slt.lookup(uKey)._1.get shouldBe newVal
+        val (verifiesU, found, newDigestU) = updateProof.verifyUpdate(digest).get
+        verifiesU shouldBe true
+        found shouldBe true
+        digest = newDigestU.get
+      }
+    }
   }
 
   property("SLTree proof double check") {

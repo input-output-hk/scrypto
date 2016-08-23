@@ -183,7 +183,6 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
                 newLeft
                 // don’t compute the label of newR, because it may still change
               }
-              println("veify: " + newR)
               (oldLabel, newR, true)
             }
             else (oldLabel, r, false)
@@ -216,7 +215,6 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
                 newRight
                 // don’t compute the label of newR, because it may still change
               }
-              println("veify: " + newR)
               (oldLabel, newR, true)
             }
             else (oldLabel, r, false)
