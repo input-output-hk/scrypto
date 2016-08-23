@@ -37,8 +37,6 @@ class Node(val key: SLTKey, var value: SLTKey, var level: Int, var left: Option[
 class FlatNode(val key: SLTKey, var value: SLTKey, var level: Int, var leftLabel: Label, var rightLabel: Label,
                val labelOpt: Option[Label]) extends NodeI {
 
-
-  def label: Label = labelOpt.getOrElse(computeLabel)
-
+  lazy  val label = labelOpt.getOrElse(computeLabel)
 }
 

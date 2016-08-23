@@ -171,12 +171,12 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
               // compute its hash if needed,
               // because it’s not going to move up
               val newR = if (newLeft.level < r.level) {
-                r.leftLabel = newLeft.label
+                r.leftLabel = newLeft.computeLabel
                 r
               } else {
                 // We need to rotate r with newLeft
                 r.leftLabel = newLeft.rightLabel
-                newLeft.rightLabel = r.label
+                newLeft.rightLabel = r.computeLabel
                 newLeft
                 // don’t compute the label of newR, because it may still change
               }
@@ -198,12 +198,12 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
               // compute its hash if needed,
               // because it’s not going to move up
               val newR = if (newRight.level <= r.level) {
-                r.rightLabel = newRight.label
+                r.rightLabel = newRight.computeLabel
                 r
               } else {
                 // We need to rotate r with newLeft
                 r.rightLabel = newRight.leftLabel
-                newRight.leftLabel = r.label
+                newRight.leftLabel = r.computeLabel
                 newRight
                 // don’t compute the label of newR, because it may still change
               }
@@ -215,7 +215,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
     }
     val (rootRightLabel, newRight, success) = verifyInsertHelper()
     val root = new FlatNode(rootKey, rootValue, rootLevel, rootLeftLabel, rootRightLabel, None)
-    if (!(root.label sameElements digest)) {
+    if (!(root.computeLabel sameElements digest)) {
       (false, false, None)
     } else {
       if (success) {
