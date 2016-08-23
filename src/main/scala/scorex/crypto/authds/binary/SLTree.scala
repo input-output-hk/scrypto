@@ -167,10 +167,10 @@ object SLTree {
               } else (r, false)
             case _ =>
               // Everything symmetric, except replace newLeft.level<r.level with
-              // newRight.level<= r.level TODO newRight is not defined here
+              // newRight.level<= r.level
               // (because on the right level is allowed to be the same as of the child,
               // but on the left the child has to be smaller)
-              proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+              proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
               val (newRight: Node, success: Boolean) = InsertHelper(r.left, x, value)
               if (success) {
                 // Attach the newLeft if its level is smaller than our level;
@@ -185,7 +185,7 @@ object SLTree {
                   r
                 } else {
                   // We need to rotate r with newLeft
-                  r.right = newRight.right
+                  r.right = newRight.left
                   r.label = r.computeLabel
                   newRight.left = Some(r)
                   newRight

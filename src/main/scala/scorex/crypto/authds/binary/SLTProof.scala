@@ -192,8 +192,8 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
             // newRight.level<= r.level
             // (because on the right level is allowed to be the same as of the child,
             // but on the left the child has to be smaller)
-            val rRightLabel = dequeueRightLabel(proof)
-            val (rLeftLabel, newRight, success) = verifyInsertHelper()
+            val rLeftLabel = dequeueLeftLabel(proof)
+            val (rRightLabel, newRight, success) = verifyInsertHelper()
             val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
             val oldLabel = r.label
             if (success) {
