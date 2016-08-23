@@ -16,7 +16,7 @@ sealed trait SLTProof {
     proof.dequeue().asInstanceOf[SLTProofKey].e
   }
 
-  def dequeueRightLevel(proof: mutable.Queue[SLTProofElement]): Label = {
+  def dequeueRightLabel(proof: mutable.Queue[SLTProofElement]): Label = {
     proof.dequeue().asInstanceOf[SLTProofRightLabel].e
   }
 
@@ -43,11 +43,11 @@ case class SLTLookupProof(x: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLT
       ByteArray.compare(x, nKey) match {
         case 0 =>
           val nLeft = dequeueLeftLabel(proof)
-          val nRight = dequeueRightLevel(proof)
+          val nRight = dequeueRightLabel(proof)
           val n = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
           (n.label, Some(n.value))
         case o if o < 0 =>
-          val nRight = dequeueRightLevel(proof)
+          val nRight = dequeueRightLabel(proof)
           if (proof.isEmpty) {
             val nLeft = LabelOfNone
             val n = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
@@ -89,13 +89,13 @@ case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofEle
       val (n: FlatNode, found: Boolean) = ByteArray.compare(x, nKey) match {
         case 0 =>
           val nLeft = dequeueLeftLabel(proof)
-          val nRight = dequeueRightLevel(proof)
+          val nRight = dequeueRightLabel(proof)
           val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
           n.label = n.computeLabel
           n.value = newVal
           (n, true)
         case i if i < 0 =>
-          val nRight = dequeueRightLevel(proof)
+          val nRight = dequeueRightLabel(proof)
           if (proof.isEmpty) {
             val (nLeft, found) = (LabelOfNone, false)
             val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
@@ -156,11 +156,11 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
         ByteArray.compare(key, rKey) match {
           case 0 =>
             val rLeftLabel = dequeueLeftLabel(proof)
-            val rRightLabel = dequeueRightLevel(proof)
+            val rRightLabel = dequeueRightLabel(proof)
             val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
             (r.label, r, false)
           case i if i < 0 =>
-            val rRightLabel = dequeueRightLevel(proof)
+            val rRightLabel = dequeueRightLabel(proof)
             val (rLeftLabel, newLeft, success) = verifyInsertHelper()
             val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
             val oldLabel = r.label
@@ -192,7 +192,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
             // newRight.level<= r.level
             // (because on the right level is allowed to be the same as of the child,
             // but on the left the child has to be smaller)
-            val rRightLabel = dequeueRightLevel(proof)
+            val rRightLabel = dequeueRightLabel(proof)
             val (rLeftLabel, newRight, success) = verifyInsertHelper()
             val r = new FlatNode(rKey, rValue, rLevel, rLeftLabel, rRightLabel, None)
             val oldLabel = r.label
