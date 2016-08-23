@@ -1,6 +1,7 @@
 package scorex.crypto.authds.binary
 
 import com.google.common.primitives.Ints
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.Sha256
 import scorex.utils.ByteArray
 
@@ -8,28 +9,37 @@ import scala.annotation.tailrec
 
 class SLTree(rootOpt: Option[Node] = None) {
 
-  var rootNode: Node = rootOpt.getOrElse {
+  var topNode: Node = rootOpt.getOrElse {
     val r = new Node(Array(), Array(), 0, None, None, LabelOfNone)
     r.label = r.computeLabel
     r
   }
 
-  def rootHash(): Label = rootNode.label
+  def rootHash(): Label = topNode.label
 
   def insert(key: SLTKey, value: SLTValue): (Boolean, SLTInsertProof) = {
-    val (newRoot, isSuccess, proof) = SLTree.insert(rootNode, key, value)
-    if (isSuccess) rootNode = newRoot
+    val (newRoot, isSuccess, proof) = SLTree.insert(topNode, key, value)
+    if (isSuccess) topNode = newRoot
     (isSuccess, proof)
   }
 
   def update(key: SLTKey, value: SLTValue): (Boolean, SLTUpdateProof) = {
-    SLTree.update(rootNode, key, value)
+    SLTree.update(topNode, key, value)
   }
 
   def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
-    SLTree.lookup(rootNode, key)
+    SLTree.lookup(topNode, key)
   }
 
+  override def toString: String = {
+    def mk(n: Node): String = {
+      n.toString
+      val ln = n.left.map(n => mk(n)).getOrElse("")
+      val rn = n.right.map(n => mk(n)).getOrElse("")
+      n.toString + "\n" + rn + ln
+    }
+    s"SLTree(${Base58.encode(rootHash()).take(8)}}): \n${mk(topNode)}"
+  }
 }
 
 
