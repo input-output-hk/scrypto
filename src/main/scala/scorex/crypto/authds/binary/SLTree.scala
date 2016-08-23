@@ -171,9 +171,9 @@ object SLTree {
               // (because on the right level is allowed to be the same as of the child,
               // but on the left the child has to be smaller)
               proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-              val (newRight: Node, success: Boolean) = InsertHelper(r.left, x, value)
+              val (newRight: Node, success: Boolean) = InsertHelper(r.right, x, value)
               if (success) {
-                // Attach the newLeft if its level is smaller than our level;
+                // Attach the newRight if its level is smaller than our level;
                 // compute its hash if needed,
                 // because it’s not going to move up
                 val newR = if (newRight.level <= r.level) {

@@ -109,7 +109,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (verifies, insertSuccess, newDigest) = proof.verifyInsert(digest).get
         verifies shouldBe true
         insertSuccess shouldBe true
-//        newDigest.get shouldEqual slt.rootHash()
+        newDigest.get shouldEqual slt.rootHash()
       }
     }
   }
@@ -199,7 +199,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (verifies, found, newDigest) = updateProof.verifyUpdate(digest2).get
         verifies shouldBe true
         found shouldBe true
-//        newDigest.get shouldEqual slt.rootHash()
+        newDigest.get shouldEqual slt.rootHash()
       }
     }
   }
