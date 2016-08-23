@@ -16,9 +16,11 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     slt.insert(Base58.decode("kD1f").get, Base58.decode("Y7wC").get)
     slt.insert(Base58.decode("iy4A").get, Base58.decode("HMx").get)
     slt.insert(Base58.decode("VpBpsmh").get, Base58.decode("3CEV9pvxo").get)
+    println(slt)
 
     val digest = slt.rootHash()
     val (success, proof) = slt.insert(Base58.decode("5Q").get, Base58.decode("pf7A").get)
+    println(slt)
     success shouldBe true
     val (verifies, insertSuccess, newDigest) = proof.verifyInsert(digest).get
     verifies shouldBe true

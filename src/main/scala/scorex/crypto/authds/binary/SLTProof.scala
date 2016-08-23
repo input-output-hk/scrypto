@@ -169,9 +169,9 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
               // compute its hash if needed,
               // because it’s not going to move up
               val newR = if (newLeft.level < r.level) {
-                if (newLeft.label sameElements LabelOfNone) {
+//                if (newLeft.label sameElements LabelOfNone) {
                   newLeft.label = newLeft.computeLabel
-                }
+//                }
                 r.leftLabel = newLeft.label
                 r.label = r.computeLabel
                 r
@@ -183,6 +183,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
                 newLeft
                 // don’t compute the label of newR, because it may still change
               }
+              println("veify: " + newR)
               (oldLabel, newR, true)
             }
             else (oldLabel, r, false)
@@ -201,9 +202,9 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
               // compute its hash if needed,
               // because it’s not going to move up
               val newR = if (newRight.level <= r.level) {
-                if (newRight.label sameElements LabelOfNone) {
+//                if (newRight.label sameElements LabelOfNone) {
                   newRight.label = newRight.computeLabel
-                }
+//                }
                 r.rightLabel = newRight.label
                 r.label = r.computeLabel
                 r
@@ -215,6 +216,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
                 newRight
                 // don’t compute the label of newR, because it may still change
               }
+              println("veify: " + newR)
               (oldLabel, newR, true)
             }
             else (oldLabel, r, false)
