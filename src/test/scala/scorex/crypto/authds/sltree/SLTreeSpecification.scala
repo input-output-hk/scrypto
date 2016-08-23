@@ -3,7 +3,7 @@ package scorex.crypto.authds.sltree
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.binary.{SLTValue, SLTKey, SLTree}
+import scorex.crypto.authds.sltree.{SLTValue, SLTKey, SLTree}
 import scorex.crypto.encode.Base58
 
 import scala.util.{Try, Random}

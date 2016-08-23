@@ -1,4 +1,4 @@
-package scorex.crypto.authds.binary
+package scorex.crypto.authds.sltree
 
 import com.google.common.primitives.Ints
 import scorex.crypto.encode.Base58
