@@ -1,15 +1,95 @@
 package scorex.crypto.authds.sltree
 
+import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.sltree.{SLTValue, SLTKey, SLTree}
-import scorex.crypto.encode.Base58
 
-import scala.util.{Try, Random}
+import scala.util.Random
 
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
+
+  property("SLTree tx update") {
+    val slt = new SLTree()
+    slt.insert(Array(0: Byte), Longs.toByteArray(Long.MaxValue))
+    var digest: Array[Byte] = slt.rootHash()
+
+    forAll { (sender: Array[Byte], recipient: Array[Byte], amount: Long) =>
+      whenever(sender.nonEmpty && recipient.nonEmpty && amount >= 0) {
+        //proover
+        //change sender balance
+        val (_, senderProof: SLTProof) = slt.lookup(sender)._1 match {
+          case Some(oldV) =>
+            val newVal = Longs.toByteArray(Longs.fromByteArray(oldV) - amount)
+            slt.update(sender, newVal)
+          case None =>
+            val newVal = Longs.toByteArray(-amount)
+            slt.insert(sender, newVal)
+        }
+        //change recepient balance
+        val (_, recipientProof: SLTProof) = slt.lookup(sender)._1 match {
+          case Some(oldV) =>
+            val newVal = Longs.toByteArray(Longs.fromByteArray(oldV) + amount)
+            slt.update(sender, newVal)
+          case None =>
+            val newVal = Longs.toByteArray(amount)
+            slt.insert(sender, newVal)
+        }
+
+        //verifier
+        //check sender proof
+        senderProof match {
+          case proof: SLTInsertProof =>
+            proof.key shouldBe sender
+            proof.value shouldBe Longs.toByteArray(-amount)
+
+            val (verifies, success, newDigest) = proof.verify(digest).get
+            success shouldBe true
+            verifies shouldBe true
+            digest = newDigest.get
+
+          case proof: SLTUpdateProof =>
+            proof.key shouldBe sender
+            //            val oldV = ???
+            //            sp.newVal shouldBe Longs.toByteArray(Longs.fromByteArray(oldV) - amount)
+
+            val (verifies, success, newDigest) = proof.verify(digest).get
+            success shouldBe true
+            verifies shouldBe true
+            digest = newDigest.get
+
+          case _ => throw new Error()
+        }
+        //check recipient proof
+        recipientProof match {
+          case proof: SLTInsertProof =>
+            proof.key shouldBe sender
+            proof.value shouldBe Longs.toByteArray(-amount)
+
+            val (verifies, success, newDigest) = proof.verify(digest).get
+            success shouldBe true
+            verifies shouldBe true
+            digest = newDigest.get
+
+          case proof: SLTUpdateProof =>
+            proof.key shouldBe sender
+            //            val oldV = ???
+            //            proof.newVal shouldBe Longs.toByteArray(Longs.fromByteArray(oldV) - amount)
+
+            val (verifies, success, newDigest) = proof.verify(digest).get
+            success shouldBe true
+            verifies shouldBe true
+            digest = newDigest.get
+
+          case _ => throw new Error()
+        }
+
+      }
+    }
+  }
+
+
 
   property("SLTree stream") {
     val slt = new SLTree()

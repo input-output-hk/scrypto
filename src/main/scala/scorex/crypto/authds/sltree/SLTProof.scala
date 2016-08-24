@@ -6,6 +6,8 @@ import scala.collection.mutable
 import scala.util.Try
 
 sealed trait SLTProof {
+  val key: SLTKey
+
   def isValid(digest: Label): Boolean
 
   def dequeueValue(proof: mutable.Queue[SLTProofElement]): SLTValue = {
@@ -29,7 +31,7 @@ sealed trait SLTProof {
   }
 }
 
-case class SLTLookupProof(x: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTProof {
+case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTProof {
 
 
   override def isValid(digest: Label): Boolean = verify(digest).map(_._1).getOrElse(false)
@@ -40,7 +42,7 @@ case class SLTLookupProof(x: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLT
       val nKey = dequeueKey(proof)
       val nValue = dequeueValue(proof)
       val nLevel = dequeueLevel(proof)
-      ByteArray.compare(x, nKey) match {
+      ByteArray.compare(key, nKey) match {
         case 0 =>
           val nLeft = dequeueLeftLabel(proof)
           val nRight = dequeueRightLabel(proof)
@@ -76,7 +78,7 @@ case class SLTLookupProof(x: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLT
 
 }
 
-case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
+case class SLTUpdateProof(key: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
   override def isValid(digest: Label): Boolean = verify(digest).map(v => v._1 && v._2).getOrElse(false)
 
   def verify(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
@@ -87,7 +89,7 @@ case class SLTUpdateProof(x: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofEle
       val nLevel = dequeueLevel(proof)
 
       var oldLabel: Label = LabelOfNone
-      val (n: FlatNode, found: Boolean) = ByteArray.compare(x, nKey) match {
+      val (n: FlatNode, found: Boolean) = ByteArray.compare(key, nKey) match {
         case 0 =>
           val nLeft = dequeueLeftLabel(proof)
           val nRight = dequeueRightLabel(proof)
