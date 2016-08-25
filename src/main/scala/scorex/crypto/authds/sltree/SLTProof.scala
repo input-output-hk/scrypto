@@ -148,7 +148,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
 
     def verifyInsertHelper(): (Label, FlatNode, Boolean) = {
       if (proof.isEmpty) {
-        val level = SLTree.computeLevel(key, value)
+        val level = SLTree.computeLevel(key)
         // this coinflip needs to be the same as in the prover’s case --
         // the strategy used for skip lists will work here, too
         val n = new FlatNode(key, value, level, LabelOfNone, LabelOfNone, None)

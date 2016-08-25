@@ -27,7 +27,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
             val newVal = Longs.toByteArray(-amount)
             slt.insert(sender, newVal)
         }
-        //change recepient balance
+        //change recipient balance
         val (_, recipientProof: SLTProof) = slt.lookup(sender)._1 match {
           case Some(oldV) =>
             val newVal = Longs.toByteArray(Longs.fromByteArray(oldV) + amount)

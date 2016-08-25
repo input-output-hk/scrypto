@@ -108,9 +108,9 @@ object SLTree {
   }
 
   /**
-   *
-   * @return (new root node, whether element was inserted, insertProof)
-   */
+    *
+    * @return (new root node, whether element was inserted, insertProof)
+    */
   def insert(root: Node, key: SLTKey, value: SLTValue): (Node, Boolean, SLTInsertProof) = {
 
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
@@ -128,7 +128,7 @@ object SLTree {
         case None =>
           // No need to set maxLevel here -- we don’t risk anything by having a
           // a very high level, because data structure size remains the same
-          val level = computeLevel(x, value)
+          val level = computeLevel(x)
           // Create a new node without computing its hash, because its hash will change
           val n = new Node(x, value, level, None, None, LabelOfNone)
           (n, true)
@@ -212,10 +212,10 @@ object SLTree {
     (root, success, SLTInsertProof(key, value, proofStream))
   }
 
-  def computeLevel(key: SLTKey, value: SLTValue): Int = {
+  def computeLevel(key: SLTKey): Int = {
     @tailrec
     def loop(lev: Int = 0): Int = {
-      if (Sha256(key ++ value ++ Ints.toByteArray(lev)).head.toInt < 0) lev
+      if (Sha256(key ++ Ints.toByteArray(lev)).head.toInt < 0) lev
       else loop(lev + 1)
     }
     loop()
