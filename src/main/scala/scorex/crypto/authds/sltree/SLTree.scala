@@ -27,6 +27,13 @@ class SLTree(rootOpt: Option[Node] = None) {
     SLTree.update(topNode, key, updateFunction)
   }
 
+  def modify(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTModifyingProof) = {
+    lookup(key)._1 match {
+      case Some(_) => update(key, updateFunction)
+      case None => insert(key, updateFunction)
+    }
+  }
+
   def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
     SLTree.lookup(topNode, key)
   }

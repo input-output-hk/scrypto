@@ -73,11 +73,11 @@ case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends S
 
 }
 
-trait ChangingProof extends SLTProof {
+trait SLTModifyingProof extends SLTProof {
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label]
 }
 
-case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends ChangingProof {
+case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTModifyingProof {
 
   def verify(digest: Label, updated: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
@@ -133,7 +133,7 @@ case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends C
 
 }
 
-case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends ChangingProof {
+case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTModifyingProof {
 
   def verify(digest: Label, updated: Option[SLTValue] => SLTValue): Option[Label] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)

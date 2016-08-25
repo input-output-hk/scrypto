@@ -10,62 +10,34 @@ import scala.util.Random
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
-  property("SLTree tx update") {
+
+  property("SLTree modify") {
     val slt = new SLTree()
     slt.insert(Array(0: Byte), _ => Longs.toByteArray(Long.MaxValue))
     var digest: Array[Byte] = slt.rootHash()
     def updateFunction(amount: Long): Option[SLTValue] => SLTValue = (old: Option[SLTValue]) =>
       Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))
 
-    //    def modN(n: Int)(x: Int) = ((x % n) == 0)
     forAll { (sender: Array[Byte], recipient: Array[Byte], amount: Long) =>
       whenever(sender.nonEmpty && recipient.nonEmpty && amount >= 0) {
         //proover
         //change sender balance
-        val (_, senderProof: SLTProof) = slt.lookup(sender)._1 match {
-          case Some(_) =>
-            slt.update(sender, updateFunction(-amount))
-          case None =>
-            slt.insert(sender, updateFunction(-amount))
-        }
+        val (_, senderProof: SLTModifyingProof) = slt.modify(sender, updateFunction(-amount))
         //change recipient balance
-        val (_, recipientProof: SLTProof) = slt.lookup(recipient)._1 match {
-          case Some(_) =>
-            slt.update(recipient, updateFunction(amount))
-          case None =>
-            slt.insert(recipient, updateFunction(amount))
-        }
+        val (_, recipientProof: SLTModifyingProof) = slt.modify(sender, updateFunction(amount))
 
         //verifier
         //check sender proof
-        senderProof match {
-          case proof: SLTInsertProof =>
-            proof.key shouldBe sender
-            digest = proof.verify(digest, updateFunction(-amount)).get
+        senderProof.key shouldBe sender
+        digest = senderProof.verify(digest, updateFunction(-amount)).get
 
-          case proof: SLTUpdateProof =>
-            proof.key shouldBe sender
-            digest = proof.verify(digest, updateFunction(-amount)).get
-          case _ => throw new Error()
-        }
         //check recipient proof
-        recipientProof match {
-          case proof: SLTInsertProof =>
-            proof.key shouldBe recipient
-            digest = proof.verify(digest, updateFunction(amount)).get
-
-          case proof: SLTUpdateProof =>
-            proof.key shouldBe recipient
-            digest = proof.verify(digest, updateFunction(amount)).get
-
-          case _ => throw new Error()
-        }
+        recipientProof.key shouldBe recipient
+        digest = recipientProof.verify(digest, updateFunction(amount)).get
 
       }
     }
   }
-
-
 
   property("SLTree stream") {
     val slt = new SLTree()
