@@ -22,7 +22,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (_, senderProof: SLTProof) = slt.lookup(sender)._1 match {
           case Some(oldV) =>
             val newVal = Longs.toByteArray(Longs.fromByteArray(oldV) - amount)
-            slt.update(sender, newVal)
+            slt.update(sender, _ => newVal)
           case None =>
             val newVal = Longs.toByteArray(-amount)
             slt.insert(sender, newVal)
@@ -31,7 +31,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val (_, recipientProof: SLTProof) = slt.lookup(sender)._1 match {
           case Some(oldV) =>
             val newVal = Longs.toByteArray(Longs.fromByteArray(oldV) + amount)
-            slt.update(sender, newVal)
+            slt.update(sender, _ => newVal)
           case None =>
             val newVal = Longs.toByteArray(amount)
             slt.insert(sender, newVal)
@@ -107,7 +107,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         digest = newDigest.get
 
         val uKey = keys(Random.nextInt(keys.length))
-        val (successUpdate, updateProof) = slt.update(uKey, newVal)
+        val (successUpdate, updateProof) = slt.update(uKey, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(uKey)._1.get shouldBe newVal
         val (verifiesU, found, newDigestU) = updateProof.verify(digest).get
@@ -134,7 +134,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         lookupProof.isValid(digest2) shouldBe true
         lookupProof.isValid(digest2) shouldBe true
 
-        val (successUpdate, updateProof) = slt.update(key, newVal)
+        val (successUpdate, updateProof) = slt.update(key, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(key)._1.get shouldBe newVal
         updateProof.isValid(digest2) shouldBe true
@@ -233,7 +233,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         proof.isValid(digest) shouldBe true
 
         val digest2 = slt.rootHash()
-        val (successUpdate, updateProof) = slt.update(key, newVal)
+        val (successUpdate, updateProof) = slt.update(key, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(key)._1.get shouldBe newVal
         val (verifies, found, newDigest) = updateProof.verify(digest2).get
@@ -254,7 +254,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         proof.isValid(digest) shouldBe true
 
         val digest2 = slt.rootHash()
-        val (successUpdate, updateProof) = slt.update(key, newVal)
+        val (successUpdate, updateProof) = slt.update(key, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(key)._1.get shouldBe newVal
         val (verifies, found, newDigest) = updateProof.verify(digest2).get

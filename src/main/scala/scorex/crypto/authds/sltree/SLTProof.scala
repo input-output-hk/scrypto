@@ -78,7 +78,7 @@ case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends S
 
 }
 
-case class SLTUpdateProof(key: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
+case class SLTUpdateProof(key: SLTKey, updated: SLTValue => SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
   override def isValid(digest: Label): Boolean = verify(digest).map(v => v._1 && v._2).getOrElse(false)
 
   def verify(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
@@ -95,7 +95,7 @@ case class SLTUpdateProof(key: SLTKey, newVal: SLTValue, proofSeq: Seq[SLTProofE
           val nRight = dequeueRightLabel(proof)
           val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
           oldLabel = n.computeLabel
-          n.value = newVal
+          n.value = updated(nValue)
           (n, true)
         case i if i < 0 =>
           val nRight = dequeueRightLabel(proof)

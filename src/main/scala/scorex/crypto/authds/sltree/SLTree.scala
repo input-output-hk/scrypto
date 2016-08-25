@@ -23,8 +23,8 @@ class SLTree(rootOpt: Option[Node] = None) {
     (isSuccess, proof)
   }
 
-  def update(key: SLTKey, value: SLTValue): (Boolean, SLTUpdateProof) = {
-    SLTree.update(topNode, key, value)
+  def update(key: SLTKey, updateFunction: SLTValue => SLTValue): (Boolean, SLTUpdateProof) = {
+    SLTree.update(topNode, key, updateFunction)
   }
 
   def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
@@ -74,9 +74,9 @@ object SLTree {
     (lookupLoop(top, key), SLTLookupProof(key, proofStream))
   }
 
-  def update(root: Node, key: SLTKey, value: SLTValue): (Boolean, SLTUpdateProof) = {
+  def update(root: Node, key: SLTKey, updateFunction: SLTValue => SLTValue): (Boolean, SLTUpdateProof) = {
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
-    def updateLoop(r: Node, newVal: SLTValue): Boolean = {
+    def updateLoop(r: Node): Boolean = {
       proofStream.enqueue(SLTProofKey(r.key))
       proofStream.enqueue(SLTProofValue(r.value))
       proofStream.enqueue(SLTProofLevel(r.level))
@@ -86,25 +86,26 @@ object SLTree {
         case 0 =>
           proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
           proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          val newVal = updateFunction(r.value)
           r.value = newVal
           found = true
         case o if o < 0 =>
           proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
           r.left match {
             case None => found = false
-            case Some(leftNode) => found = updateLoop(leftNode, newVal)
+            case Some(leftNode) => found = updateLoop(leftNode)
           }
         case _ =>
           proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
           r.right match {
             case None => found = false
-            case Some(rightNode) => found = updateLoop(rightNode, newVal)
+            case Some(rightNode) => found = updateLoop(rightNode)
           }
       }
       if (found) r.label = r.computeLabel
       found
     }
-    (updateLoop(root, value), SLTUpdateProof(key, value, proofStream))
+    (updateLoop(root), SLTUpdateProof(key, updateFunction, proofStream))
   }
 
   /**
