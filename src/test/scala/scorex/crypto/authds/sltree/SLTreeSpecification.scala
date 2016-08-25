@@ -12,29 +12,28 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
 
   property("SLTree tx update") {
     val slt = new SLTree()
-    slt.insert(Array(0: Byte), Longs.toByteArray(Long.MaxValue))
+    slt.insert(Array(0: Byte), _ => Longs.toByteArray(Long.MaxValue))
     var digest: Array[Byte] = slt.rootHash()
+    def updateFunction(amount: Long): Option[SLTValue] => SLTValue = (old: Option[SLTValue]) =>
+      Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))
 
+    //    def modN(n: Int)(x: Int) = ((x % n) == 0)
     forAll { (sender: Array[Byte], recipient: Array[Byte], amount: Long) =>
       whenever(sender.nonEmpty && recipient.nonEmpty && amount >= 0) {
         //proover
         //change sender balance
         val (_, senderProof: SLTProof) = slt.lookup(sender)._1 match {
-          case Some(oldV) =>
-            val newVal = Longs.toByteArray(Longs.fromByteArray(oldV) - amount)
-            slt.update(sender, _ => newVal)
+          case Some(_) =>
+            slt.update(sender, updateFunction(-amount))
           case None =>
-            val newVal = Longs.toByteArray(-amount)
-            slt.insert(sender, newVal)
+            slt.insert(sender, updateFunction(-amount))
         }
         //change recipient balance
-        val (_, recipientProof: SLTProof) = slt.lookup(sender)._1 match {
-          case Some(oldV) =>
-            val newVal = Longs.toByteArray(Longs.fromByteArray(oldV) + amount)
-            slt.update(sender, _ => newVal)
+        val (_, recipientProof: SLTProof) = slt.lookup(recipient)._1 match {
+          case Some(_) =>
+            slt.update(recipient, updateFunction(amount))
           case None =>
-            val newVal = Longs.toByteArray(amount)
-            slt.insert(sender, newVal)
+            slt.insert(recipient, updateFunction(amount))
         }
 
         //verifier
@@ -42,45 +41,22 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         senderProof match {
           case proof: SLTInsertProof =>
             proof.key shouldBe sender
-            proof.value shouldBe Longs.toByteArray(-amount)
-
-            val (verifies, success, newDigest) = proof.verify(digest).get
-            success shouldBe true
-            verifies shouldBe true
-            digest = newDigest.get
+            digest = proof.verify(digest, updateFunction(-amount)).get
 
           case proof: SLTUpdateProof =>
             proof.key shouldBe sender
-            //            val oldV = ???
-            //            sp.newVal shouldBe Longs.toByteArray(Longs.fromByteArray(oldV) - amount)
-
-            val (verifies, success, newDigest) = proof.verify(digest).get
-            success shouldBe true
-            verifies shouldBe true
-            digest = newDigest.get
-
+            digest = proof.verify(digest, updateFunction(-amount)).get
           case _ => throw new Error()
         }
         //check recipient proof
         recipientProof match {
           case proof: SLTInsertProof =>
-            proof.key shouldBe sender
-            proof.value shouldBe Longs.toByteArray(-amount)
-
-            val (verifies, success, newDigest) = proof.verify(digest).get
-            success shouldBe true
-            verifies shouldBe true
-            digest = newDigest.get
+            proof.key shouldBe recipient
+            digest = proof.verify(digest, updateFunction(amount)).get
 
           case proof: SLTUpdateProof =>
-            proof.key shouldBe sender
-            //            val oldV = ???
-            //            proof.newVal shouldBe Longs.toByteArray(Longs.fromByteArray(oldV) - amount)
-
-            val (verifies, success, newDigest) = proof.verify(digest).get
-            success shouldBe true
-            verifies shouldBe true
-            digest = newDigest.get
+            proof.key shouldBe recipient
+            digest = proof.verify(digest, updateFunction(amount)).get
 
           case _ => throw new Error()
         }
@@ -99,46 +75,15 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
       whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty && slt.lookup(key)._1.isEmpty) {
         keys = key +: keys
-        val (success, proof) = slt.insert(key, value)
+        val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        val (verifies, insertSuccess, newDigest) = proof.verify(digest).get
-        insertSuccess shouldBe true
-        verifies shouldBe true
-        digest = newDigest.get
+        digest = proof.verify(digest, _ => value).get
 
         val uKey = keys(Random.nextInt(keys.length))
         val (successUpdate, updateProof) = slt.update(uKey, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(uKey)._1.get shouldBe newVal
-        val (verifiesU, found, newDigestU) = updateProof.verify(digest).get
-        verifiesU shouldBe true
-        found shouldBe true
-        digest = newDigestU.get
-      }
-    }
-  }
-
-  property("SLTree proof double check") {
-    val slt = new SLTree()
-    forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
-      whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty && slt.lookup(key)._1.isEmpty) {
-        val digest = slt.rootHash()
-        val (success, proof) = slt.insert(key, value)
-        success shouldBe true
-        proof.isValid(digest) shouldBe true
-        proof.isValid(digest) shouldBe true
-
-        val digest2 = slt.rootHash()
-        val (valueOpt, lookupProof) = slt.lookup(key)
-        valueOpt.get shouldBe value
-        lookupProof.isValid(digest2) shouldBe true
-        lookupProof.isValid(digest2) shouldBe true
-
-        val (successUpdate, updateProof) = slt.update(key, _ => newVal)
-        successUpdate shouldBe true
-        slt.lookup(key)._1.get shouldBe newVal
-        updateProof.isValid(digest2) shouldBe true
-        updateProof.isValid(digest2) shouldBe true
+        digest = updateProof.verify(digest, _ => newVal).get
       }
     }
   }
@@ -149,12 +94,10 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         whenever(key.nonEmpty && value.nonEmpty) {
           val slt = new SLTree()
           val digest = slt.rootHash()
-          val (success, proof) = slt.insert(key, value)
+          val (success, proof) = slt.insert(key, _ => value)
           success shouldBe true
-          val (verifies, insertSuccess, newDigest) = proof.verify(digest).get
-          verifies shouldBe true
-          insertSuccess shouldBe true
-          newDigest.get shouldEqual slt.rootHash()
+          val newDigest = proof.verify(digest, _ => value).get
+          newDigest shouldEqual slt.rootHash()
         }
     }
   }
@@ -165,12 +108,10 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     forAll { (key: Array[Byte], value: Array[Byte]) =>
       whenever(key.nonEmpty && value.nonEmpty && slt.lookup(key)._1.isEmpty) {
         val digest = slt.rootHash()
-        val (success, proof) = slt.insert(key, value)
+        val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        val (verifies, insertSuccess, newDigest) = proof.verify(digest).get
-        verifies shouldBe true
-        insertSuccess shouldBe true
-        newDigest.get shouldEqual slt.rootHash()
+        val newDigest = proof.verify(digest, _ => value).get
+        newDigest shouldEqual slt.rootHash()
       }
     }
   }
@@ -180,14 +121,13 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
       whenever(key.nonEmpty && value.nonEmpty) {
         val slt = new SLTree()
         val digest = slt.rootHash()
-        val (success, proof) = slt.insert(key, value)
+        val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        proof.isValid(digest) shouldBe true
 
         val digest2 = slt.rootHash()
         val (valueOpt, lookupProof) = slt.lookup(key)
         valueOpt.get shouldBe value
-        lookupProof.isValid(digest2) shouldBe true
+        lookupProof.verify(digest2).isDefined shouldBe true
       }
     }
   }
@@ -197,14 +137,13 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     forAll { (key: Array[Byte], value: Array[Byte]) =>
       whenever(key.nonEmpty && value.nonEmpty && slt.lookup(key)._1.isEmpty) {
         val digest = slt.rootHash()
-        val (success, proof) = slt.insert(key, value)
+        val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        proof.isValid(digest) shouldBe true
 
         val digest2 = slt.rootHash()
         val (valueOpt, lookupProof) = slt.lookup(key)
         valueOpt.get shouldBe value
-        lookupProof.isValid(digest2) shouldBe true
+        lookupProof.verify(digest2).isDefined shouldBe true
       }
     }
   }
@@ -217,7 +156,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
 
         val (valueOpt, lookupProof) = slt.lookup(key)
         valueOpt shouldBe None
-        lookupProof.isValid(digest) shouldBe true
+        lookupProof.verify(digest) shouldBe None
       }
     }
   }
@@ -226,41 +165,37 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
       whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty) {
         val slt = new SLTree()
-        slt.topNode.right.isDefined shouldBe false
         val digest = slt.rootHash()
-        val (success, proof) = slt.insert(key, value)
+        val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        proof.isValid(digest) shouldBe true
+        proof.verify(digest, _ => value).isDefined shouldBe true
 
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(key)._1.get shouldBe newVal
-        val (verifies, found, newDigest) = updateProof.verify(digest2).get
-        verifies shouldBe true
-        found shouldBe true
-        newDigest.get shouldEqual slt.rootHash()
+        val newDigest = updateProof.verify(digest2, _ => newVal).get
+        newDigest shouldEqual slt.rootHash()
       }
     }
   }
+
 
   property("SLTree update") {
     val slt = new SLTree()
     forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
       whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty && slt.lookup(key)._1.isEmpty) {
         val digest = slt.rootHash()
-        val (success, proof) = slt.insert(key, value)
+        val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        proof.isValid(digest) shouldBe true
+        proof.verify(digest, _ => value).isDefined shouldBe true
 
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(key)._1.get shouldBe newVal
-        val (verifies, found, newDigest) = updateProof.verify(digest2).get
-        verifies shouldBe true
-        found shouldBe true
-        newDigest.get shouldEqual slt.rootHash()
+        val newDigest = updateProof.verify(digest2, _ => newVal).get
+        newDigest shouldEqual slt.rootHash()
       }
     }
   }

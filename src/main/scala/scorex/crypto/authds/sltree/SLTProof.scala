@@ -8,8 +8,6 @@ import scala.util.Try
 sealed trait SLTProof {
   val key: SLTKey
 
-  def isValid(digest: Label): Boolean
-
   def dequeueValue(proof: mutable.Queue[SLTProofElement]): SLTValue = {
     proof.dequeue().asInstanceOf[SLTProofValue].e
   }
@@ -33,10 +31,7 @@ sealed trait SLTProof {
 
 case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTProof {
 
-
-  override def isValid(digest: Label): Boolean = verify(digest).map(_._1).getOrElse(false)
-
-  def verify(digest: Label): Try[(Boolean, Option[SLTValue])] = Try {
+  def verify(digest: Label): Option[SLTValue] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
     def verifyLookupRecursive(): (Label, Option[SLTValue]) = {
       val nKey = dequeueKey(proof)
@@ -73,15 +68,18 @@ case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends S
       }
     }
     val (h, v) = verifyLookupRecursive()
-    if (h sameElements digest) (true, v) else (false, None)
-  }
+    if (h sameElements digest) v else None
+  }.getOrElse(None)
 
 }
 
-case class SLTUpdateProof(key: SLTKey, updated: SLTValue => SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
-  override def isValid(digest: Label): Boolean = verify(digest).map(v => v._1 && v._2).getOrElse(false)
+trait ChangingProof extends SLTProof {
+  def verify(digest: Label, updateFunction: UpdateFunction): Option[Label]
+}
 
-  def verify(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
+case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends ChangingProof {
+
+  def verify(digest: Label, updated: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
     def verifyUpdateRecursive(): (Label, Boolean, Option[Label]) = {
       val nKey = dequeueKey(proof)
@@ -95,7 +93,7 @@ case class SLTUpdateProof(key: SLTKey, updated: SLTValue => SLTValue, proofSeq: 
           val nRight = dequeueRightLabel(proof)
           val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
           oldLabel = n.computeLabel
-          n.value = updated(nValue)
+          n.value = updated(Some(nValue))
           (n, true)
         case i if i < 0 =>
           val nRight = dequeueRightLabel(proof)
@@ -130,16 +128,14 @@ case class SLTUpdateProof(key: SLTKey, updated: SLTValue => SLTValue, proofSeq: 
     }
 
     val (h, v, n) = verifyUpdateRecursive()
-    if (h sameElements digest) (true, v, n) else (false, false, None)
-  }
+    if (v && (h sameElements digest)) n else None
+  }.getOrElse(None)
 
 }
 
-case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofElement]) extends SLTProof {
+case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends ChangingProof {
 
-  override def isValid(digest: Label): Boolean = verify(digest).map(v => v._1 && v._2).getOrElse(false)
-
-  def verify(digest: Label): Try[(Boolean, Boolean, Option[Label])] = Try {
+  def verify(digest: Label, updated: Option[SLTValue] => SLTValue): Option[Label] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
     val rootKey = dequeueKey(proof)
     val rootValue = dequeueValue(proof)
@@ -151,7 +147,7 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
         val level = SLTree.computeLevel(key)
         // this coinflip needs to be the same as in the prover’s case --
         // the strategy used for skip lists will work here, too
-        val n = new FlatNode(key, value, level, LabelOfNone, LabelOfNone, None)
+        val n = new FlatNode(key, updated(None), level, LabelOfNone, LabelOfNone, None)
         (LabelOfNone, n, true)
       } else {
         val rKey = dequeueKey(proof)
@@ -217,18 +213,16 @@ case class SLTInsertProof(key: SLTKey, value: SLTValue, proofSeq: Seq[SLTProofEl
     }
     val (rootRightLabel, newRight, success) = verifyInsertHelper()
     val root = new FlatNode(rootKey, rootValue, rootLevel, rootLeftLabel, rootRightLabel, None)
-    if (!(root.computeLabel sameElements digest)) {
-      (false, false, None)
+    if (success && (root.computeLabel sameElements digest)) {
+      root.rightLabel = newRight.computeLabel
+      // Elevate the level of the sentinel tower to the level of the newly inserted element,
+      // if it’s higher
+      if (newRight.level > root.level) root.level = newRight.level
+      Some(root.label)
     } else {
-      if (success) {
-        root.rightLabel = newRight.computeLabel
-        // Elevate the level of the sentinel tower to the level of the newly inserted element,
-        // if it’s higher
-        if (newRight.level > root.level) root.level = newRight.level
-      }
-      (true, success, Some(root.label))
+      None
     }
-  }
+  }.getOrElse(None)
 
 
 }

@@ -17,13 +17,13 @@ class SLTree(rootOpt: Option[Node] = None) {
 
   def rootHash(): Label = topNode.label
 
-  def insert(key: SLTKey, value: SLTValue): (Boolean, SLTInsertProof) = {
-    val (newRoot, isSuccess, proof) = SLTree.insert(topNode, key, value)
+  def insert(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTInsertProof) = {
+    val (newRoot, isSuccess, proof) = SLTree.insert(topNode, key, updateFunction)
     if (isSuccess) topNode = newRoot
     (isSuccess, proof)
   }
 
-  def update(key: SLTKey, updateFunction: SLTValue => SLTValue): (Boolean, SLTUpdateProof) = {
+  def update(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTUpdateProof) = {
     SLTree.update(topNode, key, updateFunction)
   }
 
@@ -74,7 +74,7 @@ object SLTree {
     (lookupLoop(top, key), SLTLookupProof(key, proofStream))
   }
 
-  def update(root: Node, key: SLTKey, updateFunction: SLTValue => SLTValue): (Boolean, SLTUpdateProof) = {
+  def update(root: Node, key: SLTKey, updateFunction: Option[SLTValue] => SLTValue): (Boolean, SLTUpdateProof) = {
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     def updateLoop(r: Node): Boolean = {
       proofStream.enqueue(SLTProofKey(r.key))
@@ -86,7 +86,7 @@ object SLTree {
         case 0 =>
           proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
           proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
-          val newVal = updateFunction(r.value)
+          val newVal = updateFunction(Some(r.value))
           r.value = newVal
           found = true
         case o if o < 0 =>
@@ -105,14 +105,14 @@ object SLTree {
       if (found) r.label = r.computeLabel
       found
     }
-    (updateLoop(root), SLTUpdateProof(key, updateFunction, proofStream))
+    (updateLoop(root), SLTUpdateProof(key, proofStream))
   }
 
   /**
     *
     * @return (new root node, whether element was inserted, insertProof)
     */
-  def insert(root: Node, key: SLTKey, value: SLTValue): (Node, Boolean, SLTInsertProof) = {
+  def insert(root: Node, key: SLTKey, updateFunction: Option[SLTValue] => SLTValue): (Node, Boolean, SLTInsertProof) = {
 
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     proofStream.enqueue(SLTProofKey(root.key))
@@ -124,14 +124,14 @@ object SLTree {
     // so it’s up to the caller to compute it if it is equal tmo labelOfNone
     // The reason is that in some cases we don’t know if it will move up,
     // and we don’t want to waste hashing until we are sure
-    def InsertHelper(rOpt: Option[Node], x: SLTKey, value: SLTValue): (Node, Boolean) = {
+    def InsertHelper(rOpt: Option[Node], x: SLTKey): (Node, Boolean) = {
       rOpt match {
         case None =>
           // No need to set maxLevel here -- we don’t risk anything by having a
           // a very high level, because data structure size remains the same
           val level = computeLevel(x)
           // Create a new node without computing its hash, because its hash will change
-          val n = new Node(x, value, level, None, None, LabelOfNone)
+          val n = new Node(x, updateFunction(None), level, None, None, LabelOfNone)
           (n, true)
         case Some(r: Node) =>
           proofStream.enqueue(SLTProofKey(r.key))
@@ -144,7 +144,7 @@ object SLTree {
               (r, false)
             case o if o < 0 =>
               proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
-              val (newLeft: Node, success: Boolean) = InsertHelper(r.left, x, value)
+              val (newLeft: Node, success: Boolean) = InsertHelper(r.left, x)
               if (success) {
                 // Attach the newLeft if its level is smaller than our level;
                 // compute its hash if needed,
@@ -172,7 +172,7 @@ object SLTree {
               // (because on the right level is allowed to be the same as of the child,
               // but on the left the child has to be smaller)
               proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-              val (newRight: Node, success: Boolean) = InsertHelper(r.right, x, value)
+              val (newRight: Node, success: Boolean) = InsertHelper(r.right, x)
               if (success) {
                 // Attach the newRight if its level is smaller than our level;
                 // compute its hash if needed,
@@ -198,7 +198,7 @@ object SLTree {
       }
     }
 
-    val (newRight, success) = InsertHelper(root.right, key, value)
+    val (newRight, success) = InsertHelper(root.right, key)
     if (success) {
       if (newRight.label sameElements LabelOfNone) {
         newRight.label = newRight.computeLabel
@@ -210,7 +210,7 @@ object SLTree {
       if (newRight.level > root.level) root.level = newRight.level
       root.label = root.computeLabel
     }
-    (root, success, SLTInsertProof(key, value, proofStream))
+    (root, success, SLTInsertProof(key, proofStream))
   }
 
   def computeLevel(key: SLTKey): Int = {
