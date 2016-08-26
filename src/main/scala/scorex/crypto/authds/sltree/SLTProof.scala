@@ -1,5 +1,6 @@
 package scorex.crypto.authds.sltree
 
+import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -29,7 +30,8 @@ sealed trait SLTProof {
   }
 }
 
-case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTProof {
+case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
+  extends SLTProof {
 
   def verify(digest: Label): Option[SLTValue] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
@@ -77,7 +79,8 @@ trait SLTModifyingProof extends SLTProof {
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label]
 }
 
-case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTModifyingProof {
+case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
+  extends SLTModifyingProof {
 
   def verify(digest: Label, updated: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
@@ -133,7 +136,8 @@ case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends S
 
 }
 
-case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement]) extends SLTModifyingProof {
+case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
+  extends SLTModifyingProof {
 
   def verify(digest: Label, updated: Option[SLTValue] => SLTValue): Option[Label] = Try {
     val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)

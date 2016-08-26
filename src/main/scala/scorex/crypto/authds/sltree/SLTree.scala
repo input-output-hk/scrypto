@@ -2,12 +2,12 @@ package scorex.crypto.authds.sltree
 
 import com.google.common.primitives.Ints
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.Sha256
+import scorex.crypto.hash.{Blake2b256, CryptographicHash, Sha256}
 import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
 
-class SLTree(rootOpt: Option[Node] = None) {
+class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf: HF = Blake2b256) {
 
   var topNode: Node = rootOpt.getOrElse {
     val r = new Node(Array(), Array(), 0, None, None, LabelOfNone)
@@ -108,7 +108,6 @@ class SLTree(rootOpt: Option[Node] = None) {
       if (newRight.label sameElements LabelOfNone) {
         newRight.label = newRight.computeLabel
       }
-      //TODO set right ??
       root.right = Some(newRight)
       // Elevate the level of the sentinel tower to the level of the newly inserted element,
       // if it’s higher

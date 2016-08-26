@@ -2,12 +2,14 @@ package scorex.crypto.authds.sltree
 
 import com.google.common.primitives.Ints
 import scorex.crypto.encode.Base58
+import scorex.crypto.hash.CryptographicHash
 
-trait NodeI {
+abstract class NodeI(Hash: CryptographicHash) {
 
   protected def label(n: Option[NodeI]): Label = n.map(_.label).getOrElse(LabelOfNone)
 
   def label: Label
+
   val key: SLTKey
   var value: SLTValue
   var level: Int
@@ -16,7 +18,8 @@ trait NodeI {
 
   def rightLabel: Label
 
-  def computeLabel: Label = Hash(key ++ value ++ Ints.toByteArray(level) ++ leftLabel ++ rightLabel)
+  def computeLabel: Label =
+    Hash(key ++ value ++ Ints.toByteArray(level) ++ leftLabel ++ rightLabel)
 
   override def toString: String = {
     Base58.encode(key).take(8) + "|" + Base58.encode(value).take(8) + "|" + level + "|" +
@@ -26,7 +29,7 @@ trait NodeI {
 }
 
 class Node(val key: SLTKey, var value: SLTKey, var level: Int, var left: Option[Node], var right: Option[Node],
-           var label: Label) extends NodeI {
+           var label: Label)(implicit hf: CryptographicHash) extends NodeI(hf) {
 
   override def leftLabel: Label = label(left)
 
@@ -35,8 +38,8 @@ class Node(val key: SLTKey, var value: SLTKey, var level: Int, var left: Option[
 }
 
 class FlatNode(val key: SLTKey, var value: SLTKey, var level: Int, var leftLabel: Label, var rightLabel: Label,
-               val labelOpt: Option[Label]) extends NodeI {
+               val labelOpt: Option[Label])(implicit hf: CryptographicHash) extends NodeI(hf) {
 
-  lazy  val label = labelOpt.getOrElse(computeLabel)
+  lazy val label = labelOpt.getOrElse(computeLabel)
 }
 

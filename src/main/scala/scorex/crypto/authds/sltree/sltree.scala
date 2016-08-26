@@ -7,8 +7,6 @@ package object sltree {
   type SLTValue = Array[Byte]
   type Label = CryptographicHash#Digest
 
-  val Hash = Blake2b256
-  //  val LabelOfNone:Array[Byte] = Array.fill(1)(0: Byte)
   val LabelOfNone: Array[Byte] = Array()
   type UpdateFunction =  Option[SLTValue] => SLTValue
 
