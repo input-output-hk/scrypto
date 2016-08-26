@@ -18,109 +18,7 @@ class SLTree(rootOpt: Option[Node] = None) {
   def rootHash(): Label = topNode.label
 
   def insert(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTInsertProof) = {
-    val (newRoot, isSuccess, proof) = SLTree.insert(topNode, key, updateFunction)
-    if (isSuccess) topNode = newRoot
-    (isSuccess, proof)
-  }
-
-  def update(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTUpdateProof) = {
-    SLTree.update(topNode, key, updateFunction)
-  }
-
-  def modify(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTModifyingProof) = {
-    lookup(key)._1 match {
-      case Some(_) => update(key, updateFunction)
-      case None => insert(key, updateFunction)
-    }
-  }
-
-  def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
-    SLTree.lookup(topNode, key)
-  }
-
-  override def toString: String = {
-    def mk(n: Node): String = {
-      n.toString
-      val ln = n.left.map(n => mk(n)).getOrElse("")
-      val rn = n.right.map(n => mk(n)).getOrElse("")
-      n.toString + "\n" + rn + ln
-    }
-    s"SLTree(${Base58.encode(rootHash()).take(8)}}): \n${mk(topNode)}"
-  }
-}
-
-
-object SLTree {
-
-  def lookup(top: Node, key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
-    val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
-    @tailrec
-    def lookupLoop(r: Node, x: SLTKey): Option[SLTValue] = {
-      proofStream.enqueue(SLTProofKey(r.key))
-      proofStream.enqueue(SLTProofValue(r.value))
-      proofStream.enqueue(SLTProofLevel(r.level))
-      ByteArray.compare(x, r.key) match {
-        case 0 =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
-          Some(r.value)
-        case o if o < 0 =>
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
-          r.left match {
-            case None => None
-            case Some(leftNode) => lookupLoop(leftNode, x)
-          }
-        case _ =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-          r.right match {
-            case None => None
-            case Some(rightNode) => lookupLoop(rightNode, x)
-          }
-      }
-    }
-    (lookupLoop(top, key), SLTLookupProof(key, proofStream))
-  }
-
-  def update(root: Node, key: SLTKey, updateFunction: Option[SLTValue] => SLTValue): (Boolean, SLTUpdateProof) = {
-    val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
-    def updateLoop(r: Node): Boolean = {
-      proofStream.enqueue(SLTProofKey(r.key))
-      proofStream.enqueue(SLTProofValue(r.value))
-      proofStream.enqueue(SLTProofLevel(r.level))
-
-      var found = false
-      ByteArray.compare(key, r.key) match {
-        case 0 =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
-          val newVal = updateFunction(Some(r.value))
-          r.value = newVal
-          found = true
-        case o if o < 0 =>
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
-          r.left match {
-            case None => found = false
-            case Some(leftNode) => found = updateLoop(leftNode)
-          }
-        case _ =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-          r.right match {
-            case None => found = false
-            case Some(rightNode) => found = updateLoop(rightNode)
-          }
-      }
-      if (found) r.label = r.computeLabel
-      found
-    }
-    (updateLoop(root), SLTUpdateProof(key, proofStream))
-  }
-
-  /**
-    *
-    * @return (new root node, whether element was inserted, insertProof)
-    */
-  def insert(root: Node, key: SLTKey, updateFunction: Option[SLTValue] => SLTValue): (Node, Boolean, SLTInsertProof) = {
-
+    val root = topNode
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     proofStream.enqueue(SLTProofKey(root.key))
     proofStream.enqueue(SLTProofValue(root.value))
@@ -136,7 +34,7 @@ object SLTree {
         case None =>
           // No need to set maxLevel here -- we don’t risk anything by having a
           // a very high level, because data structure size remains the same
-          val level = computeLevel(x)
+          val level = SLTree.computeLevel(x)
           // Create a new node without computing its hash, because its hash will change
           val n = new Node(x, updateFunction(None), level, None, None, LabelOfNone)
           (n, true)
@@ -216,10 +114,95 @@ object SLTree {
       // if it’s higher
       if (newRight.level > root.level) root.level = newRight.level
       root.label = root.computeLabel
+      topNode = root
     }
-    (root, success, SLTInsertProof(key, proofStream))
+
+    (success, SLTInsertProof(key, proofStream))
   }
 
+  def update(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTUpdateProof) = {
+    val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
+    def updateLoop(r: Node): Boolean = {
+      proofStream.enqueue(SLTProofKey(r.key))
+      proofStream.enqueue(SLTProofValue(r.value))
+      proofStream.enqueue(SLTProofLevel(r.level))
+
+      var found = false
+      ByteArray.compare(key, r.key) match {
+        case 0 =>
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          val newVal = updateFunction(Some(r.value))
+          r.value = newVal
+          found = true
+        case o if o < 0 =>
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          r.left match {
+            case None => found = false
+            case Some(leftNode) => found = updateLoop(leftNode)
+          }
+        case _ =>
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          r.right match {
+            case None => found = false
+            case Some(rightNode) => found = updateLoop(rightNode)
+          }
+      }
+      if (found) r.label = r.computeLabel
+      found
+    }
+    (updateLoop(topNode), SLTUpdateProof(key, proofStream))
+  }
+
+  def modify(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTModifyingProof) = {
+    lookup(key)._1 match {
+      case Some(_) => update(key, updateFunction)
+      case None => insert(key, updateFunction)
+    }
+  }
+
+  def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
+    val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
+    @tailrec
+    def lookupLoop(r: Node, x: SLTKey): Option[SLTValue] = {
+      proofStream.enqueue(SLTProofKey(r.key))
+      proofStream.enqueue(SLTProofValue(r.value))
+      proofStream.enqueue(SLTProofLevel(r.level))
+      ByteArray.compare(x, r.key) match {
+        case 0 =>
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          Some(r.value)
+        case o if o < 0 =>
+          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          r.left match {
+            case None => None
+            case Some(leftNode) => lookupLoop(leftNode, x)
+          }
+        case _ =>
+          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          r.right match {
+            case None => None
+            case Some(rightNode) => lookupLoop(rightNode, x)
+          }
+      }
+    }
+    (lookupLoop(topNode, key), SLTLookupProof(key, proofStream))
+  }
+
+  override def toString: String = {
+    def mk(n: Node): String = {
+      n.toString
+      val ln = n.left.map(n => mk(n)).getOrElse("")
+      val rn = n.right.map(n => mk(n)).getOrElse("")
+      n.toString + "\n" + rn + ln
+    }
+    s"SLTree(${Base58.encode(rootHash()).take(8)}}): \n${mk(topNode)}"
+  }
+
+}
+
+object SLTree {
   def computeLevel(key: SLTKey): Int = {
     @tailrec
     def loop(lev: Int = 0): Int = {

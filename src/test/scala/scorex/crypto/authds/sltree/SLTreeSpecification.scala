@@ -46,7 +46,6 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     }
   }
 
-
   property("SLTree insert") {
     val slt = new SLTree()
     forAll { (key: Array[Byte], value: Array[Byte]) =>
