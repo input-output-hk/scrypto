@@ -193,4 +193,11 @@ with TestingCommons {
     Base58.encode(sl2.rootHash) shouldBe "Ewcvs6SqFUQyBRnjep3AV8Rhz6KE8jgxP2RnPe2dM5cJ"
   }
 
+  property("SkipList cross-platfom test") {
+    val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
+    sl2.insert(genEl(1, Some(0)).head)
+    Base58.encode(sl2.rootHash) shouldBe "5WNucddst4by47WwhHDfPX8sxhqUJigmGWgbaeteuLfP"
+  }
+
+
 }
