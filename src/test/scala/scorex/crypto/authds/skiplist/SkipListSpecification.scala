@@ -190,13 +190,13 @@ with TestingCommons {
   property("SkipList should be deterministic") {
     val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
     sl2.update(SkipListUpdate(toDelete = Seq(), toInsert = genEl(100, Some(0))))
-    Base58.encode(sl2.rootHash) shouldBe "Ewcvs6SqFUQyBRnjep3AV8Rhz6KE8jgxP2RnPe2dM5cJ"
+    Base58.encode(sl2.rootHash) shouldBe "Bjv6wK8yNNZsHZV1bUyVnZeL4LkNdBZSAb3WiRzw5B8h"
   }
 
   property("SkipList cross-platfom test") {
     val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
     sl2.insert(genEl(1, Some(0)).head)
-    Base58.encode(sl2.rootHash) shouldBe "5WNucddst4by47WwhHDfPX8sxhqUJigmGWgbaeteuLfP"
+    Base58.encode(sl2.rootHash) shouldBe "CCcvqrkJ65VprcRtrzQKZG37BsiswfxyCwQRw4t2sbki"
   }
 
 
