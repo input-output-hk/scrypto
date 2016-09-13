@@ -196,6 +196,7 @@ with TestingCommons {
   property("SkipList cross-platfom test") {
     val sl2 = new SkipList()(new MvStoreBlobBlobStorage(None), hf)
     sl2.insert(genEl(1, Some(0)).head)
+    println(sl2)
     Base58.encode(sl2.rootHash) shouldBe "CCcvqrkJ65VprcRtrzQKZG37BsiswfxyCwQRw4t2sbki"
   }
 
