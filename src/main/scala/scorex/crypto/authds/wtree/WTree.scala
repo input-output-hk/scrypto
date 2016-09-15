@@ -22,7 +22,10 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
   // - more generally, we could return the result of updateFunction (which could have its own return type,
   // for example returning both old value and new value, or some sort of success/failure)
   // I am not sure what's needed in the application
-  def modify(x: WTKey, toInsertIfNotFound: Boolean, updateFunction: UpdateFunction): WTModifyProof = {
+  //TODO insert toInsertIfNotFound to function
+  def modify(key: WTKey, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): WTModifyProof = {
+    require(ByteArray.compare(key, NegativeInfinity._1) > 0)
+    require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
     val proofStream = new scala.collection.mutable.Queue[WTProofElement]
 
@@ -49,12 +52,12 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
             proofStream.enqueue(WTProofKey(r.nextLeafKey))
             proofStream.enqueue(WTProofValue(r.value))
             if (toInsertIfNotFound) {
-              val newLeaf = new Leaf(x, updateFunction(None), r.nextLeafKey)
+              val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
               newLeaf.label = newLeaf.computeLabel
-              r.nextLeafKey = x
+              r.nextLeafKey = key
               r.label = r.computeLabel
               // Create a new node without computing its hash, because its hash will change
-              (ProverNode(x, r, newLeaf), true, false)
+              (ProverNode(key, r, newLeaf), true, false)
             } else {
               (r, false, true)
             }
@@ -66,7 +69,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
               // if it's already been found above, you always go left until leaf
               true
             } else {
-              ByteArray.compare(x, r.key) match {
+              ByteArray.compare(key, r.key) match {
                 case 0 => // found in the tree -- go one step right, then left to the leaf
                   found = true
                   false
@@ -162,7 +165,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
     var (newTopNode: ProverNodes, changeHappened: Boolean, rootLabelComputed: Boolean) = modifyHelper(topNode, foundIn = false)
     if (!rootLabelComputed) newTopNode.label = newTopNode.computeLabel
     topNode = newTopNode
-    WTModifyProof(x, proofStream)
+    WTModifyProof(key, proofStream)
   }
 
 
