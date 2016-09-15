@@ -69,7 +69,7 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
             val newLeaf = new Leaf(x, updated(None), r.nextLeafKey)
             r.nextLeafKey = x
             r.label = r.computeLabel
-            val level = levelFromKey(key)
+            val level = levelFromKey(x)
             //TODO check VerifierNode(r.label, newLeaf.label, level) or VerifierNode(newLeaf.label, r.label, level)?
             val newR = VerifierNode(r.label, newLeaf.label, level)
             (newR, true, false, oldLabel)
