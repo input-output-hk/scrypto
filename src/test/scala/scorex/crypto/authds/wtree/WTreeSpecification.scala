@@ -29,9 +29,7 @@ class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       whenever(validKey(key) && value.nonEmpty) {
         val digest = wt.rootHash()
         val proof: WTModifyProof = wt.modify(key, rewrite(value))
-        proof.verify(digest, rewrite(value)).isDefined shouldBe true
-//        TODO Fix!!
-//        proof.verify(digest, rewrite(wrongValue)) shouldBe None
+        proof.verify(digest, rewrite(value)).get shouldEqual wt.rootHash()
       }
     }
   }
@@ -42,14 +40,10 @@ class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       whenever(validKey(key) && !(value sameElements value2)) {
         val digest = wt.rootHash()
         val proof: WTModifyProof = wt.modify(key, append(value))
-        proof.verify(digest, append(value)).isDefined shouldBe true
-//        TODO Fix!!
-//        proof.verify(digest, append(value2)) shouldBe None
+        proof.verify(digest, append(value)).get shouldEqual wt.rootHash()
 
         val updateProof = wt.modify(key, append(value2))
-        proof.verify(digest, append(value2)).isDefined shouldBe true
-//        TODO Fix!!
-//        proof.verify(digest, append(value)) shouldBe None
+        proof.verify(digest, append(value2)).get shouldEqual wt.rootHash()
       }
     }
   }
