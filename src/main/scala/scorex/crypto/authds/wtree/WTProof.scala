@@ -16,7 +16,9 @@ sealed trait WTProof {
     proof.dequeue().asInstanceOf[WTProofKey].e
   }
 
-  def dequeueNextLeafKey(proof: mutable.Queue[WTProofElement]): WTKey = dequeueKey(proof)
+  def dequeueNextLeafKey(proof: mutable.Queue[WTProofElement]): WTKey  = {
+    proof.dequeue().asInstanceOf[WTProofNextLeafKey].e
+  }
 
   def dequeueRightLabel(proof: mutable.Queue[WTProofElement]): Label = {
     proof.dequeue().asInstanceOf[WTProofRightLabel].e
@@ -69,7 +71,7 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
             r.label = r.computeLabel
             val level = levelFromKey(key)
             //TODO check VerifierNode(r.label, newLeaf.label, level) or VerifierNode(newLeaf.label, r.label, level)?
-            val newR = VerifierNode(newLeaf.label, r.label, level)
+            val newR = VerifierNode(r.label, newLeaf.label, level)
             (newR, true, false, oldLabel)
           } else {
             (r, false, true, oldLabel)
@@ -157,6 +159,7 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
     } else {
       None
     }
-  }.getOrElse(None)
+  }.get
+//  }.getOrElse(None)
 
 }

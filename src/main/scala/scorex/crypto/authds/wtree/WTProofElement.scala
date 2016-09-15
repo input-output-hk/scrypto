@@ -14,23 +14,27 @@ trait WTProofLabel extends WTProofElement {
   val e: Array[Byte]
   val bytes: Array[Byte] = e
 
-  override def toString: String = s"SLTProofKey(${Base58.encode(e).take(8)})"
+  override def toString: String = s"WTProofKey(${Base58.encode(e).take(8)})"
 }
 
 case class WTProofRightLabel(e: Array[Byte]) extends WTProofLabel
 
 case class WTProofLeftLabel(e: Array[Byte]) extends WTProofLabel
 
-case class WTProofKey(e: WTKey) extends WTProofElement {
+trait Key extends WTProofElement {
+  val e: Array[Byte]
   val bytes: Array[Byte] = e
 
-  override def toString: String = s"SLTProofKey(${Base58.encode(e).take(8)})"
+  override def toString: String = s"Key(${Base58.encode(e).take(8)})"
 }
+
+case class WTProofKey(e: WTKey) extends Key
+case class WTProofNextLeafKey(e: WTKey) extends Key
 
 case class WTProofValue(e: WTValue) extends WTProofElement {
   val bytes: Array[Byte] = e
 
-  override def toString: String = s"SLTProofKey(${Base58.encode(e).take(8)})"
+  override def toString: String = s"WTProofKey(${Base58.encode(e).take(8)})"
 }
 
 case class WTProofDirection(direction: Direction) extends WTProofElement {

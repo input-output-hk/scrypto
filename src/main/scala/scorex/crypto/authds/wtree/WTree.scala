@@ -40,7 +40,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
           if (found) {
             // we already know it's in the tree, so it must be at the current leaf
             proofStream.enqueue(WTProofDirection(LeafFound))
-            proofStream.enqueue(WTProofKey(r.nextLeafKey))
+            proofStream.enqueue(WTProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(WTProofValue(r.value))
             r.value = updateFunction(Some(r.value))
             r.label = r.computeLabel
@@ -49,7 +49,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
             // x > r.key
             proofStream.enqueue(WTProofDirection(LeafNotFound))
             proofStream.enqueue(WTProofKey(r.key))
-            proofStream.enqueue(WTProofKey(r.nextLeafKey))
+            proofStream.enqueue(WTProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(WTProofValue(r.value))
             if (toInsertIfNotFound) {
               val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)

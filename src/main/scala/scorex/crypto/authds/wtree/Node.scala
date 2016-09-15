@@ -1,5 +1,6 @@
 package scorex.crypto.authds.wtree
 
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.CryptographicHash
 
 // WE NEED TO MAKE THE FOLLOWING MODIFICATIONS TO THE DEFINITION OF NODE
@@ -26,20 +27,23 @@ sealed trait Node {
   def computeLabel: Label
 
   val isLeaf: Boolean
+
+  protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
 }
 
 sealed trait ProverNodes extends Node {
   val key: WTKey
   lazy val level = levelFromKey(key)
+
+  val labelOpt: Option[Label]
+  override var label: Label = labelOpt.getOrElse(computeLabel)
 }
 
 sealed trait VerifierNodes extends Node
 
-case class ProverNode(key: WTKey, var left: ProverNodes, var right: ProverNodes,  labelOpt: Option[Label] = None)
+case class ProverNode(key: WTKey, var left: ProverNodes, var right: ProverNodes, labelOpt: Option[Label] = None)
                      (implicit hf: CryptographicHash) extends ProverNodes {
-//  override lazy val label: Label = labelOpt.getOrElse(computeLabel)
 
-  override var label: Label = _
 
   override def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
 
@@ -47,6 +51,11 @@ case class ProverNode(key: WTKey, var left: ProverNodes, var right: ProverNodes,
 
   def rightLabel: Label = right.label
   def leftLabel: Label = left.label
+
+  override def toString: String = {
+    s"ProverNode(${arrayToString(key)}, ${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
+  }
+
 }
 
 case class VerifierNode(var leftLabel: Label, var rightLabel: Label, level: Level)
@@ -56,13 +65,21 @@ case class VerifierNode(var leftLabel: Label, var rightLabel: Label, level: Leve
   override def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
 
   override val isLeaf: Boolean = false
+
+  override def toString: String = {
+    s"VerifierNode(${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
+  }
+
 }
 
-case class Leaf(key: WTKey, var value: WTValue, var nextLeafKey: WTKey)
+case class Leaf(key: WTKey, var value: WTValue, var nextLeafKey: WTKey, labelOpt: Option[Label] = None)
                (implicit hf: CryptographicHash) extends ProverNodes with VerifierNodes {
-  var label: Label = NotCalculatedLabel
 
   override def computeLabel: Label = hf(key ++ value ++ nextLeafKey)
 
   override val isLeaf: Boolean = true
+
+  override def toString: String = {
+    s"Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
+  }
 }
