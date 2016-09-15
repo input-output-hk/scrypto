@@ -1,5 +1,6 @@
 package scorex.crypto.authds.wtree
 
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
@@ -63,7 +64,7 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
           require(ByteArray.compare(key, x) < 0)
           require(ByteArray.compare(x, nextLeafKey) < 0)
 
-          val r = new Leaf(x, value, nextLeafKey)
+          val r = new Leaf(key, value, nextLeafKey)
           val oldLabel = r.label
           if (toInsertIfNotFound) {
             val newLeaf = new Leaf(x, updated(None), r.nextLeafKey)

@@ -53,7 +53,7 @@ case class ProverNode(key: WTKey, var left: ProverNodes, var right: ProverNodes,
   def leftLabel: Label = left.label
 
   override def toString: String = {
-    s"ProverNode(${arrayToString(key)}, ${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
+    s"${arrayToString(label)}: ProverNode(${arrayToString(key)}, ${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
   }
 
 }
@@ -67,7 +67,7 @@ case class VerifierNode(var leftLabel: Label, var rightLabel: Label, level: Leve
   override val isLeaf: Boolean = false
 
   override def toString: String = {
-    s"VerifierNode(${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
+    s"${arrayToString(label)}: VerifierNode(${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
   }
 
 }
@@ -80,6 +80,6 @@ case class Leaf(key: WTKey, var value: WTValue, var nextLeafKey: WTKey, labelOpt
   override val isLeaf: Boolean = true
 
   override def toString: String = {
-    s"Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
+    s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
   }
 }
