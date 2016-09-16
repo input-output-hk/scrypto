@@ -23,6 +23,17 @@ class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
     }
   }
 
+  property("WTree insert one") {
+    forAll { (key: Array[Byte], value: Array[Byte], wrongValue: Array[Byte]) =>
+      whenever(validKey(key) && value.nonEmpty) {
+        val wt = new WTree()
+        val digest = wt.rootHash()
+        val proof: WTModifyProof = wt.modify(key, rewrite(value))
+        proof.verify(digest, rewrite(value)).get shouldEqual wt.rootHash()
+      }
+    }
+  }
+
   property("WTree insert") {
     val wt = new WTree()
     forAll { (key: Array[Byte], value: Array[Byte], wrongValue: Array[Byte]) =>

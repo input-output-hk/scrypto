@@ -128,7 +128,7 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
             // This is symmetric to the left case, except of < replaced with <= on the next
             // line
             val newR = newRightM match {
-              case newRight: VerifierNode if newRight.level < r.level =>
+              case newRight: VerifierNode if newRight.level > r.level =>
                 // We need to rotate r with newRight
                 r.rightLabel = newRight.leftLabel
                 r.label = r.computeLabel

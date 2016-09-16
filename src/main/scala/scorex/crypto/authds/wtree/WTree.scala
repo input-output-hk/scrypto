@@ -135,7 +135,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
               // This is symmetric to the left case, except of < replaced with <=
               // on the next line
               val newR = newRightM match {
-                case newRight: ProverNode if newRight.level < r.level =>
+                case newRight: ProverNode if newRight.level > r.level =>
                   // We need to rotate r with newRight
                   r.right = newRight.left
                   r.label = r.computeLabel
