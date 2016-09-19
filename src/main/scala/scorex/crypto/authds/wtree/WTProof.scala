@@ -1,6 +1,5 @@
 package scorex.crypto.authds.wtree
 
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
@@ -17,7 +16,7 @@ sealed trait WTProof {
     proof.dequeue().asInstanceOf[WTProofKey].e
   }
 
-  def dequeueNextLeafKey(proof: mutable.Queue[WTProofElement]): WTKey  = {
+  def dequeueNextLeafKey(proof: mutable.Queue[WTProofElement]): WTKey = {
     proof.dequeue().asInstanceOf[WTProofNextLeafKey].e
   }
 
@@ -47,8 +46,6 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
 
     // returns the new flat root
     // and an indicator whether tree has been modified at r or below
-    // (if so, the label of the new flat root has not been computed yet,
-    // because it may still change; it's the responsibility of the caller to compute it)
     // 
     // Also returns the label of the old root
     def verifyHelper(): (VerifierNodes, Boolean, Label) = {
@@ -57,9 +54,8 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
           val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
           val value: WTValue = dequeueValue(proof)
           val oldLeaf = Leaf(x, value, nextLeafKey)
-          val oldLabel = oldLeaf.computeLabel
           val newLeaf = Leaf(x, updated(Some(value)), nextLeafKey)
-          (newLeaf, true, oldLabel)
+          (newLeaf, true, oldLeaf.label)
         case LeafNotFound =>
           val key = dequeueKey(proof)
           val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
@@ -72,7 +68,6 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
           if (toInsertIfNotFound) {
             val newLeaf = new Leaf(x, updated(None), r.nextLeafKey)
             r.nextLeafKey = x
-            r.label = r.computeLabel
             val level = levelFromKey(x)
             //TODO check VerifierNode(r.label, newLeaf.label, level) or VerifierNode(newLeaf.label, r.label, level)?
             val newR = VerifierNode(r.label, newLeaf.label, level)
@@ -94,12 +89,10 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
               case newLeft: VerifierNode if newLeft.level >= r.level =>
                 // We need to rotate r with newLeft
                 r.leftLabel = newLeft.rightLabel
-                r.label = r.computeLabel
                 newLeft.rightLabel = r.label
                 (newLeft, true, oldLabel)
               case newLeft =>
                 // Attach the newLeft because its level is smaller than our level
-                newLeft.label = newLeft.computeLabel
                 r.leftLabel = newLeft.label
                 (r, true, oldLabel)
             }
@@ -113,7 +106,6 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
           var (newRightM: VerifierNodes, changeHappened: Boolean, oldRightLabel) = verifyHelper()
 
           val r = VerifierNode(leftLabel, oldRightLabel, level)
-          r.label = r.computeLabel
           val oldLabel = r.label
 
           if (changeHappened) {
@@ -123,12 +115,10 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
               case newRight: VerifierNode if newRight.level > r.level =>
                 // We need to rotate r with newRight
                 r.rightLabel = newRight.leftLabel
-                r.label = r.computeLabel
                 newRight.leftLabel = r.label
                 (newRight, true, oldLabel)
               case newRight =>
                 // Attach the newRight because its level is smaller than or equal to our level
-                newRight.label = newRight.computeLabel
                 r.rightLabel = newRight.label
                 (r, true, oldLabel)
             }
@@ -141,12 +131,12 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
 
     var (newTopNode: VerifierNodes, changeHappened: Boolean, oldLabel: Label) = verifyHelper()
     if (oldLabel sameElements digest) {
-      newTopNode.label = newTopNode.computeLabel
       Some(newTopNode.label)
     } else {
       None
     }
   }.get
-//  }.getOrElse(None)
+
+  //  }.getOrElse(None)
 
 }

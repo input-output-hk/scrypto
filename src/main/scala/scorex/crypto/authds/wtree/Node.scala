@@ -20,36 +20,57 @@ import scorex.crypto.hash.CryptographicHash
 //
 
 sealed trait Node {
-  val NotCalculatedLabel: Label = Array()
-
-  var label: Label
 
   def computeLabel: Label
 
   val isLeaf: Boolean
 
   protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
+
+  protected var labelOpt: Option[Label] = None
+
+  def label: Label = labelOpt match {
+    case None =>
+      val l = computeLabel
+      labelOpt = Some(l)
+      l
+    case Some(l) =>
+      l
+  }
+
 }
 
 sealed trait ProverNodes extends Node {
   val key: WTKey
-  lazy val level = levelFromKey(key)
-
-  val labelOpt: Option[Label]
-  override var label: Label = labelOpt.getOrElse(computeLabel)
 }
 
 sealed trait VerifierNodes extends Node
 
-case class ProverNode(key: WTKey, var left: ProverNodes, var right: ProverNodes, labelOpt: Option[Label] = None)
+case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _right: ProverNodes)
                      (implicit hf: CryptographicHash) extends ProverNodes {
 
+  lazy val level = levelFromKey(key)
 
-  override def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
+  def left: ProverNodes = _left
+
+  def right: ProverNodes = _right
+
+  def left_=(newLeft: ProverNodes) = {
+    _left = newLeft
+    labelOpt = None
+  }
+
+  def right_=(newRight: ProverNodes) = {
+    _right = newRight
+    labelOpt = None
+  }
+
+  def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
 
   override val isLeaf: Boolean = false
 
   def rightLabel: Label = right.label
+
   def leftLabel: Label = left.label
 
   override def toString: String = {
@@ -58,11 +79,24 @@ case class ProverNode(key: WTKey, var left: ProverNodes, var right: ProverNodes,
 
 }
 
-case class VerifierNode(var leftLabel: Label, var rightLabel: Label, level: Level)
+case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: Label, level: Level)
                        (implicit hf: CryptographicHash) extends VerifierNodes {
-  var label: Label = computeLabel
 
-  override def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
+  def leftLabel: Label = _leftLabel
+
+  def rightLabel: Label = _rightLabel
+
+  def leftLabel_=(newLeft: Label) = {
+    _leftLabel = newLeft;
+    labelOpt = None
+  }
+
+  def rightLabel_=(newRight: Label) = {
+    _rightLabel = newRight
+    labelOpt = None
+  }
+
+  def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
 
   override val isLeaf: Boolean = false
 
@@ -72,10 +106,25 @@ case class VerifierNode(var leftLabel: Label, var rightLabel: Label, level: Leve
 
 }
 
-case class Leaf(key: WTKey, var value: WTValue, var nextLeafKey: WTKey, labelOpt: Option[Label] = None)
+case class Leaf(key: WTKey, private var _value: WTValue, private var _nextLeafKey: WTKey)
                (implicit hf: CryptographicHash) extends ProverNodes with VerifierNodes {
 
-  override def computeLabel: Label = hf(key ++ value ++ nextLeafKey)
+  def value: WTValue = _value
+
+  def value_=(newValue: WTValue) = {
+    _value = newValue
+    labelOpt = None
+  }
+
+  def nextLeafKey: WTKey = _nextLeafKey
+
+  def nextLeafKey_=(newNextLeafKey: WTValue) = {
+    _nextLeafKey = newNextLeafKey
+    labelOpt = None
+  }
+
+
+  def computeLabel: Label = hf(key ++ value ++ nextLeafKey)
 
   override val isLeaf: Boolean = true
 

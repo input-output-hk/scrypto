@@ -10,7 +10,6 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
 
   var topNode: ProverNodes = rootOpt.getOrElse {
     val r = Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1)
-    r.label = r.computeLabel
     r
   }
 
@@ -32,9 +31,6 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
     // found tells us if x has been already found above r in the tree
     // returns the new root
     // and an indicator whether tree has been modified at r or below
-    // (if so, the label of the new root has not been computed yet,
-    // because it may still change; it's the responsibility of the caller to compute it)
-    // (all the nodes below the new root are guaranteed to have the correct label computed)
     def modifyHelper(rNode: ProverNodes, foundIn: Boolean): (ProverNodes, Boolean) = {
       var found = foundIn
       rNode match {
@@ -54,9 +50,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
             proofStream.enqueue(WTProofValue(r.value))
             if (toInsertIfNotFound) {
               val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
-              newLeaf.label = newLeaf.computeLabel
               r.nextLeafKey = key
-              r.label = r.computeLabel
               // Create a new node without computing its hash, because its hash will change
               (ProverNode(key, r, newLeaf), true)
             } else {
@@ -98,12 +92,10 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
                 case newLeft: ProverNode if newLeft.level >= r.level =>
                   // We need to rotate r with newLeft
                   r.left = newLeft.right
-                  r.label = r.computeLabel
                   newLeft.right = r
                   (newLeft, true)
                 case newLeft =>
                   // Attach the newLeft because its level is smaller than our level
-                  newLeft.label = newLeft.computeLabel
                   r.left = newLeft
                   (r, true)
               }
@@ -128,12 +120,10 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
                 case newRight: ProverNode if newRight.level > r.level =>
                   // We need to rotate r with newRight
                   r.right = newRight.left
-                  r.label = r.computeLabel
                   newRight.left = r
                   (newRight, true)
                 case newRight =>
                   // Attach the newRight because its level is smaller than or equal to our level
-                  newRight.label = newRight.computeLabel
                   r.right = newRight
                   (r, true)
               }
@@ -147,7 +137,6 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
     }
 
     var (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundIn = false)
-    newTopNode.label = newTopNode.computeLabel
     topNode = newTopNode
     WTModifyProof(key, proofStream)
   }
