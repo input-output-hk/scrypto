@@ -45,10 +45,13 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
   def verify(digest: Label, updated: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[WTProofElement] = mutable.Queue(proofSeq: _*)
 
-    // returns the new flat root, an indicator whether tree has been modified at r or below,
-    // and an indicator whether the new root already has its label correctly computed
+    // returns the new flat root
+    // and an indicator whether tree has been modified at r or below
+    // (if so, the label of the new flat root has not been computed yet,
+    // because it may still change; it's the responsibility of the caller to compute it)
+    // 
     // Also returns the label of the old root
-    def verifyHelper(): (VerifierNodes, Boolean, Boolean, Label) = {
+    def verifyHelper(): (VerifierNodes, Boolean, Label) = {
       dequeueDirection(proof) match {
         case LeafFound =>
           val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
@@ -56,7 +59,7 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
           val oldLeaf = Leaf(x, value, nextLeafKey)
           val oldLabel = oldLeaf.computeLabel
           val newLeaf = Leaf(x, updated(Some(value)), nextLeafKey)
-          (newLeaf, true, true, oldLabel)
+          (newLeaf, true, oldLabel)
         case LeafNotFound =>
           val key = dequeueKey(proof)
           val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
@@ -73,89 +76,72 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
             val level = levelFromKey(x)
             //TODO check VerifierNode(r.label, newLeaf.label, level) or VerifierNode(newLeaf.label, r.label, level)?
             val newR = VerifierNode(r.label, newLeaf.label, level)
-            (newR, true, false, oldLabel)
+            (newR, true, oldLabel)
           } else {
-            (r, false, true, oldLabel)
+            (r, false, oldLabel)
           }
         case GoingLeft =>
           val rightLabel: Label = dequeueRightLabel(proof)
           val level: Level = dequeueLevel(proof)
 
-          var (newLeftM: VerifierNodes, changeHappened: Boolean, rootLabelComputed: Boolean, oldLeftLabel) = verifyHelper()
+          var (newLeftM: VerifierNodes, changeHappened: Boolean, oldLeftLabel) = verifyHelper()
 
           val r = VerifierNode(oldLeftLabel, rightLabel, level)
           val oldLabel = r.label
 
           if (changeHappened) {
-            // Attach the newLeft if its level is smaller than our level;
-            // compute its hash if needed,
-            // because it is not going to move up
-            val newR = newLeftM match {
+            newLeftM match {
               case newLeft: VerifierNode if newLeft.level >= r.level =>
                 // We need to rotate r with newLeft
                 r.leftLabel = newLeft.rightLabel
                 r.label = r.computeLabel
                 newLeft.rightLabel = r.label
-                rootLabelComputed = false
-                newLeft
-              // do not compute the label of newR, because it may still change
+                (newLeft, true, oldLabel)
               case newLeft =>
-                if (!rootLabelComputed) {
-                  newLeft.label = newLeft.computeLabel
-                  rootLabelComputed = true
-                }
+                // Attach the newLeft because its level is smaller than our level
+                newLeft.label = newLeft.computeLabel
                 r.leftLabel = newLeft.label
-                r
+                (r, true, oldLabel)
             }
-            (newR, true, rootLabelComputed, oldLabel)
           } else {
-            (r, false, true, oldLabel)
+            (r, false, oldLabel)
           }
         case GoingRight =>
           val leftLabel: Label = dequeueLeftLabel(proof)
           val level: Level = dequeueLevel(proof)
 
-          var (newRightM: VerifierNodes, changeHappened: Boolean, rootLabelComputed: Boolean, oldRightLabel) = verifyHelper()
+          var (newRightM: VerifierNodes, changeHappened: Boolean, oldRightLabel) = verifyHelper()
 
           val r = VerifierNode(leftLabel, oldRightLabel, level)
           r.label = r.computeLabel
           val oldLabel = r.label
 
           if (changeHappened) {
-            // Attach the newRight if its level is smaller than or equal to our level;
-            // compute its hash if needed,
-            // because it is not going to move up
-            // This is symmetric to the left case, except of < replaced with <= on the next
-            // line
-            val newR = newRightM match {
+            // This is symmetric to the left case, except of >= replaced with > in the
+            // level comparison
+            newRightM match {
               case newRight: VerifierNode if newRight.level > r.level =>
                 // We need to rotate r with newRight
                 r.rightLabel = newRight.leftLabel
                 r.label = r.computeLabel
                 newRight.leftLabel = r.label
-                rootLabelComputed = false
-                newRight
-              // do not compute the label of newR, because it may still change
+                (newRight, true, oldLabel)
               case newRight =>
-                if (!rootLabelComputed) {
-                  newRight.label = newRight.computeLabel
-                  rootLabelComputed = true
-                }
+                // Attach the newRight because its level is smaller than or equal to our level
+                newRight.label = newRight.computeLabel
                 r.rightLabel = newRight.label
-                r.label = r.computeLabel
-                r
+                (r, true, oldLabel)
             }
-            (newR, true, rootLabelComputed, oldLabel)
           } else {
             // no change happened
-            (r, false, true, oldLabel)
+            (r, false, oldLabel)
           }
       }
     }
 
-    var (newTopNode: VerifierNodes, changeHappened: Boolean, rootLabelComputed: Boolean, oldLabel: Label) = verifyHelper()
+    var (newTopNode: VerifierNodes, changeHappened: Boolean, oldLabel: Label) = verifyHelper()
     if (oldLabel sameElements digest) {
-      if (!rootLabelComputed) newTopNode.label = newTopNode.computeLabel
+      newTopNode.label = newTopNode.computeLabel
       Some(newTopNode.label)
     } else {
       None

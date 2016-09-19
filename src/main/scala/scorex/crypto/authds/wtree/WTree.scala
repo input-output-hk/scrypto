@@ -30,10 +30,12 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
     val proofStream = new scala.collection.mutable.Queue[WTProofElement]
 
     // found tells us if x has been already found above r in the tree
-    // returns the new root, an indicator whether tree has been modified at r or below,
-    // and an indicator whether the new root already has its label correctly computed
+    // returns the new root
+    // and an indicator whether tree has been modified at r or below
+    // (if so, the label of the new root has not been computed yet,
+    // because it may still change; it's the responsibility of the caller to compute it)
     // (all the nodes below the new root are guaranteed to have the correct label computed)
-    def modifyHelper(rNode: ProverNodes, foundIn: Boolean): (ProverNodes, Boolean, Boolean) = {
+    def modifyHelper(rNode: ProverNodes, foundIn: Boolean): (ProverNodes, Boolean) = {
       var found = foundIn
       rNode match {
         case r: Leaf =>
@@ -43,8 +45,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
             proofStream.enqueue(WTProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(WTProofValue(r.value))
             r.value = updateFunction(Some(r.value))
-            r.label = r.computeLabel
-            (r, true, true)
+            (r, true)
           } else {
             // x > r.key
             proofStream.enqueue(WTProofDirection(LeafNotFound))
@@ -57,9 +58,9 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
               r.nextLeafKey = key
               r.label = r.computeLabel
               // Create a new node without computing its hash, because its hash will change
-              (ProverNode(key, r, newLeaf), true, false)
+              (ProverNode(key, r, newLeaf), true)
             } else {
-              (r, false, true)
+              (r, false)
             }
           }
         case r: ProverNode =>
@@ -90,33 +91,25 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
             proofStream.enqueue(WTProofRightLabel(r.rightLabel))
             proofStream.enqueue(WTProofLevel(r.level))
 
-            var (newLeftM: ProverNodes, changeHappened: Boolean, rootLabelComputed: Boolean) = modifyHelper(r.left, found)
+            var (newLeftM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.left, found)
 
             if (changeHappened) {
-              // Attach the newLeft if its level is smaller than our level;
-              // compute its hash if needed,
-              // because it is not going to move up
-              val newR = newLeftM match {
+              newLeftM match {
                 case newLeft: ProverNode if newLeft.level >= r.level =>
                   // We need to rotate r with newLeft
                   r.left = newLeft.right
                   r.label = r.computeLabel
                   newLeft.right = r
-                  rootLabelComputed = false
-                  newLeft
+                  (newLeft, true)
                 case newLeft =>
-                  if (!rootLabelComputed) {
-                    newLeftM.label = newLeftM.computeLabel
-                    rootLabelComputed = true
-                  }
-                  r.left = newLeftM
-                  r.label = r.computeLabel
-                  r
+                  // Attach the newLeft because its level is smaller than our level
+                  newLeft.label = newLeft.computeLabel
+                  r.left = newLeft
+                  (r, true)
               }
-              (newR, true, rootLabelComputed)
             } else {
               // no change happened
-              (r, false, true)
+              (r, false)
             }
           }
 
@@ -126,44 +119,35 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: 
             proofStream.enqueue(WTProofLeftLabel(r.leftLabel))
             proofStream.enqueue(WTProofLevel(r.level))
 
-            var (newRightM: ProverNodes, changeHappened: Boolean, rootLabelComputed: Boolean) = modifyHelper(r.right, found)
+            var (newRightM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.right, found)
 
             if (changeHappened) {
-              // Attach the newRight if its level is smaller than or equal to our level;
-              // compute its hash if needed,
-              // because it is not going to move up
-              // This is symmetric to the left case, except of < replaced with <=
-              // on the next line
-              val newR = newRightM match {
+              // This is symmetric to the left case, except of >= replaced with > in the
+              // level comparison
+              newRightM match {
                 case newRight: ProverNode if newRight.level > r.level =>
                   // We need to rotate r with newRight
                   r.right = newRight.left
                   r.label = r.computeLabel
                   newRight.left = r
-                  rootLabelComputed = false
-                  newRight
-                // do not compute the label of newR, because it may still change
+                  (newRight, true)
                 case newRight =>
-                  if (!rootLabelComputed) {
-                    newRight.label = newRight.computeLabel
-                    rootLabelComputed = true
-                  }
+                  // Attach the newRight because its level is smaller than or equal to our level
+                  newRight.label = newRight.computeLabel
                   r.right = newRight
-                  r.label = r.computeLabel
-                  r
+                  (r, true)
               }
-              (newR, true, rootLabelComputed)
             } else {
               // no change happened
-              (r, false, true)
+              (r, false)
             }
           }
       }
 
     }
 
-    var (newTopNode: ProverNodes, changeHappened: Boolean, rootLabelComputed: Boolean) = modifyHelper(topNode, foundIn = false)
-    if (!rootLabelComputed) newTopNode.label = newTopNode.computeLabel
+    var (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundIn = false)
+    newTopNode.label = newTopNode.computeLabel
     topNode = newTopNode
     WTModifyProof(key, proofStream)
   }

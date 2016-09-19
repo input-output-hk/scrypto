@@ -49,12 +49,13 @@ class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
     val wt = new WTree()
     forAll { (key: Array[Byte], value: Array[Byte], value2: Array[Byte]) =>
       whenever(validKey(key) && !(value sameElements value2)) {
-        val digest = wt.rootHash()
+        val digest1 = wt.rootHash()
         val proof: WTModifyProof = wt.modify(key, append(value))
-        proof.verify(digest, append(value)).get shouldEqual wt.rootHash()
+        proof.verify(digest1, append(value)).get shouldEqual wt.rootHash()
 
+        val digest2 = wt.rootHash()
         val updateProof = wt.modify(key, append(value2))
-        proof.verify(digest, append(value2)).get shouldEqual wt.rootHash()
+        updateProof.verify(digest2, append(value2)).get shouldEqual wt.rootHash()
       }
     }
   }
