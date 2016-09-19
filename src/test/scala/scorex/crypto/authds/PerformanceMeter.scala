@@ -20,7 +20,7 @@ object PerformanceMeter extends App {
   (0 until ToCalculate) foreach { i =>
     val elements = genElements(Step, i)
     // wt
-    val (wtInsertTime, wtProofs) = time(elements.map(e => wt.modify(e._1, append(e._1))))
+    val (wtInsertTime, wtProofs) = time(elements.map(e => wt.modify(e, append(e))))
     val (wtVerifyTime, _) = time {
       wtProofs.foreach { p =>
         wtDigest = p.verify(wtDigest, append(p.x)).get
@@ -32,7 +32,7 @@ object PerformanceMeter extends App {
 
     //slt
 
-    val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e._1, append(e._1))))
+    val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
     val (sltVerifyTime, _) = time {
       sltProofs.foreach { p =>
         assert(p._1)
@@ -48,11 +48,11 @@ object PerformanceMeter extends App {
   }
 
 
-  def genElements(howMany: Int, seed: Long): Seq[(WTKey, WTValue)] = {
+  def genElements(howMany: Int, seed: Long): Seq[WTValue] = {
     val r = Random
     r.setSeed(seed)
     (0 until howMany).map { l =>
-      (Sha256(r.nextString(16).getBytes), Sha256(r.nextString(16).getBytes))
+      Sha256(r.nextString(16).getBytes)
     }
   }
 
