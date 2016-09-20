@@ -6,8 +6,8 @@ sealed trait WTProofElement {
   val bytes: Array[Byte]
 }
 
-case class WTProofLevel(e: Byte) extends WTProofElement {
-  val bytes: Array[Byte] = Array(e)
+case class WTProofLevel(e: Level) extends WTProofElement {
+  val bytes: Array[Byte] = e.bytes
 }
 
 trait WTProofLabel extends WTProofElement {
@@ -38,7 +38,7 @@ case class WTProofValue(e: WTValue) extends WTProofElement {
 }
 
 case class WTProofDirection(direction: Direction) extends WTProofElement {
-  override val bytes: Array[Level] = Array(direction match {
+  override val bytes: Array[Byte] = Array(direction match {
     case LeafFound => 1: Byte
     case LeafNotFound => 2: Byte
     case GoingLeft => 3: Byte

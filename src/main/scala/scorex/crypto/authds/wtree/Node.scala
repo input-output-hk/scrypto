@@ -49,7 +49,7 @@ sealed trait VerifierNodes extends Node
 case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _right: ProverNodes)
                      (implicit hf: CryptographicHash) extends ProverNodes {
 
-  lazy val level = levelFromKey(key)
+  lazy val level = skiplistLevel(key)
 
   def left: ProverNodes = _left
 
@@ -65,7 +65,7 @@ case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _r
     labelOpt = None
   }
 
-  def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
+  def computeLabel: Label = hf(level.bytes ++ leftLabel ++ rightLabel)
 
   override val isLeaf: Boolean = false
 
@@ -96,7 +96,7 @@ case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: 
     labelOpt = None
   }
 
-  def computeLabel: Label = hf(level +: (leftLabel ++ rightLabel))
+  def computeLabel: Label = hf(level.bytes ++ leftLabel ++ rightLabel)
 
   override val isLeaf: Boolean = false
 
