@@ -4,12 +4,26 @@ import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
+import scorex.crypto.authds.PerformanceMeter._
+import scorex.crypto.hash.{Blake2b256, Sha256}
 
 
 class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
 
   def validKey(key: WTKey): Boolean = key.length > 1 && key.length < MaxKeySize
+
+  property("WTree treap stream") {
+    val wt = new WTree()(Sha256, Level.treapLevel)
+    var digest = wt.rootHash()
+    forAll { (key: Array[Byte], value: Array[Byte]) =>
+      whenever(validKey(key) && value.nonEmpty) {
+        digest shouldEqual wt.rootHash()
+        val proof: WTModifyProof = wt.modify(key, append(value))
+        digest = proof.verify(digest, append(value)).get
+      }
+    }
+  }
 
   property("WTree stream") {
     val wt = new WTree()
@@ -62,7 +76,7 @@ class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
 
   def rewrite(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => value }
 
-  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value)}
+  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
 
   def transactionUpdate(amount: Long): Option[WTValue] => WTValue = (old: Option[WTValue]) =>
     Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))

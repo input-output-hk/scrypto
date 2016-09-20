@@ -1,37 +1,49 @@
 package scorex.crypto.authds
 
+import org.scalatest.Matchers
+import scorex.crypto.TestingCommons
 import scorex.crypto.authds.sltree.SLTree
 import scorex.crypto.authds.wtree._
-import scorex.crypto.hash._
-
-import scala.util.Random
+import scorex.crypto.hash.Blake2b256
 
 
-object PerformanceMeter extends App {
-
-  val wt = new WTree()
-  val slt = new SLTree()
+object PerformanceMeter extends App with TestingCommons with Matchers {
 
   val Step = 1000
   val ToCalculate = 1000
 
-  var wtDigest = wt.rootHash()
+  val wt = new WTree()
+  val treap = new WTree()(Blake2b256, Level.treapLevel)
+  val slt = new SLTree()
+
   var sltDigest = slt.rootHash()
+
+  def profileTree(tree: WTree[_], elements: Seq[Array[Byte]], inDigest: Label): (Long, Long, Long) = {
+    var digest = inDigest
+    val (insertTime, proofs) = time(elements.map(e => tree.modify(e, append(e))))
+    val (verifyTime, _) = time {
+      proofs.foreach { p =>
+        digest = p.verify(digest, append(p.x)).get
+      }
+    }
+    val proofSize = proofs.foldLeft(Array[Byte]()) { (a, b) =>
+      a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
+    }.length / Step
+    (insertTime, verifyTime, proofSize)
+  }
+
+  println("size, " +
+    "treapInsertTime, wtInsertTime, sltInsertTime, " +
+    "treapVerifyTime, wtVerifyTime, sltVerifyTime, " +
+    "treapProofSize, wtProofSize,  sltProofSize")
   (0 until ToCalculate) foreach { i =>
     val elements = genElements(Step, i)
     // wt
-    val (wtInsertTime, wtProofs) = time(elements.map(e => wt.modify(e, append(e))))
-    val (wtVerifyTime, _) = time {
-      wtProofs.foreach { p =>
-        wtDigest = p.verify(wtDigest, append(p.x)).get
-      }
-    }
-    val wtProofSize = wtProofs.foldLeft(Array[Byte]()) { (a, b) =>
-      a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
-    }.length / Step
+    val (wtInsertTime, wtVerifyTime, wtProofSize) = profileTree(wt, elements, wt.rootHash())
+    // treap
+    val (treapInsertTime, treapVerifyTime, treapProofSize) = profileTree(wt, elements, wt.rootHash())
 
     //slt
-
     val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
     val (sltVerifyTime, _) = time {
       sltProofs.foreach { p =>
@@ -44,24 +56,12 @@ object PerformanceMeter extends App {
     }.length / Step
 
 
-    println(s"${i * Step} => $wtInsertTime, $wtVerifyTime, $wtProofSize, $sltInsertTime, $sltVerifyTime, $sltProofSize")
+    println(s"${i * Step}, " +
+      s"$treapInsertTime, $wtInsertTime, $sltInsertTime, " +
+      s"$treapVerifyTime, $wtVerifyTime, $sltVerifyTime, " +
+      s"$treapProofSize, $wtProofSize,  $sltProofSize")
   }
 
-
-  def genElements(howMany: Int, seed: Long): Seq[WTValue] = {
-    val r = Random
-    r.setSeed(seed)
-    (0 until howMany).map { l =>
-      Sha256(r.nextString(16).getBytes)
-    }
-  }
-
-  def time[R](block: => R): (Long, R) = {
-    val t0 = System.currentTimeMillis()
-    val result = block // call-by-name
-    val t1 = System.currentTimeMillis()
-    (t1 - t0, result)
-  }
 
   def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
 }
