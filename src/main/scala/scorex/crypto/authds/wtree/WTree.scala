@@ -48,7 +48,6 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
             if (toInsertIfNotFound) {
               val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
               r.nextLeafKey = key
-              // Create a new node without computing its hash, because its hash will change
               (ProverNode(key, r, newLeaf), true)
             } else {
               (r, false)
