@@ -38,6 +38,18 @@ sealed trait Node {
 
 }
 
+trait InternalNode {
+  val hf: CryptographicHash
+  val level: Level
+
+  def leftLabel: Label
+
+  def rightLabel: Label
+
+  def computeLabel: Label = hf(Array(1: Byte) ++ level.bytes ++ leftLabel ++ rightLabel)
+
+}
+
 sealed trait ProverNodes extends Node {
   val key: WTKey
 }
@@ -45,7 +57,8 @@ sealed trait ProverNodes extends Node {
 sealed trait VerifierNodes extends Node
 
 case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _right: ProverNodes)
-                     (implicit hf: CryptographicHash, levelFunc: LevelFunction) extends ProverNodes {
+                     (implicit val hf: CryptographicHash, levelFunc: LevelFunction)
+  extends ProverNodes with InternalNode {
 
   lazy val level = levelFunc(key)
 
@@ -63,8 +76,6 @@ case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _r
     labelOpt = None
   }
 
-  def computeLabel: Label = hf(level.bytes ++ leftLabel ++ rightLabel)
-
   def rightLabel: Label = right.label
 
   def leftLabel: Label = left.label
@@ -76,14 +87,14 @@ case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _r
 }
 
 case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: Label, level: Level)
-                       (implicit hf: CryptographicHash) extends VerifierNodes {
+                       (implicit val hf: CryptographicHash) extends VerifierNodes with InternalNode {
 
   def leftLabel: Label = _leftLabel
 
   def rightLabel: Label = _rightLabel
 
   def leftLabel_=(newLeft: Label) = {
-    _leftLabel = newLeft;
+    _leftLabel = newLeft
     labelOpt = None
   }
 
@@ -91,8 +102,6 @@ case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: 
     _rightLabel = newRight
     labelOpt = None
   }
-
-  def computeLabel: Label = hf(level.bytes ++ leftLabel ++ rightLabel)
 
   override def toString: String = {
     s"${arrayToString(label)}: VerifierNode(${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
@@ -118,7 +127,7 @@ case class Leaf(key: WTKey, private var _value: WTValue, private var _nextLeafKe
   }
 
 
-  def computeLabel: Label = hf(key ++ value ++ nextLeafKey)
+  def computeLabel: Label = hf(Array(0: Byte) ++ key ++ value ++ nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
