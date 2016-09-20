@@ -44,6 +44,7 @@ object PerformanceMeter extends App with TestingCommons with Matchers {
     val (treapInsertTime, treapVerifyTime, treapProofSize) = profileTree(wt, elements, wt.rootHash())
 
     //slt
+    //TODO same interface for slt??
     val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
     val (sltVerifyTime, _) = time {
       sltProofs.foreach { p =>

@@ -23,8 +23,6 @@ sealed trait Node {
 
   def computeLabel: Label
 
-  val isLeaf: Boolean
-
   protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
 
   protected var labelOpt: Option[Label] = None
@@ -67,8 +65,6 @@ case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _r
 
   def computeLabel: Label = hf(level.bytes ++ leftLabel ++ rightLabel)
 
-  override val isLeaf: Boolean = false
-
   def rightLabel: Label = right.label
 
   def leftLabel: Label = left.label
@@ -98,8 +94,6 @@ case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: 
 
   def computeLabel: Label = hf(level.bytes ++ leftLabel ++ rightLabel)
 
-  override val isLeaf: Boolean = false
-
   override def toString: String = {
     s"${arrayToString(label)}: VerifierNode(${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
   }
@@ -125,8 +119,6 @@ case class Leaf(key: WTKey, private var _value: WTValue, private var _nextLeafKe
 
 
   def computeLabel: Label = hf(key ++ value ++ nextLeafKey)
-
-  override val isLeaf: Boolean = true
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
