@@ -7,7 +7,7 @@ import scorex.utils.ByteArray
 // It is needed to give hints to the verifier whether which way to go
 
 class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
-                                      (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.skiplistLevel) {
+                                      (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.generator) {
 
   var topNode: ProverNodes = rootOpt.getOrElse (Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
