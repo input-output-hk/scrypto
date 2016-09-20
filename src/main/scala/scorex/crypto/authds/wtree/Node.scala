@@ -47,9 +47,9 @@ sealed trait ProverNodes extends Node {
 sealed trait VerifierNodes extends Node
 
 case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _right: ProverNodes)
-                     (implicit hf: CryptographicHash) extends ProverNodes {
+                     (implicit hf: CryptographicHash, levelFunc: LevelFunction) extends ProverNodes {
 
-  lazy val level = skiplistLevel(key)
+  lazy val level = levelFunc(key)
 
   def left: ProverNodes = _left
 

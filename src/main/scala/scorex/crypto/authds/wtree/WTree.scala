@@ -6,7 +6,8 @@ import scorex.utils.ByteArray
 // WE NEED TO CREATE A NEW TYPE OF INFORMATION IN THE PROOF: `ProofDirection, which can be leafFound, leafNotFound, goingLeft, or goingRight
 // It is needed to give hints to the verifier whether which way to go
 
-class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)(implicit hf: HF = Blake2b256) {
+class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
+                                    (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.skiplistLevel) {
 
   var topNode: ProverNodes = rootOpt.getOrElse {
     val r = Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1)

@@ -14,13 +14,6 @@ package object wtree {
 
   val LabelOfNone: Array[Byte] = Array()
   type UpdateFunction = Option[WTValue] => WTValue
-
-  def skiplistLevel(key: WTKey): Level = {
-    def isBitSet(byte: Byte)(bit: Int): Boolean =
-      ((byte >> bit) & 1) == 1
-    def byte2Bools(b: Byte): Seq[Boolean] = 0 to 7 map isBitSet(b)
-
-    ByteLevel(Sha256(key).flatMap(b => byte2Bools(b)).indexOf(true).toByte)
-  }
+  type LevelFunction = WTKey => Level
 
 }

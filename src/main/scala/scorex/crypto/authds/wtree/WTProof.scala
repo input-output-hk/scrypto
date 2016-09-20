@@ -38,8 +38,8 @@ sealed trait WTProof {
 }
 
 
-case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: CryptographicHash)
-  extends WTProof {
+case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])
+                        (implicit hf: CryptographicHash, levelFunc: LevelFunction) extends WTProof {
 
   def verify(digest: Label, updated: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[WTProofElement] = mutable.Queue(proofSeq: _*)
@@ -68,7 +68,7 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])(implicit hf: C
           if (toInsertIfNotFound) {
             val newLeaf = new Leaf(x, updated(None), r.nextLeafKey)
             r.nextLeafKey = x
-            val level = skiplistLevel(x)
+            val level = levelFunc(x)
             //TODO check VerifierNode(r.label, newLeaf.label, level) or VerifierNode(newLeaf.label, r.label, level)?
             val newR = VerifierNode(r.label, newLeaf.label, level)
             (newR, true, oldLabel)
