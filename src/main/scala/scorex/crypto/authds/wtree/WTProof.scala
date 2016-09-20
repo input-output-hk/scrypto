@@ -38,38 +38,36 @@ sealed trait WTProof {
 }
 
 
-case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])
+case class WTModifyProof(key: WTKey, proofSeq: Seq[WTProofElement])
                         (implicit hf: CryptographicHash, levelFunc: LevelFunction) extends WTProof {
 
-  def verify(digest: Label, updated: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
+  def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[WTProofElement] = mutable.Queue(proofSeq: _*)
 
     // returns the new flat root
     // and an indicator whether tree has been modified at r or below
-    // 
     // Also returns the label of the old root
     def verifyHelper(): (VerifierNodes, Boolean, Label) = {
       dequeueDirection(proof) match {
         case LeafFound =>
           val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
           val value: WTValue = dequeueValue(proof)
-          val oldLeaf = Leaf(x, value, nextLeafKey)
-          val newLeaf = Leaf(x, updated(Some(value)), nextLeafKey)
+          val oldLeaf = Leaf(key, value, nextLeafKey)
+          val newLeaf = Leaf(key, updateFunction(Some(value)), nextLeafKey)
           (newLeaf, true, oldLeaf.label)
         case LeafNotFound =>
-          val key = dequeueKey(proof)
+          val neigbourLeafKey = dequeueKey(proof)
           val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
           val value: WTValue = dequeueValue(proof)
-          require(ByteArray.compare(key, x) < 0)
-          require(ByteArray.compare(x, nextLeafKey) < 0)
+          require(ByteArray.compare(neigbourLeafKey, key) < 0)
+          require(ByteArray.compare(key, nextLeafKey) < 0)
 
-          val r = new Leaf(key, value, nextLeafKey)
+          val r = new Leaf(neigbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
           if (toInsertIfNotFound) {
-            val newLeaf = new Leaf(x, updated(None), r.nextLeafKey)
-            r.nextLeafKey = x
-            val level = levelFunc(x)
-            //TODO check VerifierNode(r.label, newLeaf.label, level) or VerifierNode(newLeaf.label, r.label, level)?
+            val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
+            r.nextLeafKey = key
+            val level = levelFunc(key)
             val newR = VerifierNode(r.label, newLeaf.label, level)
             (newR, true, oldLabel)
           } else {
@@ -135,8 +133,6 @@ case class WTModifyProof(x: WTKey, proofSeq: Seq[WTProofElement])
     } else {
       None
     }
-  }.get
-
-  //  }.getOrElse(None)
+  }.getOrElse(None)
 
 }

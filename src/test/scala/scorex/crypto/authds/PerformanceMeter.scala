@@ -23,7 +23,7 @@ object PerformanceMeter extends App with TestingCommons with Matchers {
     val (insertTime, proofs) = time(elements.map(e => tree.modify(e, append(e))))
     val (verifyTime, _) = time {
       proofs.foreach { p =>
-        digest = p.verify(digest, append(p.x)).get
+        digest = p.verify(digest, append(p.key)).get
       }
     }
     val proofSize = proofs.foldLeft(Array[Byte]()) { (a, b) =>

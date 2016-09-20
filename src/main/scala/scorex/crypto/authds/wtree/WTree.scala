@@ -9,10 +9,7 @@ import scorex.utils.ByteArray
 class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                                     (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.skiplistLevel) {
 
-  var topNode: ProverNodes = rootOpt.getOrElse {
-    val r = Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1)
-    r
-  }
+  var topNode: ProverNodes = rootOpt.getOrElse (Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
   def rootHash(): Label = topNode.label
 
@@ -32,11 +29,10 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
     // found tells us if x has been already found above r in the tree
     // returns the new root
     // and an indicator whether tree has been modified at r or below
-    def modifyHelper(rNode: ProverNodes, foundIn: Boolean): (ProverNodes, Boolean) = {
-      var found = foundIn
+    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean) = {
       rNode match {
         case r: Leaf =>
-          if (found) {
+          if (foundAbove) {
             // we already know it's in the tree, so it must be at the current leaf
             proofStream.enqueue(WTProofDirection(LeafFound))
             proofStream.enqueue(WTProofNextLeafKey(r.nextLeafKey))
@@ -60,27 +56,23 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
           }
         case r: ProverNode =>
           // First figure out the direction in which we need to go
-          val nextStepIsLeft =
-            if (found) {
-              // if it's already been found above, you always go left until leaf
-              true
-            } else {
-              ByteArray.compare(key, r.key) match {
-                case 0 => // found in the tree -- go one step right, then left to the leaf
-                  found = true
-                  false
-                case o if o < 0 => // going left
-                  true
-                case _ => // going right
-                  false
-              }
+          val (nextStepIsLeft, found) = if (foundAbove) {
+            // if it's already been found above, you always go left until leaf
+            (true, true)
+          } else {
+            ByteArray.compare(key, r.key) match {
+              case 0 => // found in the tree -- go one step right, then left to the leaf
+                (false, true)
+              case o if o < 0 => // going left
+                (true, false)
+              case _ => // going right
+                (false, false)
             }
-
+          }
           // Now go recursively in the direction we just figured out
           // Get a new node
           // See if the new node needs to be swapped with r because its level > r.level (if it's left)
           // or its level >= r.level (if it's right)
-
           if (nextStepIsLeft) {
             proofStream.enqueue(WTProofDirection(GoingLeft))
             proofStream.enqueue(WTProofRightLabel(r.rightLabel))
@@ -104,9 +96,7 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
               // no change happened
               (r, false)
             }
-          }
-
-          else {
+          } else {
             // next step is to the right
             proofStream.enqueue(WTProofDirection(GoingRight))
             proofStream.enqueue(WTProofLeftLabel(r.leftLabel))
@@ -137,22 +127,9 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
 
     }
 
-    var (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundIn = false)
+    var (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundAbove = false)
     topNode = newTopNode
     WTModifyProof(key, proofStream)
   }
-
-
-  /*
-    override def toString: String = {
-      def mk(n: Node): String = {
-        n.toString
-        val ln = n.left.map(n => mk(n)).getOrElse("")
-        val rn = n.right.map(n => mk(n)).getOrElse("")
-        n.toString + "\n" + rn + ln
-      }
-      s"Wtree(${Base58.encode(rootHash()).take(8)}}): \n${mk(topNode)}"
-    }
-  */
 
 }
