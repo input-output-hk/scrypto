@@ -86,20 +86,36 @@ case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _r
 
 }
 
-case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: Label, level: Level)
-                       (implicit val hf: CryptographicHash) extends VerifierNodes with InternalNode {
+object VerifierNode {
 
-  def leftLabel: Label = _leftLabel
+  def apply(leftLabel: Label, rightLabel: Label, level: Level)(implicit hf: CryptographicHash): VerifierNode = {
+    new VerifierNode(Some(leftLabel), Some(rightLabel), level, None, None)
+  }
 
-  def rightLabel: Label = _rightLabel
+  def apply(left: VerifierNodes, right: VerifierNodes, level: Level)(implicit hf: CryptographicHash): VerifierNode = {
+    new VerifierNode(None, None, level, Some(left), Some(right))
+  }
+
+}
+
+class VerifierNode(private var _leftLabel: Option[Label], private var _rightLabel: Option[Label], val level: Level,
+                   left: Option[VerifierNodes], right: Option[VerifierNodes])
+                  (implicit val hf: CryptographicHash) extends VerifierNodes with InternalNode {
+
+  require(_leftLabel.isDefined || left.isDefined)
+  require(_rightLabel.isDefined || right.isDefined)
+
+  def leftLabel: Label = _leftLabel.getOrElse(left.get.label)
+
+  def rightLabel: Label = _rightLabel.getOrElse(right.get.label)
 
   def leftLabel_=(newLeft: Label) = {
-    _leftLabel = newLeft
+    _leftLabel = Some(newLeft)
     labelOpt = None
   }
 
   def rightLabel_=(newRight: Label) = {
-    _rightLabel = newRight
+    _rightLabel = Some(newRight)
     labelOpt = None
   }
 
