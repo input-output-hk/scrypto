@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree
 
-import scorex.crypto.authds.TwoPartyProof
+import scorex.crypto.authds._
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
@@ -10,27 +10,27 @@ import scala.util.Try
 sealed trait AVLProof {
 
   def dequeueValue(proof: mutable.Queue[AVLProofElement]): AVLValue = {
-    proof.dequeue().asInstanceOf[AVLProofValue].e
+    proof.dequeue().asInstanceOf[ProofValue].e
   }
 
   def dequeueKey(proof: mutable.Queue[AVLProofElement]): AVLKey = {
-    proof.dequeue().asInstanceOf[AVLProofKey].e
+    proof.dequeue().asInstanceOf[ProofKey].e
   }
 
   def dequeueNextLeafKey(proof: mutable.Queue[AVLProofElement]): AVLKey = {
-    proof.dequeue().asInstanceOf[AVLProofNextLeafKey].e
+    proof.dequeue().asInstanceOf[ProofNextLeafKey].e
   }
 
   def dequeueRightLabel(proof: mutable.Queue[AVLProofElement]): Label = {
-    proof.dequeue().asInstanceOf[AVLProofRightLabel].e
+    proof.dequeue().asInstanceOf[ProofRightLabel].e
   }
 
   def dequeueLeftLabel(proof: mutable.Queue[AVLProofElement]): Label = {
-    proof.dequeue().asInstanceOf[AVLProofLeftLabel].e
+    proof.dequeue().asInstanceOf[ProofLeftLabel].e
   }
 
   def dequeueDirection(proof: mutable.Queue[AVLProofElement]): Direction = {
-    proof.dequeue().asInstanceOf[AVLProofDirection].direction
+    proof.dequeue().asInstanceOf[ProofDirection].direction
   }
 
   def dequeueBalance(proof: mutable.Queue[AVLProofElement]): Level = {
@@ -48,7 +48,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
   def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[AVLProofElement] = mutable.Queue(proofSeq: _*)
- 
+
     // returns the new flat root
     // and an indicator whether tree has been modified at r or below
     // Also returns the label of the old root
@@ -80,7 +80,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
         case GoingLeft =>
           val rightLabel: Label = dequeueRightLabel(proof)
           val balance: Level = dequeueBalance(proof)
-        
+
           var (newLeftM: VerifierNodes, changeHappened: Boolean, childHeightIncreased: Boolean, oldLeftLabel) = verifyHelper()
 
           val r = VerifierNode(LabelOnlyNode(oldLeftLabel), LabelOnlyNode(rightLabel), balance)
@@ -88,10 +88,13 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
           // balance = -1 if left higher, +1 if left lower
           if (changeHappened) {
-            if (childHeightIncreased && r.balance < 0) { // need to rotate
-              newLeftM match { // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
+            if (childHeightIncreased && r.balance < 0) {
+              // need to rotate
+              newLeftM match {
+                // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
                 case newLeft: VerifierNode =>
-                  if (newLeft.balance < 0) { // single rotate
+                  if (newLeft.balance < 0) {
+                    // single rotate
                     r.left = newLeft.right
                     r.balance = 0
                     newLeft.right = r
@@ -99,37 +102,39 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                     (newLeft, true, false, oldLabel)
                   }
 
-                  else { // double rotate
+                  else {
+                    // double rotate
                     val newRootM = newLeft.right
-                    assert (newRootM.isInstanceOf[VerifierNode])
+                    assert(newRootM.isInstanceOf[VerifierNode])
                     val newRoot = newRootM.asInstanceOf[VerifierNode]
                     r.left = newRoot.right
                     newRoot.right = r
                     newLeft.right = newRoot.left
                     newRoot.left = newLeft
-                    newLeft.balance = (-1-newRoot.balance)/2
-                    r.balance = (1-newRoot.balance)/2
-                    newRoot.balance = 0 
+                    newLeft.balance = (-1 - newRoot.balance) / 2
+                    r.balance = (1 - newRoot.balance) / 2
+                    newRoot.balance = 0
                     (newRoot, true, false, oldLabel)
                   }
-              
+
                 case newLeft =>
                   assert(false) // TODO : make this more scala-like
                   (r, true, false, oldLabel) // TODO: this return value is not needed
               }
 
-            } else { // no need to rotate
+            } else {
+              // no need to rotate
               r.left = newLeftM
-              val myHeightIncreased : Boolean = (childHeightIncreased && r.balance == 0)
+              val myHeightIncreased: Boolean = (childHeightIncreased && r.balance == 0)
               if (childHeightIncreased) r.balance -= 1
               (r, true, myHeightIncreased, oldLabel)
             }
-              
+
           } else {
             // no change happened
             (r, false, false, oldLabel)
           }
-              
+
         case GoingRight =>
           val leftLabel: Label = dequeueLeftLabel(proof)
           val balance: Level = dequeueBalance(proof)
@@ -141,10 +146,13 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           val oldLabel = r.label
 
           if (changeHappened) {
-            if (childHeightIncreased && r.balance > 0) { // need to rotate
-              newRightM match { // at this point we know newRightM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
+            if (childHeightIncreased && r.balance > 0) {
+              // need to rotate
+              newRightM match {
+                // at this point we know newRightM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
                 case newRight: VerifierNode =>
-                  if (newRight.balance > 0) { // single rotate
+                  if (newRight.balance > 0) {
+                    // single rotate
                     r.right = newRight.left
                     r.balance = 0
                     newRight.left = r
@@ -152,17 +160,18 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                     (newRight, true, false, oldLabel)
                   }
 
-                  else { // double rotate
+                  else {
+                    // double rotate
                     val newRootM = newRight.left
-                    assert (newRootM.isInstanceOf[VerifierNode])
+                    assert(newRootM.isInstanceOf[VerifierNode])
                     val newRoot = newRootM.asInstanceOf[VerifierNode]
                     r.right = newRoot.left
                     newRoot.left = r
                     newRight.left = newRoot.right
                     newRoot.right = newRight
-                    newRight.balance = (newRoot.balance+1)/2
-                    r.balance = (newRoot.balance-1)/2
-                    newRoot.balance = 0 
+                    newRight.balance = (newRoot.balance + 1) / 2
+                    r.balance = (newRoot.balance - 1) / 2
+                    newRoot.balance = 0
                     (newRoot, true, false, oldLabel)
                   }
 
@@ -170,9 +179,10 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   assert(false) // TODO : make this more scala-like
                   (r, true, false, oldLabel) // TODO: this return value is not needed
               }
-            } else { // no need to rotate
+            } else {
+              // no need to rotate
               r.right = newRightM
-              val myHeightIncreased : Boolean = (childHeightIncreased && r.balance == 0)
+              val myHeightIncreased: Boolean = (childHeightIncreased && r.balance == 0)
               if (childHeightIncreased) r.balance += 1
               (r, true, myHeightIncreased, oldLabel)
             }

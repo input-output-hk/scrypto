@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree
 
-import scorex.crypto.authds.TwoPartyDictionary
+import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ByteArray
 
@@ -33,17 +33,17 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
         case r: Leaf =>
           if (foundAbove) {
             // we already know it's in the tree, so it must be at the current leaf
-            proofStream.enqueue(AVLProofDirection(LeafFound))
-            proofStream.enqueue(AVLProofNextLeafKey(r.nextLeafKey))
-            proofStream.enqueue(AVLProofValue(r.value))
+            proofStream.enqueue(ProofDirection(LeafFound))
+            proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
+            proofStream.enqueue(ProofValue(r.value))
             r.value = updateFunction(Some(r.value))
             (r, true, false)
           } else {
             // x > r.key
-            proofStream.enqueue(AVLProofDirection(LeafNotFound))
-            proofStream.enqueue(AVLProofKey(r.key))
-            proofStream.enqueue(AVLProofNextLeafKey(r.nextLeafKey))
-            proofStream.enqueue(AVLProofValue(r.value))
+            proofStream.enqueue(ProofDirection(LeafNotFound))
+            proofStream.enqueue(ProofKey(r.key))
+            proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
+            proofStream.enqueue(ProofValue(r.value))
             if (toInsertIfNotFound) {
               val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
               r.nextLeafKey = key
@@ -71,9 +71,9 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
           // Get a new node
           // See if a single or double rotation is needed for AVL tree balancing
           if (nextStepIsLeft) {
-            proofStream.enqueue(AVLProofDirection(GoingLeft))
-            proofStream.enqueue(AVLProofRightLabel(r.rightLabel))
-            proofStream.enqueue(AVLProofBalance(r.balance))
+            proofStream.enqueue(ProofDirection(GoingLeft))
+            proofStream.enqueue(ProofRightLabel(r.rightLabel))
+            proofStream.enqueue(ProofBalance(r.balance))
 
             var (newLeftM: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(r.left, found)
 
@@ -124,9 +124,9 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
             }
           } else {
             // next step is to the right
-            proofStream.enqueue(AVLProofDirection(GoingRight))
-            proofStream.enqueue(AVLProofLeftLabel(r.leftLabel))
-            proofStream.enqueue(AVLProofBalance(r.balance))
+            proofStream.enqueue(ProofDirection(GoingRight))
+            proofStream.enqueue(ProofLeftLabel(r.leftLabel))
+            proofStream.enqueue(ProofBalance(r.balance))
             var (newRightM: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(r.right, found)
 
             if (changeHappened) {

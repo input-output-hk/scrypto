@@ -1,6 +1,6 @@
 package scorex.crypto.authds.wtree
 
-import scorex.crypto.authds.TwoPartyDictionary
+import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ByteArray
 
@@ -36,17 +36,17 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
         case r: Leaf =>
           if (foundAbove) {
             // we already know it's in the tree, so it must be at the current leaf
-            proofStream.enqueue(WTProofDirection(LeafFound))
-            proofStream.enqueue(WTProofNextLeafKey(r.nextLeafKey))
-            proofStream.enqueue(WTProofValue(r.value))
+            proofStream.enqueue(ProofDirection(LeafFound))
+            proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
+            proofStream.enqueue(ProofValue(r.value))
             r.value = updateFunction(Some(r.value))
             (r, true)
           } else {
             // x > r.key
-            proofStream.enqueue(WTProofDirection(LeafNotFound))
-            proofStream.enqueue(WTProofKey(r.key))
-            proofStream.enqueue(WTProofNextLeafKey(r.nextLeafKey))
-            proofStream.enqueue(WTProofValue(r.value))
+            proofStream.enqueue(ProofDirection(LeafNotFound))
+            proofStream.enqueue(ProofKey(r.key))
+            proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
+            proofStream.enqueue(ProofValue(r.value))
             if (toInsertIfNotFound) {
               val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
               r.nextLeafKey = key
@@ -75,9 +75,9 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
           // See if the new node needs to be swapped with r because its level > r.level (if it's left)
           // or its level >= r.level (if it's right)
           if (nextStepIsLeft) {
-            proofStream.enqueue(WTProofDirection(GoingLeft))
-            proofStream.enqueue(WTProofRightLabel(r.rightLabel))
-            proofStream.enqueue(WTProofLevel(r.level))
+            proofStream.enqueue(ProofDirection(GoingLeft))
+            proofStream.enqueue(ProofRightLabel(r.rightLabel))
+            proofStream.enqueue(ProofLevel(r.level))
 
             var (newLeftM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.left, found)
 
@@ -99,9 +99,9 @@ class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
             }
           } else {
             // next step is to the right
-            proofStream.enqueue(WTProofDirection(GoingRight))
-            proofStream.enqueue(WTProofLeftLabel(r.leftLabel))
-            proofStream.enqueue(WTProofLevel(r.level))
+            proofStream.enqueue(ProofDirection(GoingRight))
+            proofStream.enqueue(ProofLeftLabel(r.leftLabel))
+            proofStream.enqueue(ProofLevel(r.level))
 
             var (newRightM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.right, found)
 

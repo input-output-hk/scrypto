@@ -31,21 +31,22 @@ object PerformanceMeter extends App with TwoPartyTests with Matchers {
     // treap
     val (treapInsertTime, treapVerifyTime, treapProofSize) = profileTree(wt, elements, wt.rootHash())
     // avl
-    val (avlInsertTime, avlVerifyTime, avlProofSize) = profileTree(avl, elements, avl.rootHash())
+//    val (avlInsertTime, avlVerifyTime, avlProofSize) = profileTree(avl, elements, avl.rootHash())
+    val (avlInsertTime, avlVerifyTime, avlProofSize) = (0,0,0)
 
 
     //slt
-    //TODO same interface for slt??
-    val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
-    val (sltVerifyTime, _) = time {
-      sltProofs.foreach { p =>
-        assert(p._1)
-        sltDigest = p._2.verify(sltDigest, append(p._2.key)).get
-      }
-    }
-    val sltProofSize = sltProofs.foldLeft(Array[Byte]()) { (a, b) =>
-      a ++ b._2.proofSeq.map(_.bytes).reduce(_ ++ _)
-    }.length / Step
+//    val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
+//    val (sltVerifyTime, _) = time {
+//      sltProofs.foreach { p =>
+//        assert(p._1)
+//        sltDigest = p._2.verify(sltDigest, append(p._2.key)).get
+//      }
+//    }
+//    val sltProofSize = sltProofs.foldLeft(Array[Byte]()) { (a, b) =>
+//      a ++ b._2.proofSeq.map(_.bytes).reduce(_ ++ _)
+//    }.length / Step
+    val (sltInsertTime, sltVerifyTime, sltProofSize) = (0,0,0)
 
 
     println(s"${i * Step}, " +

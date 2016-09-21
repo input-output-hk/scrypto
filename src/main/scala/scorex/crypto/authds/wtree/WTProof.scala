@@ -1,6 +1,6 @@
 package scorex.crypto.authds.wtree
 
-import scorex.crypto.authds.TwoPartyProof
+import scorex.crypto.authds._
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
@@ -10,31 +10,31 @@ import scala.util.Try
 sealed trait WTProof {
 
   def dequeueValue(proof: mutable.Queue[WTProofElement]): WTValue = {
-    proof.dequeue().asInstanceOf[WTProofValue].e
+    proof.dequeue().asInstanceOf[ProofValue].e
   }
 
   def dequeueKey(proof: mutable.Queue[WTProofElement]): WTKey = {
-    proof.dequeue().asInstanceOf[WTProofKey].e
+    proof.dequeue().asInstanceOf[ProofKey].e
   }
 
   def dequeueNextLeafKey(proof: mutable.Queue[WTProofElement]): WTKey = {
-    proof.dequeue().asInstanceOf[WTProofNextLeafKey].e
+    proof.dequeue().asInstanceOf[ProofNextLeafKey].e
   }
 
   def dequeueRightLabel(proof: mutable.Queue[WTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[WTProofRightLabel].e
+    proof.dequeue().asInstanceOf[ProofRightLabel].e
   }
 
   def dequeueLeftLabel(proof: mutable.Queue[WTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[WTProofLeftLabel].e
+    proof.dequeue().asInstanceOf[ProofLeftLabel].e
   }
 
   def dequeueDirection(proof: mutable.Queue[WTProofElement]): Direction = {
-    proof.dequeue().asInstanceOf[WTProofDirection].direction
+    proof.dequeue().asInstanceOf[ProofDirection].direction
   }
 
   def dequeueLevel(proof: mutable.Queue[WTProofElement]): Level = {
-    proof.dequeue().asInstanceOf[WTProofLevel].e
+    proof.dequeue().asInstanceOf[ProofLevel].e
   }
 }
 
