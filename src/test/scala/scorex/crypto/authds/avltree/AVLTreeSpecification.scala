@@ -3,13 +3,21 @@ package scorex.crypto.authds.avltree
 import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.TestingCommons
+
+import scorex.crypto.authds.TwoPartyTests
 
 
-class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
+class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TwoPartyTests {
 
 
-  def validKey(key: WTKey): Boolean = key.length > 1 && key.length < MaxKeySize
+  def validKey(key: AVLKey): Boolean = key.length > 1 && key.length < MaxKeySize
+
+  property("AVLTree performance") {
+    val avl = new AVLTree()
+    val elements = genElements(1000, 0)
+    val (avlInsertTime, avlVerifyTime, avlProofSize) = profileTree(avl, elements, avl.rootHash())
+  }
+
 
   property("AVLTree stream") {
     val wt = new AVLTree()
@@ -59,12 +67,10 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       }
     }
   }
-  
-  def rewrite(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => value }
 
-  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
+  def rewrite(value: AVLValue): UpdateFunction = { oldOpt: Option[AVLValue] => value }
 
-  def transactionUpdate(amount: Long): Option[WTValue] => WTValue = (old: Option[WTValue]) =>
+  def transactionUpdate(amount: Long): Option[AVLValue] => AVLValue = (old: Option[AVLValue]) =>
     Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))
 
 }

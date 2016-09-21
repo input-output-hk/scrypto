@@ -1,5 +1,6 @@
 package scorex.crypto.authds.avltree
 
+import scorex.crypto.authds.TwoPartyProof
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
@@ -8,15 +9,15 @@ import scala.util.Try
 
 sealed trait AVLProof {
 
-  def dequeueValue(proof: mutable.Queue[AVLProofElement]): WTValue = {
+  def dequeueValue(proof: mutable.Queue[AVLProofElement]): AVLValue = {
     proof.dequeue().asInstanceOf[AVLProofValue].e
   }
 
-  def dequeueKey(proof: mutable.Queue[AVLProofElement]): WTKey = {
+  def dequeueKey(proof: mutable.Queue[AVLProofElement]): AVLKey = {
     proof.dequeue().asInstanceOf[AVLProofKey].e
   }
 
-  def dequeueNextLeafKey(proof: mutable.Queue[AVLProofElement]): WTKey = {
+  def dequeueNextLeafKey(proof: mutable.Queue[AVLProofElement]): AVLKey = {
     proof.dequeue().asInstanceOf[AVLProofNextLeafKey].e
   }
 
@@ -34,16 +35,18 @@ sealed trait AVLProof {
 
   def dequeueBalance(proof: mutable.Queue[AVLProofElement]): Level = {
     proof.dequeue().bytes(0) match {
-      case 0 => -1 
-      case 1 => 0 
+      case 0 => -1
+      case 1 => 0
       case 2 => 1
     }
   }
 }
 
+// TODO: think about whether all the asserts that have to do with AVL trees should be Require instead, 
+// because Verifier doesn't really know what's going on with the tree of a possible dishonest prover
 
-case class AVLModifyProof(key: WTKey, proofSeq: Seq[AVLProofElement])
-                         (implicit hf: CryptographicHash) extends AVLProof {
+case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
+                         (implicit hf: CryptographicHash) extends TwoPartyProof[AVLKey, AVLValue] with AVLProof {
 
   def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[AVLProofElement] = mutable.Queue(proofSeq: _*)
@@ -54,15 +57,15 @@ case class AVLModifyProof(key: WTKey, proofSeq: Seq[AVLProofElement])
     def verifyHelper(): (VerifierNodes, Boolean, Boolean, Label) = {
       dequeueDirection(proof) match {
         case LeafFound =>
-          val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
-          val value: WTValue = dequeueValue(proof)
+          val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
+          val value: AVLValue = dequeueValue(proof)
           val oldLeaf = Leaf(key, value, nextLeafKey)
           val newLeaf = Leaf(key, updateFunction(Some(value)), nextLeafKey)
           (newLeaf, true, false, oldLeaf.label)
         case LeafNotFound =>
           val neigbourLeafKey = dequeueKey(proof)
-          val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
-          val value: WTValue = dequeueValue(proof)
+          val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
+          val value: AVLValue = dequeueValue(proof)
           require(ByteArray.compare(neigbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 
@@ -105,12 +108,13 @@ case class AVLModifyProof(key: WTKey, proofSeq: Seq[AVLProofElement])
 
                     assert(newLeft.balance>0)
                     assert(newRoot.balance!=0)
+
                     r.left = newRoot.right
                     newRoot.right = r
                     newLeft.right = newRoot.left
                     newRoot.left = newLeft
-                    newLeft.balance = (-1-newRoot.balance)/2
-                    r.balance = (1-newRoot.balance)/2
+                    newLeft.balance = (-1 - newRoot.balance) / 2
+                    r.balance = (1 - newRoot.balance) / 2
                     newRoot.balance = 0 
                     (newRoot, true, false, oldLabel)
                   }
@@ -158,7 +162,7 @@ case class AVLModifyProof(key: WTKey, proofSeq: Seq[AVLProofElement])
                     val newRootM = newRight.left
                     assert (newRootM.isInstanceOf[VerifierNode])
                     val newRoot = newRootM.asInstanceOf[VerifierNode]
-                    
+
                     assert(newRight.balance<0)
                     assert(newRoot.balance!=0)
 
@@ -166,8 +170,8 @@ case class AVLModifyProof(key: WTKey, proofSeq: Seq[AVLProofElement])
                     newRoot.left = r
                     newRight.left = newRoot.right
                     newRoot.right = newRight
-                    newRight.balance = (1-newRoot.balance)/2
-                    r.balance = (-1-newRoot.balance)/2
+                    newRight.balance = (1 - newRoot.balance) / 2
+                    r.balance = (-1 - newRoot.balance) / 2
                     newRoot.balance = 0 
                     (newRoot, true, false, oldLabel)
                   }

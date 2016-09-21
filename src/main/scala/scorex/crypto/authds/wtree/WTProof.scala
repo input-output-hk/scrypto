@@ -1,5 +1,6 @@
 package scorex.crypto.authds.wtree
 
+import scorex.crypto.authds.TwoPartyProof
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
@@ -39,7 +40,8 @@ sealed trait WTProof {
 
 
 case class WTModifyProof(key: WTKey, proofSeq: Seq[WTProofElement])
-                        (implicit hf: CryptographicHash, levelFunc: LevelFunction) extends WTProof {
+                        (implicit hf: CryptographicHash, levelFunc: LevelFunction)
+  extends TwoPartyProof[WTKey, WTValue] with WTProof {
 
   def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[WTProofElement] = mutable.Queue(proofSeq: _*)

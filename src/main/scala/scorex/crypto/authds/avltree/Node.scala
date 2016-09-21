@@ -39,7 +39,7 @@ trait InternalNode {
 }
 
 sealed trait ProverNodes extends Node {
-  val key: WTKey
+  val key: AVLKey
 }
 
 sealed trait VerifierNodes extends Node
@@ -49,7 +49,7 @@ case class LabelOnlyNode (l : Label) extends Node {
   def computeLabel : Label = l // TODO it doesn't make sense  to have labelOpt and Label stored here
 }
 
-case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _right: ProverNodes, private var _balance : Level = 0)
+case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes, private var _balance : Level = 0)
                      (implicit val hf: CryptographicHash)
   extends ProverNodes with InternalNode {
 
@@ -185,19 +185,19 @@ case class VerifierNode(private var _left: Node, private var _right: Node, priva
 
 }
 
-case class Leaf(key: WTKey, private var _value: WTValue, private var _nextLeafKey: WTKey)
+case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
                (implicit hf: CryptographicHash) extends ProverNodes with VerifierNodes {
 
-  def value: WTValue = _value
+  def value: AVLValue = _value
 
-  def value_=(newValue: WTValue) = {
+  def value_=(newValue: AVLValue) = {
     _value = newValue
     labelOpt = None
   }
 
-  def nextLeafKey: WTKey = _nextLeafKey
+  def nextLeafKey: AVLKey = _nextLeafKey
 
-  def nextLeafKey_=(newNextLeafKey: WTValue) = {
+  def nextLeafKey_=(newNextLeafKey: AVLValue) = {
     _nextLeafKey = newNextLeafKey
     labelOpt = None
   }

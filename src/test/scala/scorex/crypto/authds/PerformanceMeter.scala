@@ -2,46 +2,37 @@ package scorex.crypto.authds
 
 import org.scalatest.Matchers
 import scorex.crypto.TestingCommons
+import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.sltree.SLTree
 import scorex.crypto.authds.wtree._
 import scorex.crypto.hash.Blake2b256
 
 
-object PerformanceMeter extends App with TestingCommons with Matchers {
+object PerformanceMeter extends App with TwoPartyTests with Matchers {
 
   val Step = 1000
   val ToCalculate = 1000
 
+  val avl = new AVLTree()
   val wt = new WTree()
   val treap = new WTree()(Blake2b256, Level.treapLevel)
   val slt = new SLTree()
 
   var sltDigest = slt.rootHash()
 
-  def profileTree(tree: WTree[_], elements: Seq[Array[Byte]], inDigest: Label): (Long, Long, Long) = {
-    var digest = inDigest
-    val (insertTime, proofs) = time(elements.map(e => tree.modify(e, append(e))))
-    val (verifyTime, _) = time {
-      proofs.foreach { p =>
-        digest = p.verify(digest, append(p.key)).get
-      }
-    }
-    val proofSize = proofs.foldLeft(Array[Byte]()) { (a, b) =>
-      a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
-    }.length / Step
-    (insertTime, verifyTime, proofSize)
-  }
-
   println("size, " +
-    "treapInsertTime, wtInsertTime, sltInsertTime, " +
-    "treapVerifyTime, wtVerifyTime, sltVerifyTime, " +
-    "treapProofSize, wtProofSize,  sltProofSize")
+    "treapInsertTime, wtInsertTime, sltInsertTime, avlInsertTime, " +
+    "treapVerifyTime, wtVerifyTime, sltVerifyTime, avlVerifyTime, " +
+    "treapProofSize, wtProofSize,  sltProofSize, avlProofSize")
   (0 until ToCalculate) foreach { i =>
     val elements = genElements(Step, i)
     // wt
     val (wtInsertTime, wtVerifyTime, wtProofSize) = profileTree(wt, elements, wt.rootHash())
     // treap
     val (treapInsertTime, treapVerifyTime, treapProofSize) = profileTree(wt, elements, wt.rootHash())
+    // avl
+    val (avlInsertTime, avlVerifyTime, avlProofSize) = profileTree(avl, elements, avl.rootHash())
+
 
     //slt
     //TODO same interface for slt??
@@ -58,11 +49,10 @@ object PerformanceMeter extends App with TestingCommons with Matchers {
 
 
     println(s"${i * Step}, " +
-      s"$treapInsertTime, $wtInsertTime, $sltInsertTime, " +
-      s"$treapVerifyTime, $wtVerifyTime, $sltVerifyTime, " +
-      s"$treapProofSize, $wtProofSize,  $sltProofSize")
+      s"$treapInsertTime, $wtInsertTime, $sltInsertTime, $avlInsertTime, " +
+      s"$treapVerifyTime, $wtVerifyTime, $sltVerifyTime, $avlVerifyTime, " +
+      s"$treapProofSize, $wtProofSize,  $sltProofSize, $avlProofSize")
   }
 
 
-  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
 }

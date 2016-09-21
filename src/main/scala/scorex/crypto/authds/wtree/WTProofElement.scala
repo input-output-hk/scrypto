@@ -1,10 +1,9 @@
 package scorex.crypto.authds.wtree
 
+import scorex.crypto.authds.TwoPartyProofElement
 import scorex.crypto.encode.Base58
 
-sealed trait WTProofElement {
-  val bytes: Array[Byte]
-}
+sealed trait WTProofElement extends TwoPartyProofElement
 
 case class WTProofLevel(e: Level) extends WTProofElement {
   val bytes: Array[Byte] = e.bytes
@@ -29,6 +28,7 @@ trait Key extends WTProofElement {
 }
 
 case class WTProofKey(e: WTKey) extends Key
+
 case class WTProofNextLeafKey(e: WTKey) extends Key
 
 case class WTProofValue(e: WTValue) extends WTProofElement {
