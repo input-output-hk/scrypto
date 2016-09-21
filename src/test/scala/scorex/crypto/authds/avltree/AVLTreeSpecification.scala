@@ -22,7 +22,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       }
     }
   }
-
+  
   property("AVLTree insert one") {
     forAll { (key: Array[Byte], value: Array[Byte], wrongValue: Array[Byte]) =>
       whenever(validKey(key) && value.nonEmpty) {
@@ -59,7 +59,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       }
     }
   }
-
+  
   def rewrite(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => value }
 
   def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }

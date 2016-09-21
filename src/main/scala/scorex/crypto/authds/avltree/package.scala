@@ -3,6 +3,7 @@ package scorex.crypto.authds
 import scorex.crypto.hash.CryptographicHash
 
 package object avltree {
+  type Level = Int
   type WTKey = Array[Byte]
   type WTValue = Array[Byte]
   type Label = CryptographicHash#Digest

@@ -6,9 +6,16 @@ sealed trait AVLProofElement {
   val bytes: Array[Byte]
 }
 
-case class AVLProofLevel(e: Level) extends AVLProofElement {
-  val bytes: Array[Byte] = e.bytes
+
+// TODO: change Level to Balance and make this better
+case class AVLProofBalance(e: Level) extends AVLProofElement {
+  override val bytes: Array[Byte] = Array(e match {
+    case -1 => 0: Byte
+    case 0 => 1: Byte
+    case 1 => 2: Byte
+  })
 }
+
 
 trait AVLProofLabel extends AVLProofElement {
   val e: Array[Byte]
