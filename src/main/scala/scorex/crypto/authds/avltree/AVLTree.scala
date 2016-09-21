@@ -94,6 +94,8 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                       assert (newRootM.isInstanceOf[ProverNode])
                       val newRoot = newRootM.asInstanceOf[ProverNode]
 
+                      assert(newLeft.balance>0)
+                      assert(newRoot.balance!=0)
                       r.left = newRoot.right
                       newRoot.right = r
                       newLeft.right = newRoot.left
@@ -143,12 +145,15 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                       assert (newRootM.isInstanceOf[ProverNode])
                       val newRoot = newRootM.asInstanceOf[ProverNode]
 
+                      assert(newRight.balance<0)
+                      assert(newRoot.balance!=0)
+                      
                       r.right = newRoot.left
                       newRoot.left = r
                       newRight.left = newRoot.right
                       newRoot.right = newRight
-                      newRight.balance = (newRoot.balance+1)/2
-                      r.balance = (newRoot.balance-1)/2
+                      newRight.balance = (1-newRoot.balance)/2
+                      r.balance = (-1-newRoot.balance)/2
                       newRoot.balance = 0 
                       (newRoot, true, false)
                     }
