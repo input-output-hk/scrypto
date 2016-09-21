@@ -1,5 +1,6 @@
 package scorex.crypto.authds.wtree
 
+import scorex.crypto.authds.TwoPartyDictionary
 import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ByteArray
 
@@ -7,9 +8,10 @@ import scorex.utils.ByteArray
 // It is needed to give hints to the verifier whether which way to go
 
 class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
-                                    (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.skiplistLevel) {
+                                    (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.skiplistLevel)
+  extends TwoPartyDictionary[WTKey, WTValue] {
 
-  var topNode: ProverNodes = rootOpt.getOrElse (Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
+  var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
   def rootHash(): Label = topNode.label
 

@@ -1,14 +1,19 @@
 package scorex.crypto.authds.avltree
 
+import scorex.crypto.authds.TwoPartyProofElement
 import scorex.crypto.encode.Base58
 
-sealed trait AVLProofElement {
-  val bytes: Array[Byte]
+sealed trait AVLProofElement extends TwoPartyProofElement
+
+// TODO: change Level to Balance and make this better
+case class AVLProofBalance(e: Level) extends AVLProofElement {
+  override val bytes: Array[Byte] = Array(e match {
+    case -1 => 0: Byte
+    case 0 => 1: Byte
+    case 1 => 2: Byte
+  })
 }
 
-case class AVLProofLevel(e: Level) extends AVLProofElement {
-  val bytes: Array[Byte] = e.bytes
-}
 
 trait AVLProofLabel extends AVLProofElement {
   val e: Array[Byte]
@@ -28,10 +33,11 @@ trait Key extends AVLProofElement {
   override def toString: String = s"Key(${Base58.encode(e).take(8)})"
 }
 
-case class AVLProofKey(e: WTKey) extends Key
-case class AVLProofNextLeafKey(e: WTKey) extends Key
+case class AVLProofKey(e: AVLKey) extends Key
 
-case class AVLProofValue(e: WTValue) extends AVLProofElement {
+case class AVLProofNextLeafKey(e: AVLKey) extends Key
+
+case class AVLProofValue(e: AVLValue) extends AVLProofElement {
   val bytes: Array[Byte] = e
 
   override def toString: String = s"WTProofKey(${Base58.encode(e).take(8)})"

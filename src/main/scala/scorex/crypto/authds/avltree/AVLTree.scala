@@ -1,13 +1,12 @@
 package scorex.crypto.authds.avltree
 
+import scorex.crypto.authds.TwoPartyDictionary
 import scorex.crypto.hash.{Blake2b256, CryptographicHash}
 import scorex.utils.ByteArray
 
-// WE NEED TO CREATE A NEW TYPE OF INFORMATION IN THE PROOF: `ProofDirection, which can be leafFound, leafNotFound, goingLeft, or goingRight
-// It is needed to give hints to the verifier whether which way to go
 
 class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
-                                      (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.generator) {
+                                      (implicit hf: HF = Blake2b256) extends TwoPartyDictionary[AVLKey, AVLValue] {
 
   var topNode: ProverNodes = rootOpt.getOrElse (Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
@@ -20,7 +19,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
   // for example returning both old value and new value, or some sort of success/failure)
   // I am not sure what's needed in the application
   //TODO insert toInsertIfNotFound to function
-  def modify(key: WTKey, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): AVLModifyProof = {
+  def modify(key: AVLKey, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): AVLModifyProof = {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
@@ -29,7 +28,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
     // found tells us if x has been already found above r in the tree
     // returns the new root
     // and an indicator whether tree has been modified at r or below
-    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean) = {
+    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = {
       rNode match {
         case r: Leaf =>
           if (foundAbove) {
@@ -38,7 +37,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(AVLProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(AVLProofValue(r.value))
             r.value = updateFunction(Some(r.value))
-            (r, true)
+            (r, true, false)
           } else {
             // x > r.key
             proofStream.enqueue(AVLProofDirection(LeafNotFound))
@@ -48,9 +47,9 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
             if (toInsertIfNotFound) {
               val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
               r.nextLeafKey = key
-              (ProverNode(key, r, newLeaf), true)
+              (ProverNode(key, r, newLeaf), true, true)
             } else {
-              (r, false)
+              (r, false, false)
             }
           }
         case r: ProverNode =>
@@ -70,64 +69,111 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
           }
           // Now go recursively in the direction we just figured out
           // Get a new node
-          // See if the new node needs to be swapped with r because its level > r.level (if it's left)
-          // or its level >= r.level (if it's right)
+          // See if a single or double rotation is needed for AVL tree balancing
           if (nextStepIsLeft) {
             proofStream.enqueue(AVLProofDirection(GoingLeft))
             proofStream.enqueue(AVLProofRightLabel(r.rightLabel))
-            proofStream.enqueue(AVLProofLevel(r.level))
+            proofStream.enqueue(AVLProofBalance(r.balance))
 
-            var (newLeftM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.left, found)
+            var (newLeftM: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(r.left, found)
 
+            // balance = -1 if left higher, +1 if left lower
             if (changeHappened) {
-              newLeftM match {
-                case newLeft: ProverNode if newLeft.level >= r.level =>
-                  // We need to rotate r with newLeft
-                  r.left = newLeft.right
-                  newLeft.right = r
-                  (newLeft, true)
-                case newLeft =>
-                  // Attach the newLeft because its level is smaller than our level
-                  r.left = newLeft
-                  (r, true)
+              if (childHeightIncreased && r.balance < 0) { // need to rotate
+                newLeftM match { // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
+                  case newLeft: ProverNode =>                
+                    if (newLeft.balance < 0) { // single rotate
+                      r.left = newLeft.right
+                      r.balance = 0
+                      newLeft.right = r
+                      newLeft.balance = 0
+                      (newLeft, true, false)
+                    }
+
+                    else { // double rotate
+                      val newRootM = newLeft.right
+                      assert (newRootM.isInstanceOf[ProverNode])
+                      val newRoot = newRootM.asInstanceOf[ProverNode]
+
+                      r.left = newRoot.right
+                      newRoot.right = r
+                      newLeft.right = newRoot.left
+                      newRoot.left = newLeft
+                      newLeft.balance = (-1-newRoot.balance)/2
+                      r.balance = (1-newRoot.balance)/2
+                      newRoot.balance = 0 
+                      (newRoot, true, false)
+                    }
+                  case newLeft =>
+                    assert(false) // TODO : make this more scala-like
+                    (r, true, false) // TODO: this return value is not needed
+                }
+              } else { // no need to rotate
+                r.left = newLeftM
+                val myHeightIncreased : Boolean = (childHeightIncreased && r.balance == 0)
+                if (childHeightIncreased) r.balance -= 1
+                (r, true, myHeightIncreased)
               }
+              
             } else {
               // no change happened
-              (r, false)
+              (r, false, false)
             }
           } else {
             // next step is to the right
             proofStream.enqueue(AVLProofDirection(GoingRight))
             proofStream.enqueue(AVLProofLeftLabel(r.leftLabel))
-            proofStream.enqueue(AVLProofLevel(r.level))
-
-            var (newRightM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.right, found)
+            proofStream.enqueue(AVLProofBalance(r.balance))
+            var (newRightM: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(r.right, found)
 
             if (changeHappened) {
-              // This is symmetric to the left case, except of >= replaced with > in the
-              // level comparison
-              newRightM match {
-                case newRight: ProverNode if newRight.level > r.level =>
-                  // We need to rotate r with newRight
-                  r.right = newRight.left
-                  newRight.left = r
-                  (newRight, true)
-                case newRight =>
-                  // Attach the newRight because its level is smaller than or equal to our level
-                  r.right = newRight
-                  (r, true)
+              if (childHeightIncreased && r.balance > 0) { // need to rotate
+                newRightM match { // at this point we know newRightM must be an internal node and not a leaf -- because height increased;  TODO: make this more scala-like
+                  case newRight: ProverNode =>                
+
+                    if (newRight.balance > 0) { // single rotate
+                      r.right = newRight.left
+                      r.balance = 0
+                      newRight.left = r
+                      newRight.balance = 0
+                      (newRight, true, false)
+                    }
+
+                    else { // double rotate
+                      val newRootM = newRight.left
+                      assert (newRootM.isInstanceOf[ProverNode])
+                      val newRoot = newRootM.asInstanceOf[ProverNode]
+
+                      r.right = newRoot.left
+                      newRoot.left = r
+                      newRight.left = newRoot.right
+                      newRoot.right = newRight
+                      newRight.balance = (newRoot.balance+1)/2
+                      r.balance = (newRoot.balance-1)/2
+                      newRoot.balance = 0 
+                      (newRoot, true, false)
+                    }
+                  case newRight =>
+                    assert(false) // TODO : make this more scala-like
+                    (r, true, false) // TODO: this return value is not needed
+                }
+              } else { // no need to rotate
+                r.right = newRightM
+                val myHeightIncreased : Boolean = (childHeightIncreased && r.balance == 0)
+                if (childHeightIncreased) r.balance += 1
+                (r, true, myHeightIncreased)
               }
             } else {
               // no change happened
-              (r, false)
+              (r, false, false)
             }
           }
+        
       }
-
     }
 
-    var (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundAbove = false)
-    topNode = newTopNode
+    val (newTopNode: ProverNodes, changeHappened: Boolean, childHeightIncreased : Boolean) = modifyHelper(topNode, foundAbove = false)
+    if (changeHappened) topNode = newTopNode // MAKE SAME CHANGE IN OTHER TREES OR REMOVE IT HERE
     AVLModifyProof(key, proofStream)
   }
 

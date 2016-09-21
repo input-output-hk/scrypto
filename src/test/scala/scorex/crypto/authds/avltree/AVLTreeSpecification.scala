@@ -9,7 +9,7 @@ import scorex.crypto.TestingCommons
 class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
 
-  def validKey(key: WTKey): Boolean = key.length > 1 && key.length < MaxKeySize
+  def validKey(key: AVLKey): Boolean = key.length > 1 && key.length < MaxKeySize
 
   property("AVLTree stream") {
     val wt = new AVLTree()
@@ -60,11 +60,11 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     }
   }
 
-  def rewrite(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => value }
+  def rewrite(value: AVLValue): UpdateFunction = { oldOpt: Option[AVLValue] => value }
 
-  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
+  def append(value: AVLValue): UpdateFunction = { oldOpt: Option[AVLValue] => oldOpt.map(_ ++ value).getOrElse(value) }
 
-  def transactionUpdate(amount: Long): Option[WTValue] => WTValue = (old: Option[WTValue]) =>
+  def transactionUpdate(amount: Long): Option[AVLValue] => AVLValue = (old: Option[AVLValue]) =>
     Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))
 
 }
