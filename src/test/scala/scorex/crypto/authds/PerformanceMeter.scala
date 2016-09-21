@@ -8,7 +8,7 @@ import scorex.crypto.authds.wtree._
 import scorex.crypto.hash.Blake2b256
 
 
-object PerformanceMeter extends App with TestingCommons with Matchers {
+object PerformanceMeter extends App with TwoPartyTests with Matchers {
 
   val Step = 1000
   val ToCalculate = 1000
@@ -19,21 +19,6 @@ object PerformanceMeter extends App with TestingCommons with Matchers {
   val slt = new SLTree()
 
   var sltDigest = slt.rootHash()
-
-  def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte]],
-                  elements: Seq[Array[Byte]], inDigest: Label): (Long, Long, Long) = {
-    var digest = inDigest
-    val (insertTime, proofs) = time(elements.map(e => tree.modify(e, append(e), true)))
-    val (verifyTime, _) = time {
-      proofs.foreach { p =>
-        digest = p.verify(digest, append(p.key)).get
-      }
-    }
-    val proofSize = proofs.foldLeft(Array[Byte]()) { (a, b) =>
-      a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
-    }.length / Step
-    (insertTime, verifyTime, proofSize)
-  }
 
   println("size, " +
     "treapInsertTime, wtInsertTime, sltInsertTime, avlInsertTime, " +
@@ -70,5 +55,4 @@ object PerformanceMeter extends App with TestingCommons with Matchers {
   }
 
 
-  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
 }

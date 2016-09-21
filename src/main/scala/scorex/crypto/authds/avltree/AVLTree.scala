@@ -91,9 +91,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                       newLeft.right = r
                       newLeft.balance = 0
                       (newLeft, true, false)
-                    }
-
-                    else {
+                    } else {
                       // double rotate
                       val newRootM = newLeft.right
                       assert(newRootM.isInstanceOf[ProverNode])
@@ -115,7 +113,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
               } else {
                 // no need to rotate
                 r.left = newLeftM
-                val myHeightIncreased: Boolean = (childHeightIncreased && r.balance == 0)
+                val myHeightIncreased: Boolean = childHeightIncreased && r.balance == 0
                 if (childHeightIncreased) r.balance -= 1
                 (r, true, myHeightIncreased)
               }
@@ -145,9 +143,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                       newRight.left = r
                       newRight.balance = 0
                       (newRight, true, false)
-                    }
-
-                    else {
+                    } else {
                       // double rotate
                       val newRootM = newRight.left
                       assert(newRootM.isInstanceOf[ProverNode])
