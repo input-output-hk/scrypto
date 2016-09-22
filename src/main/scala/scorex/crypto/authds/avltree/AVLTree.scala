@@ -12,6 +12,8 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
 
   def rootHash(): Label = topNode.label
 
+
+
   // We could add return values here:
   // - we could return boolean indicating whether x was found
   // - we could val or newVal
@@ -90,20 +92,44 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                       r.balance = 0
                       newLeft.right = r
                       newLeft.balance = 0
+                      assert(r.checkHeight)
+                      assert(newLeft.checkHeight)
                       (newLeft, true, false)
-                    } else {
+                    }
+
+                    else { 
                       // double rotate
                       val newRootM = newLeft.right
-                      assert(newRootM.isInstanceOf[ProverNode])
+                      assert (newRootM.isInstanceOf[ProverNode])
                       val newRoot = newRootM.asInstanceOf[ProverNode]
+
+                      assert(newLeft.balance>0)
 
                       r.left = newRoot.right
                       newRoot.right = r
                       newLeft.right = newRoot.left
                       newRoot.left = newLeft
-                      newLeft.balance = (-1 - newRoot.balance) / 2
-                      r.balance = (1 - newRoot.balance) / 2
+                      
+                      newRoot.balance match {
+                        case 0 =>
+                          // newRoot is a newly created node
+                          assert (r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
+                          assert (newLeft.left.isInstanceOf[Leaf] && newLeft.right.isInstanceOf[Leaf])
+                          newLeft.balance = 0
+                          r.balance = 0
+                        case -1 =>
+                          newLeft.balance = 0
+                          r.balance = 1
+                        case 1 =>
+                          newLeft.balance = -1
+                          r.balance = 0
+                      }
                       newRoot.balance = 0
+                      
+                      assert(r.checkHeight)
+                      assert(newLeft.checkHeight)
+                      assert(newRoot.checkHeight)
+
                       (newRoot, true, false)
                     }
                   case newLeft =>
@@ -115,11 +141,14 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                 r.left = newLeftM
                 val myHeightIncreased: Boolean = childHeightIncreased && r.balance == 0
                 if (childHeightIncreased) r.balance -= 1
+                assert(r.checkHeight)
+
                 (r, true, myHeightIncreased)
               }
 
             } else {
               // no change happened
+              assert(r.checkHeight)
               (r, false, false)
             }
           } else {
@@ -135,27 +164,50 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                 newRightM match {
                   // at this point we know newRightM must be an internal node and not a leaf -- because height increased;  TODO: make this more scala-like
                   case newRight: ProverNode =>
-
                     if (newRight.balance > 0) {
                       // single rotate
                       r.right = newRight.left
                       r.balance = 0
                       newRight.left = r
                       newRight.balance = 0
+                      assert(r.checkHeight)
+                      assert(newRight.checkHeight)
                       (newRight, true, false)
-                    } else {
+                    }
+
+                    else { 
                       // double rotate
                       val newRootM = newRight.left
-                      assert(newRootM.isInstanceOf[ProverNode])
+                      assert (newRootM.isInstanceOf[ProverNode])
                       val newRoot = newRootM.asInstanceOf[ProverNode]
+
+                      assert(newRight.balance<0)
 
                       r.right = newRoot.left
                       newRoot.left = r
                       newRight.left = newRoot.right
                       newRoot.right = newRight
-                      newRight.balance = (newRoot.balance + 1) / 2
-                      r.balance = (newRoot.balance - 1) / 2
+                      
+                     newRoot.balance match {
+                        case 0 =>
+                          // newRoot is an newly created node
+                          assert (r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
+                          assert (newRight.left.isInstanceOf[Leaf] && newRight.right.isInstanceOf[Leaf])
+                          newRight.balance = 0
+                          r.balance = 0
+                        case -1 =>
+                          newRight.balance = 1
+                          r.balance = 0
+                        case 1 =>
+                          newRight.balance = 0
+                          r.balance = -1
+                      }
                       newRoot.balance = 0
+                        
+                      assert(r.checkHeight)
+                      assert(newRight.checkHeight)
+                      assert(newRoot.checkHeight)
+
                       (newRoot, true, false)
                     }
                   case newRight =>
@@ -167,19 +219,20 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                 r.right = newRightM
                 val myHeightIncreased: Boolean = (childHeightIncreased && r.balance == 0)
                 if (childHeightIncreased) r.balance += 1
+                assert(r.checkHeight)
                 (r, true, myHeightIncreased)
               }
             } else {
               // no change happened
+              assert(r.checkHeight)
               (r, false, false)
             }
           }
-
       }
     }
 
     val (newTopNode: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(topNode, foundAbove = false)
-    if (changeHappened) topNode = newTopNode // MAKE SAME CHANGE IN OTHER TREES OR REMOVE IT HERE
+    if (changeHappened) topNode = newTopNode // TODO MAKE SAME CHANGE IN OTHER TREES OR REMOVE IT HERE
     AVLModifyProof(key, proofStream)
   }
 

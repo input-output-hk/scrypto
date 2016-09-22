@@ -70,20 +70,30 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   else {
                     // double rotate
                     val newRootM = newLeft.right
-                    assert(newRootM.isInstanceOf[VerifierNode])
                     val newRoot = newRootM.asInstanceOf[VerifierNode]
+
                     r.left = newRoot.right
                     newRoot.right = r
                     newLeft.right = newRoot.left
                     newRoot.left = newLeft
-                    newLeft.balance = (-1 - newRoot.balance) / 2
-                    r.balance = (1 - newRoot.balance) / 2
+                    newRoot.balance match {
+                      case 0 =>
+                        // newRoot is a newly created node
+                        newLeft.balance = 0
+                        r.balance = 0
+                      case -1 =>
+                        newLeft.balance = 0
+                        r.balance = 1
+                      case 1 =>
+                        newLeft.balance = -1
+                        r.balance = 0
+                    }
                     newRoot.balance = 0
                     (newRoot, true, false, oldLabel)
                   }
 
                 case newLeft =>
-                  assert(false) // TODO : make this more scala-like
+                  require(false) // TODO : make this more scala-like
                   (r, true, false, oldLabel) // TODO: this return value is not needed
               }
 
@@ -128,26 +138,38 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   else {
                     // double rotate
                     val newRootM = newRight.left
-                    assert(newRootM.isInstanceOf[VerifierNode])
                     val newRoot = newRootM.asInstanceOf[VerifierNode]
+
                     r.right = newRoot.left
                     newRoot.left = r
                     newRight.left = newRoot.right
                     newRoot.right = newRight
-                    newRight.balance = (newRoot.balance + 1) / 2
-                    r.balance = (newRoot.balance - 1) / 2
+
+                    newRoot.balance match {
+                      case 0 =>
+                        // newRoot is a newly created node
+                        newRight.balance = 0
+                        r.balance = 0
+                      case -1 =>
+                        newRight.balance = 1
+                        r.balance = 0
+                      case 1 =>
+                        newRight.balance = 0
+                        r.balance = -1
+                    }
                     newRoot.balance = 0
+
                     (newRoot, true, false, oldLabel)
                   }
 
                 case newRight =>
-                  assert(false) // TODO : make this more scala-like
+                  require(false) // TODO : make this more scala-like
                   (r, true, false, oldLabel) // TODO: this return value is not needed
               }
             } else {
               // no need to rotate
               r.right = newRightM
-              val myHeightIncreased: Boolean = (childHeightIncreased && r.balance == 0)
+              val myHeightIncreased: Boolean = childHeightIncreased && r.balance == 0
               if (childHeightIncreased) r.balance += 1
               (r, true, myHeightIncreased, oldLabel)
             }

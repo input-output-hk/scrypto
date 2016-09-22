@@ -30,7 +30,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       }
     }
   }
-
+  
   property("AVLTree insert one") {
     forAll { (key: Array[Byte], value: Array[Byte], wrongValue: Array[Byte]) =>
       whenever(validKey(key) && value.nonEmpty) {
