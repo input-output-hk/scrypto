@@ -42,8 +42,6 @@ sealed trait AVLProof {
   }
 }
 
-// TODO: think about whether all the asserts that have to do with AVL trees should be Require instead, 
-// because Verifier doesn't really know what's going on with the tree of a possible dishonest prover
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: CryptographicHash) extends TwoPartyProof[AVLKey, AVLValue] with AVLProof {
@@ -103,24 +101,31 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
                   else { // double rotate
                     val newRootM = newLeft.right
-                    assert (newRootM.isInstanceOf[VerifierNode])
+                    require (newRootM.isInstanceOf[VerifierNode])
                     val newRoot = newRootM.asInstanceOf[VerifierNode]
-
-                    assert(newLeft.balance>0)
-                    assert(newRoot.balance!=0)
 
                     r.left = newRoot.right
                     newRoot.right = r
                     newLeft.right = newRoot.left
                     newRoot.left = newLeft
-                    newLeft.balance = (-1 - newRoot.balance) / 2
-                    r.balance = (1 - newRoot.balance) / 2
-                    newRoot.balance = 0 
+										newRoot.balance match {
+										case 0 =>
+											// newRoot is a newly created node
+											newLeft.balance = 0
+											r.balance = 0
+										case -1 =>
+											newLeft.balance = 0
+											r.balance = 1
+										case 1 =>
+											newLeft.balance = -1
+											r.balance = 0
+										}
+										newRoot.balance = 0
                     (newRoot, true, false, oldLabel)
                   }
               
                 case newLeft =>
-                  assert(false) // TODO : make this more scala-like
+                  require(false) // TODO : make this more scala-like
                   (r, true, false, oldLabel) // TODO: this return value is not needed
               }
 
@@ -160,24 +165,33 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
                   else { // double rotate
                     val newRootM = newRight.left
-                    assert (newRootM.isInstanceOf[VerifierNode])
+                    require (newRootM.isInstanceOf[VerifierNode])
                     val newRoot = newRootM.asInstanceOf[VerifierNode]
-
-                    assert(newRight.balance<0)
-                    assert(newRoot.balance!=0)
 
                     r.right = newRoot.left
                     newRoot.left = r
                     newRight.left = newRoot.right
                     newRoot.right = newRight
-                    newRight.balance = (1 - newRoot.balance) / 2
-                    r.balance = (-1 - newRoot.balance) / 2
-                    newRoot.balance = 0 
+                    
+                    newRoot.balance match {
+                      case 0 =>
+                        // newRoot is a newly created node
+                        newRight.balance = 0
+                        r.balance = 0
+                      case -1 =>
+                        newRight.balance = 1
+                        r.balance = 0
+                      case 1 =>
+                        newRight.balance = 0
+                        r.balance = -1
+                    }
+                    newRoot.balance = 0
+
                     (newRoot, true, false, oldLabel)
                   }
 
                 case newRight =>
-                  assert(false) // TODO : make this more scala-like
+                  require(false) // TODO : make this more scala-like
                   (r, true, false, oldLabel) // TODO: this return value is not needed
               }
             } else { // no need to rotate
