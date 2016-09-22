@@ -15,7 +15,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   property("AVLTree performance") {
     val avl = new AVLTree()
     val elements = genElements(1000, 0)
-    val (avlInsertTime, avlVerifyTime, avlProofSize) = profileTree(avl, elements, avl.rootHash())
+    val avlStats = profileTree(avl, elements, avl.rootHash())
   }
 
 

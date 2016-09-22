@@ -20,39 +20,38 @@ object PerformanceMeter extends App with TwoPartyTests with Matchers {
 
   var sltDigest = slt.rootHash()
 
+  val structures = Seq("treap", "wt", "slt", "avl")
   println("size, " +
-    "treapInsertTime, wtInsertTime, sltInsertTime, avlInsertTime, " +
-    "treapVerifyTime, wtVerifyTime, sltVerifyTime, avlVerifyTime, " +
-    "treapProofSize, wtProofSize,  sltProofSize, avlProofSize")
+    structures.map(_ + "InsertTime").mkString(", ") + ", " +
+    structures.map(_ + "VerifyTime").mkString(", ") + ", " +
+    structures.map(_ + "ProofSize").mkString(", "))
   (0 until ToCalculate) foreach { i =>
     val elements = genElements(Step, i)
     // wt
-    val (wtInsertTime, wtVerifyTime, wtProofSize) = profileTree(wt, elements, wt.rootHash())
+    val wtStats:Seq[Float] = profileTree(wt, elements, wt.rootHash())
     // treap
-    val (treapInsertTime, treapVerifyTime, treapProofSize) = profileTree(wt, elements, wt.rootHash())
+    val treapStats:Seq[Float] = profileTree(wt, elements, wt.rootHash())
     // avl
-//    val (avlInsertTime, avlVerifyTime, avlProofSize) = profileTree(avl, elements, avl.rootHash())
-    val (avlInsertTime, avlVerifyTime, avlProofSize) = (0,0,0)
+    //    val avlStats = profileTree(avl, elements, avl.rootHash())
+    val avlStats:Seq[Float] = Seq(-1, -1, -1, -1, -1, -1, -1, -1, -1)
 
 
     //slt
-//    val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
-//    val (sltVerifyTime, _) = time {
-//      sltProofs.foreach { p =>
-//        assert(p._1)
-//        sltDigest = p._2.verify(sltDigest, append(p._2.key)).get
-//      }
-//    }
-//    val sltProofSize = sltProofs.foldLeft(Array[Byte]()) { (a, b) =>
-//      a ++ b._2.proofSeq.map(_.bytes).reduce(_ ++ _)
-//    }.length / Step
-    val (sltInsertTime, sltVerifyTime, sltProofSize) = (0,0,0)
+    val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
+    val (sltVerifyTime, _) = time {
+      sltProofs.foreach { p =>
+        assert(p._1)
+        sltDigest = p._2.verify(sltDigest, append(p._2.key)).get
+      }
+    }
+    val sltProofSize = sltProofs.foldLeft(Array[Byte]()) { (a, b) =>
+      a ++ b._2.proofSeq.map(_.bytes).reduce(_ ++ _)
+    }.length / Step
+    val sltStats:Seq[Float] = Seq(sltInsertTime, sltVerifyTime, sltProofSize)
 
 
     println(s"${i * Step}, " +
-      s"$treapInsertTime, $wtInsertTime, $sltInsertTime, $avlInsertTime, " +
-      s"$treapVerifyTime, $wtVerifyTime, $sltVerifyTime, $avlVerifyTime, " +
-      s"$treapProofSize, $wtProofSize,  $sltProofSize, $avlProofSize")
+      wtStats.indices.map(i => treapStats(i) + ", " + wtStats(i) + ", " + sltStats(i) + ", " + avlStats(i)).mkString(", "))
   }
 
 
