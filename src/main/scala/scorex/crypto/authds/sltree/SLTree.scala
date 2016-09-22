@@ -8,10 +8,22 @@ import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
 
-class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf: HF = Blake2b256) {
+class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf: HF = Blake2b256)
+  extends TwoPartyDictionary[SLTKey, SLTValue] {
+
+
+  override def modify(key: SLTKey, updateFunction: UpdateFunction,
+                      toInsertIfNotFound: Boolean): TwoPartyProof[SLTKey, SLTValue] = {
+    val lookupProof = lookup(key)
+    lookupProof._1 match {
+      case None if toInsertIfNotFound => insert(key, updateFunction)._2
+      case Some(v) => update(key, updateFunction)._2
+      case _ => lookupProof._2
+    }
+  }
 
   var topNode: Node = rootOpt.getOrElse {
-    val r = new Node(Array(), Array(), 0, None, None, LabelOfNone)
+    val r = new Node(Array(), Array(), IntLevel(0), None, None, LabelOfNone)
     r.label = r.computeLabel
     r
   }
@@ -23,7 +35,7 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     proofStream.enqueue(ProofKey(root.key))
     proofStream.enqueue(ProofValue(root.value))
-    proofStream.enqueue(SLTProofLevel(root.level))
+    proofStream.enqueue(ProofLevel(root.level))
     proofStream.enqueue(ProofLeftLabel(root.leftLabel))
 
     // The newly returned node may not have its label computed yet,
@@ -42,7 +54,7 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
         case Some(r: Node) =>
           proofStream.enqueue(ProofKey(r.key))
           proofStream.enqueue(ProofValue(r.value))
-          proofStream.enqueue(SLTProofLevel(r.level))
+          proofStream.enqueue(ProofLevel(r.level))
           ByteArray.compare(x, r.key) match {
             case 0 =>
               proofStream.enqueue(ProofLeftLabel(r.leftLabel))
@@ -125,7 +137,7 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
     def updateLoop(r: Node): Boolean = {
       proofStream.enqueue(ProofKey(r.key))
       proofStream.enqueue(ProofValue(r.value))
-      proofStream.enqueue(SLTProofLevel(r.level))
+      proofStream.enqueue(ProofLevel(r.level))
 
       var found = false
       ByteArray.compare(key, r.key) match {
@@ -167,7 +179,7 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
     def lookupLoop(r: Node, x: SLTKey): Option[SLTValue] = {
       proofStream.enqueue(ProofKey(r.key))
       proofStream.enqueue(ProofValue(r.value))
-      proofStream.enqueue(SLTProofLevel(r.level))
+      proofStream.enqueue(ProofLevel(r.level))
       ByteArray.compare(x, r.key) match {
         case 0 =>
           proofStream.enqueue(ProofLeftLabel(r.leftLabel))
@@ -203,13 +215,13 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
 }
 
 object SLTree {
-  def computeLevel(key: SLTKey): Int = {
+  def computeLevel(key: SLTKey): Level = {
     @tailrec
     def loop(lev: Int = 0): Int = {
       if (Sha256(key ++ Ints.toByteArray(lev)).head.toInt < 0) lev
       else loop(lev + 1)
     }
-    loop()
+    IntLevel(loop())
   }
 
 }

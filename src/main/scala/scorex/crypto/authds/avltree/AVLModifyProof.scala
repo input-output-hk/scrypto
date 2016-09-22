@@ -7,47 +7,12 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-sealed trait AVLProof {
-
-  def dequeueValue(proof: mutable.Queue[AVLProofElement]): AVLValue = {
-    proof.dequeue().asInstanceOf[ProofValue].e
-  }
-
-  def dequeueKey(proof: mutable.Queue[AVLProofElement]): AVLKey = {
-    proof.dequeue().asInstanceOf[ProofKey].e
-  }
-
-  def dequeueNextLeafKey(proof: mutable.Queue[AVLProofElement]): AVLKey = {
-    proof.dequeue().asInstanceOf[ProofNextLeafKey].e
-  }
-
-  def dequeueRightLabel(proof: mutable.Queue[AVLProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofRightLabel].e
-  }
-
-  def dequeueLeftLabel(proof: mutable.Queue[AVLProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofLeftLabel].e
-  }
-
-  def dequeueDirection(proof: mutable.Queue[AVLProofElement]): Direction = {
-    proof.dequeue().asInstanceOf[ProofDirection].direction
-  }
-
-  def dequeueBalance(proof: mutable.Queue[AVLProofElement]): Level = {
-    proof.dequeue().bytes(0) match {
-      case 0 => -1
-      case 1 => 0
-      case 2 => 1
-    }
-  }
-}
-
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
-                         (implicit hf: CryptographicHash) extends TwoPartyProof[AVLKey, AVLValue] with AVLProof {
+                         (implicit hf: CryptographicHash) extends TwoPartyProof[AVLKey, AVLValue] {
 
   def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
-    val proof: mutable.Queue[AVLProofElement] = mutable.Queue(proofSeq: _*)
+    val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
 
     // returns the new flat root
     // and an indicator whether tree has been modified at r or below

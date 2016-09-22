@@ -1,7 +1,6 @@
 package scorex.crypto.authds
 
-import com.google.common.primitives.Ints
-import scorex.crypto.hash.{CryptographicHash, Sha256}
+import scorex.crypto.hash.CryptographicHash
 
 package object wtree {
   type WTKey = Array[Byte]

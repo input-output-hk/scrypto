@@ -7,44 +7,12 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-sealed trait WTProof {
-
-  def dequeueValue(proof: mutable.Queue[WTProofElement]): WTValue = {
-    proof.dequeue().asInstanceOf[ProofValue].e
-  }
-
-  def dequeueKey(proof: mutable.Queue[WTProofElement]): WTKey = {
-    proof.dequeue().asInstanceOf[ProofKey].e
-  }
-
-  def dequeueNextLeafKey(proof: mutable.Queue[WTProofElement]): WTKey = {
-    proof.dequeue().asInstanceOf[ProofNextLeafKey].e
-  }
-
-  def dequeueRightLabel(proof: mutable.Queue[WTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofRightLabel].e
-  }
-
-  def dequeueLeftLabel(proof: mutable.Queue[WTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofLeftLabel].e
-  }
-
-  def dequeueDirection(proof: mutable.Queue[WTProofElement]): Direction = {
-    proof.dequeue().asInstanceOf[ProofDirection].direction
-  }
-
-  def dequeueLevel(proof: mutable.Queue[WTProofElement]): Level = {
-    proof.dequeue().asInstanceOf[ProofLevel].e
-  }
-}
-
-
 case class WTModifyProof(key: WTKey, proofSeq: Seq[WTProofElement])
                         (implicit hf: CryptographicHash, levelFunc: LevelFunction)
-  extends TwoPartyProof[WTKey, WTValue] with WTProof {
+  extends TwoPartyProof[WTKey, WTValue] {
 
   def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
-    val proof: mutable.Queue[WTProofElement] = mutable.Queue(proofSeq: _*)
+    val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
 
     // returns the new flat root
     // and an indicator whether tree has been modified at r or below

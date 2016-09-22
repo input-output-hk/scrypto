@@ -4,9 +4,16 @@ import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
+import scorex.crypto.authds.wtree._
 
 
 class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
+
+
+  property("SLTree TwoPartyProof interface") {
+
+  }
+
 
   property("SLTree stream") {
     val slt = new SLTree()
@@ -40,7 +47,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
           val digest = slt.rootHash()
           val (success, proof) = slt.insert(key, _ => value)
           success shouldBe true
-          val newDigest = proof.verify(digest, _ => value).get
+          val newDigest = proof.verify(digest, rewrite(value)).get
           newDigest shouldEqual slt.rootHash()
         }
     }
@@ -53,7 +60,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val digest = slt.rootHash()
         val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        val newDigest = proof.verify(digest, _ => value).get
+        val newDigest = proof.verify(digest, rewrite(value)).get
         newDigest shouldEqual slt.rootHash()
       }
     }
@@ -111,13 +118,13 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val digest = slt.rootHash()
         val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        proof.verify(digest, _ => value).isDefined shouldBe true
+        proof.verify(digest, rewrite(value)).isDefined shouldBe true
 
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, _ => newVal)
         successUpdate shouldBe true
         slt.lookup(key)._1.get shouldBe newVal
-        val newDigest = updateProof.verify(digest2, _ => newVal).get
+        val newDigest = updateProof.verify(digest2, rewrite(newVal)).get
         newDigest shouldEqual slt.rootHash()
       }
     }
@@ -130,7 +137,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val digest = slt.rootHash()
         val (success, proof) = slt.insert(key, _ => value)
         success shouldBe true
-        proof.verify(digest, _ => value).isDefined shouldBe true
+        proof.verify(digest, rewrite(value)).isDefined shouldBe true
 
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, valueConcat(newVal))
@@ -143,5 +150,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
   }
 
   def valueConcat(v: SLTValue) = (old: Option[SLTValue]) => old.map(o => v ++ o).getOrElse(v)
+
+  def rewrite(value: SLTValue): UpdateFunction = { oldOpt: Option[SLTValue] => value }
 
 }

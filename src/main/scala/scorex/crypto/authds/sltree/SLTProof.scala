@@ -7,35 +7,25 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-sealed trait SLTProof {
-  val key: SLTKey
+sealed trait SLTProof extends TwoPartyProof[SLTKey, SLTValue] {
 
-  def dequeueValue(proof: mutable.Queue[SLTProofElement]): SLTValue = {
-    proof.dequeue().asInstanceOf[ProofValue].e
+  override def verify(digest: Label, updateFunction: (Option[SLTValue]) => SLTValue,
+                      toInsertIfNotFound: Boolean): Option[Label] = {
+    this match {
+      case a: SLTLookupProof => a.verify(digest)
+      case a: SLTInsertProof if toInsertIfNotFound => a.verify(digest, updateFunction)
+      case a: SLTUpdateProof if !toInsertIfNotFound => a.verify(digest, updateFunction)
+      case _ => None
+    }
   }
 
-  def dequeueKey(proof: mutable.Queue[SLTProofElement]): SLTKey = {
-    proof.dequeue().asInstanceOf[ProofKey].e
-  }
-
-  def dequeueRightLabel(proof: mutable.Queue[SLTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofRightLabel].e
-  }
-
-  def dequeueLeftLabel(proof: mutable.Queue[SLTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofLeftLabel].e
-  }
-
-  def dequeueLevel(proof: mutable.Queue[SLTProofElement]): Int = {
-    proof.dequeue().asInstanceOf[SLTProofLevel].e
-  }
 }
 
 case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
   extends SLTProof {
 
   def verify(digest: Label): Option[SLTValue] = Try {
-    val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
+    val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
     def verifyLookupRecursive(): (Label, Option[SLTValue]) = {
       val nKey = dequeueKey(proof)
       val nValue = dequeueValue(proof)
@@ -84,7 +74,7 @@ case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
   extends SLTModifyingProof {
 
   def verify(digest: Label, updated: UpdateFunction): Option[Label] = Try {
-    val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
+    val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
     def verifyUpdateRecursive(): (Label, Boolean, Option[Label]) = {
       val nKey = dequeueKey(proof)
       val nValue = dequeueValue(proof)
@@ -141,7 +131,7 @@ case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
   extends SLTModifyingProof {
 
   def verify(digest: Label, updated: Option[SLTValue] => SLTValue): Option[Label] = Try {
-    val proof: mutable.Queue[SLTProofElement] = mutable.Queue(proofSeq: _*)
+    val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
     val rootKey = dequeueKey(proof)
     val rootValue = dequeueValue(proof)
     val rootLevel = dequeueLevel(proof)

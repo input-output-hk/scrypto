@@ -1,7 +1,5 @@
 package scorex.crypto.authds
 
-import com.google.common.primitives.Ints
-import scorex.crypto.authds.wtree._
 import scorex.crypto.encode.Base58
 
 trait TwoPartyProofElement {
@@ -14,12 +12,8 @@ sealed trait AVLProofElement extends TwoPartyProofElement
 
 sealed trait SLTProofElement extends TwoPartyProofElement
 
-case class ProofLevel(e: Level) extends WTProofElement with AVLProofElement {
+case class ProofLevel(e: Level) extends WTProofElement with AVLProofElement with SLTProofElement{
   val bytes: Array[Byte] = e.bytes
-}
-
-case class SLTProofLevel(e: Int) extends SLTProofElement {
-  val bytes: Array[Byte] = Ints.toByteArray(e)
 }
 
 trait ProofLabel extends WTProofElement with AVLProofElement with SLTProofElement {
@@ -40,11 +34,11 @@ trait Key extends WTProofElement with AVLProofElement with SLTProofElement {
   override def toString: String = s"Key(${Base58.encode(e).take(8)})"
 }
 
-case class ProofKey(e: WTKey) extends Key
+case class ProofKey(e: Array[Byte]) extends Key
 
-case class ProofNextLeafKey(e: WTKey) extends Key
+case class ProofNextLeafKey(e: Array[Byte]) extends Key
 
-case class ProofValue(e: WTValue) extends WTProofElement with AVLProofElement with SLTProofElement {
+case class ProofValue(e: Array[Byte]) extends WTProofElement with AVLProofElement with SLTProofElement {
   val bytes: Array[Byte] = e
 
   override def toString: String = s"WTProofKey(${Base58.encode(e).take(8)})"

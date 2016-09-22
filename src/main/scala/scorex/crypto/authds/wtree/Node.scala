@@ -1,5 +1,6 @@
 package scorex.crypto.authds.wtree
 
+import scorex.crypto.authds.Level
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.CryptographicHash
 

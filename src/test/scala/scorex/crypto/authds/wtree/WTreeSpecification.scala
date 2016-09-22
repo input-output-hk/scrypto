@@ -4,6 +4,7 @@ import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
+import scorex.crypto.authds.Level
 import scorex.crypto.authds.PerformanceMeter._
 import scorex.crypto.hash.{Blake2b256, Sha256}
 
