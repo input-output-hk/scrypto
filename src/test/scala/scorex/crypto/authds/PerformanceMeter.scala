@@ -1,7 +1,6 @@
 package scorex.crypto.authds
 
 import org.scalatest.Matchers
-import scorex.crypto.TestingCommons
 import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.sltree.SLTree
 import scorex.crypto.authds.wtree._
@@ -28,27 +27,13 @@ object PerformanceMeter extends App with TwoPartyTests with Matchers {
   (0 until ToCalculate) foreach { i =>
     val elements = genElements(Step, i)
     // wt
-    val wtStats:Seq[Float] = profileTree(wt, elements, wt.rootHash())
+    val wtStats: Seq[Float] = profileTree(wt, elements, wt.rootHash())
     // treap
-    val treapStats:Seq[Float] = profileTree(wt, elements, wt.rootHash())
+    val treapStats: Seq[Float] = profileTree(wt, elements, wt.rootHash())
     // avl
-    //    val avlStats = profileTree(avl, elements, avl.rootHash())
-    val avlStats:Seq[Float] = Seq(-1, -1, -1, -1, -1, -1, -1, -1, -1)
-
-
+    val avlStats = profileTree(avl, elements, avl.rootHash())
     //slt
-    val (sltInsertTime, sltProofs) = time(elements.map(e => slt.insert(e, append(e))))
-    val (sltVerifyTime, _) = time {
-      sltProofs.foreach { p =>
-        assert(p._1)
-        sltDigest = p._2.verify(sltDigest, append(p._2.key)).get
-      }
-    }
-    val sltProofSize = sltProofs.foldLeft(Array[Byte]()) { (a, b) =>
-      a ++ b._2.proofSeq.map(_.bytes).reduce(_ ++ _)
-    }.length / Step
-    val sltStats:Seq[Float] = Seq(sltInsertTime, sltVerifyTime, sltProofSize)
-
+    val sltStats = profileTree(slt, elements, slt.rootHash())
 
     println(s"${i * Step}, " +
       wtStats.indices.map(i => treapStats(i) + ", " + wtStats(i) + ", " + sltStats(i) + ", " + avlStats(i)).mkString(", "))
