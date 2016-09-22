@@ -7,22 +7,12 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-sealed trait SLTProof extends TwoPartyProof[SLTKey, SLTValue] {
-
-  override def verify(digest: Label, updateFunction: (Option[SLTValue]) => SLTValue,
-                      toInsertIfNotFound: Boolean): Option[Label] = {
-    this match {
-      case a: SLTLookupProof => a.verify(digest)
-      case a: SLTInsertProof if toInsertIfNotFound => a.verify(digest, updateFunction)
-      case a: SLTUpdateProof if !toInsertIfNotFound => a.verify(digest, updateFunction)
-      case _ => None
-    }
-  }
-
-}
+sealed trait SLTProof extends TwoPartyProof[SLTKey, SLTValue]
 
 case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
   extends SLTProof {
+
+  override def verify(digest: Label, uf: UpdateFunction, toInsertIfNotFound: Boolean): Option[Label] = verify(digest)
 
   def verify(digest: Label): Option[SLTValue] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
@@ -66,14 +56,12 @@ case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
 
 }
 
-trait SLTModifyingProof extends SLTProof {
-  def verify(digest: Label, updateFunction: UpdateFunction): Option[Label]
-}
+trait SLTModifyingProof extends SLTProof
 
 case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
   extends SLTModifyingProof {
 
-  def verify(digest: Label, updated: UpdateFunction): Option[Label] = Try {
+  override def verify(digest: Label, updated: UpdateFunction, i: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
     def verifyUpdateRecursive(): (Label, Boolean, Option[Label]) = {
       val nKey = dequeueKey(proof)
@@ -130,7 +118,7 @@ case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
 case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
   extends SLTModifyingProof {
 
-  def verify(digest: Label, updated: Option[SLTValue] => SLTValue): Option[Label] = Try {
+  def verify(digest: Label, updated: UpdateFunction, b: Boolean): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
     val rootKey = dequeueKey(proof)
     val rootValue = dequeueValue(proof)

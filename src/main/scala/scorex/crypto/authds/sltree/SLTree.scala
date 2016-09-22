@@ -13,12 +13,11 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
 
 
   override def modify(key: SLTKey, updateFunction: UpdateFunction,
-                      toInsertIfNotFound: Boolean): TwoPartyProof[SLTKey, SLTValue] = {
+                      toInsertIfNotFound: Boolean = true): SLTModifyingProof = {
     val lookupProof = lookup(key)
     lookupProof._1 match {
-      case None if toInsertIfNotFound => insert(key, updateFunction)._2
+      case None => insert(key, updateFunction)._2
       case Some(v) => update(key, updateFunction)._2
-      case _ => lookupProof._2
     }
   }
 
@@ -164,13 +163,6 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
       found
     }
     (updateLoop(topNode), SLTUpdateProof(key, proofStream))
-  }
-
-  def modify(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTModifyingProof) = {
-    lookup(key)._1 match {
-      case Some(_) => update(key, updateFunction)
-      case None => insert(key, updateFunction)
-    }
   }
 
   def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {

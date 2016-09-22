@@ -25,8 +25,8 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
     forAll { (sender: Array[Byte], recipient: Array[Byte], amount: Long) =>
       whenever(sender.nonEmpty && recipient.nonEmpty && amount >= 0) {
         //proover
-        val (_, senderProof: SLTModifyingProof) = slt.modify(sender, updateFunction(-amount))
-        val (_, recipientProof: SLTModifyingProof) = slt.modify(recipient, updateFunction(amount))
+        val senderProof: SLTModifyingProof = slt.modify(sender, updateFunction(-amount))
+        val recipientProof: SLTModifyingProof = slt.modify(recipient, updateFunction(amount))
 
         //verifier
         senderProof.key shouldBe sender
