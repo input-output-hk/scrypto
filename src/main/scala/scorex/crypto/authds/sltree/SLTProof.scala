@@ -1,5 +1,6 @@
 package scorex.crypto.authds.sltree
 
+import scorex.crypto.authds._
 import scorex.crypto.hash.CryptographicHash
 import scorex.utils.ByteArray
 
@@ -10,19 +11,19 @@ sealed trait SLTProof {
   val key: SLTKey
 
   def dequeueValue(proof: mutable.Queue[SLTProofElement]): SLTValue = {
-    proof.dequeue().asInstanceOf[SLTProofValue].e
+    proof.dequeue().asInstanceOf[ProofValue].e
   }
 
   def dequeueKey(proof: mutable.Queue[SLTProofElement]): SLTKey = {
-    proof.dequeue().asInstanceOf[SLTProofKey].e
+    proof.dequeue().asInstanceOf[ProofKey].e
   }
 
   def dequeueRightLabel(proof: mutable.Queue[SLTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[SLTProofRightLabel].e
+    proof.dequeue().asInstanceOf[ProofRightLabel].e
   }
 
   def dequeueLeftLabel(proof: mutable.Queue[SLTProofElement]): Label = {
-    proof.dequeue().asInstanceOf[SLTProofLeftLabel].e
+    proof.dequeue().asInstanceOf[ProofLeftLabel].e
   }
 
   def dequeueLevel(proof: mutable.Queue[SLTProofElement]): Int = {

@@ -1,6 +1,7 @@
 package scorex.crypto.authds.sltree
 
 import com.google.common.primitives.Ints
+import scorex.crypto.authds._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Sha256}
 import scorex.utils.ByteArray
@@ -20,10 +21,10 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
   def insert(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTInsertProof) = {
     val root = topNode
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
-    proofStream.enqueue(SLTProofKey(root.key))
-    proofStream.enqueue(SLTProofValue(root.value))
+    proofStream.enqueue(ProofKey(root.key))
+    proofStream.enqueue(ProofValue(root.value))
     proofStream.enqueue(SLTProofLevel(root.level))
-    proofStream.enqueue(SLTProofLeftLabel(root.leftLabel))
+    proofStream.enqueue(ProofLeftLabel(root.leftLabel))
 
     // The newly returned node may not have its label computed yet,
     // so it’s up to the caller to compute it if it is equal tmo labelOfNone
@@ -39,16 +40,16 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
           val n = new Node(x, updateFunction(None), level, None, None, LabelOfNone)
           (n, true)
         case Some(r: Node) =>
-          proofStream.enqueue(SLTProofKey(r.key))
-          proofStream.enqueue(SLTProofValue(r.value))
+          proofStream.enqueue(ProofKey(r.key))
+          proofStream.enqueue(ProofValue(r.value))
           proofStream.enqueue(SLTProofLevel(r.level))
           ByteArray.compare(x, r.key) match {
             case 0 =>
-              proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-              proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+              proofStream.enqueue(ProofLeftLabel(r.leftLabel))
+              proofStream.enqueue(ProofRightLabel(r.rightLabel))
               (r, false)
             case o if o < 0 =>
-              proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+              proofStream.enqueue(ProofRightLabel(r.rightLabel))
               val (newLeft: Node, success: Boolean) = InsertHelper(r.left, x)
               if (success) {
                 // Attach the newLeft if its level is smaller than our level;
@@ -76,7 +77,7 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
               // newRight.level<= r.level
               // (because on the right level is allowed to be the same as of the child,
               // but on the left the child has to be smaller)
-              proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+              proofStream.enqueue(ProofLeftLabel(r.leftLabel))
               val (newRight: Node, success: Boolean) = InsertHelper(r.right, x)
               if (success) {
                 // Attach the newRight if its level is smaller than our level;
@@ -122,26 +123,26 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
   def update(key: SLTKey, updateFunction: UpdateFunction): (Boolean, SLTUpdateProof) = {
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     def updateLoop(r: Node): Boolean = {
-      proofStream.enqueue(SLTProofKey(r.key))
-      proofStream.enqueue(SLTProofValue(r.value))
+      proofStream.enqueue(ProofKey(r.key))
+      proofStream.enqueue(ProofValue(r.value))
       proofStream.enqueue(SLTProofLevel(r.level))
 
       var found = false
       ByteArray.compare(key, r.key) match {
         case 0 =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          proofStream.enqueue(ProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(ProofRightLabel(r.rightLabel))
           val newVal = updateFunction(Some(r.value))
           r.value = newVal
           found = true
         case o if o < 0 =>
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          proofStream.enqueue(ProofRightLabel(r.rightLabel))
           r.left match {
             case None => found = false
             case Some(leftNode) => found = updateLoop(leftNode)
           }
         case _ =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(ProofLeftLabel(r.leftLabel))
           r.right match {
             case None => found = false
             case Some(rightNode) => found = updateLoop(rightNode)
@@ -164,22 +165,22 @@ class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf:
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     @tailrec
     def lookupLoop(r: Node, x: SLTKey): Option[SLTValue] = {
-      proofStream.enqueue(SLTProofKey(r.key))
-      proofStream.enqueue(SLTProofValue(r.value))
+      proofStream.enqueue(ProofKey(r.key))
+      proofStream.enqueue(ProofValue(r.value))
       proofStream.enqueue(SLTProofLevel(r.level))
       ByteArray.compare(x, r.key) match {
         case 0 =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          proofStream.enqueue(ProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(ProofRightLabel(r.rightLabel))
           Some(r.value)
         case o if o < 0 =>
-          proofStream.enqueue(SLTProofRightLabel(r.rightLabel))
+          proofStream.enqueue(ProofRightLabel(r.rightLabel))
           r.left match {
             case None => None
             case Some(leftNode) => lookupLoop(leftNode, x)
           }
         case _ =>
-          proofStream.enqueue(SLTProofLeftLabel(r.leftLabel))
+          proofStream.enqueue(ProofLeftLabel(r.leftLabel))
           r.right match {
             case None => None
             case Some(rightNode) => lookupLoop(rightNode, x)
