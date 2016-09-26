@@ -1,12 +1,12 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
+import scorex.crypto.hash.{Blake2b256Unsafe, CryptographicHash}
 import scorex.utils.ByteArray
 
 
 class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
-                                      (implicit hf: HF = Blake2b256) extends TwoPartyDictionary[AVLKey, AVLValue] {
+                                      (implicit hf: HF = Blake2b256Unsafe) extends TwoPartyDictionary[AVLKey, AVLValue] {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
