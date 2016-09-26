@@ -45,7 +45,7 @@ object ExtendedSLProof {
     (r._3.proof.l.rootHash(), r._1)
   }
 
-  //update proofs from tight to left
+  //update proofs from right to left
   def recalculateProofs[HF <: CommutativeHash[_]](proofs: Seq[ProofToRecalculate], height: Int)
                                                  (implicit hf: HF): Seq[ProofToRecalculate] = {
 
