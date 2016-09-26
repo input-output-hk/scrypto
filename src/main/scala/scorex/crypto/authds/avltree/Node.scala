@@ -208,7 +208,6 @@ case class VerifierNode(private var _left: Node, private var _right: Node, priva
 
 }
 
-@specialized
 case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
                 extends ProverNodes with VerifierNodes {
 
