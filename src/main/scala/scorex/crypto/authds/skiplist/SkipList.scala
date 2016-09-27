@@ -130,8 +130,10 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
   def insert(e: SLElement, singleInsert: Boolean = true, levOpt: Option[Int] = None): Boolean = if (contains(e)) {
     false
   } else {
-    val eLevel = levOpt.getOrElse(SkipList.selectLevel(e, topNode.level))
-    if (eLevel == topNode.level) newTopLevel()
+    val eLevel = levOpt.getOrElse(SkipList.selectLevel(e, SkipList.maxLevel))
+    while (eLevel >= topNode.level) {
+      newTopLevel() //increase level by one, until the new maximal level matches the new key
+    }
     def insertOne(levNode: SLNode): SLNode = {
       val prev = levNode.rightUntil(_.right.get.el > e).get
       val downNode: Option[SLNode] = prev.down.map(dn => insertOne(dn))
@@ -284,6 +286,8 @@ class SkipList[HF <: CommutativeHash[_], ST <: StorageType](implicit storage: KV
 object SkipList {
   type SLKey = Array[Byte]
   type SLValue = Array[Byte]
+
+  val maxLevel = 10
 
   /**
    * Select a level where element e will be putted
