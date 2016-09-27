@@ -287,7 +287,7 @@ object SkipList {
   type SLKey = Array[Byte]
   type SLValue = Array[Byte]
 
-  val maxLevel = 10
+  val maxLevel = 128
 
   /**
    * Select a level where element e will be putted
