@@ -4,7 +4,7 @@ import org.scalatest.Matchers
 import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.sltree.SLTree
 import scorex.crypto.authds.wtree._
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.hash.Blake2b256Unsafe
 
 
 object PerformanceMeter extends App with TwoPartyTests with Matchers {
@@ -14,7 +14,7 @@ object PerformanceMeter extends App with TwoPartyTests with Matchers {
 
   val avl = new AVLTree()
   val wt = new WTree()
-  val treap = new WTree()(Blake2b256, Level.treapLevel)
+  val treap = new WTree()(new Blake2b256Unsafe, Level.treapLevel)
   val slt = new SLTree()
 
   val structures = Seq("treap", "wt", "slt", "avl")

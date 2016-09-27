@@ -1,7 +1,7 @@
 package scorex.crypto.authds.sltree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.ThreadUnsafeHash
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -9,7 +9,7 @@ import scala.util.Try
 
 sealed trait SLTProof extends TwoPartyProof[SLTKey, SLTValue]
 
-case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
+case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: ThreadUnsafeHash)
   extends SLTProof {
 
   override def verify(digest: Label, uf: UpdateFunction, toInsertIfNotFound: Boolean): Option[Label] = verify(digest)
@@ -58,7 +58,7 @@ case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
 
 trait SLTModifyingProof extends SLTProof
 
-case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
+case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: ThreadUnsafeHash)
   extends SLTModifyingProof {
 
   override def verify(digest: Label, updated: UpdateFunction, i: Boolean = true): Option[Label] = Try {
@@ -115,7 +115,7 @@ case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
 
 }
 
-case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: CryptographicHash)
+case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: ThreadUnsafeHash)
   extends SLTModifyingProof {
 
   def verify(digest: Label, updated: UpdateFunction, b: Boolean): Option[Label] = Try {

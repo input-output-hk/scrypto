@@ -1,11 +1,10 @@
 package scorex.crypto.authds.sltree
 
-import com.google.common.primitives.Ints
 import scorex.crypto.authds.Level
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.ThreadUnsafeHash
 
-abstract class NodeI(Hash: CryptographicHash) {
+abstract class NodeI(Hash: ThreadUnsafeHash) {
 
   protected def label(n: Option[NodeI]): Label = n.map(_.label).getOrElse(LabelOfNone)
 
@@ -19,7 +18,7 @@ abstract class NodeI(Hash: CryptographicHash) {
 
   def rightLabel: Label
 
-  def computeLabel: Label = Hash(key ++ value ++ level.bytes ++ leftLabel ++ rightLabel)
+  def computeLabel: Label = Hash.hash(key, value, level.bytes, leftLabel, rightLabel)
 
   override def toString: String = {
     Base58.encode(key).take(8) + "|" + Base58.encode(value).take(8) + "|" + level + "|" +
@@ -29,7 +28,7 @@ abstract class NodeI(Hash: CryptographicHash) {
 }
 
 class Node(val key: SLTKey, var value: SLTKey, var level: Level, var left: Option[Node], var right: Option[Node],
-           var label: Label)(implicit hf: CryptographicHash) extends NodeI(hf) {
+           var label: Label)(implicit hf: ThreadUnsafeHash) extends NodeI(hf) {
 
   override def leftLabel: Label = label(left)
 
@@ -38,7 +37,7 @@ class Node(val key: SLTKey, var value: SLTKey, var level: Level, var left: Optio
 }
 
 class FlatNode(val key: SLTKey, var value: SLTKey, var level: Level, var leftLabel: Label, var rightLabel: Label,
-               val labelOpt: Option[Label])(implicit hf: CryptographicHash) extends NodeI(hf) {
+               val labelOpt: Option[Label])(implicit hf: ThreadUnsafeHash) extends NodeI(hf) {
 
   lazy val label = labelOpt.getOrElse(computeLabel)
 }

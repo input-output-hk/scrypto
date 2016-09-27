@@ -5,8 +5,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.Level
-import scorex.crypto.authds.PerformanceMeter._
-import scorex.crypto.hash.{Blake2b256, Sha256}
+import scorex.crypto.hash.Blake2b256Unsafe
 
 
 class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
@@ -15,7 +14,7 @@ class WTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
   def validKey(key: WTKey): Boolean = key.length > 1 && key.length < MaxKeySize
 
   property("WTree treap stream") {
-    val wt = new WTree()(Sha256, Level.treapLevel)
+    val wt = new WTree()(new Blake2b256Unsafe, Level.treapLevel)
     var digest = wt.rootHash()
     forAll { (key: Array[Byte], value: Array[Byte]) =>
       whenever(validKey(key) && value.nonEmpty) {

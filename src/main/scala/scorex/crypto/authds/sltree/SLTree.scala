@@ -3,12 +3,12 @@ package scorex.crypto.authds.sltree
 import com.google.common.primitives.Ints
 import scorex.crypto.authds._
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.{Blake2b256, CryptographicHash, Sha256}
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
 
-class SLTree[HF <: CryptographicHash](rootOpt: Option[Node] = None)(implicit hf: HF = Blake2b256)
+class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[SLTKey, SLTValue] {
 
 

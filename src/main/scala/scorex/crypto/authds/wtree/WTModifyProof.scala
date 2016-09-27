@@ -1,14 +1,14 @@
 package scorex.crypto.authds.wtree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.{ThreadUnsafeHash, CryptographicHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
 import scala.util.Try
 
 case class WTModifyProof(key: WTKey, proofSeq: Seq[WTProofElement])
-                        (implicit hf: CryptographicHash, levelFunc: LevelFunction)
+                        (implicit hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends TwoPartyProof[WTKey, WTValue] {
 
   def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {

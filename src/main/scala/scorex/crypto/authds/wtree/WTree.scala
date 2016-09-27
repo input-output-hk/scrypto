@@ -1,14 +1,14 @@
 package scorex.crypto.authds.wtree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
+import scorex.crypto.hash.{Blake2b256Unsafe, Blake2b256, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 // WE NEED TO CREATE A NEW TYPE OF INFORMATION IN THE PROOF: `ProofDirection, which can be leafFound, leafNotFound, goingLeft, or goingRight
 // It is needed to give hints to the verifier whether which way to go
 
-class WTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
-                                    (implicit hf: HF = Blake2b256, lf: LevelFunction = Level.skiplistLevel)
+class WTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
+                                   (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.skiplistLevel)
   extends TwoPartyDictionary[WTKey, WTValue] {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))

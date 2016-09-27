@@ -2,7 +2,7 @@ package scorex.crypto.authds.wtree
 
 import scorex.crypto.authds.Level
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.ThreadUnsafeHash
 
 // WE NEED TO MAKE THE FOLLOWING MODIFICATIONS TO THE DEFINITION OF NODE
 // There are two kinds of nodes on the prover side: internal nodes and leaves
@@ -40,14 +40,14 @@ sealed trait Node {
 }
 
 trait InternalNode {
-  val hf: CryptographicHash
+  val hf: ThreadUnsafeHash
   val level: Level
 
   def leftLabel: Label
 
   def rightLabel: Label
 
-  def computeLabel: Label = hf(Array(1: Byte) ++ level.bytes ++ leftLabel ++ rightLabel)
+  def computeLabel: Label = hf.prefixedHash(1: Byte, level.bytes, leftLabel, rightLabel)
 
 }
 
@@ -58,7 +58,7 @@ sealed trait ProverNodes extends Node {
 sealed trait VerifierNodes extends Node
 
 case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _right: ProverNodes)
-                     (implicit val hf: CryptographicHash, levelFunc: LevelFunction)
+                     (implicit val hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
   lazy val level = levelFunc(key)
@@ -88,7 +88,7 @@ case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _r
 }
 
 case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: Label, level: Level)
-                       (implicit val hf: CryptographicHash) extends VerifierNodes with InternalNode {
+                       (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
 
   def leftLabel: Label = _leftLabel
 
@@ -111,7 +111,7 @@ case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: 
 }
 
 case class Leaf(key: WTKey, private var _value: WTValue, private var _nextLeafKey: WTKey)
-               (implicit hf: CryptographicHash) extends ProverNodes with VerifierNodes {
+               (implicit hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
 
   def value: WTValue = _value
 
@@ -127,8 +127,7 @@ case class Leaf(key: WTKey, private var _value: WTValue, private var _nextLeafKe
     labelOpt = None
   }
 
-
-  def computeLabel: Label = hf(Array(0: Byte) ++ key ++ value ++ nextLeafKey)
+  def computeLabel: Label = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
