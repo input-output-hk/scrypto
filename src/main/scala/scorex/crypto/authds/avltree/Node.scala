@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
+import scorex.crypto.hash.ThreadUnsafeHash
 
 // TODO: change the type Level everywhere
 // TODO: move some common things into InternalNode
@@ -26,7 +26,7 @@ sealed trait Node {
 }
 
 trait InternalNode {
-  val hf: CryptographicHash
+  val hf: ThreadUnsafeHash
 
   var balance: Level
 
@@ -34,7 +34,7 @@ trait InternalNode {
 
   def rightLabel: Label
 
-  def computeLabel: Label = hf(Array(1: Byte) ++ Array(balance.toByte) ++ leftLabel ++ rightLabel)
+  def computeLabel: Label = hf.prefixedHash(1: Byte, Array(balance.toByte), leftLabel, rightLabel)
 
 }
 
@@ -55,7 +55,7 @@ case class LabelOnlyNode(l: Label) extends Node {
 }
 
 case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes, private var _balance: Level = 0)
-                     (implicit val hf: CryptographicHash)
+                     (implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
@@ -110,71 +110,8 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
 
 }
 
-/*
-
-object VerifierNode {
-
-  def apply(leftLabel: Label, rightLabel: Label, balance: Level)(implicit hf: CryptographicHash): VerifierNode = {
-    new VerifierNode(Some(leftLabel), Some(rightLabel), balance, None, None)
-  }
-
-  def apply(left: VerifierNodes, right: VerifierNodes, balance: Level)(implicit hf: CryptographicHash): VerifierNode = {
-    new VerifierNode(None, None, balance, Some(left), Some(right))
-  }
-
-}
-
-class VerifierNode(private var _leftLabel: Option[Label], private var _rightLabel: Option[Label], private val balance: Level,
-                   private var _left: Option[VerifierNodes], private var _right: Option[VerifierNodes])
-                  (implicit val hf: CryptographicHash) extends VerifierNodes with InternalNode {
-
-  require(_leftLabel.isDefined || left.isDefined) // TODO: this should be XOR rather than OR -- else you have ambiguity 
-  require(_rightLabel.isDefined || right.isDefined) // TODO: this should be XOR rather than OR -- else you have ambiguity 
-
-  def leftLabel: Label = _leftLabel.getOrElse(left.get.label)
-
-  def rightLabel: Label = _rightLabel.getOrElse(right.get.label)
-
-  def left: VerifierNodes = _left.get // TODO: is this correct?
-
-  def right: VerifierNodes = _right.get // TODO: is this correct?
-
-  def balance: Level = _balance 
-
-  def leftLabel_=(newLeft: Label) = {
-    _leftLabel = Some(newLeft)
-    _left = None
-    labelOpt = None
-  }
-
-  def rightLabel_=(newRight: Label) = {
-    _rightLabel = Some(newRight)
-    _right = None
-    labelOpt = None
-  }
-
-
-  def left_=(newLeft: ProverNodes) = {
-    _left = newLeft
-    _leftLabel = None
-    labelOpt = None
-  }
-
-  def right_=(newRight: ProverNodes) = {
-    _right = newRight
-    _rightLabel = None
-    labelOpt = None
-  }
-
-  def balance_=(balance: Level) = { TODO: change type
-    _balance = balance
-    labelOpt = None
-  }
-
-*/
-
 case class VerifierNode(private var _left: Node, private var _right: Node, private var _balance: Level)
-                       (implicit val hf: CryptographicHash) extends VerifierNodes with InternalNode {
+                       (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
 
   def balance: Level = _balance
 
@@ -209,7 +146,7 @@ case class VerifierNode(private var _left: Node, private var _right: Node, priva
 }
 
 case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
-                extends ProverNodes with VerifierNodes {
+               (implicit val hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
 
   var height = 0 //TODO: needed for debug only
 
@@ -228,10 +165,11 @@ case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeaf
   }
 
   def printTree() = {
-    print(key(0)); print(" at leaf ")
+    print(key(0))
+    print(" at leaf ")
   } // TODO needed for debug only
 
-  def computeLabel: Label = Blake2b256(Array(0: Byte) ++ key ++ value ++ nextLeafKey)
+  def computeLabel: Label = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"

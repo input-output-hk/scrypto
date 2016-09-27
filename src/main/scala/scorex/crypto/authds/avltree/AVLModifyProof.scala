@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.{ThreadUnsafeHash, CryptographicHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -9,7 +9,7 @@ import scala.util.Try
 
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
-                         (implicit hf: CryptographicHash) extends TwoPartyProof[AVLKey, AVLValue] {
+                         (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
 
   def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)

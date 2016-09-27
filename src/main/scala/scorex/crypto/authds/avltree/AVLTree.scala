@@ -1,18 +1,16 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, CryptographicHash}
+import scorex.crypto.hash.{ThreadUnsafeHash, Blake2b256Unsafe, CryptographicHash}
 import scorex.utils.ByteArray
 
 
-class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
-                                      (implicit hf: HF = Blake2b256Unsafe) extends TwoPartyDictionary[AVLKey, AVLValue] {
+class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf: HF = new Blake2b256Unsafe)
+  extends TwoPartyDictionary[AVLKey, AVLValue] {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
   def rootHash(): Label = topNode.label
-
-
 
   // We could add return values here:
   // - we could return boolean indicating whether x was found
@@ -97,24 +95,24 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                       (newLeft, true, false)
                     }
 
-                    else { 
+                    else {
                       // double rotate
                       val newRootM = newLeft.right
-                      assert (newRootM.isInstanceOf[ProverNode])
+                      assert(newRootM.isInstanceOf[ProverNode])
                       val newRoot = newRootM.asInstanceOf[ProverNode]
 
-                      assert(newLeft.balance>0)
+                      assert(newLeft.balance > 0)
 
                       r.left = newRoot.right
                       newRoot.right = r
                       newLeft.right = newRoot.left
                       newRoot.left = newLeft
-                      
+
                       newRoot.balance match {
                         case 0 =>
                           // newRoot is a newly created node
-                          assert (r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
-                          assert (newLeft.left.isInstanceOf[Leaf] && newLeft.right.isInstanceOf[Leaf])
+                          assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
+                          assert(newLeft.left.isInstanceOf[Leaf] && newLeft.right.isInstanceOf[Leaf])
                           newLeft.balance = 0
                           r.balance = 0
                         case -1 =>
@@ -125,7 +123,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                           r.balance = 0
                       }
                       newRoot.balance = 0
-                      
+
                       assert(r.checkHeight)
                       assert(newLeft.checkHeight)
                       assert(newRoot.checkHeight)
@@ -175,24 +173,24 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                       (newRight, true, false)
                     }
 
-                    else { 
+                    else {
                       // double rotate
                       val newRootM = newRight.left
-                      assert (newRootM.isInstanceOf[ProverNode])
+                      assert(newRootM.isInstanceOf[ProverNode])
                       val newRoot = newRootM.asInstanceOf[ProverNode]
 
-                      assert(newRight.balance<0)
+                      assert(newRight.balance < 0)
 
                       r.right = newRoot.left
                       newRoot.left = r
                       newRight.left = newRoot.right
                       newRoot.right = newRight
-                      
-                     newRoot.balance match {
+
+                      newRoot.balance match {
                         case 0 =>
                           // newRoot is an newly created node
-                          assert (r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
-                          assert (newRight.left.isInstanceOf[Leaf] && newRight.right.isInstanceOf[Leaf])
+                          assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
+                          assert(newRight.left.isInstanceOf[Leaf] && newRight.right.isInstanceOf[Leaf])
                           newRight.balance = 0
                           r.balance = 0
                         case -1 =>
@@ -203,7 +201,7 @@ class AVLTree[HF <: CryptographicHash](rootOpt: Option[Leaf] = None)
                           r.balance = -1
                       }
                       newRoot.balance = 0
-                        
+
                       assert(r.checkHeight)
                       assert(newRight.checkHeight)
                       assert(newRoot.checkHeight)
