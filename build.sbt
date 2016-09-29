@@ -49,3 +49,6 @@ pomExtra :=
         <url>http://chepurnoy.org/</url>
       </developer>
     </developers>
+
+
+mainClass in assembly := Some("scorex.test.PerformanceMeter")

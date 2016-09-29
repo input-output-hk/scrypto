@@ -7,17 +7,23 @@ import scorex.crypto.authds.wtree._
 import scorex.crypto.hash.{Sha256Unsafe, Blake2b256Unsafe}
 
 
-object PerformanceMeter extends App with TwoPartyTests with Matchers {
+object PerformanceMeter extends App with TwoPartyTests {
 
   val Step = 1000
   val ToCalculate = 1000
-//  val hash = new Sha256Unsafe
+  //  val hash = new Sha256Unsafe
   val hash = new Blake2b256Unsafe
 
   val avl = new AVLTree()(hash)
   val wt = new WTree()(hash)
   val treap = new WTree()(hash, Level.treapLevel)
   val slt = new SLTree()(hash)
+  val elements = genElements(Step, 0, 26)
+  profileTree(avl, elements, avl.rootHash())
+  profileTree(wt, elements, wt.rootHash())
+  profileTree(treap, elements, treap.rootHash())
+  profileTree(slt, elements, slt.rootHash())
+
 
   val structures = Seq("treap", "wt", "slt", "avl")
   println("size, " +
@@ -30,8 +36,10 @@ object PerformanceMeter extends App with TwoPartyTests with Matchers {
     structures.map(_ + "ValueN").mkString(", ") + ", " +
     structures.map(_ + "BalanceN").mkString(", ") + ", " +
     structures.map(_ + "DirectionN").mkString(", "))
-  (0 until ToCalculate) foreach { i =>
-    val elements = genElements(Step, i)
+  (1 until ToCalculate) foreach { i =>
+    System.gc()
+
+    val elements = genElements(Step, i, 26)
     // wt
     val wtStats: Seq[Float] = profileTree(wt, elements, wt.rootHash())
     // treap
