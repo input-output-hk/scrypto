@@ -33,7 +33,7 @@ object PerformanceMeter extends App with TwoPartyTests with Matchers {
     // wt
     val wtStats: Seq[Float] = profileTree(wt, elements, wt.rootHash())
     // treap
-    val treapStats: Seq[Float] = profileTree(wt, elements, wt.rootHash())
+    val treapStats: Seq[Float] = profileTree(treap, elements, treap.rootHash())
     // avl
     val avlStats = profileTree(avl, elements, avl.rootHash())
     //slt

@@ -14,7 +14,7 @@ trait TwoPartyTests extends TestingCommons {
         digest = p.verify(digest, append(p.key)).get
       }
     }
-    val m: scala.collection.mutable.Map[Int, Int] =
+    val m: scala.collection.mutable.Map[Int, Float] =
       scala.collection.mutable.Map(0 -> 0, 1 -> 0, 2 -> 0, 3 -> 0, 4 -> 0, 5 -> 0)
 
     proofs.foreach { p =>
