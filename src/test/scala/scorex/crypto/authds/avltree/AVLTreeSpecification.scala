@@ -25,8 +25,8 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll { (key: Array[Byte], value: Array[Byte]) =>
       whenever(validKey(key) && value.nonEmpty) {
         digest shouldEqual wt.rootHash()
-        val proof = wt.modify(key, append(value))
-        digest = proof.verify(digest, append(value)).get
+        val proof = wt.modify(key, replaceLong(value))
+        digest = proof.verify(digest, replaceLong(value)).get
       }
     }
   }
@@ -58,12 +58,12 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll { (key: Array[Byte], value: Array[Byte], value2: Array[Byte]) =>
       whenever(validKey(key) && !(value sameElements value2)) {
         val digest1 = wt.rootHash()
-        val proof = wt.modify(key, append(value))
-        proof.verify(digest1, append(value)).get shouldEqual wt.rootHash()
+        val proof = wt.modify(key, replaceLong(value))
+        proof.verify(digest1, replaceLong(value)).get shouldEqual wt.rootHash()
 
         val digest2 = wt.rootHash()
-        val updateProof = wt.modify(key, append(value2))
-        updateProof.verify(digest2, append(value2)).get shouldEqual wt.rootHash()
+        val updateProof = wt.modify(key, replaceLong(value2))
+        updateProof.verify(digest2, replaceLong(value2)).get shouldEqual wt.rootHash()
       }
     }
   }

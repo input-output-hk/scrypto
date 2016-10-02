@@ -8,13 +8,13 @@ trait TwoPartyTests extends TestingCommons {
   def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte]],
                   elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
     var digest = inDigest
-    val (insertTime, proofs) = time(elements.map(e => tree.modify(e, append(e), true)))
-    val (verifyTime, _) = time {
+    val (insertTime: Float, proofs) = time(elements.map(e => tree.modify(e, replaceLong(e), true)))
+    val (verifyTime: Float, _) = time {
       proofs.foreach { p =>
-        digest = p.verify(digest, append(p.key)).get
+        digest = p.verify(digest, replaceLong(p.key)).get
       }
     }
-    val m: scala.collection.mutable.Map[Int, Int] =
+    val m: scala.collection.mutable.Map[Int, Float] =
       scala.collection.mutable.Map(0 -> 0, 1 -> 0, 2 -> 0, 3 -> 0, 4 -> 0, 5 -> 0)
 
     proofs.foreach { p =>
@@ -37,6 +37,6 @@ trait TwoPartyTests extends TestingCommons {
     Seq(insertTime, verifyTime, proofSize, m(0) / pl, m(1) / pl, m(2) / pl, m(3) / pl, m(4) / pl, m(5) / pl)
   }
 
-  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
+  def replaceLong(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => value.take(8) }
 
 }
