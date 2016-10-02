@@ -28,7 +28,7 @@ object BlockchainBench extends App {
   val balance = Array.fill(8)(0: Byte)
   val bfn = set(balance)
 
-  val initElements = 10000000
+  val initElements = 5000000
   val keyCacheSize = 10000
 
   private def initStep(i: Int) = {
@@ -84,6 +84,8 @@ object BlockchainBench extends App {
       avl.modify(k, bfn, toInsertIfNotFound = false)
     }
 
+    System.gc()
+
     //verification
     val sl0 = System.currentTimeMillis()
     proofs.foldLeft(digest0) { case (digest, proof) =>
@@ -91,6 +93,7 @@ object BlockchainBench extends App {
     }
     val dsl = System.currentTimeMillis() - sl0
 
+    System.gc()
     println(s"block #$b, elements: $size, full validation: $dsf, light validation: $dsl")
   }
 
