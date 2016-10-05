@@ -1,10 +1,12 @@
 package scorex.crypto.authds
 
+
 import org.h2.mvstore.MVStore
 import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.wtree._
 import scorex.crypto.hash.Blake2b256Unsafe
 
+import scala.reflect.io.File
 import scala.util.Random
 
 
@@ -43,18 +45,19 @@ object BlockchainBench extends App {
   (0 until initElements - keyCacheSize).foreach(initStep)
   val keyCache = ((initElements - keyCacheSize) until initElements).map(initStep).toArray
 
-  // println("kS size: " + keyCache.length)
-
   store.commit()
 
   var size = initElements
+
+  var last100f = 0L
+  var last100l = 0L
 
   (0 until blocks).foreach { b =>
     size = size + additionsInBlock
 
     val sf0 = System.currentTimeMillis()
     (0 until additionsInBlock).foreach { k =>
-      val size = map.size()
+      //val size = map.size()
       map.put(hf.hash(s"$k -- $b"), 0)
     }
 
@@ -73,6 +76,8 @@ object BlockchainBench extends App {
     store.commit()
     val dsf = System.currentTimeMillis() - sf0
 
+    last100f = last100f + dsf
+
     val digest0 = avl.rootHash()
 
     //proofs generation
@@ -84,8 +89,6 @@ object BlockchainBench extends App {
       avl.modify(k, bfn, toInsertIfNotFound = false)
     }
 
-    System.gc()
-
     //verification
     val sl0 = System.currentTimeMillis()
     proofs.foldLeft(digest0) { case (digest, proof) =>
@@ -93,8 +96,19 @@ object BlockchainBench extends App {
     }
     val dsl = System.currentTimeMillis() - sl0
 
-    System.gc()
+    last100l = last100l + dsl
+
     println(s"block #$b, elements: $size, full validation: $dsf, light validation: $dsl")
+
+    if (b % 100 == 99) {
+      val avgf = last100f / 100.0f
+      val avgl = last100l / 100.0f
+      val rs = s"averaged started at block #${b - 99}, full validation: $avgf, light validation: $avgl"
+      println(rs)
+      File("/tmp/report").appendAll(rs + "\n")
+      last100f = 0L
+      last100l = 0L
+    }
   }
 
   def set(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.getOrElse(value) }
