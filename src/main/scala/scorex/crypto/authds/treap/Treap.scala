@@ -1,4 +1,4 @@
-package scorex.crypto.authds.wtree
+package scorex.crypto.authds.treap
 
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, Blake2b256, ThreadUnsafeHash}
@@ -7,8 +7,8 @@ import scorex.utils.ByteArray
 // WE NEED TO CREATE A NEW TYPE OF INFORMATION IN THE PROOF: `ProofDirection, which can be leafFound, leafNotFound, goingLeft, or goingRight
 // It is needed to give hints to the verifier whether which way to go
 
-class WTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
-                                   (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.skiplistLevel)
+class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
+                                   (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.treapLevel)
   extends TwoPartyDictionary[WTKey, WTValue] {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
@@ -22,7 +22,7 @@ class WTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
   // for example returning both old value and new value, or some sort of success/failure)
   // I am not sure what's needed in the application
   //TODO insert toInsertIfNotFound to function
-  def modify(key: WTKey, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): WTModifyProof = {
+  def modify(key: WTKey, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): TreapModifyProof = {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
@@ -130,7 +130,7 @@ class WTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
 
     var (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundAbove = false)
     topNode = newTopNode
-    WTModifyProof(key, proofStream)
+    TreapModifyProof(key, proofStream)
   }
 
 }

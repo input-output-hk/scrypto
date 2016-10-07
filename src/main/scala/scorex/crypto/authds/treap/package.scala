@@ -2,7 +2,7 @@ package scorex.crypto.authds
 
 import scorex.crypto.hash.CryptographicHash
 
-package object wtree {
+package object treap {
   type WTKey = Array[Byte]
   type WTValue = Array[Byte]
   type Label = CryptographicHash#Digest

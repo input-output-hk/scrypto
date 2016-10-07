@@ -51,4 +51,4 @@ pomExtra :=
     </developers>
 
 
-mainClass in assembly := Some("scorex.test.PerformanceMeter")
+mainClass in assembly := Some("perf.PerformanceMeter")

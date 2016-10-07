@@ -1,4 +1,4 @@
-package scorex.crypto.authds.wtree
+package scorex.crypto.authds.treap
 
 import scorex.crypto.authds.Level
 import scorex.crypto.encode.Base58

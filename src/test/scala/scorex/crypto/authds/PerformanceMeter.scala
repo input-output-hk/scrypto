@@ -3,7 +3,7 @@ package scorex.crypto.authds
 import org.scalatest.Matchers
 import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.sltree.SLTree
-import scorex.crypto.authds.wtree._
+import scorex.crypto.authds.treap._
 import scorex.crypto.hash.{Sha256Unsafe, Blake2b256Unsafe}
 
 
@@ -15,8 +15,8 @@ object PerformanceMeter extends App with TwoPartyTests {
   val hash = new Blake2b256Unsafe
 
   val avl = new AVLTree()(hash)
-  val wt = new WTree()(hash)
-  val treap = new WTree()(hash, Level.treapLevel)
+  val wt = new Treap()(hash)
+  val treap = new Treap()(hash, Level.treapLevel)
   val slt = new SLTree()(hash)
   val elements = genElements(Step, 0, 26)
   profileTree(avl, elements, avl.rootHash())

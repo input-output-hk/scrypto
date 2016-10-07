@@ -103,10 +103,14 @@ Whisper Systems, so has the same security properties. JDK's SecureRandom used to
 
 ### Authenticated data structure
 
-Scrypto supports following authenticated data structure:
+Scrypto supports following authenticated data structures:
 
 - Merkle tree
 - Skip list
+- Treap
+- AVL tree
+
+Merkle tree may be the best solution for static data set, while for dynamic data AVL tree outperform other structures
 
 Example:
 

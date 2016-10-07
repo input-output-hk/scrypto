@@ -1,7 +1,7 @@
 package scorex.crypto.authds
 
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.wtree._
+import scorex.crypto.authds.treap._
 
 trait TwoPartyTests extends TestingCommons {
 

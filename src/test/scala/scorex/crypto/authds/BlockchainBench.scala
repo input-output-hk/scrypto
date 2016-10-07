@@ -3,7 +3,7 @@ package scorex.crypto.authds
 
 import org.h2.mvstore.MVStore
 import scorex.crypto.authds.avltree.AVLTree
-import scorex.crypto.authds.wtree._
+import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
 
 import scala.reflect.io.File
