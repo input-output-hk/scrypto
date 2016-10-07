@@ -33,9 +33,11 @@ object Level {
   def skiplistLevel(key: WTKey): Level = {
     def isBitSet(byte: Byte)(bit: Int): Boolean =
       ((byte >> bit) & 1) == 1
-    def byte2Bools(b: Byte): Seq[Boolean] = 0 to 7 map isBitSet(b)
 
-    ByteLevel(Sha256(key).flatMap(b => byte2Bools(b)).indexOf(true).toByte)
+    val s = Sha256(key)
+    var i = 0
+    while (i < 256 && !isBitSet(s(i / 8))(i % 8)) i = i + 1
+    ByteLevel(i.toByte)
   }
 
   def treapLevel(key: WTKey): Level = IntLevel(Ints.fromByteArray(Sha256(key).take(4)))
