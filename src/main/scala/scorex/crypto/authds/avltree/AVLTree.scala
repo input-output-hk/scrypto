@@ -4,8 +4,7 @@ import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
-import scala.util.Success
-
+import scala.util.{Try, Success}
 
 class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[AVLKey, AVLValue] {
@@ -14,23 +13,18 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
 
   def rootHash(): Label = topNode.label
 
-  // We could add return values here:
-  // - we could return boolean indicating whether x was found
-  // - we could val or newVal
-  // - more generally, we could return the result of updateFunction (which could have its own return type,
-  // for example returning both old value and new value, or some sort of success/failure)
-  // I am not sure what's needed in the application
-  //TODO insert toInsertIfNotFound to function
   def modify(key: AVLKey, updateFunction: UpdateFunction): AVLModifyProof = {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
     val proofStream = new scala.collection.mutable.Queue[AVLProofElement]
 
-    // found tells us if x has been already found above r in the tree
-    // returns the new root
-    // and an indicator whether tree has been modified at r or below
-    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = {
+    /**
+      * foundAbove tells us if x has been already found above r in the tree
+      * returns the new root and an indicator whether tree has been modified at r or below
+      *
+       */
+    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = Try {
       rNode match {
         case r: Leaf =>
           if (foundAbove) {
@@ -90,7 +84,7 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
               if (childHeightIncreased && r.balance < 0) {
                 // need to rotate
                 newLeftM match {
-                  // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
+                  // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;
                   case newLeft: ProverNode =>
                     if (newLeft.balance < 0) {
                       // single rotate
@@ -101,9 +95,7 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
                       assert(r.checkHeight)
                       assert(newLeft.checkHeight)
                       (newLeft, true, false)
-                    }
-
-                    else {
+                    } else {
                       // double rotate
                       val newRootM = newLeft.right
                       assert(newRootM.isInstanceOf[ProverNode])
@@ -139,8 +131,7 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
                       (newRoot, true, false)
                     }
                   case newLeft =>
-                    assert(false) // TODO : make this more scala-like
-                    (r, true, false) // TODO: this return value is not needed
+                    throw new Error("Got a leaf, internal node expected")
                 }
               } else {
                 // no need to rotate
@@ -217,13 +208,12 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
                       (newRoot, true, false)
                     }
                   case newRight =>
-                    assert(false) // TODO : make this more scala-like
-                    (r, true, false) // TODO: this return value is not needed
+                    throw new Error("Got a leaf, internal node expected")
                 }
               } else {
                 // no need to rotate
                 r.right = newRightM
-                val myHeightIncreased: Boolean = (childHeightIncreased && r.balance == 0)
+                val myHeightIncreased: Boolean = childHeightIncreased && r.balance == 0
                 if (childHeightIncreased) r.balance += 1
                 assert(r.checkHeight)
                 (r, true, myHeightIncreased)
@@ -235,7 +225,7 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
             }
           }
       }
-    }
+    }.getOrElse((topNode, true, false))
 
     val (newTopNode: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(topNode, foundAbove = false)
     if (changeHappened) topNode = newTopNode // TODO MAKE SAME CHANGE IN OTHER TREES OR REMOVE IT HERE

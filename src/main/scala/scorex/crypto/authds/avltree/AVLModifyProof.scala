@@ -14,9 +14,10 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
 
-    // returns the new flat root
-    // and an indicator whether tree has been modified at r or below
-    // Also returns the label of the old root
+    /*
+     * Returns the new flat root and an indicator whether tree has been modified at r or below
+     * Also returns the label of the old root
+     */
     def verifyHelper(): (VerifierNodes, Boolean, Boolean, Label) = {
       dequeueDirection(proof) match {
         case LeafFound =>
@@ -57,7 +58,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             if (childHeightIncreased && r.balance < 0) {
               // need to rotate
               newLeftM match {
-                // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
+                // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;
                 case newLeft: VerifierNode =>
                   if (newLeft.balance < 0) {
                     // single rotate
@@ -94,14 +95,13 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   }
 
                 case newLeft =>
-                  require(false) // TODO : make this more scala-like
-                  (r, true, false, oldLabel) // TODO: this return value is not needed
+                  throw new Error("Got a leaf, internal node expected")
               }
 
             } else {
               // no need to rotate
               r.left = newLeftM
-              val myHeightIncreased: Boolean = (childHeightIncreased && r.balance == 0)
+              val myHeightIncreased: Boolean = childHeightIncreased && r.balance == 0
               if (childHeightIncreased) r.balance -= 1
               (r, true, myHeightIncreased, oldLabel)
             }
@@ -125,7 +125,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             if (childHeightIncreased && r.balance > 0) {
               // need to rotate
               newRightM match {
-                // at this point we know newRightM must be an internal node an not a leaf -- b/c height increased;  TODO: make this more scala-like
+                // at this point we know newRightM must be an internal node an not a leaf -- b/c height increased
                 case newRight: VerifierNode =>
                   if (newRight.balance > 0) {
                     // single rotate
@@ -164,8 +164,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   }
 
                 case newRight =>
-                  require(false) // TODO : make this more scala-like
-                  (r, true, false, oldLabel) // TODO: this return value is not needed
+                  throw new Error("Got a leaf, internal node expected")
               }
             } else {
               // no need to rotate
