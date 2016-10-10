@@ -2,11 +2,13 @@ package scorex.crypto
 
 import java.io.File
 
+import org.scalacheck.{Arbitrary, Gen}
+import org.scalatest.Matchers
 import scorex.crypto.hash.Sha256
 
 import scala.util.Random
 
-trait TestingCommons {
+trait TestingCommons extends Matchers {
   val dirName = "/tmp/scorex-test/test/"
   val treeDir = new File(dirName)
   treeDir.mkdirs()
@@ -24,6 +26,10 @@ trait TestingCommons {
     val result = block // call-by-name
     val t1 = System.nanoTime()
     ((t1 - t0).toFloat / 1000000, result)
+  }
+
+  def genBoundedBytes(minSize: Int, maxSize: Int): Gen[Array[Byte]] = {
+    Gen.choose(minSize, maxSize) flatMap { sz => Gen.listOfN(sz, Arbitrary.arbitrary[Byte]).map(_.toArray) }
   }
 
 }

@@ -12,7 +12,7 @@ sealed trait AVLProofElement extends TwoPartyProofElement
 
 sealed trait SLTProofElement extends TwoPartyProofElement
 
-case class ProofLevel(e: Level) extends WTProofElement with AVLProofElement with SLTProofElement{
+case class ProofLevel(e: Level) extends WTProofElement with AVLProofElement with SLTProofElement {
   val bytes: Array[Byte] = e.bytes
 }
 
@@ -51,6 +51,8 @@ case class ProofDirection(direction: Direction) extends WTProofElement with AVLP
     case GoingLeft => 3: Byte
     case GoingRight => 4: Byte
   })
+
+  lazy val isLeaf: Boolean = bytes.head == 1 || bytes.head == 2
 }
 
 sealed trait Direction
@@ -66,8 +68,8 @@ case object GoingRight extends Direction
 // TODO: change Level to Balance and make this better
 case class ProofBalance(e: Int) extends AVLProofElement {
   override val bytes: Array[Byte] = Array(e match {
-    case -1 => 0: Byte
-    case 0 => 1: Byte
-    case 1 => 2: Byte
+    case -1 => -1: Byte
+    case 0 => 0: Byte
+    case 1 => 1: Byte
   })
 }

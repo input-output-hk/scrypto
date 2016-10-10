@@ -1,6 +1,5 @@
 package scorex.crypto.authds.skiplist
 
-import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds.storage.MvStoreBlobBlobStorage

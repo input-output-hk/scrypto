@@ -28,11 +28,11 @@ sealed trait Node {
 trait InternalNode extends Node {
   val hf: ThreadUnsafeHash
 
-  protected var _balance: Level
+  protected var _balance: Balance
 
-  def balance: Level = _balance
+  def balance: Balance = _balance
 
-  def balance_=(balance: Level) = {
+  def balance_=(balance: Balance) = {
     _balance = balance
     labelOpt = None
   }
@@ -60,7 +60,7 @@ case class LabelOnlyNode(l: Label) extends Node {
 }
 
 case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes,
-                      protected var _balance: Level = 0)(implicit val hf: ThreadUnsafeHash)
+                      protected var _balance: Balance = 0)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
@@ -96,7 +96,7 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
 
 }
 
-case class VerifierNode(private var _left: Node, private var _right: Node, protected var _balance: Level)
+case class VerifierNode(private var _left: Node, private var _right: Node, protected var _balance: Balance)
                        (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
 
   def left: Node = _left

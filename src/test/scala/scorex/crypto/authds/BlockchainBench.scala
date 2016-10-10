@@ -25,7 +25,7 @@ object BlockchainBench extends App {
 
   val hf = new Blake2b256Unsafe()
 
-  val avl = new AVLTree()
+  val avl = new AVLTree(32)
 
   val balance = Array.fill(8)(0: Byte)
   val bfn = set(balance)

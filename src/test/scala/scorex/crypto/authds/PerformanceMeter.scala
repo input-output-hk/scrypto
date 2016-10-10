@@ -11,14 +11,15 @@ object PerformanceMeter extends App with TwoPartyTests {
 
   val Step = 1000
   val ToCalculate = 1000
-  //  val hash = new Sha256Unsafe
   val hash = new Blake2b256Unsafe
+  val KL = 26
 
-  val avl = new AVLTree()(hash)
+
+  val avl = new AVLTree(KL)(hash)
   val wt = new Treap()(hash)
   val treap = new Treap()(hash, Level.treapLevel)
   val slt = new SLTree()(hash)
-  val elements = genElements(Step, 0, 26)
+  val elements = genElements(Step, 0, KL)
   profileTree(avl, elements, avl.rootHash())
   profileTree(wt, elements, wt.rootHash())
   profileTree(treap, elements, treap.rootHash())
@@ -39,7 +40,7 @@ object PerformanceMeter extends App with TwoPartyTests {
   (1 until ToCalculate) foreach { i =>
     System.gc()
 
-    val elements = genElements(Step, i, 26)
+    val elements = genElements(Step, i, KL)
     // wt
     val wtStats: Seq[Float] = profileTree(wt, elements, wt.rootHash())
     // treap

@@ -1,7 +1,8 @@
 package scorex.crypto.authds.avltree
 
+import com.google.common.primitives.Bytes
 import scorex.crypto.authds._
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -10,6 +11,25 @@ import scala.util.{Success, Try}
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
+
+  /**
+    * seqLength, key, Seq(ProofDirection, ProofLabel, ProofBalance),
+    * ProofDirection, ProofKey, ProofNextLeafKey, ProofValue
+    */
+  lazy val bytes: Array[Byte] = {
+    require((proofSeq.length - 4).toByte % 3 == 0)
+
+    val inBytes = (proofSeq.length - 4).toByte +: key
+    val pathProofsBytes: Array[Byte] = (0 until (proofSeq.length - 4) / 3).toArray.flatMap { i: Int =>
+      val label = proofSeq(3 * i + 1)
+      val directionLabelByte = AVLModifyProof.directionBalanceByte(proofSeq(3 * i).asInstanceOf[ProofDirection],
+        proofSeq(3 * i + 2).asInstanceOf[ProofBalance])
+
+      Bytes.concat(Array(directionLabelByte), label.bytes)
+    }
+    Bytes.concat(inBytes, pathProofsBytes, proofSeq(proofSeq.length - 4).bytes, proofSeq(proofSeq.length - 3).bytes,
+      proofSeq(proofSeq.length - 2).bytes, proofSeq(proofSeq.length - 1).bytes)
+  }
 
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
@@ -46,7 +66,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           }
         case GoingLeft =>
           val rightLabel: Label = dequeueRightLabel(proof)
-          val balance: Level = dequeueBalance(proof)
+          val balance: Balance = dequeueBalance(proof)
 
           var (newLeftM: VerifierNodes, changeHappened: Boolean, childHeightIncreased: Boolean, oldLeftLabel) = verifyHelper()
 
@@ -113,7 +133,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
         case GoingRight =>
           val leftLabel: Label = dequeueLeftLabel(proof)
-          val balance: Level = dequeueBalance(proof)
+          val balance: Balance = dequeueBalance(proof)
 
 
           var (newRightM: VerifierNodes, changeHappened: Boolean, childHeightIncreased: Boolean, oldRightLabel) = verifyHelper()
@@ -187,5 +207,53 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
       None
     }
   }.getOrElse(None)
+
+}
+
+object AVLModifyProof {
+
+  def parseBytes(bytes: Array[Byte])(implicit keyLength: Int = 32, digestSize: Int = 32,
+                                     hf: ThreadUnsafeHash = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
+    val pathLength: Int = bytes.head
+    require(pathLength % 3 == 0)
+
+    val key = bytes.slice(1, 1 + keyLength)
+    val pathProofs: Seq[AVLProofElement] = (0 until pathLength / 3) flatMap { i: Int =>
+      val start = 1 + keyLength + i * (1 + 32)
+      val (direction, balance) = parseDirectionBalance(bytes.slice(start, start + 1).head)
+      val labelBytes = bytes.slice(start + 1, start + 1 + digestSize)
+      val label = direction.direction match {
+        case GoingLeft => ProofRightLabel(labelBytes)
+        case GoingRight => ProofLeftLabel(labelBytes)
+        case _ => throw new Error("Incorrect direction in internal node")
+      }
+
+      Seq(direction, label, balance)
+    }
+    val point = 1 + keyLength + pathLength * ( 32 + 1) / 3
+    val lastDirection = parseDirection(bytes(point))
+    require(lastDirection.isLeaf, "Incorrect direction in leaf")
+    val proofKey: ProofKey = ProofKey(bytes.slice(point + 1, point + 1 + keyLength))
+    val nextLeafKey: ProofNextLeafKey = ProofNextLeafKey(bytes.slice(point + 1 + keyLength, point + 1 + 2 * keyLength))
+    val value: ProofValue = ProofValue(bytes.slice(point + 1 + 2 * keyLength, bytes.length))
+    AVLModifyProof(key, pathProofs ++ (lastDirection +: proofKey +: nextLeafKey +: Seq(value)))
+  }
+
+  private def parseDirection(byte: Byte): ProofDirection = ProofDirection(byte match {
+    case 1 => LeafFound
+    case 2 => LeafNotFound
+    case 3 => GoingLeft
+    case 4 => GoingRight
+  })
+
+
+  def directionBalanceByte(dir: ProofDirection, balance: ProofBalance): Byte = {
+    ((dir.bytes.head << 4) | (balance.bytes.head + 1)).toByte
+  }
+
+  def parseDirectionBalance(b: Byte): (ProofDirection, ProofBalance) = {
+    (parseDirection((b >>> 4).toByte), ProofBalance((b & 15) - 1))
+  }
+
 
 }

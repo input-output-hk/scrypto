@@ -48,9 +48,9 @@ trait TwoPartyProof[Key, Value] {
 
   protected def dequeueBalance(proof: mutable.Queue[TwoPartyProofElement]): Int = {
     proof.dequeue().bytes(0) match {
-      case 0 => -1
-      case 1 => 0
-      case 2 => 1
+      case -1 => -1
+      case 0 => 0
+      case 1 => 1
     }
   }
 }

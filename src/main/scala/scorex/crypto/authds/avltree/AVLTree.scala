@@ -1,13 +1,18 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.authds._
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
-import scala.util.{Try, Success}
+import scala.util.{Success, Try}
 
-class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf: HF = new Blake2b256Unsafe)
+class AVLTree[HF <: ThreadUnsafeHash](keySize: Int , rootOpt: Option[Leaf] = None)
+                                     (implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[AVLKey, AVLValue] {
+
+  val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keySize)(-1: Byte), Array())
+  val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keySize)(0: Byte), Array())
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
@@ -23,7 +28,7 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
       * foundAbove tells us if x has been already found above r in the tree
       * returns the new root and an indicator whether tree has been modified at r or below
       *
-       */
+      */
     def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = Try {
       rNode match {
         case r: Leaf =>
