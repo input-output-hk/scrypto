@@ -6,6 +6,8 @@ import org.scalatest.{Matchers, PropSpec}
 
 import scorex.crypto.authds.TwoPartyTests
 
+import scala.util.Success
+
 
 class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TwoPartyTests {
 
@@ -68,7 +70,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     }
   }
 
-  def rewrite(value: AVLValue): UpdateFunction = { oldOpt: Option[AVLValue] => value }
+  def rewrite(value: AVLValue): UpdateFunction = { oldOpt: Option[AVLValue] => Success(value) }
 
   def transactionUpdate(amount: Long): Option[AVLValue] => AVLValue = (old: Option[AVLValue]) =>
     Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))

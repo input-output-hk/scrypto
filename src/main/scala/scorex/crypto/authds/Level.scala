@@ -30,7 +30,7 @@ case class IntLevel(level: Int) extends Level {
 
 
 object Level {
-  def skiplistLevel(key: WTKey): Level = {
+  def skiplistLevel(key: TreapKey): Level = {
     def isBitSet(byte: Byte)(bit: Int): Boolean =
       ((byte >> bit) & 1) == 1
 
@@ -40,6 +40,6 @@ object Level {
     ByteLevel(i.toByte)
   }
 
-  def treapLevel(key: WTKey): Level = IntLevel(Ints.fromByteArray(Sha256(key).take(4)))
+  def treapLevel(key: TreapKey): Level = IntLevel(Ints.fromByteArray(Sha256(key).take(4)))
 
 }

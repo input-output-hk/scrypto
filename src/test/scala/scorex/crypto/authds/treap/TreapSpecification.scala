@@ -7,11 +7,13 @@ import scorex.crypto.TestingCommons
 import scorex.crypto.authds.Level
 import scorex.crypto.hash.Blake2b256Unsafe
 
+import scala.util.Success
+
 
 class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
 
 
-  def validKey(key: WTKey): Boolean = key.length > 1 && key.length < MaxKeySize
+  def validKey(key: TreapKey): Boolean = key.length > 1 && key.length < MaxKeySize
 
   property("skiplist stream") {
     val wt = new Treap()(new Blake2b256Unsafe, Level.skiplistLevel)
@@ -74,11 +76,13 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
     }
   }
 
-  def rewrite(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => value }
+  def rewrite(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Success(value) }
 
-  def append(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.map(_ ++ value).getOrElse(value) }
+  def append(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] =>
+    Success(oldOpt.map(_ ++ value).getOrElse(value))
+  }
 
-  def transactionUpdate(amount: Long): Option[WTValue] => WTValue = (old: Option[WTValue]) =>
+  def transactionUpdate(amount: Long): Option[TreapValue] => TreapValue = (old: Option[TreapValue]) =>
     Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))
 
 }

@@ -1,8 +1,10 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.{ThreadUnsafeHash, Blake2b256Unsafe, CryptographicHash}
+import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
+
+import scala.util.Success
 
 
 class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf: HF = new Blake2b256Unsafe)
@@ -19,7 +21,7 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
   // for example returning both old value and new value, or some sort of success/failure)
   // I am not sure what's needed in the application
   //TODO insert toInsertIfNotFound to function
-  def modify(key: AVLKey, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): AVLModifyProof = {
+  def modify(key: AVLKey, updateFunction: UpdateFunction): AVLModifyProof = {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
@@ -36,20 +38,26 @@ class AVLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)(implicit hf:
             proofStream.enqueue(ProofDirection(LeafFound))
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
-            r.value = updateFunction(Some(r.value))
-            (r, true, false)
+            updateFunction(Some(r.value)) match {
+              case Success(v) =>
+                r.value = v
+                (r, true, false)
+              case _ =>
+                (r, false, false)
+            }
           } else {
             // x > r.key
             proofStream.enqueue(ProofDirection(LeafNotFound))
             proofStream.enqueue(ProofKey(r.key))
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
-            if (toInsertIfNotFound) {
-              val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
-              r.nextLeafKey = key
-              (ProverNode(key, r, newLeaf), true, true)
-            } else {
-              (r, false, false)
+            updateFunction(None) match {
+              case Success(v) =>
+                val newLeaf = new Leaf(key, v, r.nextLeafKey)
+                r.nextLeafKey = key
+                (ProverNode(key, r, newLeaf), true, true)
+              case _ =>
+                (r, false, false)
             }
           }
         case r: ProverNode =>

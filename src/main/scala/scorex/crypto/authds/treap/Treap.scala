@@ -1,15 +1,17 @@
 package scorex.crypto.authds.treap
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, Blake2b256, ThreadUnsafeHash}
+import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
-// WE NEED TO CREATE A NEW TYPE OF INFORMATION IN THE PROOF: `ProofDirection, which can be leafFound, leafNotFound, goingLeft, or goingRight
-// It is needed to give hints to the verifier whether which way to go
+import scala.util.Success
 
+/**
+  * Authenticated data structure, representing both treap and binary tree, depending on level selection function
+  */
 class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
                                    (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.treapLevel)
-  extends TwoPartyDictionary[WTKey, WTValue] {
+  extends TwoPartyDictionary[TreapKey, TreapValue] {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
@@ -22,7 +24,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
   // for example returning both old value and new value, or some sort of success/failure)
   // I am not sure what's needed in the application
   //TODO insert toInsertIfNotFound to function
-  def modify(key: WTKey, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): TreapModifyProof = {
+  def modify(key: TreapKey, updateFunction: UpdateFunction): TreapModifyProof = {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
@@ -39,20 +41,24 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(ProofDirection(LeafFound))
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
-            r.value = updateFunction(Some(r.value))
-            (r, true)
+            updateFunction(Some(r.value)) match {
+              case Success(v) =>
+                r.value = v
+                (r, true)
+              case _ => (r, false)
+            }
           } else {
             // x > r.key
             proofStream.enqueue(ProofDirection(LeafNotFound))
             proofStream.enqueue(ProofKey(r.key))
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
-            if (toInsertIfNotFound) {
-              val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
-              r.nextLeafKey = key
-              (ProverNode(key, r, newLeaf), true)
-            } else {
-              (r, false)
+            updateFunction(None) match {
+              case Success(v) =>
+                val newLeaf = new Leaf(key, v, r.nextLeafKey)
+                r.nextLeafKey = key
+                (ProverNode(key, r, newLeaf), true)
+              case _ => (r, false)
             }
           }
         case r: ProverNode =>

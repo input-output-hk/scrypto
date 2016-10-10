@@ -2,6 +2,8 @@ package scorex.crypto.authds
 
 import scorex.crypto.hash.CryptographicHash
 
+import scala.util.Try
+
 package object avltree {
   type Level = Int
   type AVLKey = Array[Byte]
@@ -12,7 +14,7 @@ package object avltree {
   val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(1)(0: Byte), Array())
 
   val LabelOfNone: Array[Byte] = Array()
-  type UpdateFunction = Option[AVLValue] => AVLValue
+  type UpdateFunction = Option[AVLValue] => Try[AVLValue]
   type LevelFunction = AVLKey => Level
 
 }

@@ -3,12 +3,14 @@ package scorex.crypto.authds
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.treap._
 
+import scala.util.Success
+
 trait TwoPartyTests extends TestingCommons {
 
   def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte]],
                   elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
     var digest = inDigest
-    val (insertTime: Float, proofs) = time(elements.map(e => tree.modify(e, replaceLong(e), true)))
+    val (insertTime: Float, proofs) = time(elements.map(e => tree.modify(e, replaceLong(e))))
     val (verifyTime: Float, _) = time {
       proofs.foreach { p =>
         digest = p.verify(digest, replaceLong(p.key)).get
@@ -37,6 +39,6 @@ trait TwoPartyTests extends TestingCommons {
     Seq(insertTime, verifyTime, proofSize, m(0) / pl, m(1) / pl, m(2) / pl, m(3) / pl, m(4) / pl, m(5) / pl)
   }
 
-  def replaceLong(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => value.take(8) }
+  def replaceLong(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Success(value.take(8)) }
 
 }

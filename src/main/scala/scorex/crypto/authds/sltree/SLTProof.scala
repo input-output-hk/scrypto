@@ -12,7 +12,7 @@ sealed trait SLTProof extends TwoPartyProof[SLTKey, SLTValue]
 case class SLTLookupProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: ThreadUnsafeHash)
   extends SLTProof {
 
-  override def verify(digest: Label, uf: UpdateFunction, toInsertIfNotFound: Boolean): Option[Label] = verify(digest)
+  override def verify(digest: Label, uf: UpdateFunction): Option[Label] = verify(digest)
 
   def verify(digest: Label): Option[SLTValue] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
@@ -61,7 +61,7 @@ trait SLTModifyingProof extends SLTProof
 case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: ThreadUnsafeHash)
   extends SLTModifyingProof {
 
-  override def verify(digest: Label, updated: UpdateFunction, i: Boolean = true): Option[Label] = Try {
+  override def verify(digest: Label, updated: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
     def verifyUpdateRecursive(): (Label, Boolean, Option[Label]) = {
       val nKey = dequeueKey(proof)
@@ -75,7 +75,7 @@ case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
           val nRight = dequeueRightLabel(proof)
           val n: FlatNode = new FlatNode(nKey, nValue, nLevel, nLeft, nRight, None)
           oldLabel = n.computeLabel
-          n.value = updated(Some(nValue))
+          n.value = updated(Some(nValue)).get
           (n, true)
         case i if i < 0 =>
           val nRight = dequeueRightLabel(proof)
@@ -118,7 +118,7 @@ case class SLTUpdateProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
 case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit hf: ThreadUnsafeHash)
   extends SLTModifyingProof {
 
-  def verify(digest: Label, updated: UpdateFunction, b: Boolean): Option[Label] = Try {
+  def verify(digest: Label, updated: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
     val rootKey = dequeueKey(proof)
     val rootValue = dequeueValue(proof)
@@ -130,7 +130,7 @@ case class SLTInsertProof(key: SLTKey, proofSeq: Seq[SLTProofElement])(implicit 
         val level = SLTree.computeLevel(key)
         // this coinflip needs to be the same as in the prover’s case --
         // the strategy used for skip lists will work here, too
-        val n = new FlatNode(key, updated(None), level, LabelOfNone, LabelOfNone, None)
+        val n = new FlatNode(key, updated(None).get, level, LabelOfNone, LabelOfNone, None)
         (LabelOfNone, n, true)
       } else {
         val rKey = dequeueKey(proof)

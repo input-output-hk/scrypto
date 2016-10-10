@@ -12,8 +12,7 @@ class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: 
   extends TwoPartyDictionary[SLTKey, SLTValue] {
 
 
-  override def modify(key: SLTKey, updateFunction: UpdateFunction,
-                      toInsertIfNotFound: Boolean = true): SLTModifyingProof = {
+  override def modify(key: SLTKey, updateFunction: UpdateFunction): SLTModifyingProof = {
     val lookupProof = lookup(key)
     lookupProof._1 match {
       case None => insert(key, updateFunction)._2
@@ -48,7 +47,7 @@ class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: 
           // a very high level, because data structure size remains the same
           val level = SLTree.computeLevel(x)
           // Create a new node without computing its hash, because its hash will change
-          val n = new Node(x, updateFunction(None), level, None, None, LabelOfNone)
+          val n = new Node(x, updateFunction(None).get, level, None, None, LabelOfNone)
           (n, true)
         case Some(r: Node) =>
           proofStream.enqueue(ProofKey(r.key))
@@ -143,7 +142,7 @@ class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: 
         case 0 =>
           proofStream.enqueue(ProofLeftLabel(r.leftLabel))
           proofStream.enqueue(ProofRightLabel(r.rightLabel))
-          val newVal = updateFunction(Some(r.value))
+          val newVal = updateFunction(Some(r.value)).get
           r.value = newVal
           found = true
         case o if o < 0 =>

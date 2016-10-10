@@ -1,6 +1,8 @@
 package scorex.crypto.authds
 
-import scorex.crypto.hash.{Blake2b256, CryptographicHash}
+import scorex.crypto.hash.CryptographicHash
+
+import scala.util.Try
 
 package object sltree {
   type SLTKey = Array[Byte]
@@ -8,6 +10,6 @@ package object sltree {
   type Label = CryptographicHash#Digest
 
   val LabelOfNone: Array[Byte] = Array()
-  type UpdateFunction =  Option[SLTValue] => SLTValue
+  type UpdateFunction = Option[SLTValue] => Try[SLTValue]
 
 }

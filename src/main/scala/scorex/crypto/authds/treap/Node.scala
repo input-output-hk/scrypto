@@ -52,12 +52,12 @@ trait InternalNode {
 }
 
 sealed trait ProverNodes extends Node {
-  val key: WTKey
+  val key: TreapKey
 }
 
 sealed trait VerifierNodes extends Node
 
-case class ProverNode(key: WTKey, private var _left: ProverNodes, private var _right: ProverNodes)
+case class ProverNode(key: TreapKey, private var _left: ProverNodes, private var _right: ProverNodes)
                      (implicit val hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
@@ -110,19 +110,19 @@ case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: 
 
 }
 
-case class Leaf(key: WTKey, private var _value: WTValue, private var _nextLeafKey: WTKey)
+case class Leaf(key: TreapKey, private var _value: TreapValue, private var _nextLeafKey: TreapKey)
                (implicit hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
 
-  def value: WTValue = _value
+  def value: TreapValue = _value
 
-  def value_=(newValue: WTValue) = {
+  def value_=(newValue: TreapValue) = {
     _value = newValue
     labelOpt = None
   }
 
-  def nextLeafKey: WTKey = _nextLeafKey
+  def nextLeafKey: TreapKey = _nextLeafKey
 
-  def nextLeafKey_=(newNextLeafKey: WTValue) = {
+  def nextLeafKey_=(newNextLeafKey: TreapValue) = {
     _nextLeafKey = newNextLeafKey
     labelOpt = None
   }

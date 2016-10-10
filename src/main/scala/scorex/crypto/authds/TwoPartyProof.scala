@@ -1,13 +1,14 @@
 package scorex.crypto.authds
 
 import scala.collection.mutable
+import scala.util.Try
 
 
 trait TwoPartyProof[Key, Value] {
   type Label = Array[Byte]
   val key: Key
   val proofSeq: Seq[TwoPartyProofElement]
-  def verify(digest: Label, updateFunction: Option[Value] => Value, toInsertIfNotFound: Boolean = true): Option[Label]
+  def verify(digest: Label, updateFunction: Option[Value] => Try[Value]): Option[Label]
 
   def dequeueValue(proof: mutable.Queue[TwoPartyProofElement]): Array[Byte] = {
     proof.dequeue().asInstanceOf[ProofValue].e

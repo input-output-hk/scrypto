@@ -1,17 +1,17 @@
 package scorex.crypto.authds.treap
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.{ThreadUnsafeHash, CryptographicHash}
+import scorex.crypto.hash.ThreadUnsafeHash
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
-import scala.util.Try
+import scala.util.{Success, Try}
 
-case class TreapModifyProof(key: WTKey, proofSeq: Seq[WTProofElement])
+case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
                            (implicit hf: ThreadUnsafeHash, levelFunc: LevelFunction)
-  extends TwoPartyProof[WTKey, WTValue] {
+  extends TwoPartyProof[TreapKey, TreapValue] {
 
-  def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
+  def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
 
     // returns the new flat root
@@ -20,28 +20,29 @@ case class TreapModifyProof(key: WTKey, proofSeq: Seq[WTProofElement])
     def verifyHelper(): (VerifierNodes, Boolean, Label) = {
       dequeueDirection(proof) match {
         case LeafFound =>
-          val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
-          val value: WTValue = dequeueValue(proof)
+          val nextLeafKey: TreapKey = dequeueNextLeafKey(proof)
+          val value: TreapValue = dequeueValue(proof)
           val oldLeaf = Leaf(key, value, nextLeafKey)
-          val newLeaf = Leaf(key, updateFunction(Some(value)), nextLeafKey)
+          val newLeaf = Leaf(key, updateFunction(Some(value)).get, nextLeafKey)
           (newLeaf, true, oldLeaf.label)
         case LeafNotFound =>
           val neigbourLeafKey = dequeueKey(proof)
-          val nextLeafKey: WTKey = dequeueNextLeafKey(proof)
-          val value: WTValue = dequeueValue(proof)
+          val nextLeafKey: TreapKey = dequeueNextLeafKey(proof)
+          val value: TreapValue = dequeueValue(proof)
           require(ByteArray.compare(neigbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 
           val r = new Leaf(neigbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
-          if (toInsertIfNotFound) {
-            val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
-            r.nextLeafKey = key
-            val level = levelFunc(key)
-            val newR = VerifierNode(r.label, newLeaf.label, level)
-            (newR, true, oldLabel)
-          } else {
-            (r, false, oldLabel)
+          updateFunction(None) match {
+            case Success(v) =>
+              val newLeaf = new Leaf(key, v, r.nextLeafKey)
+              r.nextLeafKey = key
+              val level = levelFunc(key)
+              val newR = VerifierNode(r.label, newLeaf.label, level)
+              (newR, true, oldLabel)
+            case _ =>
+              (r, false, oldLabel)
           }
         case GoingLeft =>
           val rightLabel: Label = dequeueRightLabel(proof)

@@ -2,9 +2,11 @@ package scorex.crypto.authds
 
 import scorex.crypto.hash.CryptographicHash
 
+import scala.util.Try
+
 package object treap {
-  type WTKey = Array[Byte]
-  type WTValue = Array[Byte]
+  type TreapKey = Array[Byte]
+  type TreapValue = Array[Byte]
   type Label = CryptographicHash#Digest
 
   val MaxKeySize = 512
@@ -12,7 +14,7 @@ package object treap {
   val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(1)(0: Byte), Array())
 
   val LabelOfNone: Array[Byte] = Array()
-  type UpdateFunction = Option[WTValue] => WTValue
-  type LevelFunction = WTKey => Level
+  type UpdateFunction = Option[TreapValue] => Try[TreapValue]
+  type LevelFunction = TreapKey => Level
 
 }

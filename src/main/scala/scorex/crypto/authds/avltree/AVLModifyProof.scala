@@ -1,17 +1,17 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.{ThreadUnsafeHash, CryptographicHash}
+import scorex.crypto.hash.ThreadUnsafeHash
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
-import scala.util.Try
+import scala.util.{Success, Try}
 
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
 
-  def verify(digest: Label, updateFunction: UpdateFunction, toInsertIfNotFound: Boolean = true): Option[Label] = Try {
+  def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
 
     // returns the new flat root
@@ -23,7 +23,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
           val value: AVLValue = dequeueValue(proof)
           val oldLeaf = Leaf(key, value, nextLeafKey)
-          val newLeaf = Leaf(key, updateFunction(Some(value)), nextLeafKey)
+          val newLeaf = Leaf(key, updateFunction(Some(value)).get, nextLeafKey)
           (newLeaf, true, false, oldLeaf.label)
         case LeafNotFound =>
           val neigbourLeafKey = dequeueKey(proof)
@@ -34,13 +34,14 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
           val r = new Leaf(neigbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
-          if (toInsertIfNotFound) {
-            val newLeaf = new Leaf(key, updateFunction(None), r.nextLeafKey)
-            r.nextLeafKey = key
-            val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0)
-            (newR, true, true, oldLabel)
-          } else {
-            (r, false, false, oldLabel)
+          updateFunction(None) match {
+            case Success(v) =>
+              val newLeaf = new Leaf(key, v, r.nextLeafKey)
+              r.nextLeafKey = key
+              val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0)
+              (newR, true, true, oldLabel)
+            case _ =>
+              (r, false, false, oldLabel)
           }
         case GoingLeft =>
           val rightLabel: Label = dequeueRightLabel(proof)

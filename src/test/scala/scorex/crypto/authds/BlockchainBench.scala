@@ -7,7 +7,7 @@ import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
 
 import scala.reflect.io.File
-import scala.util.Random
+import scala.util.{Try, Random}
 
 
 object BlockchainBench extends App {
@@ -38,7 +38,7 @@ object BlockchainBench extends App {
     map.put(hf.hash(i + "-0"), 0)
 
     val k = hf("1-1" + i)
-    avl.modify(k, bfn, toInsertIfNotFound = true)
+    avl.modify(k, bfn)
     k
   }
 
@@ -83,10 +83,10 @@ object BlockchainBench extends App {
     //proofs generation
     val proofs = (0 until additionsInBlock).map { i =>
       val k = hf("0" + i + ":" + b)
-      avl.modify(k, bfn, toInsertIfNotFound = true)
+      avl.modify(k, bfn)
     } ++ (0 until modificationsInBlock).map { i =>
       val k = keyCache(Random.nextInt(keyCache.length))
-      avl.modify(k, bfn, toInsertIfNotFound = false)
+      avl.modify(k, bfn)
     }
 
     //verification
@@ -111,5 +111,5 @@ object BlockchainBench extends App {
     }
   }
 
-  def set(value: WTValue): UpdateFunction = { oldOpt: Option[WTValue] => oldOpt.getOrElse(value) }
+  def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(oldOpt.getOrElse(value)) }
 }
