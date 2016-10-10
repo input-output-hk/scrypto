@@ -13,7 +13,7 @@ class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: 
 
 
   override def modify(key: SLTKey, updateFunction: UpdateFunction): SLTModifyingProof = {
-    val lookupProof = lookup(key)
+    val lookupProof = SLTlookup(key)
     lookupProof._1 match {
       case None => insert(key, updateFunction)._2
       case Some(v) => update(key, updateFunction)._2
@@ -164,7 +164,7 @@ class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: 
     (updateLoop(topNode), SLTUpdateProof(key, proofStream))
   }
 
-  def lookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
+  def SLTlookup(key: SLTKey): (Option[SLTValue], SLTLookupProof) = {
     val proofStream = new scala.collection.mutable.Queue[SLTProofElement]
     @tailrec
     def lookupLoop(r: Node, x: SLTKey): Option[SLTValue] = {

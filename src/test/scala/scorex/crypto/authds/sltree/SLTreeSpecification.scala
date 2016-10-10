@@ -57,7 +57,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
   property("SLTree insert") {
     val slt = new SLTree()
     forAll { (key: Array[Byte], value: Array[Byte]) =>
-      whenever(key.nonEmpty && value.nonEmpty && slt.lookup(key)._1.isEmpty) {
+      whenever(key.nonEmpty && value.nonEmpty && slt.SLTlookup(key)._1.isEmpty) {
         val digest = slt.rootHash()
         val (success, proof) = slt.insert(key, rewrite(value))
         success shouldBe true
@@ -76,7 +76,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         success shouldBe true
 
         val digest2 = slt.rootHash()
-        val (valueOpt, lookupProof) = slt.lookup(key)
+        val (valueOpt, lookupProof) = slt.SLTlookup(key)
         valueOpt.get shouldBe value
         lookupProof.verify(digest2).isDefined shouldBe true
       }
@@ -86,13 +86,13 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
   property("SLTree lookup") {
     val slt = new SLTree()
     forAll { (key: Array[Byte], value: Array[Byte]) =>
-      whenever(key.nonEmpty && value.nonEmpty && slt.lookup(key)._1.isEmpty) {
+      whenever(key.nonEmpty && value.nonEmpty && slt.SLTlookup(key)._1.isEmpty) {
         val digest = slt.rootHash()
         val (success, proof) = slt.insert(key, rewrite(value))
         success shouldBe true
 
         val digest2 = slt.rootHash()
-        val (valueOpt, lookupProof) = slt.lookup(key)
+        val (valueOpt, lookupProof) = slt.SLTlookup(key)
         valueOpt.get shouldBe value
         lookupProof.verify(digest2).isDefined shouldBe true
       }
@@ -102,10 +102,10 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
   property("SLTree non-existent lookup") {
     val slt = new SLTree()
     forAll { (key: Array[Byte]) =>
-      whenever(key.nonEmpty && slt.lookup(key)._1.isEmpty) {
+      whenever(key.nonEmpty && slt.SLTlookup(key)._1.isEmpty) {
         val digest = slt.rootHash()
 
-        val (valueOpt, lookupProof) = slt.lookup(key)
+        val (valueOpt, lookupProof) = slt.SLTlookup(key)
         valueOpt shouldBe None
         lookupProof.verify(digest) shouldBe None
       }
@@ -124,7 +124,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, rewrite(newVal))
         successUpdate shouldBe true
-        slt.lookup(key)._1.get shouldBe newVal
+        slt.SLTlookup(key)._1.get shouldBe newVal
         val newDigest = updateProof.verify(digest2, rewrite(newVal)).get
         newDigest shouldEqual slt.rootHash()
       }
@@ -134,7 +134,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
   property("SLTree update") {
     val slt = new SLTree()
     forAll { (key: Array[Byte], value: Array[Byte], newVal: Array[Byte]) =>
-      whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty && slt.lookup(key)._1.isEmpty) {
+      whenever(key.nonEmpty && value.nonEmpty && newVal.nonEmpty && slt.SLTlookup(key)._1.isEmpty) {
         val digest = slt.rootHash()
         val (success, proof) = slt.insert(key, rewrite(value))
         success shouldBe true
@@ -143,7 +143,7 @@ class SLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks wi
         val digest2 = slt.rootHash()
         val (successUpdate, updateProof) = slt.update(key, valueConcat(newVal))
         successUpdate shouldBe true
-        slt.lookup(key)._1.get.take(newVal.length) shouldEqual newVal
+        slt.SLTlookup(key)._1.get.take(newVal.length) shouldEqual newVal
         val newDigest = updateProof.verify(digest2, valueConcat(newVal)).get
         newDigest shouldEqual slt.rootHash()
       }

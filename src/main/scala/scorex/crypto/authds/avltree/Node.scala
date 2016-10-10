@@ -25,10 +25,17 @@ sealed trait Node {
 
 }
 
-trait InternalNode {
+trait InternalNode extends Node {
   val hf: ThreadUnsafeHash
 
-  var balance: Level
+  protected var _balance: Level
+
+  def balance: Level = _balance
+
+  def balance_=(balance: Level) = {
+    _balance = balance
+    labelOpt = None
+  }
 
   def leftLabel: Label
 
@@ -40,10 +47,8 @@ trait InternalNode {
 
 sealed trait ProverNodes extends Node {
   val key: AVLKey
-  var height: Int
+  protected[avltree] var height: Int
 
-  //TODO: needed for debug only
-  def printTree() // TODO: needed for debug only
 }
 
 sealed trait VerifierNodes extends Node
@@ -54,15 +59,13 @@ case class LabelOnlyNode(l: Label) extends Node {
   def computeLabel: Label = l // TODO it doesn't make sense  to have labelOpt and Label stored here
 }
 
-case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes, private var _balance: Level = 0)
-                     (implicit val hf: ThreadUnsafeHash)
+case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes,
+                      protected var _balance: Level = 0)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
 
   def right: ProverNodes = _right
-
-  def balance: Level = _balance
 
   def left_=(newLeft: ProverNodes) = {
     _left = newLeft
@@ -74,46 +77,27 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
     labelOpt = None
   }
 
-  def balance_=(balance: Level) = {
-    _balance = balance
-    labelOpt = None
-  }
-
-
   def rightLabel: Label = right.label
 
   def leftLabel: Label = left.label
 
   var height = 1
 
-  //TODO: needed for debug only
-  def checkHeight: Boolean = {
+  //needed for debug only
+  private[avltree] def checkHeight: Boolean = {
     height = math.max(right.height, left.height) + 1
     balance == right.height - left.height && balance >= -1 && balance <= 1
   }
 
-  def printTree() = {
-    // TODO: needed for debug only
-    print(key(0))
-    print(" ")
-    print(balance)
-    print(" L: ")
-    left.printTree()
-    print(" R: ")
-    right.printTree()
-  }
-
-
   override def toString: String = {
-    s"${arrayToString(label)}: ProverNode(${arrayToString(key)}, ${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $balance)"
+    s"${arrayToString(label)}: ProverNode(${arrayToString(key)}, ${arrayToString(leftLabel)}, " +
+      "${arrayToString(rightLabel)}, $balance)"
   }
 
 }
 
-case class VerifierNode(private var _left: Node, private var _right: Node, private var _balance: Level)
+case class VerifierNode(private var _left: Node, private var _right: Node, protected var _balance: Level)
                        (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
-
-  def balance: Level = _balance
 
   def left: Node = _left
 
@@ -129,10 +113,6 @@ case class VerifierNode(private var _left: Node, private var _right: Node, priva
     labelOpt = None
   }
 
-  def balance_=(balance: Level) = {
-    _balance = balance
-    labelOpt = None
-  }
 
   def rightLabel: Label = right.label
 
@@ -148,7 +128,7 @@ case class VerifierNode(private var _left: Node, private var _right: Node, priva
 case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
                (implicit val hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
 
-  var height = 0 //TODO: needed for debug only
+  protected[avltree] var height = 0 //needed for debug only
 
   def value: AVLValue = _value
 
@@ -163,11 +143,6 @@ case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeaf
     _nextLeafKey = newNextLeafKey
     labelOpt = None
   }
-
-  def printTree() = {
-    print(key(0))
-    print(" at leaf ")
-  } // TODO needed for debug only
 
   def computeLabel: Label = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
