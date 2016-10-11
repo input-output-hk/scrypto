@@ -26,13 +26,13 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
           val newLeaf = Leaf(key, updateFunction(Some(value)).get, nextLeafKey)
           (newLeaf, true, oldLeaf.label)
         case LeafNotFound =>
-          val neigbourLeafKey = dequeueKey(proof)
+          val neighbourLeafKey = dequeueKey(proof)
           val nextLeafKey: TreapKey = dequeueNextLeafKey(proof)
           val value: TreapValue = dequeueValue(proof)
-          require(ByteArray.compare(neigbourLeafKey, key) < 0)
+          require(ByteArray.compare(neighbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 
-          val r = new Leaf(neigbourLeafKey, value, nextLeafKey)
+          val r = new Leaf(neighbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
           updateFunction(None) match {
             case Success(v) =>

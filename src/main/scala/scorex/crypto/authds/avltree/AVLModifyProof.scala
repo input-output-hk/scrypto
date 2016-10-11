@@ -47,13 +47,13 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           val newLeaf = Leaf(key, updateFunction(Some(value)).get, nextLeafKey)
           (newLeaf, true, false, oldLeaf.label)
         case LeafNotFound =>
-          val neigbourLeafKey = dequeueKey(proof)
+          val neighbourLeafKey = dequeueKey(proof)
           val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
           val value: AVLValue = dequeueValue(proof)
-          require(ByteArray.compare(neigbourLeafKey, key) < 0)
+          require(ByteArray.compare(neighbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 
-          val r = new Leaf(neigbourLeafKey, value, nextLeafKey)
+          val r = new Leaf(neighbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
           updateFunction(None) match {
             case Success(v) =>
