@@ -17,13 +17,6 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
 
   def rootHash(): Label = topNode.label
 
-  // We could add return values here:
-  // - we could return boolean indicating whether x was found
-  // - we could val or newVal
-  // - more generally, we could return the result of updateFunction (which could have its own return type,
-  // for example returning both old value and new value, or some sort of success/failure)
-  // I am not sure what's needed in the application
-  //TODO insert toInsertIfNotFound to function
   def modify(key: TreapKey, updateFunction: UpdateFunction): TreapModifyProof = {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)

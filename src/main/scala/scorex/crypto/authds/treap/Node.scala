@@ -4,22 +4,6 @@ import scorex.crypto.authds.Level
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
 
-// WE NEED TO MAKE THE FOLLOWING MODIFICATIONS TO THE DEFINITION OF NODE
-// There are two kinds of nodes on the prover side: internal nodes and leaves
-// internal nodes always have two children (so no options on right and left)
-// leaves always have no children
-// internal nodes store a key and a level
-// leaves store key, value, and nextLeafKey
-// Both have labels (which do not need to be options; we should not compute them at creation time,
-// but rather should set them to all 0 or labelOfNone, doesn't matter)
-//
-//
-// There are also two kinds of nodes on the verifier side: flat internal nodes and leaves
-// leaves are the same as on the prover side
-// flat internal nodes store a level and hashes of the two children. They do NOT store the key.
-// Both have labels
-//
-
 sealed trait Node {
 
   def computeLabel: Label
