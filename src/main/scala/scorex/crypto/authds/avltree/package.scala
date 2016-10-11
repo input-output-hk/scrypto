@@ -5,7 +5,7 @@ import scorex.crypto.hash.CryptographicHash
 import scala.util.Try
 
 package object avltree {
-  type Balance = Int
+  type Balance = Byte
   type AVLKey = Array[Byte]
   type AVLValue = Array[Byte]
   type Label = CryptographicHash#Digest

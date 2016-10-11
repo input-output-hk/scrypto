@@ -28,7 +28,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
       Bytes.concat(Array(directionLabelByte), label.bytes)
     }
     Bytes.concat(inBytes, pathProofsBytes, proofSeq(proofSeq.length - 4).bytes, proofSeq(proofSeq.length - 3).bytes,
-      proofSeq(proofSeq.length - 2).bytes, proofSeq(proofSeq.length - 1).bytes)
+      proofSeq(proofSeq.length - 2).bytes, proofSeq.last.bytes)
   }
 
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
@@ -59,7 +59,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             case Success(v) =>
               val newLeaf = new Leaf(key, v, r.nextLeafKey)
               r.nextLeafKey = key
-              val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0)
+              val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0: Byte)
               (newR, true, true, oldLabel)
             case _ =>
               (r, false, false, oldLabel)
@@ -83,9 +83,9 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   if (newLeft.balance < 0) {
                     // single rotate
                     r.left = newLeft.right
-                    r.balance = 0
+                    r.balance = 0: Byte
                     newLeft.right = r
-                    newLeft.balance = 0
+                    newLeft.balance = 0: Byte
                     (newLeft, true, false, oldLabel)
                   }
 
@@ -101,16 +101,16 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                     newRoot.balance match {
                       case 0 =>
                         // newRoot is a newly created node
-                        newLeft.balance = 0
-                        r.balance = 0
+                        newLeft.balance = 0: Byte
+                        r.balance = 0: Byte
                       case -1 =>
-                        newLeft.balance = 0
-                        r.balance = 1
+                        newLeft.balance = 0: Byte
+                        r.balance = 1: Byte
                       case 1 =>
-                        newLeft.balance = -1
-                        r.balance = 0
+                        newLeft.balance = -1: Byte
+                        r.balance = 0: Byte
                     }
-                    newRoot.balance = 0
+                    newRoot.balance = 0: Byte
                     (newRoot, true, false, oldLabel)
                   }
 
@@ -121,8 +121,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             } else {
               // no need to rotate
               r.left = newLeftM
-              val myHeightIncreased: Boolean = childHeightIncreased && r.balance == 0
-              if (childHeightIncreased) r.balance -= 1
+              val myHeightIncreased: Boolean = childHeightIncreased && (r.balance == (0:Byte))
+              if (childHeightIncreased) r.balance = (r.balance - 1).toByte
               (r, true, myHeightIncreased, oldLabel)
             }
 
@@ -150,9 +150,9 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   if (newRight.balance > 0) {
                     // single rotate
                     r.right = newRight.left
-                    r.balance = 0
+                    r.balance = 0: Byte
                     newRight.left = r
-                    newRight.balance = 0
+                    newRight.balance = 0: Byte
                     (newRight, true, false, oldLabel)
                   }
 
@@ -169,16 +169,16 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                     newRoot.balance match {
                       case 0 =>
                         // newRoot is a newly created node
-                        newRight.balance = 0
-                        r.balance = 0
+                        newRight.balance = 0: Byte
+                        r.balance = 0: Byte
                       case -1 =>
-                        newRight.balance = 1
-                        r.balance = 0
+                        newRight.balance = 1: Byte
+                        r.balance = 0: Byte
                       case 1 =>
-                        newRight.balance = 0
-                        r.balance = -1
+                        newRight.balance = 0: Byte
+                        r.balance = -1: Byte
                     }
-                    newRoot.balance = 0
+                    newRoot.balance = 0: Byte
 
                     (newRoot, true, false, oldLabel)
                   }
@@ -189,8 +189,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             } else {
               // no need to rotate
               r.right = newRightM
-              val myHeightIncreased: Boolean = childHeightIncreased && r.balance == 0
-              if (childHeightIncreased) r.balance += 1
+              val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
+              if (childHeightIncreased) r.balance = (r.balance + 1).toByte
               (r, true, myHeightIncreased, oldLabel)
             }
           } else {
@@ -252,7 +252,7 @@ object AVLModifyProof {
   }
 
   def parseDirectionBalance(b: Byte): (ProofDirection, ProofBalance) = {
-    (parseDirection((b >>> 4).toByte), ProofBalance((b & 15) - 1))
+    (parseDirection((b >>> 4).toByte), ProofBalance(((b & 15) - 1).toByte))
   }
 
 

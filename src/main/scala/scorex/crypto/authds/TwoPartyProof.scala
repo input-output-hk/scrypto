@@ -1,5 +1,7 @@
 package scorex.crypto.authds
 
+import scorex.crypto.authds.avltree.Balance
+
 import scala.collection.mutable
 import scala.util.Try
 
@@ -46,11 +48,11 @@ trait TwoPartyProof[Key, Value] {
     proof.dequeue().asInstanceOf[ProofLevel].e
   }
 
-  protected def dequeueBalance(proof: mutable.Queue[TwoPartyProofElement]): Int = {
+  protected def dequeueBalance(proof: mutable.Queue[TwoPartyProofElement]): Balance = {
     proof.dequeue().bytes(0) match {
-      case -1 => -1
-      case 0 => 0
-      case 1 => 1
+      case -1 => -1: Byte
+      case 0 => 0: Byte
+      case 1 => 1: Byte
     }
   }
 }

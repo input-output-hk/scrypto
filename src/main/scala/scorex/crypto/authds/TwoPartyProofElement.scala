@@ -1,5 +1,6 @@
 package scorex.crypto.authds
 
+import scorex.crypto.authds.avltree.Balance
 import scorex.crypto.encode.Base58
 
 trait TwoPartyProofElement {
@@ -65,8 +66,7 @@ case object GoingLeft extends Direction
 
 case object GoingRight extends Direction
 
-// TODO: change Level to Balance and make this better
-case class ProofBalance(e: Int) extends AVLProofElement {
+case class ProofBalance(e: Balance) extends AVLProofElement {
   override val bytes: Array[Byte] = Array(e match {
     case -1 => -1: Byte
     case 0 => 0: Byte
