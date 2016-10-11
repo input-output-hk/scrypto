@@ -78,7 +78,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(ProofRightLabel(r.rightLabel))
             proofStream.enqueue(ProofLevel(r.level))
 
-            var (newLeftM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.left, found)
+            val (newLeftM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.left, found)
 
             if (changeHappened) {
               newLeftM match {
@@ -102,7 +102,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(ProofLeftLabel(r.leftLabel))
             proofStream.enqueue(ProofLevel(r.level))
 
-            var (newRightM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.right, found)
+            val (newRightM: ProverNodes, changeHappened: Boolean) = modifyHelper(r.right, found)
 
             if (changeHappened) {
               // This is symmetric to the left case, except of >= replaced with > in the
@@ -127,8 +127,8 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
 
     }
 
-    var (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundAbove = false)
-    topNode = newTopNode
+    val (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundAbove = false)
+    if(changeHappened) topNode = newTopNode
     TreapModifyProof(key, proofStream)
   }
 

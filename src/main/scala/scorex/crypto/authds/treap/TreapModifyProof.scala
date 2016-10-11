@@ -48,7 +48,7 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
           val rightLabel: Label = dequeueRightLabel(proof)
           val level: Level = dequeueLevel(proof)
 
-          var (newLeftM: VerifierNodes, changeHappened: Boolean, oldLeftLabel) = verifyHelper()
+          val (newLeftM, changeHappened, oldLeftLabel) = verifyHelper()
 
           val r = VerifierNode(oldLeftLabel, rightLabel, level)
           val oldLabel = r.label
@@ -72,7 +72,7 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
           val leftLabel: Label = dequeueLeftLabel(proof)
           val level: Level = dequeueLevel(proof)
 
-          var (newRightM: VerifierNodes, changeHappened: Boolean, oldRightLabel) = verifyHelper()
+          val (newRightM, changeHappened, oldRightLabel) = verifyHelper()
 
           val r = VerifierNode(leftLabel, oldRightLabel, level)
           val oldLabel = r.label
@@ -98,7 +98,7 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
       }
     }
 
-    var (newTopNode: VerifierNodes, changeHappened: Boolean, oldLabel: Label) = verifyHelper()
+    val (newTopNode, changeHappened, oldLabel) = verifyHelper()
     if (oldLabel sameElements digest) {
       Some(newTopNode.label)
     } else {

@@ -81,7 +81,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keySize: Int, rootOpt: Option[Leaf] = None
             proofStream.enqueue(ProofRightLabel(r.rightLabel))
             proofStream.enqueue(ProofBalance(r.balance))
 
-            var (newLeftM: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(r.left, found)
+            val (newLeftM, changeHappened, childHeightIncreased) = modifyHelper(r.left, found)
 
             // balance = -1 if left higher, +1 if left lower
             if (changeHappened) {
@@ -157,13 +157,13 @@ class AVLTree[HF <: ThreadUnsafeHash](keySize: Int, rootOpt: Option[Leaf] = None
             proofStream.enqueue(ProofDirection(GoingRight))
             proofStream.enqueue(ProofLeftLabel(r.leftLabel))
             proofStream.enqueue(ProofBalance(r.balance))
-            var (newRightM: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(r.right, found)
+            val (newRightM, changeHappened, childHeightIncreased) = modifyHelper(r.right, found)
 
             if (changeHappened) {
               if (childHeightIncreased && r.balance > 0) {
                 // need to rotate
                 newRightM match {
-                  // at this point we know newRightM must be an internal node and not a leaf -- because height increased;  TODO: make this more scala-like
+                  // at this point we know newRightM must be an internal node and not a leaf -- because height increased
                   case newRight: ProverNode =>
                     if (newRight.balance > 0) {
                       // single rotate
@@ -231,8 +231,8 @@ class AVLTree[HF <: ThreadUnsafeHash](keySize: Int, rootOpt: Option[Leaf] = None
       }
     }.getOrElse((topNode, true, false))
 
-    val (newTopNode: ProverNodes, changeHappened: Boolean, childHeightIncreased: Boolean) = modifyHelper(topNode, foundAbove = false)
-    if (changeHappened) topNode = newTopNode // TODO MAKE SAME CHANGE IN OTHER TREES OR REMOVE IT HERE
+    val (newTopNode, changeHappened, childHeightIncreased) = modifyHelper(topNode, foundAbove = false)
+    if (changeHappened) topNode = newTopNode
     AVLModifyProof(key, proofStream)
   }
 

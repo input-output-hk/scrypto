@@ -68,7 +68,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           val rightLabel: Label = dequeueRightLabel(proof)
           val balance: Balance = dequeueBalance(proof)
 
-          var (newLeftM: VerifierNodes, changeHappened: Boolean, childHeightIncreased: Boolean, oldLeftLabel) = verifyHelper()
+          val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper()
 
           val r = VerifierNode(LabelOnlyNode(oldLeftLabel), LabelOnlyNode(rightLabel), balance)
           val oldLabel = r.label
@@ -121,7 +121,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             } else {
               // no need to rotate
               r.left = newLeftM
-              val myHeightIncreased: Boolean = childHeightIncreased && (r.balance == (0:Byte))
+              val myHeightIncreased: Boolean = childHeightIncreased && (r.balance == (0: Byte))
               if (childHeightIncreased) r.balance = (r.balance - 1).toByte
               (r, true, myHeightIncreased, oldLabel)
             }
@@ -136,7 +136,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           val balance: Balance = dequeueBalance(proof)
 
 
-          var (newRightM: VerifierNodes, changeHappened: Boolean, childHeightIncreased: Boolean, oldRightLabel) = verifyHelper()
+          val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper()
 
           val r = VerifierNode(LabelOnlyNode(leftLabel), LabelOnlyNode(oldRightLabel), balance)
           val oldLabel = r.label
@@ -200,7 +200,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
       }
     }
 
-    var (newTopNode: VerifierNodes, changeHappened: Boolean, heighIncreased: Boolean, oldLabel: Label) = verifyHelper()
+    val (newTopNode, changeHappened, heighIncreased, oldLabel) = verifyHelper()
     if (oldLabel sameElements digest) {
       Some(newTopNode.label)
     } else {
@@ -230,7 +230,7 @@ object AVLModifyProof {
 
       Seq(direction, label, balance)
     }
-    val point = 1 + keyLength + pathLength * ( 32 + 1) / 3
+    val point = 1 + keyLength + pathLength * (32 + 1) / 3
     val lastDirection = parseDirection(bytes(point))
     require(lastDirection.isLeaf, "Incorrect direction in leaf")
     val proofKey: ProofKey = ProofKey(bytes.slice(point + 1, point + 1 + keyLength))
