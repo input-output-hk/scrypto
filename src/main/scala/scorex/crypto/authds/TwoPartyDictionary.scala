@@ -1,6 +1,6 @@
 package scorex.crypto.authds
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 trait TwoPartyDictionary[Key, Value] {
   /**
@@ -19,8 +19,8 @@ trait TwoPartyDictionary[Key, Value] {
     */
   def rootHash(): Array[Byte]
 
-  private def lookupFunction: Option[Value] => Try[Value] = {
+  def lookupFunction: Option[Value] => Try[Value] = {
     case Some(oldValue) => Success(oldValue)
-    case None => ???
+    case None => Failure(new Error("Just lookup"))
   }
 }

@@ -3,7 +3,6 @@ package scorex.crypto.authds.avltree
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
 
-// TODO: change the type Level everywhere
 // TODO: move some common things into InternalNode
 
 sealed trait Node {
@@ -41,7 +40,7 @@ trait InternalNode extends Node {
 
   def rightLabel: Label
 
-  def computeLabel: Label = hf.prefixedHash(1: Byte, Array(balance.toByte), leftLabel, rightLabel)
+  def computeLabel: Label = hf.prefixedHash(1: Byte, Array(balance), leftLabel, rightLabel)
 
 }
 
