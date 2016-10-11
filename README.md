@@ -1,4 +1,4 @@
-# Scrypto [![Build Status](http://23.94.190.226:8080/buildStatus/icon?job=scrypto)](http://23.94.190.226:8080/job/scrypto)
+# Scrypto
 
 Scrypto is an open source cryptographic toolkit designed to make it easier and safer for developers to use cryptography in their applications.
 
@@ -111,12 +111,6 @@ Scrypto supports following authenticated data structures:
 - AVL tree
 
 Merkle tree may be the best solution for static data set, while for dynamic data AVL tree outperform other structures
-
-Example:
-
-```scala
-TODO
-```
 
 # Tests
 
