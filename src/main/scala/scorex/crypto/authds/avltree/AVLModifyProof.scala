@@ -21,7 +21,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     */
   lazy val bytes: Array[Byte] = {
 
-    val pathLength = if(keyFound) proofSeq.length - 3 else proofSeq.length - 4
+    val pathLength = if (keyFound) proofSeq.length - 3 else proofSeq.length - 4
     val inBytes = pathLength.toByte +: key
     val pathProofsBytes: Array[Byte] = (0 until pathLength / 3).toArray.flatMap { i: Int =>
       val label = proofSeq(3 * i + 1)
@@ -42,14 +42,13 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
   }
 
   def verifyLookup(digest: Label, existence: Boolean): Option[Label] = Try {
-    val foundKey = proofSeq(proofSeq.length - 3).asInstanceOf[ProofKey].e
-    val nextLeafKey = proofSeq(proofSeq.length - 2).asInstanceOf[ProofNextLeafKey].e
-    val nonEx = ByteArray.compare(foundKey, key) < 0 && ByteArray.compare(nextLeafKey, key) > 0
-    val e = verify(digest, TwoPartyDictionary.lookupFunction[AVLValue])
-    if ((existence && (key sameElements foundKey)) || (!existence && nonEx)) {
-      verify(digest, TwoPartyDictionary.lookupFunction[AVLValue])
-    } else None
-
+    require(existence == keyFound)
+    if (!existence) {
+      val foundKey = proofSeq(proofSeq.length - 3).asInstanceOf[ProofKey].e
+      val nextLeafKey = proofSeq(proofSeq.length - 2).asInstanceOf[ProofNextLeafKey].e
+      require(ByteArray.compare(foundKey, key) < 0 && ByteArray.compare(nextLeafKey, key) > 0)
+    }
+    verify(digest, TwoPartyDictionary.lookupFunction[AVLValue])
   }.getOrElse(None)
 
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
