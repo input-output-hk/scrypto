@@ -12,24 +12,45 @@ import scala.util.{Success, Try}
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
 
+  val keyFound = proofSeq.length % 3 == 0
+
   /**
-    * seqLength, key, Seq(ProofDirection, ProofLabel, ProofBalance),
-    * ProofDirection, ProofKey, ProofNextLeafKey, ProofValue
+    * seqLength, key, ++
+    * notFound: Seq(ProofDirection, ProofLabel, ProofBalance), ProofDirection, ProofKey, ProofNextLeafKey, ProofValue
+    * found: Seq(ProofDirection, ProofLabel, ProofBalance), ProofDirection, ProofNextLeafKey, ProofValue
     */
   lazy val bytes: Array[Byte] = {
-    require((proofSeq.length - 4).toByte % 3 == 0)
 
-    val inBytes = (proofSeq.length - 4).toByte +: key
-    val pathProofsBytes: Array[Byte] = (0 until (proofSeq.length - 4) / 3).toArray.flatMap { i: Int =>
+    val pathLength = if(keyFound) proofSeq.length - 3 else proofSeq.length - 4
+    val inBytes = pathLength.toByte +: key
+    val pathProofsBytes: Array[Byte] = (0 until pathLength / 3).toArray.flatMap { i: Int =>
       val label = proofSeq(3 * i + 1)
       val directionLabelByte = AVLModifyProof.directionBalanceByte(proofSeq(3 * i).asInstanceOf[ProofDirection],
         proofSeq(3 * i + 2).asInstanceOf[ProofBalance])
 
       Bytes.concat(Array(directionLabelByte), label.bytes)
     }
-    Bytes.concat(inBytes, pathProofsBytes, proofSeq(proofSeq.length - 4).bytes, proofSeq(proofSeq.length - 3).bytes,
-      proofSeq(proofSeq.length - 2).bytes, proofSeq.last.bytes)
+    if (keyFound) {
+      Bytes.concat(inBytes, pathProofsBytes,
+        Array(AVLModifyProof.combineBytes(1: Byte, proofSeq(proofSeq.length - 3).bytes.head)),
+        proofSeq(proofSeq.length - 2).bytes, proofSeq.last.bytes)
+    } else {
+      Bytes.concat(inBytes, pathProofsBytes,
+        Array(AVLModifyProof.combineBytes(0: Byte, proofSeq(proofSeq.length - 4).bytes.head)),
+        proofSeq(proofSeq.length - 2).bytes, proofSeq(proofSeq.length - 3).bytes, proofSeq.last.bytes)
+    }
   }
+
+  def verifyLookup(digest: Label, existence: Boolean): Option[Label] = Try {
+    val foundKey = proofSeq(proofSeq.length - 3).asInstanceOf[ProofKey].e
+    val nextLeafKey = proofSeq(proofSeq.length - 2).asInstanceOf[ProofNextLeafKey].e
+    val nonEx = ByteArray.compare(foundKey, key) < 0 && ByteArray.compare(nextLeafKey, key) > 0
+    val e = verify(digest, TwoPartyDictionary.lookupFunction[AVLValue])
+    if ((existence && (key sameElements foundKey)) || (!existence && nonEx)) {
+      verify(digest, TwoPartyDictionary.lookupFunction[AVLValue])
+    } else None
+
+  }.getOrElse(None)
 
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
@@ -231,12 +252,20 @@ object AVLModifyProof {
       Seq(direction, label, balance)
     }
     val point = 1 + keyLength + pathLength * (32 + 1) / 3
-    val lastDirection = parseDirection(bytes(point))
+    val (found, lastDirectionB) = splitBytes(bytes(point))
+
+    val lastDirection = parseDirection(lastDirectionB)
     require(lastDirection.isLeaf, "Incorrect direction in leaf")
-    val proofKey: ProofKey = ProofKey(bytes.slice(point + 1, point + 1 + keyLength))
-    val nextLeafKey: ProofNextLeafKey = ProofNextLeafKey(bytes.slice(point + 1 + keyLength, point + 1 + 2 * keyLength))
-    val value: ProofValue = ProofValue(bytes.slice(point + 1 + 2 * keyLength, bytes.length))
-    AVLModifyProof(key, pathProofs ++ (lastDirection +: proofKey +: nextLeafKey +: Seq(value)))
+    val nextLeafKey: ProofNextLeafKey = ProofNextLeafKey(bytes.slice(point + 1, point + 1 + keyLength))
+    val l = if (found == (1: Byte)) {
+      val value: ProofValue = ProofValue(bytes.slice(point + 1 + keyLength, bytes.length))
+      Seq(nextLeafKey, value)
+    } else {
+      val proofKey: ProofKey = ProofKey(bytes.slice(point + 1 + keyLength, point + 1 + 2 * keyLength))
+      val value: ProofValue = ProofValue(bytes.slice(point + 1 + 2 * keyLength, bytes.length))
+      Seq(proofKey, nextLeafKey, value)
+    }
+    AVLModifyProof(key, pathProofs ++ (lastDirection +: l))
   }
 
   private def parseDirection(byte: Byte): ProofDirection = ProofDirection(byte match {
@@ -246,13 +275,16 @@ object AVLModifyProof {
     case 4 => GoingRight
   })
 
+  def combineBytes(b1: Byte, b2: Byte): Byte = ((b1 << 4) | (b2 + 1)).toByte
 
-  def directionBalanceByte(dir: ProofDirection, balance: ProofBalance): Byte = {
-    ((dir.bytes.head << 4) | (balance.bytes.head + 1)).toByte
-  }
+  def splitBytes(b: Byte): (Byte, Byte) = ((b >>> 4).toByte, ((b & 15) - 1).toByte)
+
+  def directionBalanceByte(dir: ProofDirection, balance: ProofBalance): Byte =
+    combineBytes(dir.bytes.head, balance.bytes.head)
 
   def parseDirectionBalance(b: Byte): (ProofDirection, ProofBalance) = {
-    (parseDirection((b >>> 4).toByte), ProofBalance(((b & 15) - 1).toByte))
+    val (b1, b2) = splitBytes(b)
+    (parseDirection(b1), ProofBalance(b2))
   }
 
 
