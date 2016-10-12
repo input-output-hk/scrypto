@@ -10,7 +10,7 @@ import scala.util.{Success, Try}
 
 class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = None)
                                      (implicit hf: HF = new Blake2b256Unsafe)
-  extends TwoPartyDictionary[AVLKey, AVLValue] {
+  extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] {
 
   val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
   val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(0: Byte), Array())

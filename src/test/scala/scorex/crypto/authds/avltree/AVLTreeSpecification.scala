@@ -4,7 +4,8 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
-import scorex.utils.ByteArray
+import scorex.crypto.hash.Sha256
+import scorex.utils.{ByteArray, Random}
 
 import scala.util.Success
 
@@ -13,24 +14,34 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   val KL = 26
   val VL = 8
 
-  property("AVLTree lookup") {
+  property("lookup") {
     val tree = new AVLTree(KL)
     var digest = tree.rootHash()
-    forAll(kvGen) { case (aKey, aValue) =>
-      whenever(aKey.length == KL) {
-        digest shouldEqual tree.rootHash()
 
-        //TODO check whether value was found
-        digest shouldEqual tree.lookup(aKey).verify(digest, tree.lookupFunction).get
+    forAll(kvGen) { case (aKeyNN, aValue) =>
+      val aKey = Random.randomBytes(KL)
 
-        digest shouldEqual tree.rootHash()
-        val proof = tree.modify(aKey, replaceLong(aValue))
-        digest = proof.verify(digest, replaceLong(aValue)).get
-      }
+      require(aKey.length == KL)
+      digest shouldEqual tree.rootHash()
+
+      tree.lookup(aKey).verifyLookup(digest, existence = false).get shouldEqual digest
+      tree.lookup(aKey).verifyLookup(digest, existence = true) shouldBe None
+
+      digest shouldEqual tree.rootHash()
+      val proof = tree.modify(aKey, replaceLong(aValue))
+      digest = proof.verify(digest, replaceLong(aValue)).get
+
+      val l = tree.lookup(aKey)
+      val parsed = AVLModifyProof.parseBytes(l.bytes)(KL, 32).get
+
+
+      l.keyFound shouldBe true
+      l.verifyLookup(digest, existence = true).get shouldEqual digest
+      l.verifyLookup(digest, existence = false) shouldBe None
     }
   }
 
-  property("AVLTree infinities") {
+  property("infinities") {
     val tree = new AVLTree(KL)
     forAll(kvGen) { case (aKey, aValue) =>
       require(ByteArray.compare(aKey, tree.NegativeInfinity._1) > 0)
@@ -40,7 +51,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
 
 
 
-  property("AVLTree stream") {
+  property("stream") {
     val wt = new AVLTree(KL)
     var digest = wt.rootHash()
     forAll(kvGen) { case (aKey, aValue) =>
@@ -50,7 +61,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     }
   }
 
-  property("AVLTree insert") {
+  property("insert") {
     val wt = new AVLTree(KL)
     forAll(kvGen) { case (aKey, aValue) =>
       val digest = wt.rootHash()
@@ -60,7 +71,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   }
 
 
-  property("AVLTree update") {
+  property("update") {
     val wt = new AVLTree(KL)
     forAll(genBoundedBytes(KL, KL), genBoundedBytes(VL, VL), genBoundedBytes(VL, VL)) {
       (key: Array[Byte], value: Array[Byte], value2: Array[Byte]) =>
@@ -78,11 +89,15 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
 
   property("AVLModifyProof serialization") {
     val wt = new AVLTree(KL)
+
+    genElements(100, 1, 26).foreach(e => wt.modify(e, replaceLong(e)))
+
     var digest = wt.rootHash()
     forAll(kvGen) { case (aKey, aValue) =>
       whenever(aKey.length == KL && aValue.length == VL) {
         digest shouldEqual wt.rootHash()
         val proof = wt.modify(aKey, replaceLong(aValue))
+
         digest = proof.verify(digest, replaceLong(aValue)).get
         val parsed = AVLModifyProof.parseBytes(proof.bytes)(KL, 32).get
 
@@ -91,10 +106,19 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
           parsed.proofSeq(i).bytes shouldEqual proof.proofSeq(i).bytes
         }
         parsed.bytes shouldEqual proof.bytes
+
+        val value2 = Sha256(aValue)
+        val digest2 = wt.rootHash()
+        val uProof = wt.modify(aKey, replaceLong(value2))
+        digest = uProof.verify(digest2, replaceLong(value2)).get
+        uProof.keyFound shouldBe true
+
+        val uParsed = AVLModifyProof.parseBytes(uProof.bytes)(KL, 32).get
+        uParsed.bytes shouldEqual uProof.bytes
+
       }
     }
   }
-
 
   def rewrite(value: AVLValue): UpdateFunction = {
     oldOpt: Option[AVLValue] => Success(value)

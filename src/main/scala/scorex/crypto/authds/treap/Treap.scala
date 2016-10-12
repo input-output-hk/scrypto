@@ -11,7 +11,7 @@ import scala.util.Success
   */
 class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
                                    (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.treapLevel)
-  extends TwoPartyDictionary[TreapKey, TreapValue] {
+  extends TwoPartyDictionary[TreapKey, TreapValue, TreapModifyProof] {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 

@@ -9,7 +9,7 @@ import scorex.utils.ByteArray
 import scala.annotation.tailrec
 
 class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: HF = new Blake2b256Unsafe)
-  extends TwoPartyDictionary[SLTKey, SLTValue] {
+  extends TwoPartyDictionary[SLTKey, SLTValue, SLTProof] {
 
 
   override def modify(key: SLTKey, updateFunction: UpdateFunction): SLTModifyingProof = {

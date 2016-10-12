@@ -7,7 +7,7 @@ import scala.util.Success
 
 trait TwoPartyTests extends TestingCommons {
 
-  def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte]],
+  def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte], _ <: TwoPartyProof[Array[Byte], Array[Byte]]],
                   elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
     var digest = inDigest
     val (insertTime: Float, proofs) = time(elements.map(e => tree.modify(e, replaceLong(e))))
