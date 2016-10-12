@@ -2,8 +2,9 @@ package scorex.crypto.authds
 
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.treap._
+import scorex.crypto.hash.Sha256
 
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 trait TwoPartyTests extends TestingCommons {
 
@@ -40,5 +41,16 @@ trait TwoPartyTests extends TestingCommons {
   }
 
   def replaceLong(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Success(value.take(8)) }
+
+  def insertOnly(value: TreapValue): UpdateFunction = {
+    case None => Success(value)
+    case _ => Failure(new Error("Don't update elements"))
+  }
+
+  def updateOnly(value: TreapValue): UpdateFunction = {
+    case Some(v) => Success(Sha256(v ++ value).take(value.length))
+    case _ => Failure(new Error("Don't insert elements"))
+  }
+
 
 }

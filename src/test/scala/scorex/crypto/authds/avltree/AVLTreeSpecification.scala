@@ -5,7 +5,7 @@ import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.hash.Sha256
-import scorex.utils.{ByteArray, Random}
+import scorex.utils.ByteArray
 
 import scala.util.Success
 
@@ -18,10 +18,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     val tree = new AVLTree(KL)
     var digest = tree.rootHash()
 
-    forAll(kvGen) { case (aKeyNN, aValue) =>
-      val aKey = Random.randomBytes(KL)
-
-      require(aKey.length == KL)
+    forAll(kvGen) { case (aKey, aValue) =>
       digest shouldEqual tree.rootHash()
 
       tree.lookup(aKey).verifyLookup(digest, existence = false).get shouldEqual digest
@@ -31,15 +28,32 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       val proof = tree.modify(aKey, replaceLong(aValue))
       digest = proof.verify(digest, replaceLong(aValue)).get
 
-      val l = tree.lookup(aKey)
-      val parsed = AVLModifyProof.parseBytes(l.bytes)(KL, 32).get
-
-
-      l.keyFound shouldBe true
-      l.verifyLookup(digest, existence = true).get shouldEqual digest
-      l.verifyLookup(digest, existence = false) shouldBe None
+      tree.lookup(aKey).verifyLookup(digest, existence = true).get shouldEqual digest
+      tree.lookup(aKey).verifyLookup(digest, existence = false) shouldBe None
     }
   }
+
+  property("Failure in update function") {
+    val tree = new AVLTree(KL)
+    var digest = tree.rootHash()
+
+    forAll(kvGen) { case (aKey, aValue) =>
+      digest shouldEqual tree.rootHash()
+
+      tree.modify(aKey, updateOnly(aValue))
+      digest shouldEqual tree.rootHash()
+
+      val proof2 = tree.modify(aKey, insertOnly(aValue))
+      digest = proof2.verify(digest, insertOnly(aValue)).get
+
+      tree.modify(aKey, insertOnly(aValue))
+      digest shouldEqual tree.rootHash()
+
+      val proof4 = tree.modify(aKey, updateOnly(aValue))
+      digest = proof4.verify(digest, updateOnly(aValue)).get
+    }
+  }
+
 
   property("infinities") {
     val tree = new AVLTree(KL)
