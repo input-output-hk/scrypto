@@ -7,12 +7,13 @@ import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
+import scala.util.Try
 
 class SLTree[HF <: ThreadUnsafeHash](rootOpt: Option[Node] = None)(implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[SLTKey, SLTValue, SLTProof] {
 
 
-  override def modify(key: SLTKey, updateFunction: UpdateFunction): SLTModifyingProof = {
+  override def modify(key: SLTKey, updateFunction: UpdateFunction): Try[SLTModifyingProof] = Try {
     val lookupProof = SLTlookup(key)
     lookupProof._1 match {
       case None => insert(key, updateFunction)._2

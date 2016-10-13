@@ -5,7 +5,7 @@ import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = None)
                                      (implicit hf: HF = new Blake2b256Unsafe)
@@ -18,7 +18,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
 
   def rootHash(): Label = topNode.label
 
-  def modify(key: AVLKey, updateFunction: UpdateFunction): AVLModifyProof = {
+  override def modify(key: AVLKey, updateFunction: UpdateFunction): Try[AVLModifyProof] = Try {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinity._1) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength)
@@ -30,7 +30,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
       * returns the new root and an indicator whether tree has been modified at r or below
       *
       */
-    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = Try {
+    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = {
       rNode match {
         case r: Leaf =>
           if (foundAbove) {
@@ -42,8 +42,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
               case Success(v) =>
                 r.value = v
                 (r, true, false)
-              case _ =>
-                (r, false, false)
+              case Failure(e) => throw e
             }
           } else {
             // x > r.key
@@ -56,8 +55,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 r.nextLeafKey = key
                 (ProverNode(key, r, newLeaf), true, true)
-              case _ =>
-                (r, false, false)
+              case Failure(e) => throw e
             }
           }
         case r: ProverNode =>
@@ -176,9 +174,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
                       assert(r.checkHeight)
                       assert(newRight.checkHeight)
                       (newRight, true, false)
-                    }
-
-                    else {
+                    } else {
                       // double rotate
                       val newRootM = newRight.left
                       assert(newRootM.isInstanceOf[ProverNode])
@@ -231,7 +227,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
             }
           }
       }
-    }.getOrElse((topNode, true, false))
+    }
 
     val (newTopNode, changeHappened, childHeightIncreased) = modifyHelper(topNode, foundAbove = false)
     if (changeHappened) topNode = newTopNode

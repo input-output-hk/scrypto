@@ -10,9 +10,9 @@ trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] {
     * @param updateFunction - function from old value to new one.
     * @return modification proof
     */
-  def modify(key: Key, updateFunction: Option[Value] => Try[Value]): ProofType
+  def modify(key: Key, updateFunction: Option[Value] => Try[Value]): Try[ProofType]
 
-  def lookup(key: Key): ProofType = modify(key, TwoPartyDictionary.lookupFunction[Value])
+  def lookup(key: Key): Try[ProofType] = modify(key, TwoPartyDictionary.lookupFunction[Value])
 
   /**
     * @return current digest of structure

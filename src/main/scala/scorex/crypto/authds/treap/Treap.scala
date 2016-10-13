@@ -4,7 +4,7 @@ import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
-import scala.util.Success
+import scala.util.{Failure, Success, Try}
 
 /**
   * Authenticated data structure, representing both treap and binary tree, depending on level selection function
@@ -17,7 +17,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
 
   def rootHash(): Label = topNode.label
 
-  def modify(key: TreapKey, updateFunction: UpdateFunction): TreapModifyProof = {
+  override def modify(key: TreapKey, updateFunction: UpdateFunction): Try[TreapModifyProof] = Try {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
@@ -38,7 +38,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
               case Success(v) =>
                 r.value = v
                 (r, true)
-              case _ => (r, false)
+              case Failure(e) => throw e
             }
           } else {
             // x > r.key
@@ -51,7 +51,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 r.nextLeafKey = key
                 (ProverNode(key, r, newLeaf), true)
-              case _ => (r, false)
+              case Failure(e) => throw e
             }
           }
         case r: ProverNode =>
@@ -128,7 +128,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
     }
 
     val (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundAbove = false)
-    if(changeHappened) topNode = newTopNode
+    if (changeHappened) topNode = newTopNode
     TreapModifyProof(key, proofStream)
   }
 

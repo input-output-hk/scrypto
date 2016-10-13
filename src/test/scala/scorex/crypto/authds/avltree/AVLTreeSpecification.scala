@@ -5,7 +5,7 @@ import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.hash.Sha256
-import scorex.utils.ByteArray
+import scorex.utils.{Random, ByteArray}
 
 import scala.util.Success
 
@@ -21,15 +21,15 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll(kvGen) { case (aKey, aValue) =>
       digest shouldEqual tree.rootHash()
 
-      tree.lookup(aKey).verifyLookup(digest, existence = false).get shouldEqual digest
-      tree.lookup(aKey).verifyLookup(digest, existence = true) shouldBe None
+      tree.lookup(aKey).get.verifyLookup(digest, existence = false).get shouldEqual digest
+      tree.lookup(aKey).get.verifyLookup(digest, existence = true) shouldBe None
 
       digest shouldEqual tree.rootHash()
-      val proof = tree.modify(aKey, replaceLong(aValue))
+      val proof = tree.modify(aKey, replaceLong(aValue)).get
       digest = proof.verify(digest, replaceLong(aValue)).get
 
-      tree.lookup(aKey).verifyLookup(digest, existence = true).get shouldEqual digest
-      tree.lookup(aKey).verifyLookup(digest, existence = false) shouldBe None
+      tree.lookup(aKey).get.verifyLookup(digest, existence = true).get shouldEqual digest
+      tree.lookup(aKey).get.verifyLookup(digest, existence = false) shouldBe None
     }
   }
 
@@ -40,17 +40,17 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll(kvGen) { case (aKey, aValue) =>
       digest shouldEqual tree.rootHash()
 
-      tree.modify(aKey, updateOnly(aValue))
+      tree.modify(aKey, updateOnly(aValue)).isFailure shouldBe true
       digest shouldEqual tree.rootHash()
 
       val proof2 = tree.modify(aKey, insertOnly(aValue))
-      digest = proof2.verify(digest, insertOnly(aValue)).get
+      digest = proof2.get.verify(digest, insertOnly(aValue)).get
 
-      tree.modify(aKey, insertOnly(aValue))
+      tree.modify(aKey, insertOnly(aValue)).isFailure shouldBe true
       digest shouldEqual tree.rootHash()
 
       val proof4 = tree.modify(aKey, updateOnly(aValue))
-      digest = proof4.verify(digest, updateOnly(aValue)).get
+      digest = proof4.get.verify(digest, updateOnly(aValue)).get
     }
   }
 
@@ -71,7 +71,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll(kvGen) { case (aKey, aValue) =>
       digest shouldEqual wt.rootHash()
       val proof = wt.modify(aKey, replaceLong(aValue))
-      digest = proof.verify(digest, replaceLong(aValue)).get
+      digest = proof.get.verify(digest, replaceLong(aValue)).get
     }
   }
 
@@ -79,7 +79,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     val wt = new AVLTree(KL)
     forAll(kvGen) { case (aKey, aValue) =>
       val digest = wt.rootHash()
-      val proof = wt.modify(aKey, rewrite(aValue))
+      val proof = wt.modify(aKey, rewrite(aValue)).get
       proof.verify(digest, rewrite(aValue)).get shouldEqual wt.rootHash()
     }
   }
@@ -91,11 +91,11 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       (key: Array[Byte], value: Array[Byte], value2: Array[Byte]) =>
         whenever(!(value sameElements value2)) {
           val digest1 = wt.rootHash()
-          val proof = wt.modify(key, replaceLong(value))
+          val proof = wt.modify(key, replaceLong(value)).get
           proof.verify(digest1, replaceLong(value)).get shouldEqual wt.rootHash()
 
           val digest2 = wt.rootHash()
-          val updateProof = wt.modify(key, replaceLong(value2))
+          val updateProof = wt.modify(key, replaceLong(value2)).get
           updateProof.verify(digest2, replaceLong(value2)).get shouldEqual wt.rootHash()
         }
     }
@@ -110,7 +110,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll(kvGen) { case (aKey, aValue) =>
       whenever(aKey.length == KL && aValue.length == VL) {
         digest shouldEqual wt.rootHash()
-        val proof = wt.modify(aKey, replaceLong(aValue))
+        val proof = wt.modify(aKey, replaceLong(aValue)).get
 
         digest = proof.verify(digest, replaceLong(aValue)).get
         val parsed = AVLModifyProof.parseBytes(proof.bytes)(KL, 32).get
@@ -123,7 +123,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
 
         val value2 = Sha256(aValue)
         val digest2 = wt.rootHash()
-        val uProof = wt.modify(aKey, replaceLong(value2))
+        val uProof = wt.modify(aKey, replaceLong(value2)).get
         digest = uProof.verify(digest2, replaceLong(value2)).get
         uProof.keyFound shouldBe true
 

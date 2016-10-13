@@ -38,7 +38,7 @@ object BlockchainBench extends App {
     map.put(hf.hash(i + "-0"), 0)
 
     val k = hf("1-1" + i)
-    avl.modify(k, bfn)
+    avl.modify(k, bfn).get
     k
   }
 
@@ -83,10 +83,10 @@ object BlockchainBench extends App {
     //proofs generation
     val proofs = (0 until additionsInBlock).map { i =>
       val k = hf("0" + i + ":" + b)
-      avl.modify(k, bfn)
+      avl.modify(k, bfn).get
     } ++ (0 until modificationsInBlock).map { i =>
       val k = keyCache(Random.nextInt(keyCache.length))
-      avl.modify(k, bfn)
+      avl.modify(k, bfn).get
     }
 
     //verification
