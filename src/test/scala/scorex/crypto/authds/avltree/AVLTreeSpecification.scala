@@ -5,7 +5,7 @@ import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.hash.Sha256
-import scorex.utils.{Random, ByteArray}
+import scorex.utils.ByteArray
 
 import scala.util.Success
 
@@ -132,10 +132,6 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
 
       }
     }
-  }
-
-  def rewrite(value: AVLValue): UpdateFunction = {
-    oldOpt: Option[AVLValue] => Success(value)
   }
 
   def kvGen: Gen[(Array[Byte], Array[Byte])] = for {

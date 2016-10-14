@@ -10,7 +10,7 @@ import scala.reflect.io.File
 import scala.util.{Try, Random}
 
 
-object BlockchainBench extends App {
+object BlockchainBench extends App with UpdateF[TreapValue] {
 
   val blocks = 1000000
 
@@ -111,5 +111,5 @@ object BlockchainBench extends App {
     }
   }
 
-  def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(oldOpt.getOrElse(value)) }
+  def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(Some(oldOpt.getOrElse(value))) }
 }

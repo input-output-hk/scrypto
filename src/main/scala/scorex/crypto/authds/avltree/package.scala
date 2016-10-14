@@ -11,6 +11,5 @@ package object avltree {
   type Label = CryptographicHash#Digest
 
   val LabelOfNone: Array[Byte] = Array()
-  type UpdateFunction = Option[AVLValue] => Try[AVLValue]
 
 }

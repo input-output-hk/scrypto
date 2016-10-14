@@ -35,10 +35,13 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
             updateFunction(Some(r.value)) match {
-              case Success(v) =>
+              case Success(None) => //delete value
+                ???
+              case Success(Some(v)) => //update value
                 r.value = v
                 (r, true)
-              case Failure(e) => throw e
+              case Failure(e) => // found incorrect value
+                throw e
             }
           } else {
             // x > r.key
@@ -47,11 +50,14 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
             updateFunction(None) match {
-              case Success(v) =>
+              case Success(None) => //don't change anything, just lookup
+                ???
+              case Success(Some(v)) => //insert new value
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 r.nextLeafKey = key
                 (ProverNode(key, r, newLeaf), true)
-              case Failure(e) => throw e
+              case Failure(e) => // found incorrect value
+                throw e
             }
           }
         case r: ProverNode =>

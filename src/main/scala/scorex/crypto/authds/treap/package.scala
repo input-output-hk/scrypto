@@ -2,8 +2,6 @@ package scorex.crypto.authds
 
 import scorex.crypto.hash.CryptographicHash
 
-import scala.util.Try
-
 package object treap {
   type TreapKey = Array[Byte]
   type TreapValue = Array[Byte]
@@ -14,7 +12,6 @@ package object treap {
   val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(1)(0: Byte), Array())
 
   val LabelOfNone: Array[Byte] = Array()
-  type UpdateFunction = Option[TreapValue] => Try[TreapValue]
   type LevelFunction = TreapKey => Level
 
 }

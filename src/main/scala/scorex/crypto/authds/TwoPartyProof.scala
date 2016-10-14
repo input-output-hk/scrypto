@@ -3,10 +3,9 @@ package scorex.crypto.authds
 import scorex.crypto.authds.avltree.Balance
 
 import scala.collection.mutable
-import scala.util.Try
 
 
-trait TwoPartyProof[Key, Value] {
+trait TwoPartyProof[Key, Value] extends UpdateF[Value]{
   type Label = Array[Byte]
   val key: Key
   val proofSeq: Seq[TwoPartyProofElement]
@@ -18,7 +17,7 @@ trait TwoPartyProof[Key, Value] {
     * @param updateFunction - function from old value to new one
     * @return Some from new root hash if proof is valid or None if proof is not valid.
     */
-  def verify(digest: Label, updateFunction: Option[Value] => Try[Value]): Option[Label]
+  def verify(digest: Label, updateFunction: UpdateFunction): Option[Label]
 
   protected def dequeueValue(proof: mutable.Queue[TwoPartyProofElement]): Array[Byte] = {
     proof.dequeue().asInstanceOf[ProofValue].e

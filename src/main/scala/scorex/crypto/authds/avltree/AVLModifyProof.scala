@@ -6,7 +6,7 @@ import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
@@ -63,9 +63,16 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
         case LeafFound =>
           val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
           val value: AVLValue = dequeueValue(proof)
-          val oldLeaf = Leaf(key, value, nextLeafKey)
-          val newLeaf = Leaf(key, updateFunction(Some(value)).get, nextLeafKey)
-          (newLeaf, true, false, oldLeaf.label)
+          updateFunction(Some(value)) match {
+            case Success(None) => //delete value
+              ???
+            case Success(Some(v)) => //update value
+              val oldLeaf = Leaf(key, value, nextLeafKey)
+              val newLeaf = Leaf(key, v, nextLeafKey)
+              (newLeaf, true, false, oldLeaf.label)
+            case Failure(e) => // found incorrect value
+              throw e
+          }
         case LeafNotFound =>
           val neighbourLeafKey = dequeueKey(proof)
           val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
@@ -76,13 +83,16 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           val r = new Leaf(neighbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
           updateFunction(None) match {
-            case Success(v) =>
+            case Success(None) => //don't change anything, just lookup
+              ???
+            case Success(Some(v)) => //insert new value
               val newLeaf = new Leaf(key, v, r.nextLeafKey)
               r.nextLeafKey = key
               val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0: Byte)
               (newR, true, true, oldLabel)
-            case _ =>
-              (r, false, false, oldLabel)
+            case Failure(e) => // found incorrect value
+              // (r, false, false, oldLabel)
+              throw e
           }
         case GoingLeft =>
           val rightLabel: Label = dequeueRightLabel(proof)

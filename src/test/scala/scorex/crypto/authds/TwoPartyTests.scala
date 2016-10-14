@@ -1,12 +1,15 @@
 package scorex.crypto.authds
 
+import com.google.common.primitives.Longs
 import scorex.crypto.TestingCommons
+import scorex.crypto.authds.avltree._
+import scorex.crypto.authds.treap.Label
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Sha256
 
 import scala.util.{Failure, Success}
 
-trait TwoPartyTests extends TestingCommons {
+trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
 
   def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte], _ <: TwoPartyProof[Array[Byte], Array[Byte]]],
                   elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
@@ -40,17 +43,29 @@ trait TwoPartyTests extends TestingCommons {
     Seq(insertTime, verifyTime, proofSize, m(0) / pl, m(1) / pl, m(2) / pl, m(3) / pl, m(4) / pl, m(5) / pl)
   }
 
-  def replaceLong(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Success(value.take(8)) }
+  def replaceLong(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Success(Some(value.take(8))) }
 
   def insertOnly(value: TreapValue): UpdateFunction = {
-    case None => Success(value)
+    case None => Success(Some(value))
     case _ => Failure(new Error("Don't update elements"))
   }
 
   def updateOnly(value: TreapValue): UpdateFunction = {
-    case Some(v) => Success(Sha256(v ++ value).take(value.length))
+    case Some(v) => Success(Some(Sha256(v ++ value).take(value.length)))
     case _ => Failure(new Error("Don't insert elements"))
   }
+
+  def rewrite(value: AVLValue): UpdateFunction = {
+    oldOpt: Option[AVLValue] => Success(Some(value))
+  }
+
+  def append(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] =>
+    Success(Some(oldOpt.map(_ ++ value).getOrElse(value)))
+  }
+
+  def transactionUpdate(amount: Long): UpdateFunction = (old: Option[TreapValue]) =>
+    Success(Some(Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
+
 
 
 }

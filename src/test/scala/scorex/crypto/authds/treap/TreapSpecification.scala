@@ -4,13 +4,13 @@ import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.Level
+import scorex.crypto.authds.{TwoPartyTests, Level}
 import scorex.crypto.hash.Blake2b256Unsafe
 
 import scala.util.Success
 
 
-class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
+class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TwoPartyTests {
 
 
   def validKey(key: TreapKey): Boolean = key.length > 1 && key.length < MaxKeySize
@@ -75,14 +75,5 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       }
     }
   }
-
-  def rewrite(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Success(value) }
-
-  def append(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] =>
-    Success(oldOpt.map(_ ++ value).getOrElse(value))
-  }
-
-  def transactionUpdate(amount: Long): Option[TreapValue] => TreapValue = (old: Option[TreapValue]) =>
-    Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))
 
 }
