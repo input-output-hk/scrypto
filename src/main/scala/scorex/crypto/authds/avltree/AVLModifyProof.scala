@@ -12,35 +12,6 @@ import scorex.crypto.authds.TwoPartyDictionary.Label
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
 
-  val keyFound = proofSeq.length % 3 == 0
-
-  /**
-    * seqLength, key, ++
-    * notFound: Seq(ProofDirection, ProofLabel, ProofBalance), ProofDirection, ProofKey, ProofNextLeafKey, ProofValue
-    * found: Seq(ProofDirection, ProofLabel, ProofBalance), ProofDirection, ProofNextLeafKey, ProofValue
-    */
-  lazy val bytes: Array[Byte] = {
-
-    val pathLength = if (keyFound) proofSeq.length - 3 else proofSeq.length - 4
-    val inBytes = pathLength.toByte +: key
-    val pathProofsBytes: Array[Byte] = (0 until pathLength / 3).toArray.flatMap { i: Int =>
-      val label = proofSeq(3 * i + 1)
-      val directionLabelByte = AVLModifyProof.directionBalanceByte(proofSeq(3 * i).asInstanceOf[ProofDirection],
-        proofSeq(3 * i + 2).asInstanceOf[ProofBalance])
-
-      Bytes.concat(Array(directionLabelByte), label.bytes)
-    }
-    if (keyFound) {
-      Bytes.concat(inBytes, pathProofsBytes,
-        Array(AVLModifyProof.combineBytes(1: Byte, proofSeq(proofSeq.length - 3).bytes.head)),
-        proofSeq(proofSeq.length - 2).bytes, proofSeq.last.bytes)
-    } else {
-      Bytes.concat(inBytes, pathProofsBytes,
-        Array(AVLModifyProof.combineBytes(0: Byte, proofSeq(proofSeq.length - 4).bytes.head)),
-        proofSeq(proofSeq.length - 2).bytes, proofSeq(proofSeq.length - 3).bytes, proofSeq.last.bytes)
-    }
-  }
-
   def verifyLookup(digest: Label, existence: Boolean): Option[Label] = {
     if(existence) {
       verify(digest, TwoPartyDictionary.existenceLookupFunction[AVLValue])
@@ -235,6 +206,34 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
       None
     }
   }.getOrElse(None)
+
+  /**
+    * seqLength, key, ++
+    * notFound: Seq(ProofDirection, ProofLabel, ProofBalance), ProofDirection, ProofKey, ProofNextLeafKey, ProofValue
+    * found: Seq(ProofDirection, ProofLabel, ProofBalance), ProofDirection, ProofNextLeafKey, ProofValue
+    */
+  lazy val bytes: Array[Byte] = {
+    val keyFound = proofSeq.length % 3 == 0
+
+    val pathLength = if (keyFound) proofSeq.length - 3 else proofSeq.length - 4
+    val inBytes = pathLength.toByte +: key
+    val pathProofsBytes: Array[Byte] = (0 until pathLength / 3).toArray.flatMap { i: Int =>
+      val label = proofSeq(3 * i + 1)
+      val directionLabelByte = AVLModifyProof.directionBalanceByte(proofSeq(3 * i).asInstanceOf[ProofDirection],
+        proofSeq(3 * i + 2).asInstanceOf[ProofBalance])
+
+      Bytes.concat(Array(directionLabelByte), label.bytes)
+    }
+    if (keyFound) {
+      Bytes.concat(inBytes, pathProofsBytes,
+        Array(AVLModifyProof.combineBytes(1: Byte, proofSeq(proofSeq.length - 3).bytes.head)),
+        proofSeq(proofSeq.length - 2).bytes, proofSeq.last.bytes)
+    } else {
+      Bytes.concat(inBytes, pathProofsBytes,
+        Array(AVLModifyProof.combineBytes(0: Byte, proofSeq(proofSeq.length - 4).bytes.head)),
+        proofSeq(proofSeq.length - 2).bytes, proofSeq(proofSeq.length - 3).bytes, proofSeq.last.bytes)
+    }
+  }
 
 }
 

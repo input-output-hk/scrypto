@@ -125,7 +125,6 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
         val digest2 = wt.rootHash()
         val uProof = wt.modify(aKey, replaceLong(value2)).get
         digest = uProof.verify(digest2, replaceLong(value2)).get
-        uProof.keyFound shouldBe true
 
         val uParsed = AVLModifyProof.parseBytes(uProof.bytes)(KL, 32).get
         uParsed.bytes shouldEqual uProof.bytes
