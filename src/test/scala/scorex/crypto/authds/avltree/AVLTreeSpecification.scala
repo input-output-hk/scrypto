@@ -7,8 +7,6 @@ import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.hash.Sha256
 import scorex.utils.ByteArray
 
-import scala.util.Success
-
 class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
   val KL = 26

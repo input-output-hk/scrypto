@@ -1,6 +1,6 @@
 package scorex.crypto.authds
 
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 
 trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] extends UpdateF[Value] {
 
@@ -15,6 +15,8 @@ trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] ext
 
   def lookup(key: Key): Try[ProofType] = modify(key, TwoPartyDictionary.lookupFunction[Value])
 
+  def remove(key: Key): Try[ProofType] = modify(key, TwoPartyDictionary.removeFunction[Value])
+
   /**
     * @return current digest of structure
     */
@@ -24,5 +26,10 @@ trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] ext
 }
 
 object TwoPartyDictionary {
+  def removeFunction[Value]: Option[Value] => Try[Option[Value]] = {
+    case Some(v) => Success(None)
+    case None => Failure(new Error("Key not found"))
+  }
+
   def lookupFunction[Value]: Option[Value] => Try[Option[Value]] = { x: Option[Value] => Success(x) }
 }
