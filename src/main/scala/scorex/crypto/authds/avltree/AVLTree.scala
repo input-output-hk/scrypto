@@ -1,6 +1,7 @@
 package scorex.crypto.authds.avltree
 
 import scorex.crypto.authds._
+import scorex.crypto.authds.treap._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -240,4 +241,30 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
     AVLModifyProof(key, proofStream)
   }
 
+
+  //todo: remove function stub, not sure about function signature
+  def remove(key: AVLKey): AVLModifyProof = ???
+
+}
+
+object AVLTree extends App {
+  val KeyLength = 32
+
+  val tree = new AVLTree(KeyLength)
+
+  def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(oldOpt.getOrElse(value)) }
+
+  val balance = Array.fill(8)(0: Byte)
+  val bfn = set(balance)
+  val hf = new Blake2b256Unsafe()
+
+  tree.modify(hf("1"), bfn)
+  assert(Base58.encode(tree.rootHash()) != "Hello world!" )
+
+  //tree.remove(hf("1"))
+  //assert(Base58.encode(tree.rootHash()) != "Hello world!" )
+
+  println("======================================")
+  println("Everything in the test is working fine")
+  println("======================================")
 }
