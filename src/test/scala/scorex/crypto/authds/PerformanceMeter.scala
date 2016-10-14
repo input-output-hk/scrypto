@@ -1,10 +1,8 @@
 package scorex.crypto.authds
 
-import org.scalatest.Matchers
 import scorex.crypto.authds.avltree.AVLTree
-import scorex.crypto.authds.sltree.SLTree
 import scorex.crypto.authds.treap._
-import scorex.crypto.hash.{Sha256Unsafe, Blake2b256Unsafe}
+import scorex.crypto.hash.Blake2b256Unsafe
 
 
 object PerformanceMeter extends App with TwoPartyTests {
@@ -18,15 +16,13 @@ object PerformanceMeter extends App with TwoPartyTests {
   val avl = new AVLTree(KL)(hash)
   val wt = new Treap()(hash)
   val treap = new Treap()(hash, Level.treapLevel)
-  val slt = new SLTree()(hash)
   val elements = genElements(Step, 0, KL)
   profileTree(avl, elements, avl.rootHash())
   profileTree(wt, elements, wt.rootHash())
   profileTree(treap, elements, treap.rootHash())
-  profileTree(slt, elements, slt.rootHash())
 
 
-  val structures = Seq("treap", "wt", "slt", "avl")
+  val structures = Seq("treap", "wt", "avl")
   println("size, " +
     structures.map(_ + "InsertTime").mkString(", ") + ", " +
     structures.map(_ + "VerifyTime").mkString(", ") + ", " +
@@ -47,11 +43,9 @@ object PerformanceMeter extends App with TwoPartyTests {
     val treapStats: Seq[Float] = profileTree(treap, elements, treap.rootHash())
     // avl
     val avlStats = profileTree(avl, elements, avl.rootHash())
-    //slt
-    val sltStats = profileTree(slt, elements, slt.rootHash())
 
     println(s"${i * Step}, " +
-      wtStats.indices.map(i => treapStats(i) + ", " + wtStats(i) + ", " + sltStats(i) + ", " + avlStats(i)).mkString(", "))
+      wtStats.indices.map(i => treapStats(i) + ", " + wtStats(i) + ", " + avlStats(i)).mkString(", "))
   }
 
 
