@@ -1,9 +1,8 @@
 package scorex.crypto.authds.avltree
 
+import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
-
-// TODO: move some common things into InternalNode
 
 sealed trait Node {
 

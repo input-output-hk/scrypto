@@ -3,10 +3,9 @@ package scorex.crypto.authds
 import scorex.crypto.authds.avltree.Balance
 
 import scala.collection.mutable
-
+import TwoPartyDictionary.Label
 
 trait TwoPartyProof[Key, Value] extends UpdateF[Value]{
-  type Label = Array[Byte]
   val key: Key
   val proofSeq: Seq[TwoPartyProofElement]
 

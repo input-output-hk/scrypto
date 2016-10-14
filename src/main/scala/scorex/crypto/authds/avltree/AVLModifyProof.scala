@@ -7,7 +7,7 @@ import scorex.utils.ByteArray
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
-
+import scorex.crypto.authds.TwoPartyDictionary.Label
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
@@ -41,15 +41,13 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
-  def verifyLookup(digest: Label, existence: Boolean): Option[Label] = Try {
-    require(existence == keyFound)
-    if (!existence) {
-      val foundKey = proofSeq(proofSeq.length - 3).asInstanceOf[ProofKey].e
-      val nextLeafKey = proofSeq(proofSeq.length - 2).asInstanceOf[ProofNextLeafKey].e
-      require(ByteArray.compare(foundKey, key) < 0 && ByteArray.compare(nextLeafKey, key) > 0)
+  def verifyLookup(digest: Label, existence: Boolean): Option[Label] = {
+    if(existence) {
+      verify(digest, TwoPartyDictionary.existenceLookupFunction[AVLValue])
+    } else {
+      verify(digest, TwoPartyDictionary.nonExistenceLookupFunction[AVLValue])
     }
-    verify(digest, TwoPartyDictionary.lookupFunction[AVLValue])
-  }.getOrElse(None)
+  }
 
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)

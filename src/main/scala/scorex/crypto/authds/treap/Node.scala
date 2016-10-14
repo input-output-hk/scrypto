@@ -1,6 +1,7 @@
 package scorex.crypto.authds.treap
 
 import scorex.crypto.authds.Level
+import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
 

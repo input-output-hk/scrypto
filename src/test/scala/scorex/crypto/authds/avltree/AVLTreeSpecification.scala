@@ -3,9 +3,10 @@ package scorex.crypto.authds.avltree
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.hash.Sha256
-import scorex.utils.ByteArray
+import scorex.utils.{Random, ByteArray}
 
 class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -14,9 +15,10 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
 
   property("lookup") {
     val tree = new AVLTree(KL)
-    var digest = tree.rootHash()
+    var digest: Label = tree.rootHash()
 
-    forAll(kvGen) { case (aKey, aValue) =>
+    forAll(kvGen) { case (aKey2, aValue) =>
+      val aKey = Random.randomBytes(KL)
       digest shouldEqual tree.rootHash()
 
       tree.lookup(aKey).get.verifyLookup(digest, existence = false).get shouldEqual digest

@@ -3,11 +3,12 @@ package scorex.crypto.authds
 import com.google.common.primitives.Longs
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.treap.Label
+import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Sha256
 
 import scala.util.{Failure, Success}
+import scorex.crypto.authds.TwoPartyDictionary.Label
 
 trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
 
