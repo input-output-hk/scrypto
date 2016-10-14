@@ -1,11 +1,8 @@
 package scorex.crypto.authds
 
-import scorex.crypto.authds.avltree.Balance
+import scorex.crypto.authds.TwoPartyDictionary.Label
 
-import scala.collection.mutable
-import TwoPartyDictionary.Label
-
-trait TwoPartyProof[Key, Value] extends UpdateF[Value]{
+trait TwoPartyProof[Key, Value] extends UpdateF[Value] with ProofIterator {
   val key: Key
   val proofSeq: Seq[TwoPartyProofElement]
 
@@ -18,39 +15,4 @@ trait TwoPartyProof[Key, Value] extends UpdateF[Value]{
     */
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label]
 
-  protected def dequeueValue(proof: mutable.Queue[TwoPartyProofElement]): Array[Byte] = {
-    proof.dequeue().asInstanceOf[ProofValue].e
-  }
-
-  protected def dequeueKey(proof: mutable.Queue[TwoPartyProofElement]): Array[Byte] = {
-    proof.dequeue().asInstanceOf[ProofKey].e
-  }
-
-  protected def dequeueNextLeafKey(proof: mutable.Queue[TwoPartyProofElement]): Array[Byte] = {
-    proof.dequeue().asInstanceOf[ProofNextLeafKey].e
-  }
-
-  protected def dequeueRightLabel(proof: mutable.Queue[TwoPartyProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofRightLabel].e
-  }
-
-  protected def dequeueLeftLabel(proof: mutable.Queue[TwoPartyProofElement]): Label = {
-    proof.dequeue().asInstanceOf[ProofLeftLabel].e
-  }
-
-  protected def dequeueDirection(proof: mutable.Queue[TwoPartyProofElement]): Direction = {
-    proof.dequeue().asInstanceOf[ProofDirection].direction
-  }
-
-  protected def dequeueLevel(proof: mutable.Queue[TwoPartyProofElement]): Level = {
-    proof.dequeue().asInstanceOf[ProofLevel].e
-  }
-
-  protected def dequeueBalance(proof: mutable.Queue[TwoPartyProofElement]): Balance = {
-    proof.dequeue().bytes(0) match {
-      case -1 => -1: Byte
-      case 0 => 0: Byte
-      case 1 => 1: Byte
-    }
-  }
 }

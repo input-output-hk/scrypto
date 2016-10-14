@@ -21,17 +21,17 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
   }
 
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
-    val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
+    initializeIterator()
 
     /*
      * Returns the new flat root and an indicator whether tree has been modified at r or below
      * Also returns the label of the old root
      */
     def verifyHelper(): (VerifierNodes, Boolean, Boolean, Label) = {
-      dequeueDirection(proof) match {
+      dequeueDirection() match {
         case LeafFound =>
-          val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
-          val value: AVLValue = dequeueValue(proof)
+          val nextLeafKey: AVLKey = dequeueNextLeafKey()
+          val value: AVLValue = dequeueValue()
           updateFunction(Some(value)) match {
             case Success(None) => //delete value
               ???
@@ -43,9 +43,9 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
               throw e
           }
         case LeafNotFound =>
-          val neighbourLeafKey = dequeueKey(proof)
-          val nextLeafKey: AVLKey = dequeueNextLeafKey(proof)
-          val value: AVLValue = dequeueValue(proof)
+          val neighbourLeafKey = dequeueKey()
+          val nextLeafKey: AVLKey = dequeueNextLeafKey()
+          val value: AVLValue = dequeueValue()
           require(ByteArray.compare(neighbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 
@@ -64,8 +64,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
               throw e
           }
         case GoingLeft =>
-          val rightLabel: Label = dequeueRightLabel(proof)
-          val balance: Balance = dequeueBalance(proof)
+          val rightLabel: Label = dequeueRightLabel()
+          val balance: Balance = dequeueBalance()
 
           val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper()
 
@@ -131,9 +131,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           }
 
         case GoingRight =>
-          val leftLabel: Label = dequeueLeftLabel(proof)
-          val balance: Balance = dequeueBalance(proof)
-
+          val leftLabel: Label = dequeueLeftLabel()
+          val balance: Balance = dequeueBalance()
 
           val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper()
 

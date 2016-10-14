@@ -1,11 +1,10 @@
 package scorex.crypto.authds.treap
 
+import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.hash.ThreadUnsafeHash
 import scorex.utils.ByteArray
-import scorex.crypto.authds.TwoPartyDictionary.Label
 
-import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
@@ -13,16 +12,16 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
   extends TwoPartyProof[TreapKey, TreapValue] {
 
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
-    val proof: mutable.Queue[TwoPartyProofElement] = mutable.Queue(proofSeq: _*)
+    initializeIterator()
 
     // returns the new flat root
     // and an indicator whether tree has been modified at r or below
     // Also returns the label of the old root
     def verifyHelper(): (VerifierNodes, Boolean, Label) = {
-      dequeueDirection(proof) match {
+      dequeueDirection() match {
         case LeafFound =>
-          val nextLeafKey: TreapKey = dequeueNextLeafKey(proof)
-          val value: TreapValue = dequeueValue(proof)
+          val nextLeafKey: TreapKey = dequeueNextLeafKey()
+          val value: TreapValue = dequeueValue()
           updateFunction(Some(value)) match {
             case Success(None) => //delete value
               ???
@@ -34,9 +33,9 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
               throw e
           }
         case LeafNotFound =>
-          val neighbourLeafKey = dequeueKey(proof)
-          val nextLeafKey: TreapKey = dequeueNextLeafKey(proof)
-          val value: TreapValue = dequeueValue(proof)
+          val neighbourLeafKey = dequeueKey()
+          val nextLeafKey: TreapKey = dequeueNextLeafKey()
+          val value: TreapValue = dequeueValue()
           require(ByteArray.compare(neighbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 
@@ -56,8 +55,8 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
               throw e
           }
         case GoingLeft =>
-          val rightLabel: Label = dequeueRightLabel(proof)
-          val level: Level = dequeueLevel(proof)
+          val rightLabel: Label = dequeueRightLabel()
+          val level: Level = dequeueLevel()
 
           val (newLeftM, changeHappened, oldLeftLabel) = verifyHelper()
 
@@ -80,8 +79,8 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
             (r, false, oldLabel)
           }
         case GoingRight =>
-          val leftLabel: Label = dequeueLeftLabel(proof)
-          val level: Level = dequeueLevel(proof)
+          val leftLabel: Label = dequeueLeftLabel()
+          val level: Level = dequeueLevel()
 
           val (newRightM, changeHappened, oldRightLabel) = verifyHelper()
 
