@@ -84,7 +84,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           val oldLabel = r.label
           updateFunction(None) match {
             case Success(None) => //don't change anything, just lookup
-              ???
+              (r, false, false, oldLabel)
             case Success(Some(v)) => //insert new value
               val newLeaf = new Leaf(key, v, r.nextLeafKey)
               r.nextLeafKey = key

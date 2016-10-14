@@ -56,7 +56,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
             proofStream.enqueue(ProofValue(r.value))
             updateFunction(None) match {
               case Success(None) => //don't change anything, just lookup
-                ???
+                (r, false, false)
               case Success(Some(v)) => //insert new value
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 r.nextLeafKey = key
