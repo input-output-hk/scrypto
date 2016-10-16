@@ -11,6 +11,7 @@ libraryDependencies ++= Seq(
   "com.h2database" % "h2-mvstore" % "1.+",
   "com.google.guava" % "guava" % "19.+",
   "com.typesafe.play" %% "play-json" % "2.4.+",
+  "org.mapdb" % "mapdb" % "3.+" % "test",
   "io.spray" %% "spray-testkit" % "1.+" % "test",
   "org.scalatest" %% "scalatest" % "2.+" % "test",
   "org.scalactic" %% "scalactic" % "2.+" % "test",

@@ -10,6 +10,14 @@ import scala.reflect.io.File
 import scala.util.{Try, Random}
 
 
+class Prover{
+  val avl = new AVLTree(32)
+
+  val hf = new Blake2b256Unsafe()
+  def dumpProofs =
+}
+
+
 object BlockchainBench extends App with UpdateF[TreapValue] {
 
   val blocks = 1000000
