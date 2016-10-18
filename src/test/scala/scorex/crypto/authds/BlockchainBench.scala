@@ -1,64 +1,102 @@
 package scorex.crypto.authds
 
 
+import org.mapdb.{DBMaker, Serializer}
 import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
 
 import scala.reflect.io.File
-import scala.util.{Try, Random}
-
-
-class Prover{
-  val avl = new AVLTree(32)
-
-  val hf = new Blake2b256Unsafe()
-  def dumpProofs =
-}
-
-
-object BlockchainBench extends App with UpdateF[TreapValue] {
+import scala.util.{Random, Try}
 
 /*
-  val blocks = 1000000
-
-  val additionsInBlock = 200
-  val modificationsInBlock = 2000
-  //val removalsInBlock = 150
-
-  val store = MVStore.open("/tmp/dbmvstore" + Random.nextInt())
-  store.setCacheSize(1)
-
-  val map = store.openMap[Array[Byte], Long]("balances")
+trait TwoPartyCommons extends UpdateF[TreapValue] {
+  val avl = new AVLTree(32)
 
   val hf = new Blake2b256Unsafe()
 
-  val avl = new AVLTree(32)
+  val db = DBMaker
+    .fileDB("/tmp/proofs")
+    .make()
 
+  val blocks = 1000000
+
+  val additionsInBlock: Int = 200
+  val modificationsInBlock: Int = 2000
+  //val removalsInBlock = 150
+
+  val perBlock = additionsInBlock + modificationsInBlock
+
+  val proofsMap = db.treeMap("proofs")
+    .keySerializer(Serializer.LONG)
+    .valueSerializer(Serializer.BYTE_ARRAY)
+    .createOrOpen()
+
+  def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(Some(oldOpt.getOrElse(value))) }
   val balance = Array.fill(8)(0: Byte)
   val bfn = set(balance)
+}
 
+trait Initializing extends TwoPartyCommons {
   val initElements = 5000000
   val keyCacheSize = 10000
 
-  private def initStep(i: Int) = {
-    if (i % 10000 == 0) println("init: i = " + i)
-    map.put(hf.hash(i + "-0"), 0)
+  protected def initStep(i: Int): hf.Digest
 
+  protected def afterInit():Unit
+
+
+  (0 until initElements - keyCacheSize).foreach(initStep)
+  val keyCache = ((initElements - keyCacheSize) until initElements).map(initStep).toArray
+  afterInit()
+}
+
+class Prover extends TwoPartyCommons with Initializing {
+  override protected def initStep(i: Int) = {
     val k = hf("1-1" + i)
     avl.modify(k, bfn).get
     k
   }
 
-  (0 until initElements - keyCacheSize).foreach(initStep)
-  val keyCache = ((initElements - keyCacheSize) until initElements).map(initStep).toArray
+  override protected def afterInit():Unit = {
+  }
 
-  store.commit()
+  //proofs generation
+  def dumpProofs(blockNum:Int) = {
+    val proofs = (0 until additionsInBlock).map { i =>
+      val k = hf("0" + i + ":" + blockNum)
+      avl.modify(k, bfn).get
+    } ++ (0 until modificationsInBlock).map { i =>
+      val k = keyCache(Random.nextInt(keyCache.length))
+      avl.modify(k, bfn).get
+    }
+  }
+}
 
+class Verifier extends TwoPartyCommons {
+}
+
+class FullWorker extends TwoPartyCommons with Initializing {
+  val store = MVStore.open("/tmp/dbmvstore" + Random.nextInt())
+  store.setCacheSize(1)
+
+  val map = store.openMap[Array[Byte], Long]("balances")
+
+  override protected def initStep(i: Int) = {
+    if (i % 10000 == 0) println("init: i = " + i)
+    map.put(hf.hash(i + "-0"), 0)
+  }
+
+  override protected def afterInit():Unit = {
+    store.commit()
+  }
+}
+
+
+object BlockchainBench extends App with TwoPartyCommons {
   var size = initElements
 
-  var last100f = 0L
-  var last100l = 0L
+
 
   (0 until blocks).foreach { b =>
     size = size + additionsInBlock
@@ -82,20 +120,18 @@ object BlockchainBench extends App with UpdateF[TreapValue] {
     }*/
 
     store.commit()
+
+
+    var last100f = 0L
+    var last100l = 0L
+
     val dsf = System.currentTimeMillis() - sf0
 
     last100f = last100f + dsf
 
     val digest0 = avl.rootHash()
 
-    //proofs generation
-    val proofs = (0 until additionsInBlock).map { i =>
-      val k = hf("0" + i + ":" + b)
-      avl.modify(k, bfn).get
-    } ++ (0 until modificationsInBlock).map { i =>
-      val k = keyCache(Random.nextInt(keyCache.length))
-      avl.modify(k, bfn).get
-    }
+
 
     //verification
     val sl0 = System.currentTimeMillis()
@@ -119,6 +155,6 @@ object BlockchainBench extends App with UpdateF[TreapValue] {
     }
   }
 
-  def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(Some(oldOpt.getOrElse(value))) }
-*/
+
 }
+*/
