@@ -2,7 +2,6 @@ package scorex.crypto.authds.skiplist
 
 import com.google.common.primitives.Ints
 import scorex.crypto.authds.DataProof
-import scorex.crypto.authds.merkle.MerkleTree.Position
 import scorex.crypto.encode._
 import scorex.crypto.hash.CryptographicHash
 
