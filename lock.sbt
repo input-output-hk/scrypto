@@ -9,7 +9,6 @@ dependencyOverrides in ThisBuild ++= Set(
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.5.4",
   "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.5.4",
   "com.google.guava" % "guava" % "19.0",
-  "com.h2database" % "h2-mvstore" % "1.4.192",
   "com.typesafe" % "config" % "1.3.0",
   "com.typesafe.akka" % "akka-actor_2.11" % "2.3.9",
   "com.typesafe.akka" % "akka-testkit_2.11" % "2.3.9",

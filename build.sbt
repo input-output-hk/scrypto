@@ -8,7 +8,6 @@ scalaVersion := "2.11.8"
 
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.+",
-  "com.h2database" % "h2-mvstore" % "1.+",
   "com.google.guava" % "guava" % "19.+",
   "com.typesafe.play" %% "play-json" % "2.4.+",
   "org.mapdb" % "mapdb" % "3.+" % "test",

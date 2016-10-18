@@ -1,7 +1,6 @@
 package scorex.crypto.authds
 
 
-import org.h2.mvstore.MVStore
 import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
@@ -20,6 +19,7 @@ class Prover{
 
 object BlockchainBench extends App with UpdateF[TreapValue] {
 
+/*
   val blocks = 1000000
 
   val additionsInBlock = 200
@@ -120,4 +120,5 @@ object BlockchainBench extends App with UpdateF[TreapValue] {
   }
 
   def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(Some(oldOpt.getOrElse(value))) }
+*/
 }
