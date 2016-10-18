@@ -290,7 +290,7 @@ object SkipList {
   val maxLevel = 128
 
   /**
-   * Select a level where element e will be putted
+   * Selects a level where element e will be placed
    */
   def selectLevel(e: SLElement, maxLev: Int): Int = {
     @tailrec

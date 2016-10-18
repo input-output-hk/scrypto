@@ -240,5 +240,4 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
     if (changeHappened) topNode = newTopNode
     AVLModifyProof(key, proofStream)
   }
-
 }
