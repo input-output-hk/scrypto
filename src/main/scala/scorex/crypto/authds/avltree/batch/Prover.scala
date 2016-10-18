@@ -104,9 +104,9 @@ object BatchingPlayground extends App {
     case bss: BatchSuccessSimple =>
       assert(new Verifier(digest0).verifyBatchSimple(modifications, bss))
 
-      val m4 = Update(m2.key, Array.fill(8)(0: Byte))
+      val m4 = Insert(Random.randomBytes(), Array.fill(8)(1: Byte))
       val wrongMods = Seq(m1, m2, m4)
-      assert(new Verifier(digest0).verifyBatchSimple(wrongMods, bss))
+      assert(!new Verifier(digest0).verifyBatchSimple(wrongMods, bss))
     case bf: BatchFailure =>
       println(bf.error)
       assert(false)
