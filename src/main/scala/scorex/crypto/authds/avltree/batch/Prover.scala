@@ -69,7 +69,7 @@ class Prover(tree: AVLTree[_]) extends ADSUser {
     }
   }
 
-  def applyBatchComprehensive(modifications: Seq[Modification]): BatchProvingResult = {
+  def applyBatch(modifications: Seq[Modification]): BatchProvingResult = {
     convert(modifications)
     ???
   }
