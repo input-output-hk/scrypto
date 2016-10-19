@@ -46,7 +46,8 @@ trait InternalNode extends Node {
 sealed trait ProverNodes extends Node {
   val key: AVLKey
   protected[avltree] var height: Int
-
+  var isNew: Boolean = true
+  var visited: Boolean = false
 }
 
 sealed trait VerifierNodes extends Node
@@ -64,15 +65,41 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
   def left: ProverNodes = _left
 
   def right: ProverNodes = _right
-
+  
   def left_=(newLeft: ProverNodes) = {
     _left = newLeft
     labelOpt = None
   }
-
+  
+  def changeLeft(newLeft: ProverNodes, newBalance: Byte, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
+    if (isNew) {
+      _left = newLeft
+      _balance = newBalance
+      labelOpt = None
+      this
+    } else {
+      val ret = new ProverNode(this.key, newLeft, this.right, newBalance)
+      newNodes += ret
+      ret
+    }
+  }
+            
   def right_=(newRight: ProverNodes) = {
     _right = newRight
     labelOpt = None
+  }
+  
+  def changeRight(newRight: ProverNodes, newBalance: Byte, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
+    if (isNew) {
+      _right = newRight
+      _balance = newBalance
+      labelOpt = None
+      this
+    } else {
+      val ret = new ProverNode(this.key, this.left, newRight, newBalance)
+      newNodes += ret
+      ret
+    }
   }
 
   def rightLabel: Label = right.label
@@ -140,6 +167,32 @@ case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeaf
   def nextLeafKey_=(newNextLeafKey: AVLValue) = {
     _nextLeafKey = newNextLeafKey
     labelOpt = None
+  }
+
+  def changeValue(newValue: AVLValue, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : Leaf = {
+    if (isNew) {
+      _value = newValue
+      labelOpt = None
+      this
+    } else {
+      val ret = new Leaf(this.key, newValue, this.nextLeafKey)
+      newNodes += ret
+      ret
+    }
+  }
+
+
+  def changeValueAndNextKey(newValue: AVLValue, newNextLeafKey: AVLKey, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : Leaf = {
+    if (isNew) {
+      _value = newValue
+      _nextLeafKey = newNextLeafKey
+      labelOpt = None
+      this
+    } else {
+      val ret = new Leaf(this.key, newValue, newNextLeafKey)
+      newNodes += ret
+      ret
+    }
   }
 
   def computeLabel: Label = hf.prefixedHash(0: Byte, key, value, nextLeafKey)

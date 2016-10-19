@@ -28,6 +28,8 @@ case class ProofRightLabel(e: Array[Byte]) extends ProofLabel
 
 case class ProofLeftLabel(e: Array[Byte]) extends ProofLabel
 
+case class ProofEitherLabel(e: Array[Byte]) extends ProofLabel
+
 trait Key extends WTProofElement with AVLProofElement with SLTProofElement {
   val e: Array[Byte]
   val bytes: Array[Byte] = e
@@ -56,6 +58,21 @@ case class ProofDirection(direction: Direction) extends WTProofElement with AVLP
   lazy val isLeaf: Boolean = bytes.head == 1 || bytes.head == 2
 }
 
+sealed trait NodeTypeInProof
+case object LabelOnlyNodeInProof extends NodeTypeInProof
+case object LeafNodeInProof extends NodeTypeInProof
+case object InternalNodeInProof extends NodeTypeInProof
+case class ProofNode(t: NodeTypeInProof) extends WTProofElement with AVLProofElement {
+  override val bytes: Array[Byte] = Array(t match {
+    case LabelOnlyNodeInProof => 1: Byte
+    case LeafNodeInProof => 2: Byte
+    case InternalNodeInProof => 3: Byte
+  })
+}
+
+
+
+
 sealed trait Direction
 
 case object LeafFound extends Direction {}
@@ -65,6 +82,7 @@ case object LeafNotFound extends Direction
 case object GoingLeft extends Direction
 
 case object GoingRight extends Direction
+
 
 case class ProofBalance(e: Balance) extends AVLProofElement {
   override val bytes: Array[Byte] = Array(e match {
