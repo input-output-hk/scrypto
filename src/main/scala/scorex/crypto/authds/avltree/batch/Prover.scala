@@ -100,18 +100,23 @@ object BatchingPlayground extends App with ADSUser {
 
   val oldProver = new oldProver(tree)
 
-  val m1 = Insert(Random.randomBytes(), Array.fill(8)(0: Byte))
-  val m2 = Insert(Random.randomBytes(), Array.fill(8)(1: Byte))
-  val m3 = Update(m1.key, Array.fill(8)(1: Byte))
-  val modifications1 = Seq(m1, m2, m3)
+  val m11 = Insert(Array.fill(32)(5:Byte), Array.fill(8)(0: Byte))
+  val m12 = Insert(Array.fill(32)(7:Byte), Array.fill(8)(1: Byte))
+  val m13 = Update(m11.key, Array.fill(8)(1: Byte))
+  val modifications1 = Seq(m11, m12, m13)
+  val m21 = Insert(Array.fill(32)(1:Byte), Array.fill(8)(3: Byte))
+  val m22 = Insert(Array.fill(32)(3:Byte), Array.fill(8)(7: Byte))
+  val m23 = Update(m22.key, Array.fill(8)(15: Byte))
+  val modifications2 = Seq(m21, m22, m23)
+
 
   oldProver.applyBatchSimple(modifications1) match {
     case bss: BatchSuccessSimple =>
       assert(new oldVerifier(digest0).verifyBatchSimple(modifications1, bss))
 
       val m4 = Insert(Random.randomBytes(), Array.fill(8)(1: Byte))
-      val wrongMods = Seq(m1, m2, m4)
-      assert(!new oldVerifier(digest0).verifyBatchSimple(wrongMods, bss))
+    // val wrongMods = Seq(m1, m2, m4)
+    // assert(!new oldVerifier(digest0).verifyBatchSimple(wrongMods, bss)//)
     case bf: BatchFailure =>
       println(bf.error)
       assert(false)
@@ -119,18 +124,30 @@ object BatchingPlayground extends App with ADSUser {
   
   val newProver = new NewBatchProver(32)
   if (newProver.rootHash sameElements digest0)
-    println("Two prover's digests match before modifications1")
+    print("Two prover's digests match before modifications1 ")
   else
-    println("ERROR Two prover's digests do not match before modifications1")   
-
+    print("ERROR Two prover's digests do not match before modifications1 ")   
+  println(digest0(0))
 
   convert(modifications1) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
-  val p = newProver.generateProof
+  val p1 = newProver.generateProof
   if (newProver.rootHash sameElements oldProver.rootHash)
     println("Two prover's digests match after modifications1")
   else
     println("ERROR Two prover's digests do not match after modifications1")   
-  val newVerifier = new NewBatchVerifier(digest0, p)
+  var newVerifier = new NewBatchVerifier(digest0, p1)
+  newVerifier.digest match {
+    case None =>
+      println("ERROR VERIFICATION FAILED TO CONSTRUCT THE TREE")
+    case Some(d) =>
+      if (d sameElements digest0)
+        println("Tree successfully built")
+      else
+        println("ERROR BUILT TREE, WRONG DIGEST")
+  }
+
+  print("Directions length ")
+  println(p1.directions.length)
   convert(modifications1) foreach (m => newVerifier.verifyOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
   newVerifier.digest match {
     case None =>
@@ -138,7 +155,41 @@ object BatchingPlayground extends App with ADSUser {
     case Some(d) =>
       if (d sameElements newProver.rootHash)
         println("Success")
-      else
+      else {
         println("ERROR Nonmatching Digests between prover and verifier")
+        if (d sameElements oldProver.rootHash) println("old root hash is good, though!")
+        else println ("they all suck!")
+      }
   }
+  
+  val digest1 = newProver.rootHash
+  convert(modifications2) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+  val p2 = newProver.generateProof
+  newVerifier = new NewBatchVerifier(digest1, p2)
+  newVerifier.digest match {
+    case None =>
+      println("ERROR VERIFICATION FAILED TO CONSTRUCT THE TREE")
+    case Some(d) =>
+      if (d sameElements digest1)
+        println("Tree successfully built")
+      else
+        println("ERROR BUILT TREE, WRONG DIGEST")
+  }
+
+  print("Directions length ")
+  println(p2.directions.length)
+  convert(modifications2) foreach (m => newVerifier.verifyOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+  newVerifier.digest match {
+    case None =>
+      println("ERROR VERIFICATION FAIL")
+    case Some(d) =>
+      if (d sameElements newProver.rootHash)
+        println("Success")
+      else {
+        println("ERROR Nonmatching Digests between prover and verifier")
+        if (d sameElements oldProver.rootHash) println("old root hash is good, though!")
+        else println ("they all suck!")
+      }
+  }
+
 }

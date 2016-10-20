@@ -58,16 +58,8 @@ case class ProofDirection(direction: Direction) extends WTProofElement with AVLP
   lazy val isLeaf: Boolean = bytes.head == 1 || bytes.head == 2
 }
 
-sealed trait NodeTypeInProof
-case object LabelOnlyNodeInProof extends NodeTypeInProof
-case object LeafNodeInProof extends NodeTypeInProof
-case object InternalNodeInProof extends NodeTypeInProof
-case class ProofNode(t: NodeTypeInProof) extends WTProofElement with AVLProofElement {
-  override val bytes: Array[Byte] = Array(t match {
-    case LabelOnlyNodeInProof => 1: Byte
-    case LeafNodeInProof => 2: Byte
-    case InternalNodeInProof => 3: Byte
-  })
+case class ProofNode(b: Byte) extends WTProofElement with AVLProofElement {
+  override val bytes: Array[Byte] = Array(b)
 }
 
 

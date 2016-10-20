@@ -26,6 +26,7 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
   private val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
   private val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(0: Byte), Array())
   private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
+  topNode.isNew = false // TODO: If someone passes me a tree and I don't create it myself, then this is unsafe, because I don't know what their "new" and "visited" are set to; best to remove the rootOpt argument
   private var oldTopNode = topNode
   private var proofStream = new scala.collection.mutable.ArrayBuffer[Boolean] // TODO: WHICH BUFFER TO USE
   private val newNodes = new scala.collection.mutable.ListBuffer[ProverNodes] // TODO: WHICH BUFFER TO USE
@@ -53,7 +54,7 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
               case Success(None) => //delete value
                 ???
               case Success(Some(v)) => //update value
-                val rNew = r.changeValue(r.value, newNodes)
+                val rNew = r.changeValue(v, newNodes)
                 (rNew, true, false)
               case Failure(e) => // found incorrect value
                 throw e
@@ -260,25 +261,24 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
     // Possible optimizations:
     // Don't put in the key if it's in the modification stream somewhere (savings ~32 bytes per proof, except 0 for insert)
     // Don't put in the nextLeafKey if the next leaf is in the tree, or equivalently, don't put in key if previous leaf is in the tree (savings are small if number of transactions is much smaller than number of leaves, because cases of two leaves in a row will be rare)
-    // Condense a sequence of internal nodes/balances (expected savings: ~30 bytes per proof for depth 20) using bit-level stuff and maybe even "changing base without losing space" by Dodis-Patrascu-Thorup STOC 2010
+    // Condense a sequence of balances (expected savings: ~10 bytes per proof for depth 20) using bit-level stuff and maybe even "changing base without losing space" by Dodis-Patrascu-Thorup STOC 2010
     // Condensed the other queue -- of directions -- into bits from bytes. Expected savings: about 20 bytes per proof
     def packTree(rNode: ProverNodes)  {
       if (!rNode.visited) {
-        packagedTree += ProofNode(LabelOnlyNodeInProof)
+        packagedTree += ProofNode(2) // TODO: THIS 2, 3, and mixing of Balance/ProofNode needs to be improved
         packagedTree += ProofEitherLabel(rNode.label)
       }
       else {
         rNode.visited = false
         rNode match {
           case r: Leaf =>
-            packagedTree += ProofNode(LeafNodeInProof)
+            packagedTree += ProofNode(3)
             packagedTree += ProofKey(r.key)
             packagedTree += ProofNextLeafKey(r.nextLeafKey)
             packagedTree += ProofValue(r.value)
           case r: ProverNode =>
             packTree(r.right)
             packTree(r.left)
-            packagedTree += ProofNode(InternalNodeInProof)
             packagedTree += ProofBalance(r.balance)
         }
       }
@@ -293,7 +293,7 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
     newNodes.clear
     oldTopNode = topNode
     
-    NewBatchProof(packagedTree, proofStream)
+    NewBatchProof(packagedTree, currentProofStream)
   }
 }
 

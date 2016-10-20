@@ -25,14 +25,14 @@ class NewBatchVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : NewBa
     val s = new scala.collection.mutable.Stack[Node] // TODO: Why can't omit "scala.collection.mutable." here if I already did import scala.collection._ above; same question in verifier code
     var i = 0 //TODO: change to an iterator
     while (i<seq.length) {
-      val l = seq(i).asInstanceOf[NodeTypeInProof]
+      val l : Byte = seq(i).bytes(0)
       i += 1
       l match {
-        case LabelOnlyNodeInProof =>
+        case 2 => // TODO: should we just leave it as -1,0,1,2,3?
           val label = seq(i).asInstanceOf[ProofEitherLabel].e
           s.push (LabelOnlyNode(label))
           i+=1
-        case LeafNodeInProof =>
+        case 3 =>
           val key = seq(i).asInstanceOf[ProofKey].e
           i+=1
           val nextLeafKey = seq(i).asInstanceOf[ProofNextLeafKey].e
@@ -40,12 +40,10 @@ class NewBatchVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : NewBa
           val value = seq(i).asInstanceOf[ProofValue].e
           i+=1
           s.push (Leaf(key, value, nextLeafKey))
-        case InternalNodeInProof =>
-          val balance = seq(i).bytes(0)
-          i+=1
+        case _ =>
           val left = s.pop
           val right = s.pop
-          s.push(VerifierNode(left, right, balance))
+          s.push(VerifierNode(left, right, l))
       }
     }
     require (s.size == 1)
