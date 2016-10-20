@@ -24,7 +24,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     initializeIterator()
 
     /*
-     * Returns the new flat root and an indicator whether tree has been modified at r or below
+     * Returns the new root and indicators whether tree has been modified at r or below
+     * and whether the height has increased
      * Also returns the label of the old root
      */
     def verifyHelper(): (VerifierNodes, Boolean, Boolean, Label) = {

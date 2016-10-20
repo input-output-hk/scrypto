@@ -182,14 +182,13 @@ case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeaf
   }
 
 
-  def changeValueAndNextKey(newValue: AVLValue, newNextLeafKey: AVLKey, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : Leaf = {
+  def changeNextKey(newNextLeafKey: AVLKey, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : Leaf = {
     if (isNew) {
-      _value = newValue
       _nextLeafKey = newNextLeafKey
       labelOpt = None
       this
     } else {
-      val ret = new Leaf(this.key, newValue, newNextLeafKey)
+      val ret = new Leaf(this.key, this.value, newNextLeafKey)
       newNodes += ret
       ret
     }
