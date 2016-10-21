@@ -1,7 +1,6 @@
 package scorex.crypto.authds
 
 
-import org.mapdb.{DBMaker, Serializer}
 import scorex.crypto.authds.avltree.AVLTree
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe

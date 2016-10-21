@@ -3,6 +3,7 @@ package scorex.crypto.authds.avltree
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
+import scala.collection.mutable
 
 sealed trait Node {
 
@@ -65,13 +66,13 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
   def left: ProverNodes = _left
 
   def right: ProverNodes = _right
-  
+
   def left_=(newLeft: ProverNodes) = {
     _left = newLeft
     labelOpt = None
   }
-  
-  def changeLeft(newLeft: ProverNodes, newBalance: Balance, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
+
+  def changeLeft(newLeft: ProverNodes, newBalance: Balance, newNodes: mutable.Buffer[ProverNodes]): ProverNode = {
     if (isNew) {
       _left = newLeft
       _balance = newBalance
@@ -83,13 +84,13 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
       ret
     }
   }
-            
+
   def right_=(newRight: ProverNodes) = {
     _right = newRight
     labelOpt = None
   }
-  
-  def changeRight(newRight: ProverNodes, newBalance: Balance, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
+
+  def changeRight(newRight: ProverNodes, newBalance: Balance, newNodes: mutable.Buffer[ProverNodes]): ProverNode = {
     if (isNew) {
       _right = newRight
       _balance = newBalance
@@ -170,7 +171,7 @@ case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeaf
     labelOpt = None
   }
 
-  def changeValue(newValue: AVLValue, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : Leaf = {
+  def changeValue(newValue: AVLValue, newNodes: scala.collection.mutable.Buffer[ProverNodes]): Leaf = {
     if (isNew) {
       _value = newValue
       labelOpt = None
@@ -183,7 +184,7 @@ case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeaf
   }
 
 
-  def changeNextKey(newNextLeafKey: AVLKey, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : Leaf = {
+  def changeNextKey(newNextLeafKey: AVLKey, newNodes: scala.collection.mutable.Buffer[ProverNodes]): Leaf = {
     if (isNew) {
       _nextLeafKey = newNextLeafKey
       labelOpt = None
