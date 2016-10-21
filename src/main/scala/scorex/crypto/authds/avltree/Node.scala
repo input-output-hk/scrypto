@@ -153,6 +153,7 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
 case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
                (implicit val hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
 
+
   protected[avltree] var height = 0 //needed for debug only
 
   def value: AVLValue = _value

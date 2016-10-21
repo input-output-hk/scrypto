@@ -24,7 +24,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : Array
   private var directionsIndex = 0
 
   private def reconstructTree : Option[Node] = Try {
-    val s = new scala.collection.mutable.Stack[Node] // TODO: Why can't omit "scala.collection.mutable." here if I already did import scala.collection._ above; same question in verifier code
+    val s = new scala.collection.mutable.Stack[Node] // TODO: Why can't omit "scala.collection.mutable." here if I already did import scala.collection._ above; same question in prover code
     var i = 0
     while (pf(i) != EndOfTreeInPackagedProof) {
       val n = pf(i)

@@ -31,20 +31,20 @@ trait BatchProofConstants {
 class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, labelLength : Int = 32, keyLength : Int = 32, valueLength : Int = 8)
                                      (implicit hf: HF = new Blake2b256Unsafe) /*extends ADSUser*/ /* extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] */ extends UpdateF[Array[Byte]] with BatchProofConstants {
                                      
-  // TODO: how (and if to add a check that hash function actually returns correct-length labels)?
+  // TODO: how (and if) to add a check that hash function actually returns correct-length labels)?
                                      
-  // TODO: why two arrays in both infinities?                                     
+  // TODO: why a pair of arrays in each of the infinities (same question for nonbatch version)
   private val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
   private val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(0: Byte), Array())
   
-  // TODO: very important that this should be the right length; else parsing will fail
+  
   private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, Array.fill(valueLength)(0:Byte), PositiveInfinity._1))
   topNode.isNew = false // TODO: If someone passes me a tree and I don't create it myself, then this is unsafe, because I don't know what their "new" and "visited" are set to; best to remove the rootOpt argument
   private var oldTopNode = topNode
-  private val newNodes = new scala.collection.mutable.ListBuffer[ProverNodes] // TODO: WHICH BUFFER TO USE
+  private val newNodes = new scala.collection.mutable.ListBuffer[ProverNodes]
 
   // Directions are just a bit string representing booleans
-  private var directions = new scala.collection.mutable.ArrayBuffer[Byte] // TODO: WHICH BUFFER TO USE
+  private var directions = new scala.collection.mutable.ArrayBuffer[Byte]
   private var directionsBitLength : Int = 0
   private def addToDirections(d : Boolean) = {
     // encode Booleans as bits 
@@ -288,13 +288,22 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
   
 
   def generateProof : Seq[Byte]	 = {
-    val packagedTree = new scala.collection.mutable.ArrayBuffer[Byte] // TODO: BEST OPTION?
+    val packagedTree = new scala.collection.mutable.ArrayBuffer[Byte]
 
-    // Possible optimizations:
-    // Don't put in the key if it's in the modification stream somewhere (savings ~32 bytes per proof, except 0 for insert)
-    // Don't put in the nextLeafKey if the next leaf is in the tree, or equivalently, don't put in key if previous leaf is in the tree (savings are small if number of transactions is much smaller than number of leaves, because cases of two leaves in a row will be rare)
-    // Condense a sequence of balances (expected savings: ~10 bytes per proof for depth 20) using bit-level stuff and maybe even "changing base without losing space" by Dodis-Patrascu-Thorup STOC 2010
-    // Condensed the other queue -- of directions -- into bits from bytes. Expected savings: about 20 bytes per proof
+    /* TODO Possible optimizations:
+     * - Don't put in the key if it's in the modification stream somewhere 
+     *   (savings ~32 bytes per proof, except 0 for insert)
+     *   (problem is that then verifier logic has to change -- 
+     *   can't verify tree immediately)
+     * - Don't put in the nextLeafKey if the next leaf is in the tree, 
+     *   or equivalently, don't put in key if previous leaf is in the tree 
+     *   (savings are small if number of transactions is much smaller than  
+     *   number of leaves, because cases of two leaves in a row will be rare)
+     * - Condense a sequence of balances and other non-full-byte info using 
+     *   bit-level stuff and maybe even "changing base without losing space" 
+     *   by Dodis-Patrascu-Thorup STOC 2010 (expected savings: 5-15 bytes 
+     *   per proof for depth 20) 
+     */
     def packTree(rNode: ProverNodes)  {
       // Post order traversal to pack up the tree
       if (!rNode.visited) {
@@ -324,7 +333,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
     
     // prepare for the next time proof
     newNodes foreach (n => {n.isNew = false; n.visited = false}) // TODO: IS THIS THE BEST SYNTAX?
-    directions = new scala.collection.mutable.ArrayBuffer[Byte] // TODO: BEST OPTION?
+    directions = new scala.collection.mutable.ArrayBuffer[Byte]
     directionsBitLength = 0
     newNodes.clear
     oldTopNode = topNode
@@ -332,6 +341,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
     packagedTree
   }
   
-// TODO: write a test that examines the entire ree after a proof is produced, and checks that the isNew and visited flags are all false. It will be a very slow test, so can invoked only when debugging
+// TODO: write a test that examines the entire tree after a proof is produced, and checks that the isNew and visited flags are all false. It will be a very slow test, so can be invoked only when debugging
+
+// TODO: add a simple non-modifying non-proof-generating lookup -- a prover may simple need to know a value associated with a key, just to check a balance, for example. It should be relatively easy to take the code above and simple remove everything extra, to get a very short piece of code
 }
 
