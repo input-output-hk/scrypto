@@ -22,7 +22,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
   override def modify(key: AVLKey, updateFunction: UpdateFunction): Try[AVLModifyProof] = Try {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinity._1) < 0, s"Key ${Base58.encode(key)} is more than +inf")
-    require(key.length == keyLength)
+    require(key.length == keyLength, s"Key length ${key.length} != $keyLength")
 
     val proofStream = new scala.collection.mutable.Queue[AVLProofElement]
 
