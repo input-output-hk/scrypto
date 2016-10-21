@@ -71,7 +71,7 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
     labelOpt = None
   }
   
-  def changeLeft(newLeft: ProverNodes, newBalance: Byte, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
+  def changeLeft(newLeft: ProverNodes, newBalance: Balance, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
     if (isNew) {
       _left = newLeft
       _balance = newBalance
@@ -89,7 +89,7 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
     labelOpt = None
   }
   
-  def changeRight(newRight: ProverNodes, newBalance: Byte, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
+  def changeRight(newRight: ProverNodes, newBalance: Balance, newNodes: scala.collection.mutable.Buffer[ProverNodes]) : ProverNode = {
     if (isNew) {
       _right = newRight
       _balance = newBalance

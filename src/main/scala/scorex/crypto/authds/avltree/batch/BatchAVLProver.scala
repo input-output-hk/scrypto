@@ -15,23 +15,53 @@ import scorex.utils.ByteArray
 import scala.util.{Failure, Success, Try}
 import scala.collection.mutable
 
+// TODO: cleanup imports
 
 // TODO: interfaces/inheritance/signatures
 
-case class NewBatchProof (packedTree : Seq[AVLProofElement], directions: Seq[Boolean]) 
+trait BatchProofConstants {
+  // Do not use bytes -1, 0, or 1 -- these are for balance
+  val LeafWithKeyInPackagedProof: Byte = 2
+  val LeafWithoutKeyInPackagedProof: Byte = 3
+  val LabelInPackagedProof: Byte = 4
+  val EndOfTreeInPackagedProof: Byte = 5
+}
+  
 
-class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = None)
-                                     (implicit hf: HF = new Blake2b256Unsafe) /*extends ADSUser*/ /* extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] */ extends UpdateF[Array[Byte]]{
+class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, labelLength : Int = 32, keyLength : Int = 32, valueLength : Int = 8)
+                                     (implicit hf: HF = new Blake2b256Unsafe) /*extends ADSUser*/ /* extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] */ extends UpdateF[Array[Byte]] with BatchProofConstants {
                                      
+  // TODO: how (and if to add a check that hash function actually returns correct-length labels)?
+                                     
+  // TODO: why two arrays in both infinities?                                     
   private val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
   private val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(0: Byte), Array())
-  private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
+  
+  // TODO: very important that this should be the right length; else parsing will fail
+  private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, Array.fill(valueLength)(0:Byte), PositiveInfinity._1))
   topNode.isNew = false // TODO: If someone passes me a tree and I don't create it myself, then this is unsafe, because I don't know what their "new" and "visited" are set to; best to remove the rootOpt argument
   private var oldTopNode = topNode
-  private var proofStream = new scala.collection.mutable.ArrayBuffer[Boolean] // TODO: WHICH BUFFER TO USE
   private val newNodes = new scala.collection.mutable.ListBuffer[ProverNodes] // TODO: WHICH BUFFER TO USE
 
+  // Directions are just a bit string representing booleans
+  private var directions = new scala.collection.mutable.ArrayBuffer[Byte] // TODO: WHICH BUFFER TO USE
+  private var directionsBitLength : Int = 0
+  private def addToDirections(d : Boolean) = {
+    // encode Booleans as bits 
+    if ((directionsBitLength & 7) == 0) { // new byte needed
+      directions += (d match {
+        case true => 1:Byte
+        case false => 0:Byte
+      })
+    } else {
+      val i = directionsBitLength >> 3
+      if (d) directions(i) = (directions(i) | (1<<(directionsBitLength & 7))).toByte // change last byte
+    }
+    directionsBitLength+=1
+  }
+
   def rootHash : Label = topNode.label
+
 
   def performOneModification(key: AVLKey, updateFunction: UpdateFunction) = {
     require(ByteArray.compare(key, NegativeInfinity._1) > 0, s"Key ${Base58.encode(key)} is less than -inf")
@@ -54,6 +84,7 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
               case Success(None) => //delete value
                 ???
               case Success(Some(v)) => //update value
+                require(v.length == valueLength)
                 val rNew = r.changeValue(v, newNodes)
                 (rNew, true, false)
               case Failure(e) => // found incorrect value
@@ -65,6 +96,7 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
               case Success(None) => //don't change anything, just lookup
                 (r, false, false)
               case Success(Some(v)) => // insert new value
+                require(v.length == valueLength)
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 newNodes += newLeaf
                 val oldLeaf = r.changeNextKey(key, newNodes)
@@ -94,7 +126,7 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
           // Get a new node
           // See if a single or double rotation is needed for AVL tree balancing
           if (nextStepIsLeft) {
-            proofStream += true
+            addToDirections (true)
 
             val (newLeftM, changeHappened, childHeightIncreased) = modifyHelper(r.left, found)
 
@@ -128,8 +160,8 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
                   val rBalance = newRoot.balance match {
                     case 0 =>
                       // newRoot is a newly created node right above two leaves following an insert
-                      assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
-                      assert(newLeft.left.isInstanceOf[Leaf] && newLeft.right.isInstanceOf[Leaf])
+                      assert(newRoot.left.isInstanceOf[Leaf] && newRoot.right.isInstanceOf[Leaf])
+                      assert(newLeft.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
                       newLeft.balance = 0: Byte
                       0: Byte
                     case -1 =>
@@ -173,7 +205,7 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
             }
           } else {
             // next step is to the right
-            proofStream += false
+            addToDirections (false)
             val (newRightM, changeHappened, childHeightIncreased) = modifyHelper(r.right, found)
 
             // balance = -1 if left higher, +1 if left lower
@@ -206,8 +238,8 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
                   val rBalance = newRoot.balance match {
                     case 0 =>
                       // newRoot is a newly created node right above two leaves following an insert
-                      assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
-                      assert(newRight.left.isInstanceOf[Leaf] && newRight.right.isInstanceOf[Leaf])
+                      assert(newRoot.left.isInstanceOf[Leaf] && newRoot.right.isInstanceOf[Leaf])
+                      assert(newRight.right.isInstanceOf[Leaf] && r.left.isInstanceOf[Leaf])
                       newRight.balance = 0: Byte
                       0: Byte
                     case -1 =>
@@ -255,8 +287,8 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
   }
   
 
-  def generateProof : NewBatchProof	 = {
-    val packagedTree = new scala.collection.mutable.ArrayBuffer[AVLProofElement] // TODO: BEST OPTION?
+  def generateProof : Seq[Byte]	 = {
+    val packagedTree = new scala.collection.mutable.ArrayBuffer[Byte] // TODO: BEST OPTION?
 
     // Possible optimizations:
     // Don't put in the key if it's in the modification stream somewhere (savings ~32 bytes per proof, except 0 for insert)
@@ -264,36 +296,42 @@ class NewBatchProver[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Lea
     // Condense a sequence of balances (expected savings: ~10 bytes per proof for depth 20) using bit-level stuff and maybe even "changing base without losing space" by Dodis-Patrascu-Thorup STOC 2010
     // Condensed the other queue -- of directions -- into bits from bytes. Expected savings: about 20 bytes per proof
     def packTree(rNode: ProverNodes)  {
+      // Post order traversal to pack up the tree
       if (!rNode.visited) {
-        packagedTree += ProofNode(2) // TODO: THIS 2, 3, and mixing of Balance/ProofNode needs to be improved
-        packagedTree += ProofEitherLabel(rNode.label)
+        packagedTree += LabelInPackagedProof
+        packagedTree ++= rNode.label
+        assert (rNode.label.length == labelLength)
       }
       else {
         rNode.visited = false
         rNode match {
           case r: Leaf =>
-            packagedTree += ProofNode(3)
-            packagedTree += ProofKey(r.key)
-            packagedTree += ProofNextLeafKey(r.nextLeafKey)
-            packagedTree += ProofValue(r.value)
+            packagedTree += LeafWithKeyInPackagedProof
+            packagedTree ++= r.key
+            packagedTree ++= r.nextLeafKey
+            packagedTree ++= r.value
           case r: ProverNode =>
             packTree(r.right)
             packTree(r.left)
-            packagedTree += ProofBalance(r.balance)
+            packagedTree += r.balance
         }
       }
     }
 
     packTree(oldTopNode)
-    val currentProofStream = proofStream
+    packagedTree += EndOfTreeInPackagedProof
+    packagedTree ++= directions
     
     // prepare for the next time proof
     newNodes foreach (n => {n.isNew = false; n.visited = false}) // TODO: IS THIS THE BEST SYNTAX?
-    proofStream = new scala.collection.mutable.ArrayBuffer[Boolean] // TODO: BEST OPTION?
+    directions = new scala.collection.mutable.ArrayBuffer[Byte] // TODO: BEST OPTION?
+    directionsBitLength = 0
     newNodes.clear
     oldTopNode = topNode
     
-    NewBatchProof(packagedTree, currentProofStream)
+    packagedTree
   }
+  
+// TODO: write a test that examines the entire ree after a proof is produced, and checks that the isNew and visited flags are all false. It will be a very slow test, so can invoked only when debugging
 }
 

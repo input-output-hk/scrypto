@@ -16,50 +16,67 @@ import scala.util.{Failure, Success, Try}
 import scorex.crypto.authds.TwoPartyDictionary.Label
 
 
-
+// TODO: cleanup imports
 // TODO: interaces/inheritance/signatures
-class NewBatchVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : NewBatchProof)
-                         (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]] /*TwoPartyProof[AVLKey, AVLValue]*/ {
+class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : Array[Byte], labelLength : Int = 32, keyLength : Int = 32, valueLength : Int = 8)
+                         (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]] with BatchProofConstants /*TwoPartyProof[AVLKey, AVLValue]*/ {
 
-  private def reconstructTree (seq: Seq[AVLProofElement]) : Option[Node] = Try {
+  private var directionsIndex = 0
+
+  private def reconstructTree : Option[Node] = Try {
     val s = new scala.collection.mutable.Stack[Node] // TODO: Why can't omit "scala.collection.mutable." here if I already did import scala.collection._ above; same question in verifier code
-    var i = 0 //TODO: change to an iterator
-    while (i<seq.length) {
-      val l : Byte = seq(i).bytes(0)
-      i += 1
-      l match {
-        case 2 => // TODO: should we just leave it as -1,0,1,2,3?
-          val label = seq(i).asInstanceOf[ProofEitherLabel].e
+    var i = 0
+    while (pf(i) != EndOfTreeInPackagedProof) {
+      val n = pf(i)
+      i+=1
+      n match {
+        case LabelInPackagedProof => 
+          val label = pf.slice(i,i+labelLength).asInstanceOf[Label]
+          i+=labelLength
           s.push (LabelOnlyNode(label))
-          i+=1
-        case 3 =>
-          val key = seq(i).asInstanceOf[ProofKey].e
-          i+=1
-          val nextLeafKey = seq(i).asInstanceOf[ProofNextLeafKey].e
-          i+=1
-          val value = seq(i).asInstanceOf[ProofValue].e
-          i+=1
+        case LeafWithKeyInPackagedProof =>
+          val key = pf.slice(i,i+keyLength).asInstanceOf[AVLKey]
+          i+=keyLength
+          val nextLeafKey = pf.slice(i,i+keyLength).asInstanceOf[AVLKey]
+          i+=keyLength
+          val value = pf.slice(i, i+valueLength).asInstanceOf[AVLValue]
+          i+=valueLength
           s.push (Leaf(key, value, nextLeafKey))
         case _ =>
           val left = s.pop
           val right = s.pop
-          s.push(VerifierNode(left, right, l))
+          s.push(VerifierNode(left, right, n))
       }
     }
     require (s.size == 1)
     val root = s.pop
     require (root.label sameElements startingDigest)
+    directionsIndex = (i+1)*8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.getOrElse(None)
 
-  private var topNode = reconstructTree(pf.packedTree) // TODO: SCALA QUESTION: packedTree is no longer needed after init; how do we free up this memory if it's no needed elsewere?
-  // TODO: SCALA QUESTION: should we copy pf.directions over here because it's mutable and so can change on us while we use it? Will there ever be a case when someone else mutates it?
-  private var proofSeqIndex = 0
+  private var topNode : Option[Node] = reconstructTree
+  
+  // TODO: SCALA QUESTION: should we copy the rest of pf into a class variable because 
+  // it's mutable and so can change on us while we use it? 
+  // Will there ever be a case when someone else mutates it? And also, if we copy it into the class, will we free up
+  // the space that's taken up by the tree portion of the proof (which is most of the proof) --- will it get garbage collected?
+
+  // Decode bits as Booleans
+  private def getNextDirection : Boolean = {
+    val ret = if ((pf(directionsIndex>>3) & (1<<(directionsIndex&7)).toByte) != 0)
+      true
+    else 
+      false
+    directionsIndex += 1
+    ret
+  }
 
   def digest : Option[Label] = topNode match { // TODO: is there a better syntax for this?
     case Some(t) => Some(t.label)
     case _ => None
   }
+
   
   def verifyOneModification(key: AVLKey, updateFunction: UpdateFunction): Option[Label] =  {
 
@@ -98,8 +115,7 @@ class NewBatchVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : NewBa
             }
           }
         case r: VerifierNode =>
-          val nextStepIsLeft = pf.directions(proofSeqIndex) // TODO: MAKE AN INTERATOR
-          proofSeqIndex+=1
+          val nextStepIsLeft = getNextDirection
 
           // Now go recursively in the direction we just figured out
           // Get a new node
