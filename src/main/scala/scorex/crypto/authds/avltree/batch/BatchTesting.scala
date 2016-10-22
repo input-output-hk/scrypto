@@ -93,82 +93,123 @@ class oldVerifier(digest: Label) extends ADSUser {
   def verifyBatchComprehensive(modifications: Seq[Modification], batch: BatchSuccess): Boolean = ???
 }
 
+
 object BatchingPlayground extends App with ADSUser {
+  //spaceBenchmarks
+  variousTests
 
+  // TODO: Add a test that modifies directions and sees verifier reject
 
-// TODO: Add a test that runs a prover on no changes and a verifier on no changes, both on an empty tree and on a modified tree
-// TODO: Add a test that modifies directions and sees verifier reject
-
-  val tree = new AVLTree(32)
-  var digest = tree.rootHash()
-  val oldProver = new oldProver(tree)
+  def spaceBenchmarks {
+    val newProver = new BatchAVLProver()
   
-  val newProver = new BatchAVLProver()
-  assert (newProver.rootHash sameElements digest)
-  
-  val numMods = 2000000
-  
-  val mods = new Array[Modification](numMods)
-  mods(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
-
-  var numInserts = 0
-  for (i <- 1 until numMods) {
-    if((Random.randomBytes(1))(0).toInt.abs<64) { // with prob ~.5 insert a new one, with prob ~.5 update an existing one
-      mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
-      numInserts+=1
+    val numMods = 1024*1024
+ 
+    val mod = new Array[Modification](1)
+    for (i <-0 until numMods) {
+      mod(0)=(Insert(Random.randomBytes(), Random.randomBytes(8)))
+      convert(mod) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+      if (i%10000 == 0)
+        println(i)
     }
-    else {
-      val j = Random.randomBytes(3)
-      mods(i) = Update(mods((j(0).toInt.abs+j(1).toInt.abs*128+j(2).toInt.abs*128*128) % i).key, Random.randomBytes(8))
-    }
-  }
-  
-  var i = 0
-  while (i<numMods) {
-    var j =  1000+i //(Random.randomBytes(1))(0).toInt.abs + i
-    if (j>numMods) j = numMods
-    println(j)
-    val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](j-i)
-    while(i<j) {
-      currentMods += mods(i)      
-      i+=1
-    }
-
-    oldProver.applyBatchSimple(currentMods) match {
-      case bss: BatchSuccessSimple =>
-        assert(new oldVerifier(digest).verifyBatchSimple(currentMods, bss))
-      case bf: BatchFailure =>
-        println(bf.error)
-        assert(false)
-    }
-
-    convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
     val pf = newProver.generateProof.toArray
-    
     println(pf.length)
-   
-    val newVerifier = new BatchAVLVerifier(digest, pf)
-    newVerifier.digest match {
-      case None =>
-        println("ERROR VERIFICATION FAILED TO CONSTRUCT THE TREE")
-        assert(false)
-      case Some(d) =>
-        assert (d sameElements digest) // Tree built successfully
-    }
+
+    var j = 1
+    // Init j
+    while (j < 1000000) // TODO: can't run this test -- runs out of heap
+     j = j*2
+    j = j/2
     
-    digest = oldProver.rootHash
-    assert (newProver.rootHash sameElements digest)
-    convert(currentMods) foreach (m => newVerifier.verifyOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
-    newVerifier.digest match {
-      case None =>
-        println("ERROR VERIFICATION FAIL")
-        assert(false)
-      case Some(d) =>
-        assert (d sameElements digest)
+    
+    while (j<1000000) {
+      for (i <-0 until j) {
+        mod(0)=(Insert(Random.randomBytes(), Random.randomBytes(8)))
+        convert(mod) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+      }
+      print("j = ")
+      println(j)
+      val pf = newProver.generateProof.toArray
+      print("proof length ")
+      println(pf.length)
+      print("proof length per mod ")
+      println(pf.length/j)
+      j=j*2
     }
   }
-  print("NumInserts = ")
-  println(numInserts)
 
+  def variousTests {
+    val tree = new AVLTree(32)
+    var digest = tree.rootHash()
+    val oldProver = new oldProver(tree)
+   
+    val newProver = new BatchAVLProver()
+    assert (newProver.rootHash sameElements digest)
+   
+    val numMods = 10000
+   
+    val mods = new Array[Modification](numMods)
+    mods(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
+ 
+    var numInserts = 0
+    for (i <- 1 until numMods) {
+      if((Random.randomBytes(1))(0).toInt>0) { // with prob ~.5 insert a new one, with prob ~.5 update an existing one
+        mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
+        numInserts+=1
+      }
+      else {
+        val j = Random.randomBytes(3)
+        mods(i) = Update(mods((j(0).toInt.abs+j(1).toInt.abs*128+j(2).toInt.abs*128*128) % i).key, Random.randomBytes(8))
+      }
+    }
+   
+    var i = 0
+    var firstTime = true
+    while (i<numMods) {
+      var j = if (firstTime) {firstTime=false; 0} else i+(Random.randomBytes(1))(0).toInt.abs
+      if (j>numMods) j = numMods
+       println(j)
+      val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](j-i)
+      while(i<j) {
+        currentMods += mods(i)      
+        i+=1
+      }
+
+      oldProver.applyBatchSimple(currentMods) match {
+        case bss: BatchSuccessSimple =>
+          assert(new oldVerifier(digest).verifyBatchSimple(currentMods, bss))
+        case bf: BatchFailure =>
+          println(bf.error)
+          assert(false)
+      }
+ 
+      convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+      val pf = newProver.generateProof.toArray
+     
+      println(pf.length)
+   
+      val newVerifier = new BatchAVLVerifier(digest, pf)
+      newVerifier.digest match {
+        case None =>
+          println("ERROR VERIFICATION FAILED TO CONSTRUCT THE TREE")
+          assert(false)
+        case Some(d) =>
+          assert (d sameElements digest) // Tree built successfully
+      }
+     
+      digest = oldProver.rootHash
+      assert (newProver.rootHash sameElements digest)
+      convert(currentMods) foreach (m => newVerifier.verifyOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+      newVerifier.digest match {
+        case None =>
+          println("ERROR VERIFICATION FAIL")
+          assert(false)
+        case Some(d) =>
+          assert (d sameElements digest)
+      }
+    }
+    print("NumInserts = ")
+    println(numInserts)
+  }
 }
-  
+   

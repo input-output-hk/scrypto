@@ -286,13 +286,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
     topNode = modifyHelper(topNode, foundAbove = false)._1
   }
   
-
   def generateProof : Seq[Byte]	 = {
     val packagedTree = new scala.collection.mutable.ArrayBuffer[Byte]
 
     /* TODO Possible optimizations:
      * - Don't put in the key if it's in the modification stream somewhere 
-     *   (savings ~32 bytes per proof, except 0 for insert)
+     *   (savings ~32 bytes per proof for transactions with existing key; 0 for insert)
      *   (problem is that then verifier logic has to change -- 
      *   can't verify tree immediately)
      * - Don't put in the nextLeafKey if the next leaf is in the tree, 
@@ -302,7 +301,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
      * - Condense a sequence of balances and other non-full-byte info using 
      *   bit-level stuff and maybe even "changing base without losing space" 
      *   by Dodis-Patrascu-Thorup STOC 2010 (expected savings: 5-15 bytes 
-     *   per proof for depth 20) 
+     *   per proof for depth 20, based on experiments with gzipping the array
+     *   that contains only this info)
      */
     def packTree(rNode: ProverNodes)  {
       // Post order traversal to pack up the tree
@@ -330,7 +330,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
     packTree(oldTopNode)
     packagedTree += EndOfTreeInPackagedProof
     packagedTree ++= directions
-    
+
     // prepare for the next time proof
     newNodes foreach (n => {n.isNew = false; n.visited = false}) // TODO: IS THIS THE BEST SYNTAX?
     directions = new scala.collection.mutable.ArrayBuffer[Byte]
@@ -345,4 +345,3 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
 
 // TODO: add a simple non-modifying non-proof-generating lookup -- a prover may simple need to know a value associated with a key, just to check a balance, for example. It should be relatively easy to take the code above and simple remove everything extra, to get a very short piece of code
 }
-
