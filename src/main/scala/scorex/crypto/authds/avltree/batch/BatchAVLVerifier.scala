@@ -8,7 +8,6 @@ import scala.util.{Failure, Success, Try}
 import scorex.crypto.authds.TwoPartyDictionary.Label
 
 
-// TODO: cleanup imports
 // TODO: interaces/inheritance/signatures
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : Array[Byte], labelLength : Int = 32, keyLength : Int = 32, valueLength : Int = 8)
                          (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]] with BatchProofConstants /*TwoPartyProof[AVLKey, AVLValue]*/ {
