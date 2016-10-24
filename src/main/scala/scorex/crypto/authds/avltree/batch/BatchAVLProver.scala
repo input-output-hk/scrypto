@@ -9,7 +9,6 @@ import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success}
 
-// TODO: cleanup imports
 
 // TODO: interfaces/inheritance/signatures
 

@@ -1,22 +1,13 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree._
-import scorex.utils.Random
-
-import com.google.common.primitives.Bytes
-import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
-import scorex.crypto.encode.Base58
-
-import scala.collection._
 import scala.util.{Failure, Success, Try}
 import scorex.crypto.authds.TwoPartyDictionary.Label
 
 
-// TODO: cleanup imports
 // TODO: interaces/inheritance/signatures
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf : Array[Byte], labelLength : Int = 32, keyLength : Int = 32, valueLength : Int = 8)
                          (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]] with BatchProofConstants /*TwoPartyProof[AVLKey, AVLValue]*/ {
