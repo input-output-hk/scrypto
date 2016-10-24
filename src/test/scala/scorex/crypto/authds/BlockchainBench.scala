@@ -6,6 +6,8 @@ import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
+
+import scala.collection.mutable
 import scala.util.{Random, Try}
 
 
@@ -14,7 +16,7 @@ trait BenchmarkCommons {
 
   val initElements = 5000000
 
-  val blocks = 200000
+  val blocks = 100000
 
   val additionsInBlock: Int = 500
   val modificationsInBlock: Int = 1500
@@ -49,11 +51,11 @@ trait Initializing extends BenchmarkCommons {
 
   protected def afterInit(): Unit
 
-  protected var keyCache: Array[hf.Digest] = null
+  protected var keyCache: mutable.Buffer[hf.Digest] = mutable.Buffer()
 
   def init(): Unit = {
     (0 until initElements - keyCacheSize).foreach(initStep)
-    keyCache = ((initElements - keyCacheSize) until initElements).map(initStep).toArray
+    keyCache.appendAll(((initElements - keyCacheSize) until initElements).map(initStep))
     afterInit()
   }
 }
@@ -121,9 +123,15 @@ class FullWorker extends BenchmarkCommons with Initializing {
 
   def processBlock(blockNum: Int): Unit = {
     (0 until additionsInBlock).foreach { k =>
-      //val size = map.size()
-      map.put(hf.hash(s"$k -- $blockNum"), 0)
+      val keyToAdd = hf.hash(s"$k -- $blockNum")
+      map.put(keyToAdd, 0)
+      if(k == 1){
+        keyCache.remove(Random.nextInt(keyCache.length))
+        keyCache.append(keyToAdd)
+      }
     }
+
+
 
     (0 until modificationsInBlock).foreach { _ =>
       val k = keyCache(Random.nextInt(keyCache.length))
