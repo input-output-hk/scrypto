@@ -44,7 +44,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       convert(currentMods) foreach (m => prover.performOneModification(m._1, m._2))
       val pf = prover.generateProof.toArray
 
-      val verifier = new BatchAVLVerifier(digest, pf)
+      val verifier = new BatchAVLVerifier(digest, pf, 32, KL, VL)
       digest = verifier.digest.get
 
       prover.rootHash shouldEqual digest
