@@ -5,7 +5,6 @@ import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.batch.{oldProver, _}
-import scorex.crypto.encode.Base58
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests with ADSUser {
 
@@ -30,13 +29,28 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2))
       val pf = newProver.generateProof.toArray
 
-      val newVerifier = new BatchAVLVerifier(digest, pf)
       digest = oldProver.rootHash
-      //TODO ???
-//      newVerifier.digest.get shouldEqual digest
       oldProver.rootHash shouldBe newProver.rootHash
     }
   }
+
+  property("Verifier should calculate the same digest") {
+    val prover = new BatchAVLProver(None, 32, KL, VL)
+    var digest = prover.rootHash
+
+    forAll(kvGen) { case (aKey, aValue) =>
+      val currentMods = Seq(Insert(aKey, aValue))
+
+      convert(currentMods) foreach (m => prover.performOneModification(m._1, m._2))
+      val pf = prover.generateProof.toArray
+
+      val verifier = new BatchAVLVerifier(digest, pf)
+      digest = verifier.digest.get
+
+      prover.rootHash shouldEqual digest
+    }
+  }
+
 
   def kvGen: Gen[(Array[Byte], Array[Byte])] = for {
     key <- Gen.listOfN(KL, Arbitrary.arbitrary[Byte]).map(_.toArray) suchThat
