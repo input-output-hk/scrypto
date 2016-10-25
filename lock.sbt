@@ -3,23 +3,8 @@
 // https://github.com/tkawachi/sbt-lock/
 dependencyOverrides in ThisBuild ++= Set(
   "com.chuusai" % "shapeless_2.11" % "2.3.2",
-  "com.fasterxml.jackson.core" % "jackson-annotations" % "2.5.4",
-  "com.fasterxml.jackson.core" % "jackson-core" % "2.5.4",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.5.4",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % "2.5.4",
-  "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % "2.5.4",
   "com.google.guava" % "guava" % "19.0",
-  "com.typesafe" % "config" % "1.3.0",
-  "com.typesafe.akka" % "akka-actor_2.11" % "2.3.9",
-  "com.typesafe.akka" % "akka-testkit_2.11" % "2.3.9",
-  "com.typesafe.play" % "play-datacommons_2.11" % "2.4.8",
-  "com.typesafe.play" % "play-functional_2.11" % "2.4.8",
-  "com.typesafe.play" % "play-iteratees_2.11" % "2.4.8",
-  "com.typesafe.play" % "play-json_2.11" % "2.4.8",
-  "io.spray" % "spray-testkit_2.11" % "1.3.4",
-  "io.spray" % "spray-util_2.11" % "1.3.4",
   "jline" % "jline" % "2.12.1",
-  "joda-time" % "joda-time" % "2.8.1",
   "net.jcip" % "jcip-annotations" % "1.0",
   "net.jpountz.lz4" % "lz4" % "1.3.0",
   "org.eclipse.collections" % "eclipse-collections" % "7.1.0",
@@ -27,13 +12,11 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.eclipse.collections" % "eclipse-collections-forkjoin" % "7.1.0",
   "org.jetbrains.kotlin" % "kotlin-runtime" % "1.0.2",
   "org.jetbrains.kotlin" % "kotlin-stdlib" % "1.0.2",
-  "org.joda" % "joda-convert" % "1.7",
   "org.mapdb" % "elsa" % "3.0.0-M5",
   "org.mapdb" % "mapdb" % "3.0.2",
   "org.scala-lang.modules" % "scala-parser-combinators_2.11" % "1.0.4",
   "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.2",
   "org.scala-sbt" % "test-interface" % "1.0",
-  "org.scala-stm" % "scala-stm_2.11" % "0.7",
   "org.scalacheck" % "scalacheck_2.11" % "1.12.5",
   "org.scalactic" % "scalactic_2.11" % "2.3.0-SNAP2",
   "org.scalatest" % "scalatest_2.11" % "2.3.0-SNAP2",
@@ -41,6 +24,6 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.scoverage" % "scalac-scoverage-runtime_2.11" % "1.1.1",
   "org.slf4j" % "slf4j-api" % "1.7.21",
   "org.typelevel" % "macro-compat_2.11" % "1.1.1",
-  "org.whispersystems" % "curve25519-java" % "0.2.5"
+  "org.whispersystems" % "curve25519-java" % "0.3.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 529bbe1e6eb282598219dff8758c406d4dc8d86e
+// LIBRARY_DEPENDENCIES_HASH c2edd628403651af6cbba24d562ea9e5fc3069ec
