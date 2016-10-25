@@ -6,8 +6,8 @@ import scorex.crypto.authds.avltree._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
-import scala.collection.mutable
 
+import scala.collection.mutable
 import scala.util.{Failure, Success}
 
 
@@ -39,7 +39,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
   private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
 
 
-  private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey,
+  private[avltree] var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey,
     Array.fill(valueLength)(0: Byte), PositiveInfinityKey))
 
   topNode.isNew = false
@@ -340,7 +340,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
     newNodes foreach (n => {
       n.isNew = false
       n.visited = false
-    }) // TODO: IS THIS THE BEST SYNTAX?
+    })
     directions = new mutable.ArrayBuffer[Byte]
     directionsBitLength = 0
     newNodes.clear
@@ -349,8 +349,10 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
     packagedTree
   }
 
-  // TODO: write a test that examines the entire tree after a proof is produced, and checks that the isNew and visited flags are all false. It will be a very slow test, so can be invoked only when debugging
-
-  // TODO: add a simple non-modifying non-proof-generating lookup -- a prover may simple need to know a value associated with a key, just to check a balance, for example. It should be relatively easy to take the code above and simple remove everything extra, to get a very short piece of code
+  /* TODO: add a simple non-modifying non-proof-generating lookup
+   * -- a prover may simple need to know a value associated with a key, just to check a balance, for example.
+   * It should be relatively easy to take the code above and simple remove everything extra,
+   * to get a very short piece of code
+   */
 }
 

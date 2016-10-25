@@ -32,6 +32,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       digest = oldProver.rootHash
       oldProver.rootHash shouldBe newProver.rootHash
     }
+    checkTree(newProver.topNode)
   }
 
   property("Verifier should calculate the same digest") {
@@ -50,6 +51,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       prover.rootHash shouldEqual digest
     }
+    checkTree(prover.topNode)
   }
 
 
@@ -59,5 +61,19 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)
   } yield (key, value)
 
+
+  /**
+    * Checks that the isNew and visited flags are all false.
+    **/
+  def checkTree(node: ProverNodes): Unit = {
+    node.isNew shouldBe false
+    node.visited shouldBe false
+    node match {
+      case pn: ProverNode =>
+        checkTree(pn.left)
+        checkTree(pn.right)
+      case _ =>
+    }
+  }
 
 }
