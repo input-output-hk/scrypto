@@ -27,13 +27,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
 
   require(hf.DigestSize == labelLength)
 
-  // TODO: why a pair of arrays in each of the infinities (same question for nonbatch version)
-  private val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
-  private val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(0: Byte), Array())
+  private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
+  private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
 
 
-  private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1,
-    Array.fill(valueLength)(0: Byte), PositiveInfinity._1))
+  private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey,
+    Array.fill(valueLength)(0: Byte), PositiveInfinityKey))
 
   topNode.isNew = false
   // TODO: If someone passes me a tree and I don't create it myself, then this is unsafe, because I don't know what their "new" and "visited" are set to; best to remove the rootOpt argument
@@ -63,8 +62,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
 
 
   def performOneModification(key: AVLKey, updateFunction: UpdateFunction) = {
-    require(ByteArray.compare(key, NegativeInfinity._1) > 0, s"Key ${Base58.encode(key)} is less than -inf")
-    require(ByteArray.compare(key, PositiveInfinity._1) < 0, s"Key ${Base58.encode(key)} is more than +inf")
+    require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
+    require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength)
 
 

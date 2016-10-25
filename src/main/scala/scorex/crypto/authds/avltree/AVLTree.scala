@@ -12,16 +12,16 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
                                      (implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] {
 
-  val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
-  val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(0: Byte), Array())
+  private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
+  private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
 
-  var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, Array.fill(8)(0:Byte), PositiveInfinity._1))
+  var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey, Array.fill(8)(0:Byte), PositiveInfinityKey))
 
   def rootHash(): Label = topNode.label
 
   override def modify(key: AVLKey, updateFunction: UpdateFunction): Try[AVLModifyProof] = Try {
-    require(ByteArray.compare(key, NegativeInfinity._1) > 0, s"Key ${Base58.encode(key)} is less than -inf")
-    require(ByteArray.compare(key, PositiveInfinity._1) < 0, s"Key ${Base58.encode(key)} is more than +inf")
+    require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
+    require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength, s"Key length ${key.length} != $keyLength")
 
     val proofStream = new scala.collection.mutable.Queue[AVLProofElement]

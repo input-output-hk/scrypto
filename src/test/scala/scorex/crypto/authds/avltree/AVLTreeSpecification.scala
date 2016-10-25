@@ -6,7 +6,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.hash.Sha256
-import scorex.utils.{Random, ByteArray}
+import scorex.utils.Random
 
 class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -53,17 +53,6 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       digest = proof4.get.verify(digest, updateOnly(aValue)).get
     }
   }
-
-
-  property("infinities") {
-    val tree = new AVLTree(KL)
-    forAll(kvGen) { case (aKey, aValue) =>
-      require(ByteArray.compare(aKey, tree.NegativeInfinity._1) > 0)
-      require(ByteArray.compare(aKey, tree.PositiveInfinity._1) < 0)
-    }
-  }
-
-
 
   property("stream") {
     val wt = new AVLTree(KL)
