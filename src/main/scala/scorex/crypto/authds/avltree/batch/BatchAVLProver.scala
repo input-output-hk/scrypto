@@ -6,6 +6,7 @@ import scorex.crypto.authds.avltree._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
+import scala.collection.mutable
 
 import scala.util.{Failure, Success}
 
@@ -43,10 +44,10 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
 
   topNode.isNew = false
   private var oldTopNode = topNode
-  private val newNodes = new scala.collection.mutable.ListBuffer[ProverNodes]
+  private val newNodes = new mutable.ListBuffer[ProverNodes]
 
   // Directions are just a bit string representing booleans
-  private var directions = new scala.collection.mutable.ArrayBuffer[Byte]
+  private var directions = new mutable.ArrayBuffer[Byte]
   private var directionsBitLength: Int = 0
 
   private def addToDirections(d: Boolean) = {
@@ -292,7 +293,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
 
 
   def generateProof: Seq[Byte] = {
-    val packagedTree = new scala.collection.mutable.ArrayBuffer[Byte]
+    val packagedTree = new mutable.ArrayBuffer[Byte]
 
     /* TODO Possible optimizations:
      * - Don't put in the key if it's in the modification stream somewhere 
@@ -337,10 +338,10 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
 
     // prepare for the next time proof
     newNodes foreach (n => {
-      n.isNew = false;
+      n.isNew = false
       n.visited = false
     }) // TODO: IS THIS THE BEST SYNTAX?
-    directions = new scala.collection.mutable.ArrayBuffer[Byte]
+    directions = new mutable.ArrayBuffer[Byte]
     directionsBitLength = 0
     newNodes.clear
     oldTopNode = topNode
