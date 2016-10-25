@@ -8,14 +8,15 @@ import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
-class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = None)
+class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, rootOpt: Option[Leaf] = None)
                                      (implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] {
 
   private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
 
-  var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey, Array.fill(8)(0:Byte), PositiveInfinityKey))
+  var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey, Array.fill(valueLength)(0:Byte),
+    PositiveInfinityKey))
 
   def rootHash(): Label = topNode.label
 
@@ -43,6 +44,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
               case Success(None) => //delete value
                 ???
               case Success(Some(v)) => //update value
+                require(v.length == valueLength)
                 r.value = v
                 (r, true, false)
               case Failure(e) => // found incorrect value
@@ -58,6 +60,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, rootOpt: Option[Leaf] = No
               case Success(None) => //don't change anything, just lookup
                 (r, false, false)
               case Success(Some(v)) => //insert new value
+                require(v.length == valueLength)
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 r.nextLeafKey = key
                 (ProverNode(key, r, newLeaf), true, true)
