@@ -15,7 +15,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val tree = new AVLTree(26)
     var digest = tree.rootHash()
     val oldProver = new oldProver(tree)
-    val newProver = new BatchAVLProver(None, 32, 26, 8)
+    val newProver = new BatchAVLProver(None, 26, 8)
     oldProver.rootHash shouldBe newProver.rootHash
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -35,7 +35,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Verifier should calculate the same digest") {
-    val prover = new BatchAVLProver(None, 32, KL, VL)
+    val prover = new BatchAVLProver(None, KL, VL)
     var digest = prover.rootHash
 
     forAll(kvGen) { case (aKey, aValue) =>

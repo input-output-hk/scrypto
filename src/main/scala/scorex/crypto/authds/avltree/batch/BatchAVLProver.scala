@@ -20,12 +20,19 @@ trait BatchProofConstants {
   val EndOfTreeInPackagedProof: Byte = 5
 }
 
-
-class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, labelLength: Int = 32, keyLength: Int = 32,
-                                             valueLength: Int = 8) (implicit hf: HF = new Blake2b256Unsafe)
+/**
+  *
+  * @param rootOpt - option root hash of lold tree. Should contain new nodes only
+  * @param keyLength - length of keys in tree
+  * @param valueLength - length of values in tree
+  * @param hf - hash function
+  */
+class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLength: Int = 32,
+                                             valueLength: Int = 8)(implicit hf: HF = new Blake2b256Unsafe)
   extends UpdateF[Array[Byte]] with BatchProofConstants {
 
-  require(hf.DigestSize == labelLength)
+  val labelLength = hf.DigestSize
+
 
   private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
@@ -35,7 +42,6 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
     Array.fill(valueLength)(0: Byte), PositiveInfinityKey))
 
   topNode.isNew = false
-  // TODO: If someone passes me a tree and I don't create it myself, then this is unsafe, because I don't know what their "new" and "visited" are set to; best to remove the rootOpt argument
   private var oldTopNode = topNode
   private val newNodes = new scala.collection.mutable.ListBuffer[ProverNodes]
 
@@ -98,7 +104,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 newNodes += newLeaf
                 val oldLeaf = r.changeNextKey(key, newNodes)
-                val newProverNode = new ProverNode(key, oldLeaf, newLeaf, 0)
+                val newProverNode = new ProverNode(key, oldLeaf, newLeaf, 0: Byte)
                 newNodes += newProverNode
                 (newProverNode, true, true)
               case Failure(e) => // found incorrect value
@@ -331,7 +337,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
 
     // prepare for the next time proof
     newNodes foreach (n => {
-      n.isNew = false; n.visited = false
+      n.isNew = false;
+      n.visited = false
     }) // TODO: IS THIS THE BEST SYNTAX?
     directions = new scala.collection.mutable.ArrayBuffer[Byte]
     directionsBitLength = 0
