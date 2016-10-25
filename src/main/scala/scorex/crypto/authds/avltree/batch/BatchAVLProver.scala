@@ -25,7 +25,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, label
                                              valueLength: Int = 8) (implicit hf: HF = new Blake2b256Unsafe)
   extends UpdateF[Array[Byte]] with BatchProofConstants {
 
-  // TODO: how (and if) to add a check that hash function actually returns correct-length labels)?
+  require(hf.DigestSize == labelLength)
 
   // TODO: why a pair of arrays in each of the infinities (same question for nonbatch version)
   private val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
