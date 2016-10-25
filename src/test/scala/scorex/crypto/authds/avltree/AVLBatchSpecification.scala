@@ -6,7 +6,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.batch.{oldProver, _}
 
-class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests with ADSUser {
+class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
   val KL = 26
   val VL = 8
@@ -26,7 +26,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         case bf: BatchFailure => throw bf.error
       }
 
-      convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2))
+      Modification.convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2))
       val pf = newProver.generateProof.toArray
 
       digest = oldProver.rootHash
@@ -39,13 +39,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     var digest = prover.rootHash
 
     forAll(kvGen) { case (aKey, aValue) =>
-      val currentMods = Seq(Insert(aKey, aValue))
+      val currentMods = Modification.convert(Seq(Insert(aKey, aValue)))
 
-      convert(currentMods) foreach (m => prover.performOneModification(m._1, m._2))
+      currentMods foreach (m => prover.performOneModification(m._1, m._2))
       val pf = prover.generateProof.toArray
 
       val verifier = new BatchAVLVerifier(digest, pf, 32, KL, VL)
-      convert(currentMods) foreach (m => verifier.verifyOneModification(m._1, m._2))
+      currentMods foreach (m => verifier.verifyOneModification(m._1, m._2))
       digest = verifier.digest.get
 
       prover.rootHash shouldEqual digest

@@ -3,7 +3,7 @@ package scorex.crypto.authds.avltree
 import scorex.crypto.authds.avltree.batch._
 import scorex.utils.Random
 
-object BatchingPlayground extends App with ADSUser {
+object BatchingPlayground extends App {
 
 
 // TODO: Add a test that runs a prover on no changes and a verifier on no changes, both on an empty tree and on a modified tree
@@ -52,7 +52,7 @@ object BatchingPlayground extends App with ADSUser {
         assert(false)
     }
 
-    convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+    Modification.convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
     val pf = newProver.generateProof.toArray
 
     println(pf.length)
@@ -68,7 +68,7 @@ object BatchingPlayground extends App with ADSUser {
 
     digest = oldProver.rootHash
     assert (newProver.rootHash sameElements digest)
-    convert(currentMods) foreach (m => newVerifier.verifyOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
+    Modification.convert(currentMods) foreach (m => newVerifier.verifyOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
     newVerifier.digest match {
       case None =>
         println("ERROR VERIFICATION FAIL")
