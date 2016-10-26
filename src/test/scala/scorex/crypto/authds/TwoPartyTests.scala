@@ -38,9 +38,10 @@ trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
     }
     val pl: Float = proofs.length
 
-    val proofSize = proofs.foldLeft(Array[Byte]()) { (a, b) =>
-      a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
-    }.length / elements.length
+    val proofSize = proofs.foldLeft(0) { (a, b) =>
+      a + b.proofSeq.map(_.bytes.length).sum
+    } / elements.length
+
     Seq(insertTime, verifyTime, proofSize, m(0) / pl, m(1) / pl, m(2) / pl, m(3) / pl, m(4) / pl, m(5) / pl)
   }
 

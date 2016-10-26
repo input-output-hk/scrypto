@@ -6,6 +6,8 @@ package scorex.crypto.hash
   */
 trait ThreadUnsafeHash {
 
+  val DigestSize: Int // in bytes
+
   def hash(inputs: Array[Byte]*): Array[Byte]
 
   def prefixedHash(prefix: Byte, inputs: Array[Byte]*): Array[Byte]

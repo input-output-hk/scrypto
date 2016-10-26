@@ -34,8 +34,6 @@ object PerformanceMeter extends App with TwoPartyTests {
     structures.map(_ + "BalanceN").mkString(", ") + ", " +
     structures.map(_ + "DirectionN").mkString(", "))
   (1 until ToCalculate) foreach { i =>
-    System.gc()
-
     val elements = genElements(Step, i, KL)
     // wt
     val wtStats: Seq[Float] = profileTree(wt, elements, wt.rootHash())
