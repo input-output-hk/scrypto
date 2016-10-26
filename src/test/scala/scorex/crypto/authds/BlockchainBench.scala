@@ -26,22 +26,25 @@ trait BenchmarkCommons {
 }
 
 trait TwoPartyCommons extends BenchmarkCommons with UpdateF[TreapValue] {
-  val avl = new AVLTree(32)
+  lazy val avl = new AVLTree(32)
 
-  val db = DBMaker
+  lazy val db = DBMaker
     .fileDB("/tmp/proofs")
     .fileMmapEnable()
+    .closeOnJvmShutdown()
     .make()
 
-  val proofsMap = db.treeMap("proofs")
-    .keySerializer(Serializer.LONG)
+  lazy val proofsMap = db.treeMap("proofs")
+    .keySerializer(Serializer.INTEGER)
     .valueSerializer(Serializer.BYTE_ARRAY)
     .createOrOpen()
 
   def set(value: TreapValue): UpdateFunction = { oldOpt: Option[TreapValue] => Try(Some(oldOpt.getOrElse(value))) }
 
-  val balance = Array.fill(8)(0: Byte)
-  val bfn = set(balance)
+  lazy val balance = Array.fill(8)(0: Byte)
+  lazy val bfn = set(balance)
+
+  protected lazy val rootVar = db.atomicVar("root", Serializer.BYTE_ARRAY).createOrOpen()
 }
 
 trait Initializing extends BenchmarkCommons {
@@ -62,43 +65,59 @@ trait Initializing extends BenchmarkCommons {
 
 class Prover extends TwoPartyCommons with Initializing {
   override protected def initStep(i: Int) = {
+    if (i % 10000 == 0) println("init: i = " + i)
     val k = hf("1-1" + i)
     avl.modify(k, bfn).get
     k
   }
 
   override protected def afterInit(): Unit = {
+    val rootVar = db.atomicVar("root", Serializer.BYTE_ARRAY).createOrOpen()
+    rootVar.set(treeRoot)
+    db.commit()
   }
 
-  //proofs generation
-  def dumpProofs(blockNum: Int): Unit = {
-    val proofs = (0 until additionsInBlock).map { i =>
+  def treeRoot: Label = avl.rootHash()
+
+  def obtainProofs(blockNum: Int): Seq[AVLModifyProof] = {
+    (0 until additionsInBlock).map { i =>
       val k = hf("0" + i + ":" + blockNum)
+      if (i == 1) {
+        keyCache.remove(Random.nextInt(keyCache.length))
+        keyCache.append(k)
+      }
       avl.modify(k, bfn).get
     } ++ (0 until modificationsInBlock).map { i =>
       val k = keyCache(Random.nextInt(keyCache.length))
       avl.modify(k, bfn).get
     }
+  }
 
-    var idx: Long = initElements + perBlock * blockNum
+  //proofs generation
+  def dumpProofs(blockNum: Int, proofs: Seq[AVLModifyProof]): Unit = {
+    var idx = initElements + perBlock * blockNum
     proofs.foreach { proof =>
       proofsMap.put(idx, proof.bytes)
       idx = idx + 1
     }
   }
+
+  def close() = db.close()
 }
 
 class Verifier extends TwoPartyCommons {
-  def checkProofs(blockNum: Int, rootValueBefore: Label): Label = {
-    var idx: Long = initElements + perBlock * blockNum
-    var root = rootValueBefore
+  lazy val initRoot = rootVar.get()
 
-    while (idx < initElements + perBlock * (blockNum + 1)) {
-      val proof = proofsMap.get(idx)
-      root = AVLModifyProof.parseBytes(proof).get.verify(root, bfn).get
-      idx = idx + 1
+  def loadProofs(blockNum: Int): Seq[AVLModifyProof] = {
+    (initElements + perBlock * blockNum) until (initElements + perBlock * (blockNum + 1)) map { idx =>
+      AVLModifyProof.parseBytes(proofsMap.get(idx)).get
     }
-    root
+  }
+
+  def checkProofs(rootValueBefore: Label, proofs: Seq[AVLModifyProof]): Label = {
+    proofs.foldLeft(rootValueBefore) { case (root, proof) =>
+        proof.verify(root, bfn).get
+    }
   }
 }
 
@@ -125,7 +144,7 @@ class FullWorker extends BenchmarkCommons with Initializing {
     (0 until additionsInBlock).foreach { k =>
       val keyToAdd = hf.hash(s"$k -- $blockNum")
       map.put(keyToAdd, 0)
-      if(k == 1){
+      if (k == 1) {
         keyCache.remove(Random.nextInt(keyCache.length))
         keyCache.append(keyToAdd)
       }
@@ -148,55 +167,61 @@ class FullWorker extends BenchmarkCommons with Initializing {
   }
 }
 
-
-object BlockchainBench extends App with TwoPartyCommons {
-
-  val fw = new FullWorker
-  fw.init()
-  (1 to blocks).foreach{blockNum =>
-    val sf0 = System.currentTimeMillis()
-    fw.processBlock(blockNum)
-    val sf = System.currentTimeMillis()
-    val dsf = sf - sf0
-    println(s"block #$blockNum, full validation: $dsf")
-  }
-
-
-  /*
-    val sf0 = System.currentTimeMillis()
-
-
-
-    var last100f = 0L
-    var last100l = 0L
-
-    val dsf = System.currentTimeMillis() - sf0
-
-    last100f = last100f + dsf
-
-    val digest0 = avl.rootHash()
-
-    //verification
-    val sl0 = System.currentTimeMillis()
-    proofs.foldLeft(digest0) { case (digest, proof) =>
-      proof.verify(digest, bfn).get
-    }
-    val dsl = System.currentTimeMillis() - sl0
-
-    last100l = last100l + dsl
-
-    println(s"block #$b, elements: $size, full validation: $dsf, light validation: $dsl")
-
-    if (b % 100 == 99) {
-      val avgf = last100f / 100.0f
-      val avgl = last100l / 100.0f
-      val rs = s"averaged started at block #${b - 99}, full validation: $avgf, light validation: $avgl"
-      println(rs)
-      File("/tmp/report").appendAll(rs + "\n")
-      last100f = 0L
-      last100l = 0L
+trait BenchmarkLaunchers extends BenchmarkCommons {
+  def runFullWorker(): Unit = {
+    val fw = new FullWorker
+    fw.init()
+    (1 to blocks).foreach { blockNum =>
+      val sf0 = System.currentTimeMillis()
+      fw.processBlock(blockNum)
+      val sf = System.currentTimeMillis()
+      val dsf = sf - sf0
+      println(s"block #$blockNum, full validation: $dsf")
     }
   }
-*/
 
+  def runProver(): Unit = {
+    val p = new Prover
+    p.init()
+
+    (1 to blocks).foreach { blockNum =>
+      val sf0 = System.currentTimeMillis()
+      val proofs = p.obtainProofs(blockNum)
+      val sf = System.currentTimeMillis()
+      val dsf = sf - sf0
+      p.dumpProofs(blockNum, proofs)
+      println(s"block #$blockNum, prover: $dsf")
+
+      if(blockNum % 5000 == 4999){
+        System.gc()
+        Thread.sleep(60000)
+      }
+    }
+    p.close()
+  }
+
+  def runVerifier(): Unit = {
+    val v = new Verifier
+    var root = v.initRoot
+
+    (1 to blocks).foreach { blockNum =>
+      val proofs = v.loadProofs(blockNum)
+      val sf0 = System.currentTimeMillis()
+      root = v.checkProofs(root, proofs)
+      val sf = System.currentTimeMillis()
+      val dsf = sf - sf0
+      println(s"block #$blockNum, verifier: $dsf")
+
+      if(blockNum % 5000 == 4999){
+        System.gc()
+        Thread.sleep(60000)
+      }
+    }
+  }
+}
+
+
+object BlockchainBench extends BenchmarkLaunchers with App {
+  runProver()
+  //runVerifier()
 }
