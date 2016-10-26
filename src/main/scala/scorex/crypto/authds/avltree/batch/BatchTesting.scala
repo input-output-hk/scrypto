@@ -95,8 +95,8 @@ class oldVerifier(digest: Label) extends ADSUser {
 
 
 object BatchingPlayground extends App with ADSUser {
-  //spaceBenchmarks
-  variousTests
+  spaceBenchmarks
+  //variousTests
 
   // TODO: Add a test that modifies directions and sees verifier reject
 
@@ -116,13 +116,7 @@ object BatchingPlayground extends App with ADSUser {
     println(pf.length)
 
     var j = 1
-    // Init j
-    while (j < 1000000) // TODO: can't run this test -- runs out of heap
-     j = j*2
-    j = j/2
-    
-    
-    while (j<1000000) {
+    while (j<2000000) {
       for (i <-0 until j) {
         mod(0)=(Insert(Random.randomBytes(), Random.randomBytes(8)))
         convert(mod) foreach (m => newProver.performOneModification(m._1, m._2)) // TODO: IS THIS THE BEST SYNTAX?
