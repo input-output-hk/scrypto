@@ -30,7 +30,6 @@ trait TwoPartyCommons extends BenchmarkCommons with UpdateF[TreapValue] {
 
   lazy val db = DBMaker
     .fileDB("/tmp/proofs")
-    .fileMmapEnable()
     .closeOnJvmShutdown()
     .make()
 
