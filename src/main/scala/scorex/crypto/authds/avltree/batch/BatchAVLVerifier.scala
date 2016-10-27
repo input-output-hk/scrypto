@@ -66,7 +66,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
 
   def digest: Option[Label] = topNode.map(_.label)
 
-  def verifyOneModification(key: AVLKey, updateFunction: UpdateFunction): Option[Label] = {
+  def verifyOneModification(key: AVLKey, updateFunction: UpdateFunction) : Unit = {
 
     /*
      * Returns the new root and indicators whether tree has been modified at r or below
@@ -239,6 +239,5 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
 
     topNode = Try(Some(verifyHelper(topNode.getOrElse(None).asInstanceOf[VerifierNodes])._1)).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
-    topNode.map(_.label)
   }
 }

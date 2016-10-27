@@ -3,13 +3,23 @@ package scorex.crypto.authds.avltree.batch
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree._
+import scorex.utils.Random
+
+import scala.util.{Failure, Success, Try}
+
+import scorex.crypto.authds._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
+import scala.util.{Failure, Success, Try}
 import scala.collection.mutable
-import scala.util.{Failure, Success}
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
+import java.util.zip.{GZIPInputStream, GZIPOutputStream}
+
+
+// TODO: cleanup imports
 
 // TODO: interfaces/inheritance/signatures
 
@@ -20,57 +30,46 @@ trait BatchProofConstants {
   val LabelInPackagedProof: Byte = 4
   val EndOfTreeInPackagedProof: Byte = 5
 }
+  
 
-/**
-  *
-  * @param rootOpt - option root hash of lold tree. Should contain new nodes only
-  * @param keyLength - length of keys in tree
-  * @param valueLength - length of values in tree
-  * @param hf - hash function
-  */
-class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLength: Int = 32,
-                                             valueLength: Int = 8)(implicit hf: HF = new Blake2b256Unsafe)
-  extends UpdateF[Array[Byte]] with BatchProofConstants {
-
-  val labelLength = hf.DigestSize
-
-
-  private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
-  private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
-
-
-  private[avltree] var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey,
-    Array.fill(valueLength)(0: Byte), PositiveInfinityKey))
-
-  topNode.isNew = false
+class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, labelLength : Int = 32, keyLength : Int = 32, valueLength : Int = 8)
+                                     (implicit hf: HF = new Blake2b256Unsafe) /*extends ADSUser*/ /* extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] */ extends UpdateF[Array[Byte]] with BatchProofConstants {
+                                     
+  // TODO: how (and if) to add a check that hash function actually returns correct-length labels)?
+                                     
+  // TODO: why a pair of arrays in each of the infinities (same question for nonbatch version)
+  private val PositiveInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(-1: Byte), Array())
+  private val NegativeInfinity: (Array[Byte], Array[Byte]) = (Array.fill(keyLength)(0: Byte), Array())
+  
+  
+  private var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, Array.fill(valueLength)(0:Byte), PositiveInfinity._1))
+  topNode.isNew = false // TODO: If someone passes me a tree and I don't create it myself, then this is unsafe, because I don't know what their "new" and "visited" are set to; best to remove the rootOpt argument
   private var oldTopNode = topNode
-  private val newNodes = new mutable.ListBuffer[ProverNodes]
+  private val newNodes = new scala.collection.mutable.ListBuffer[ProverNodes]
 
   // Directions are just a bit string representing booleans
-  private var directions = new mutable.ArrayBuffer[Byte]
-  private var directionsBitLength: Int = 0
-
-  private def addToDirections(d: Boolean) = {
+  private var directions = new scala.collection.mutable.ArrayBuffer[Byte]
+  private var directionsBitLength : Int = 0
+  private def addToDirections(d : Boolean) = {
     // encode Booleans as bits 
-    if ((directionsBitLength & 7) == 0) {
-      // new byte needed
+    if ((directionsBitLength & 7) == 0) { // new byte needed
       directions += (d match {
-        case true => 1: Byte
-        case false => 0: Byte
+        case true => 1:Byte
+        case false => 0:Byte
       })
     } else {
       val i = directionsBitLength >> 3
-      if (d) directions(i) = (directions(i) | (1 << (directionsBitLength & 7))).toByte // change last byte
+      if (d) directions(i) = (directions(i) | (1<<(directionsBitLength & 7))).toByte // change last byte
     }
-    directionsBitLength += 1
+    directionsBitLength+=1
   }
 
-  def rootHash: Label = topNode.label
+  def rootHash : Label = topNode.label
 
 
   def performOneModification(key: AVLKey, updateFunction: UpdateFunction) = {
-    require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
-    require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
+    require(ByteArray.compare(key, NegativeInfinity._1) > 0, s"Key ${Base58.encode(key)} is less than -inf")
+    require(ByteArray.compare(key, PositiveInfinity._1) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength)
 
 
@@ -105,7 +104,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
                 val newLeaf = new Leaf(key, v, r.nextLeafKey)
                 newNodes += newLeaf
                 val oldLeaf = r.changeNextKey(key, newNodes)
-                val newProverNode = new ProverNode(key, oldLeaf, newLeaf, 0: Byte)
+                val newProverNode = new ProverNode(key, oldLeaf, newLeaf, 0)
                 newNodes += newProverNode
                 (newProverNode, true, true)
               case Failure(e) => // found incorrect value
@@ -131,7 +130,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
           // Get a new node
           // See if a single or double rotation is needed for AVL tree balancing
           if (nextStepIsLeft) {
-            addToDirections(true)
+            addToDirections (true)
 
             val (newLeftM, changeHappened, childHeightIncreased) = modifyHelper(r.left, found)
 
@@ -145,7 +144,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
                 // at this point we know newleftM must be an internal node and not a leaf -- because height increased;
                 assert(newLeftM.isInstanceOf[ProverNode])
                 val newLeft = newLeftM.asInstanceOf[ProverNode]
-
+            
                 if (newLeft.balance < 0) {
                   // single rotate
                   val newR = r.changeLeft(newLeft.right, 0: Byte, newNodes)
@@ -177,7 +176,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
                       0: Byte
                   }
                   newRoot.balance = 0: Byte
-
+              
                   val newR = r.changeLeft(newRoot.right, rBalance, newNodes)
                   newRoot.right = newR
                   newLeft.right = newRoot.left
@@ -197,7 +196,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
                 } else {
                   r.balance
                 }
-
+              
                 val newR = r.changeLeft(newLeftM, rBalance, newNodes)
                 assert(newR.checkHeight)
                 (newR, true, myHeightIncreased)
@@ -210,7 +209,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
             }
           } else {
             // next step is to the right
-            addToDirections(false)
+            addToDirections (false)
             val (newRightM, changeHappened, childHeightIncreased) = modifyHelper(r.right, found)
 
             // balance = -1 if left higher, +1 if left lower
@@ -221,9 +220,9 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
               if (childHeightIncreased && r.balance > 0) {
                 // need to rotate
                 // at this point we know newRightM must be an internal node and not a leaf -- because height increased
-                assert(newRightM.isInstanceOf[ProverNode])
+                assert (newRightM.isInstanceOf[ProverNode])
                 val newRight = newRightM.asInstanceOf[ProverNode]
-
+            
                 if (newRight.balance > 0) {
                   // single rotate
                   val newR = r.changeRight(newRight.left, 0: Byte, newNodes)
@@ -275,7 +274,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
                 } else {
                   r.balance
                 }
-
+            
                 val newR = r.changeRight(newRightM, rBalance, newNodes)
                 assert(newR.checkHeight)
                 (newR, true, myHeightIncreased)
@@ -290,9 +289,15 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
     }
     topNode = modifyHelper(topNode, foundAbove = false)._1
   }
+  
 
-  def generateProof: Seq[Byte] = {
-    val packagedTree = new mutable.ArrayBuffer[Byte]
+  
+  def generateProof : Seq[Byte]	 = {
+    val packagedTree = new scala.collection.mutable.ArrayBuffer[Byte]
+    var numLabels : Int = 0
+    var numLeaves : Int = 0
+    var numInternals : Int = 0
+    val onlyBytes = new scala.collection.mutable.ArrayBuffer[Byte]
 
     /* TODO Possible optimizations:
      * - Don't put in the key if it's in the modification stream somewhere 
@@ -307,14 +312,17 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
      *   bit-level stuff and maybe even "changing base without losing space" 
      *   by Dodis-Patrascu-Thorup STOC 2010 (expected savings: 5-15 bytes 
      *   per proof for depth 20, based on experiments with gzipping the array
-     *   that contains only this info)
+     *   that contains only this info) 
      */
-    def packTree(rNode: ProverNodes) {
+    def packTree(rNode: ProverNodes)  {
       // Post order traversal to pack up the tree
       if (!rNode.visited) {
         packagedTree += LabelInPackagedProof
         packagedTree ++= rNode.label
-        assert(rNode.label.length == labelLength)
+        assert (rNode.label.length == labelLength)
+        
+        onlyBytes += LabelInPackagedProof
+        numLabels += 1
       }
       else {
         rNode.visited = false
@@ -324,34 +332,86 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
             packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
             packagedTree ++= r.value
+            
+            onlyBytes += LeafWithKeyInPackagedProof
+            numLeaves += 1
+            
           case r: ProverNode =>
             packTree(r.right)
             packTree(r.left)
             packagedTree += r.balance
+
+            onlyBytes += r.balance
+            numInternals += 1
         }
       }
     }
 
     packTree(oldTopNode)
+    print("numLabels = ")
+    println(numLabels)
+    print("numLeaves = ")
+    println(numLeaves)
+    print("numInternals = ")
+    println(numInternals)
+    print("Length of tree = ")
+    println(packagedTree.length)
+    print("Length of directions = ")
+    print(directions.length)
+    print("; compressed length = ")
+    println(Gzip.compress(directions.toArray).length)
+    print("Number of nodes = ")
+    print(onlyBytes.length)
+    print("; compressed length =")
+    val clb = Gzip.compress(onlyBytes.toArray).length
+    print(clb)
+    print("; savings of ")
+    println(onlyBytes.length-clb)
+    
     packagedTree += EndOfTreeInPackagedProof
     packagedTree ++= directions
 
+    print("Total Proof Length = ")
+    print(packagedTree.length)
+    print("; compressed length =")
+    val clt = Gzip.compress(packagedTree.toArray).length
+    print(clt)
+    println("; savings of ") 
+    println(packagedTree.length-clt)
+
+    
     // prepare for the next time proof
-    newNodes foreach (n => {
-      n.isNew = false
-      n.visited = false
-    })
-    directions = new mutable.ArrayBuffer[Byte]
+    newNodes foreach (n => {n.isNew = false; n.visited = false}) // TODO: IS THIS THE BEST SYNTAX?
+    directions = new scala.collection.mutable.ArrayBuffer[Byte]
     directionsBitLength = 0
     newNodes.clear
     oldTopNode = topNode
-
+    
     packagedTree
   }
+  
+// TODO: write a test that examines the entire tree after a proof is produced, and checks that the isNew and visited flags are all false. It will be a very slow test, so can be invoked only when debugging
 
-  /* TODO: add a simple non-modifying non-proof-generating lookup
-   * -- a prover may simply need to know a value associated with a key, just to check a balance, for example.
-   * It should be relatively easy to take the code above and simply remove everything extra,
-   * to get a very short piece of code
-   */
+// TODO: add a simple non-modifying non-proof-generating lookup -- a prover may simple need to know a value associated with a key, just to check a balance, for example. It should be relatively easy to take the code above and simple remove everything extra, to get a very short piece of code
 }
+
+
+object Gzip {
+
+  def compress(input: Array[Byte]): Array[Byte] = {
+    val bos = new ByteArrayOutputStream(input.length)
+    val gzip = new GZIPOutputStream(bos)
+    gzip.write(input)
+    gzip.close()
+    val compressed = bos.toByteArray
+    bos.close()
+    compressed
+  }
+
+  def decompress(compressed: Array[Byte]): Option[String] =
+    Try {
+      val inputStream = new GZIPInputStream(new ByteArrayInputStream(compressed))
+      scala.io.Source.fromInputStream(inputStream).mkString
+    }.toOption
+}
+
