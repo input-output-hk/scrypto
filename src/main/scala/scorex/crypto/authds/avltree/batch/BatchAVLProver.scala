@@ -12,6 +12,8 @@ import scala.util.{Failure, Success}
 
 
 // TODO: interfaces/inheritance/signatures
+// TODO: Add a test that runs a prover on no changes and a verifier on no changes, both on an empty tree and on a modified tree
+// TODO: Add a test that modifies directions and sees verifier reject
 
 trait BatchProofConstants {
   // Do not use bytes -1, 0, or 1 -- these are for balance
@@ -67,8 +69,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
 
   def rootHash: Label = topNode.label
 
+  def performOneModification2(modification: Modification): Unit = {
+    val (key: AVLKey, uf: UpdateFunction) = Modification.convert(modification)
+    performOneModification(key, uf)
+  }
 
-  def performOneModification(key: AVLKey, updateFunction: UpdateFunction) = {
+  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Unit = {
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength)
@@ -307,16 +313,16 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
      * - Condense a sequence of balances and other non-full-byte info using 
      *   bit-level stuff and maybe even "changing base without losing space" 
      *   by Dodis-Patrascu-Thorup STOC 2010 (expected savings: 5-15 bytes 
-     *   per proof for depth 20) 
-     */
+     *   per proof for depth 20)
+     * - Condense the sequence of values if they are mostly not randomly distribute
+     * */
     def packTree(rNode: ProverNodes) {
       // Post order traversal to pack up the tree
       if (!rNode.visited) {
         packagedTree += LabelInPackagedProof
         packagedTree ++= rNode.label
         assert(rNode.label.length == labelLength)
-      }
-      else {
+      } else {
         rNode.visited = false
         rNode match {
           case r: Leaf =>

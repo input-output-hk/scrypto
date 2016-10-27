@@ -1,8 +1,8 @@
-package scorex.crypto.authds
-
+package scorex.crypto.authds.benchmarks
 
 import org.mapdb.{DBMaker, Serializer}
 import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
@@ -115,7 +115,7 @@ class Verifier extends TwoPartyCommons {
 
   def checkProofs(rootValueBefore: Label, proofs: Seq[AVLModifyProof]): Label = {
     proofs.foldLeft(rootValueBefore) { case (root, proof) =>
-        proof.verify(root, bfn).get
+      proof.verify(root, bfn).get
     }
   }
 }
@@ -191,7 +191,7 @@ trait BenchmarkLaunchers extends BenchmarkCommons {
       p.dumpProofs(blockNum, proofs)
       println(s"block #$blockNum, prover: $dsf")
 
-      if(blockNum % 5000 == 4999){
+      if (blockNum % 5000 == 4999) {
         System.gc()
         Thread.sleep(60000)
       }
@@ -211,7 +211,7 @@ trait BenchmarkLaunchers extends BenchmarkCommons {
       val dsf = sf - sf0
       println(s"block #$blockNum, verifier: $dsf")
 
-      if(blockNum % 5000 == 4999){
+      if (blockNum % 5000 == 4999) {
         System.gc()
         Thread.sleep(60000)
       }
