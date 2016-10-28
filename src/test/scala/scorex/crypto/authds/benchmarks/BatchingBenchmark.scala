@@ -8,6 +8,7 @@ import scorex.utils.Random
 object BatchingBenchmark extends App with TwoPartyTests {
 
   val Step = 1000
+  val InitilaMods = 0
   val NumMods = 2000000
 
   val oldProver = new oldProver(new AVLTree(32))
@@ -19,11 +20,15 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
   val mods = generateModifications()
 
+  val initialModifications =  Modification.convert(mods.slice(0, InitilaMods))
+  oldProver.applyUpdates(initialModifications)
+  initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
+  newProver.rootHash
+
   println("Step, Plain size, GZiped size, Batched size, Old apply time, New apply time, Old verify time, New verify time")
-  (0 until(NumMods, Step)) foreach { i =>
+  (InitilaMods until(NumMods, Step)) foreach { i =>
     System.gc()
-    val currentMods = mods.slice(i, i + Step)
-    val converted = Modification.convert(currentMods)
+    val converted = Modification.convert(mods.slice(i, i + Step))
 
     val (oldProverTime, oldProves: Seq[AVLModifyProof]) = time {
       oldProver.applyUpdates(converted).asInstanceOf[BatchSuccessSimple].proofs
