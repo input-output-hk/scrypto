@@ -26,7 +26,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
     val converted = Modification.convert(currentMods)
 
     val (oldProverTime, oldProves: Seq[AVLModifyProof]) = time {
-      oldProver.applyBatchSimple(currentMods).asInstanceOf[BatchSuccessSimple].proofs
+      oldProver.applyUpdates(converted).asInstanceOf[BatchSuccessSimple].proofs
     }
     val oldBytes = oldProves.foldLeft(Array[Byte]()) { (a, b) =>
       a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
