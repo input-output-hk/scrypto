@@ -21,6 +21,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
   println("Step, Plain size, GZiped size, Batched size, Old apply time, New apply time, Old verify time, New verify time")
   (0 until(NumMods, Step)) foreach { i =>
+    System.gc()
     val currentMods = mods.slice(i, i + Step)
     val converted = Modification.convert(currentMods)
 
