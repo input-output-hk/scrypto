@@ -42,8 +42,10 @@ object BatchingBenchmark extends App with TwoPartyTests {
     val oldSize = oldBytes.length.toFloat / Step
     val gzippedSize = Gzip.compress(oldBytes).length.toFloat / Step
 
+    newProver.rootHash
     val (newProverTime, pf) = time {
       converted foreach (m => newProver.performOneModification(m._1, m._2))
+      newProver.rootHash
       newProver.generateProof.toArray
     }
     val newSize = pf.length.toFloat / Step
@@ -68,12 +70,11 @@ object BatchingBenchmark extends App with TwoPartyTests {
     mods(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
 
     for (i <- 1 until NumMods) {
-      if ((Random.randomBytes(1)) (0).toInt.abs < 64) {
+      if (scala.util.Random.nextBoolean()) {
         // with prob ~.5 insert a new one, with prob ~.5 update an existing one
         mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
         numInserts += 1
-      }
-      else {
+      } else {
         val j = Random.randomBytes(3)
         mods(i) = Update(mods((j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % i).key, Random.randomBytes(8))
       }
