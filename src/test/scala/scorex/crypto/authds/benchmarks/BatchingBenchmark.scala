@@ -111,7 +111,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
     mods(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
 
     for (i <- 1 until NumMods) {
-      if (scala.util.Random.nextBoolean()) {
+      if (i % 2 == 0) {
         // with prob ~.5 insert a new one, with prob ~.5 update an existing one
         mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
         numInserts += 1
