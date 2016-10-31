@@ -7,8 +7,8 @@ import scorex.utils.Random
 
 object BatchingBenchmark extends App with TwoPartyTests {
 
-  val InitilaMods = 100000
-  val NumMods = 100000 + 4096 * 64
+  val InitilaMods = 1000000
+  val NumMods = InitilaMods + 4096 * 64
 
   var digest = Array[Byte]()
 
