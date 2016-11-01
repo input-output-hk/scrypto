@@ -30,12 +30,15 @@ object BatchingBenchmark extends App with TwoPartyTests {
       val oldProver = new oldProver(new AVLTree(32))
       val newProver = new BatchAVLProver()
 
-      val initialModifications = Modification.convert(mods.slice(0, InitilaMods))
-      oldProver.applyUpdates(initialModifications)
-      initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
-      newProver.generateProof
-      digest = newProver.rootHash
-      require(oldProver.rootHash sameElements digest)
+      val Step = InitilaMods / 1000
+      (0 until(InitilaMods, Step)) foreach { cur =>
+        val initialModifications = Modification.convert(mods.slice(cur, cur + Step))
+        oldProver.applyUpdates(initialModifications)
+        initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
+        newProver.generateProof
+        digest = newProver.rootHash
+        require(oldProver.rootHash sameElements digest)
+      }
 
       oneStep(InitilaMods, j, j, oldProver, newProver)
     }
@@ -72,14 +75,14 @@ object BatchingBenchmark extends App with TwoPartyTests {
     val oldBytes = oldProves.foldLeft(Array[Byte]()) { (a, b) =>
       a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
     }
-    val (oldVerifierTime, _) = time {
+    val oldVerifierTime = time {
       var h = 0
       oldProves.foldLeft(digest) { (prevDigest, proof) =>
         val newDigest = proof.verify(prevDigest, converted(h)._2).get
         h = h + 1
         newDigest
       }
-    }
+    }._1
 
     val oldSize = oldBytes.length.toFloat / step
     val gzippedSize = Gzip.compress(oldBytes).length.toFloat / step
@@ -103,7 +106,8 @@ object BatchingBenchmark extends App with TwoPartyTests {
       newVerifier.digest
     }
     newVerifier.digest.get shouldEqual digest
-    println(s"$toPrint,$oldSize,$gzippedSize,$newSize,$oldProverTime,$newProverTime,$oldVerifierTime,$newVerifierTime")
+    println(s"$toPrint,$oldSize,$gzippedSize,$newSize,${oldProverTime / step},${newProverTime / step}," +
+      s"${oldVerifierTime / step},${newVerifierTime / step}")
   }
 
   def generateModifications(): Array[Modification] = {
