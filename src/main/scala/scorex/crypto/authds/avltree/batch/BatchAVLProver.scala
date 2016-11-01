@@ -308,6 +308,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
      *   by Dodis-Patrascu-Thorup STOC 2010 (expected savings: 5-15 bytes 
      *   per proof for depth 20, based on experiments with gzipping the array
      *   that contains only this info)
+     * - Condense the sequence of values if they are mostly not randomly distributed
      */
     def packTree(rNode: ProverNodes) {
       // Post order traversal to pack up the tree
