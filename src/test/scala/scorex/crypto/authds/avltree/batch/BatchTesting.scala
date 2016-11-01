@@ -4,6 +4,7 @@ import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree._
 
+import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
 
 sealed trait BatchProvingResultSimple
@@ -23,16 +24,22 @@ case class BatchFailure(error: Throwable)
 
 class oldProver(tree: AVLTree[_]) extends UpdateF[AVLKey] {
   def applyBatchSimple(modifications: Seq[Modification]): BatchProvingResultSimple = {
-    Modification.convert(modifications).foldLeft(Success(Seq()): Try[Seq[AVLModifyProof]]) { case (t, (k, uf)) =>
-      t match {
-        case Success(proofs) =>
-          tree.modify(k, uf).map(proof => proofs :+ proof)
-        case f@Failure(e) => f
+    applyUpdates(Modification.convert(modifications))
+  }
+
+  def applyUpdates(modifications: Seq[(AVLKey, UpdateFunction)]): BatchProvingResultSimple = Try {
+    val agregatedProofs: ArrayBuffer[AVLModifyProof] = ArrayBuffer()
+    modifications.foreach { case (k, uf) =>
+      tree.modify(k, uf) match {
+        case Success(proof) =>
+          agregatedProofs += proof
+        case Failure(e) => throw e
       }
-    } match {
-      case Success(proofs) => BatchSuccessSimple(proofs)
-      case Failure(e) => BatchFailure(e)
     }
+    BatchSuccessSimple(agregatedProofs)
+  } match {
+    case Success(p) => p
+    case Failure(e) => BatchFailure(e)
   }
 
   def rootHash: Label = tree.rootHash()
