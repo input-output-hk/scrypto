@@ -25,21 +25,20 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
     val steps = Seq(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 4096 * 2, 4096 * 4, 4096 * 8, 4096 * 16,
       4096 * 32, 4096 * 64)
+    val oldProver = new oldProver(new AVLTree(32))
+    val newProver = new BatchAVLProver()
+
+    val Step = InitilaMods / 1000
+    (0 until(InitilaMods, Step)) foreach { cur =>
+      val initialModifications = Modification.convert(mods.slice(cur, cur + Step))
+      oldProver.applyUpdates(initialModifications)
+      initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
+      newProver.generateProof
+      digest = newProver.rootHash
+      require(oldProver.rootHash sameElements digest)
+    }
 
     steps foreach { j =>
-      val oldProver = new oldProver(new AVLTree(32))
-      val newProver = new BatchAVLProver()
-
-      val Step = InitilaMods / 1000
-      (0 until(InitilaMods, Step)) foreach { cur =>
-        val initialModifications = Modification.convert(mods.slice(cur, cur + Step))
-        oldProver.applyUpdates(initialModifications)
-        initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
-        newProver.generateProof
-        digest = newProver.rootHash
-        require(oldProver.rootHash sameElements digest)
-      }
-
       oneStep(InitilaMods, j, j, oldProver, newProver)
     }
   }
@@ -68,14 +67,17 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
     val (oldProverTime, oldProves: Seq[AVLModifyProof]) = time {
       oldProver.applyUpdates(converted) match {
-        case a: BatchSuccessSimple => a.proofs
+        case a: BatchSuccessSimple =>
+          val proofs = a.proofs
+          a.proofs.foreach(_.bytes)
+          proofs
         case BatchFailure(e) => throw e
       }
     }
     val oldBytes = oldProves.foldLeft(Array[Byte]()) { (a, b) =>
       a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
     }
-    val oldVerifierTime = time {
+    val oldVerifierTime: Float = time {
       var h = 0
       oldProves.foldLeft(digest) { (prevDigest, proof) =>
         val newDigest = proof.verify(prevDigest, converted(h)._2).get
@@ -91,11 +93,11 @@ object BatchingBenchmark extends App with TwoPartyTests {
     val (newProverTime, pf) = time {
       converted foreach (m => newProver.performOneModification(m._1, m._2))
       newProver.rootHash
-      newProver.generateProof.toArray
+      newProver.generateProof
     }
     val newSize = pf.length.toFloat / step
 
-    val newVerifier = new BatchAVLVerifier(digest, pf)
+    val newVerifier = new BatchAVLVerifier(digest, pf.toArray)
     newVerifier.digest.get shouldEqual digest
 
     digest = oldProver.rootHash
@@ -110,12 +112,37 @@ object BatchingBenchmark extends App with TwoPartyTests {
       s"${oldVerifierTime / step},${newVerifierTime / step}")
   }
 
+  def bench3(): Unit = {
+    val newProver = new BatchAVLProver()
+    val numMods = 1024 * 1024
+    val batchSize = 1 // change to see different timings
+
+    var mods = new Array[Modification](1024)
+    for (i <- 0 until 1024) {
+      for (j <- 0 until 1024)
+        mods(j) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
+      val converted = Modification.convert(mods)
+      val (t, d) = time {
+        var j = 0
+        while (j < 1024) {
+          for (k <- 0 until batchSize)
+            newProver.performOneModification(converted(j + k)._1, converted(j + k)._2)
+          newProver.generateProof.toArray // this is what you give to the verifier, together with the OLD digest
+          newProver.rootHash // this should go into the blockchain header -- NEW digest
+          j += batchSize
+        }
+      }
+      println(s"$i $t")
+    }
+  }
+
   def generateModifications(): Array[Modification] = {
     val mods = new Array[Modification](NumMods)
     mods(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
+    numInserts += 1
 
     for (i <- 1 until NumMods) {
-      if (i % 2 == 0) {
+      if (i < InitilaMods) {
         // with prob ~.5 insert a new one, with prob ~.5 update an existing one
         mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
         numInserts += 1
