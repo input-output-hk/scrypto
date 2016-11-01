@@ -6,6 +6,7 @@ import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, BatchAVLVerifier, Insert}
 import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.treap._
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.Blake2b256Unsafe
 
 import scala.collection.mutable
@@ -17,17 +18,17 @@ trait BenchmarkCommons {
 
   val initElements = 50000
 
-  val blocks = 100000
+  val blocks = 1
 
-  val additionsInBlock: Int = 500
-  val modificationsInBlock: Int = 1500
+  val additionsInBlock: Int = 5
+  val modificationsInBlock: Int = 15
 
   val perBlock = additionsInBlock + modificationsInBlock
 }
 
 trait TwoPartyCommons extends BenchmarkCommons with UpdateF[TreapValue] {
   lazy val db = DBMaker
-    .fileDB("/tmp/proofs")
+    .fileDB("/tmp/proofs" + Random.nextLong()) //todo: remove random
     .closeOnJvmShutdown()
     .make()
 
@@ -130,11 +131,11 @@ class BatchProver extends TwoPartyCommons with Batching with Initializing {
 
   override protected def afterInit(): Unit = {
     val rootVar = db.atomicVar("root", Serializer.BYTE_ARRAY).createOrOpen()
-    rootVar.set(treeRoot)
+    val root = newProver.rootHash
+    println("root after p. init: " + Base58.encode(root))
+    rootVar.set(root)
     db.commit()
   }
-
-  def treeRoot: Label = newProver.rootHash
 
   def obtainBatchProof(blockNum: Int): (Seq[Byte], Array[Byte], IndexedSeq[Array[Byte]]) = {
     val keys = (0 until additionsInBlock).map { i =>
@@ -202,6 +203,7 @@ class BatchVerifier extends TwoPartyCommons with Batching {
     val modificationKeys = (0 until additionsInBlock + modificationsInBlock).map { idx =>
       idx -> modsMap.get(s"$blockNum--$idx")
     }.toMap
+    println("v. : root before: " + Base58.encode(rootBefore))
     (proof, rootBefore, rootAfter, modificationKeys)
   }
 
@@ -347,5 +349,6 @@ trait BenchmarkLaunchers extends BenchmarkCommons {
 
 
 object BlockchainBench extends BenchmarkLaunchers with App {
+  runBatchProver()
   runBatchVerifier()
 }
