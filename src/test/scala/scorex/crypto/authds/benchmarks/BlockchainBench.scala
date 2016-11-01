@@ -6,7 +6,6 @@ import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, BatchAVLVerifier, Insert}
 import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.treap._
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.Blake2b256Unsafe
 
 import scala.collection.mutable
@@ -16,12 +15,12 @@ import scala.util.{Random, Try}
 trait BenchmarkCommons {
   val hf = new Blake2b256Unsafe()
 
-  val initElements = 50000
+  val initElements = 5000000
 
-  val blocks = 1
+  val blocks = 90000
 
-  val additionsInBlock: Int = 5
-  val modificationsInBlock: Int = 15
+  val additionsInBlock: Int = 500
+  val modificationsInBlock: Int = 1500
 
   val perBlock = additionsInBlock + modificationsInBlock
 }
@@ -131,8 +130,8 @@ class BatchProver extends TwoPartyCommons with Batching with Initializing {
 
   override protected def afterInit(): Unit = {
     val rootVar = db.atomicVar("root", Serializer.BYTE_ARRAY).createOrOpen()
+    newProver.generateProof
     val root = newProver.rootHash
-    println("root after p. init: " + Base58.encode(root))
     rootVar.set(root)
     db.commit()
   }
@@ -157,14 +156,12 @@ class BatchProver extends TwoPartyCommons with Batching with Initializing {
     (res, root, keys)
   }
 
-  //proofs generation
   def dumpProofs(blockNum: Int, proof: Seq[Byte], root: Array[Byte], modificationKeys: IndexedSeq[Array[Byte]]): Unit = {
     proofsMap.put(blockNum, proof.toArray)
 
     rootsMap.put(blockNum, root)
 
     modificationKeys.zipWithIndex.foreach { case (mk, idx) =>
-
       modsMap.put(s"$blockNum--$idx", mk)
     }
     db.commit()
@@ -194,23 +191,20 @@ class BatchVerifier extends TwoPartyCommons with Batching {
   lazy val initRoot = rootVar.get()
 
   def loadBlock(blockNum: Int): (Array[Byte], Array[Byte], Array[Byte], Map[Int, Array[Byte]]) = {
-    println(s"b:$blockNum")
-
     val proof = proofsMap.get(blockNum)
 
     val rootBefore = if (blockNum == 1) initRoot else rootsMap.get(blockNum - 1)
     val rootAfter = rootsMap.get(blockNum)
 
     val modificationKeys = (0 until additionsInBlock + modificationsInBlock).map { idx =>
-      idx -> modsMap.get(s"$blockNum--$idx")
-    }.toMap println("v. : root before: " + Base58.encode(rootBefore))
+      idx -> Option(modsMap.get(s"$blockNum--$idx")).get
+    }.toMap
     (proof, rootBefore, rootAfter, modificationKeys)
   }
 
   def checkProofs(proof: Array[Byte], rootBefore: Label, rootAfter: Label, modificationKeys: Map[Int, Array[Byte]]): Unit = {
     val verifier = new BatchAVLVerifier(rootBefore, proof)
     (0 until additionsInBlock + modificationsInBlock).foreach { idx =>
-      println(s"$idx")
       val k = modificationKeys(idx)
       val root = verifier.verifyOneModification(k, bfn).get
       if (idx == additionsInBlock + modificationsInBlock - 1) assert(root sameElements rootAfter)
@@ -350,5 +344,5 @@ trait BenchmarkLaunchers extends BenchmarkCommons {
 
 object BlockchainBench extends BenchmarkLaunchers with App {
   runBatchProver()
-  runBatchVerifier()
+  // runBatchVerifier()
 }
