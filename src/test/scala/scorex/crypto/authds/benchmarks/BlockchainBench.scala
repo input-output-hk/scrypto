@@ -3,6 +3,7 @@ package scorex.crypto.authds.benchmarks
 import org.mapdb.{DBMaker, Serializer}
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, BatchAVLVerifier, Insert}
 import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
@@ -14,20 +15,17 @@ import scala.util.{Random, Try}
 trait BenchmarkCommons {
   val hf = new Blake2b256Unsafe()
 
-  val initElements = 5000000
+  val initElements = 50000
 
   val blocks = 100000
 
   val additionsInBlock: Int = 500
   val modificationsInBlock: Int = 1500
-  //val removalsInBlock = 150
 
   val perBlock = additionsInBlock + modificationsInBlock
 }
 
 trait TwoPartyCommons extends BenchmarkCommons with UpdateF[TreapValue] {
-  lazy val avl = new AVLTree(32)
-
   lazy val db = DBMaker
     .fileDB("/tmp/proofs")
     .closeOnJvmShutdown()
@@ -63,6 +61,8 @@ trait Initializing extends BenchmarkCommons {
 }
 
 class Prover extends TwoPartyCommons with Initializing {
+  lazy val avl = new AVLTree(32)
+
   override protected def initStep(i: Int) = {
     if (i % 10000 == 0) println("init: i = " + i)
     val k = hf("1-1" + i)
@@ -99,6 +99,73 @@ class Prover extends TwoPartyCommons with Initializing {
       proofsMap.put(idx, proof.bytes)
       idx = idx + 1
     }
+    db.commit()
+  }
+
+  def close() = db.close()
+}
+
+
+trait Batching extends TwoPartyCommons {
+  lazy val modsMap = db.treeMap("modkeys")
+    .keySerializer(Serializer.STRING)
+    .valueSerializer(Serializer.BYTE_ARRAY)
+    .createOrOpen()
+
+  lazy val rootsMap = db.treeMap("roots")
+    .keySerializer(Serializer.INTEGER)
+    .valueSerializer(Serializer.BYTE_ARRAY)
+    .createOrOpen()
+}
+
+
+class BatchProver extends TwoPartyCommons with Batching with Initializing {
+  val newProver = new BatchAVLProver()
+
+  override protected def initStep(i: Int) = {
+    if (i % 10000 == 0) println("init: i = " + i)
+    newProver.performOneModification2(Insert(hf("1-1" + i), Array.fill(8)(0: Byte)))
+    newProver.rootHash
+  }
+
+  override protected def afterInit(): Unit = {
+    val rootVar = db.atomicVar("root", Serializer.BYTE_ARRAY).createOrOpen()
+    rootVar.set(treeRoot)
+    db.commit()
+  }
+
+  def treeRoot: Label = newProver.rootHash
+
+  def obtainBatchProof(blockNum: Int): (Seq[Byte], Array[Byte], IndexedSeq[Array[Byte]]) = {
+    val keys = (0 until additionsInBlock).map { i =>
+      val k = hf("0" + i + ":" + blockNum)
+      if (i == 1) {
+        keyCache.remove(Random.nextInt(keyCache.length))
+        keyCache.append(k)
+      }
+      newProver.performOneModification(k, bfn)
+      k
+    } ++ (0 until modificationsInBlock).map { i =>
+      val k = keyCache(Random.nextInt(keyCache.length))
+      newProver.performOneModification(k, bfn)
+      k
+    }
+
+    val res = newProver.generateProof
+    val root = newProver.rootHash
+    (res, root, keys)
+  }
+
+  //proofs generation
+  def dumpProofs(blockNum: Int, proof: Seq[Byte], root: Array[Byte], modificationKeys: IndexedSeq[Array[Byte]]): Unit = {
+    proofsMap.put(blockNum, proof.toArray)
+
+    rootsMap.put(blockNum, root)
+
+    modificationKeys.zipWithIndex.foreach { case (mk, idx) =>
+      modsMap.put(s"$blockNum--$idx", mk)
+    }
+    db.commit()
   }
 
   def close() = db.close()
@@ -116,6 +183,35 @@ class Verifier extends TwoPartyCommons {
   def checkProofs(rootValueBefore: Label, proofs: Seq[AVLModifyProof]): Label = {
     proofs.foldLeft(rootValueBefore) { case (root, proof) =>
       proof.verify(root, bfn).get
+    }
+  }
+}
+
+class BatchVerifier extends TwoPartyCommons with Batching {
+
+  lazy val initRoot = rootVar.get()
+
+  def loadBlock(blockNum: Int): (Array[Byte], Array[Byte], Array[Byte], Map[Int, Array[Byte]]) = {
+    println(s"b:$blockNum")
+
+    val proof = proofsMap.get(blockNum)
+
+    val rootBefore = if (blockNum == 1) initRoot else rootsMap.get(blockNum - 1)
+    val rootAfter = rootsMap.get(blockNum)
+
+    val modificationKeys = (0 until additionsInBlock + modificationsInBlock).map { idx =>
+      idx -> modsMap.get(s"$blockNum--$idx")
+    }.toMap
+    (proof, rootBefore, rootAfter, modificationKeys)
+  }
+
+  def checkProofs(proof: Array[Byte], rootBefore: Label, rootAfter: Label, modificationKeys: Map[Int, Array[Byte]]): Unit = {
+    val verifier = new BatchAVLVerifier(rootBefore, proof)
+    (0 until additionsInBlock + modificationsInBlock).foreach { idx =>
+      println(s"$idx")
+      val k = modificationKeys(idx)
+      val root = verifier.verifyOneModification(k, bfn).get
+      if (idx == additionsInBlock + modificationsInBlock - 1) assert(root sameElements rootAfter)
     }
   }
 }
@@ -149,18 +245,10 @@ class FullWorker extends BenchmarkCommons with Initializing {
       }
     }
 
-
-
     (0 until modificationsInBlock).foreach { _ =>
       val k = keyCache(Random.nextInt(keyCache.length))
       map.put(k, map.get(k) + 100)
     }
-
-    /*(0 until removalsInBlock).foreach { _ =>
-      val size = map.size()
-      val k = map.getKey(Random.nextInt(size - 100) + 1)
-      map.remove(k)
-    }*/
 
     store.commit()
   }
@@ -199,6 +287,44 @@ trait BenchmarkLaunchers extends BenchmarkCommons {
     p.close()
   }
 
+  def runBatchProver(): Unit = {
+    val p = new BatchProver
+    p.init()
+
+    (1 to blocks).foreach { blockNum =>
+      val sf0 = System.currentTimeMillis()
+      val (proofs, root, modKeys) = p.obtainBatchProof(blockNum)
+      val sf = System.currentTimeMillis()
+      val dsf = sf - sf0
+      p.dumpProofs(blockNum, proofs, root, modKeys)
+      println(s"block #$blockNum, prover: $dsf")
+
+      if (blockNum % 5000 == 4999) {
+        System.gc()
+        Thread.sleep(60000)
+      }
+    }
+    p.close()
+  }
+
+  def runBatchVerifier(): Unit = {
+    val v = new BatchVerifier
+
+    (1 to blocks).foreach { blockNum =>
+      val (proof, rootBefore, rootAfter, modKeys) = v.loadBlock(blockNum)
+      val sf0 = System.currentTimeMillis()
+      v.checkProofs(proof, rootBefore, rootAfter, modKeys)
+      val sf = System.currentTimeMillis()
+      val dsf = sf - sf0
+      println(s"block #$blockNum, verifier: $dsf")
+
+      if (blockNum % 5000 == 4999) {
+        System.gc()
+        Thread.sleep(60000)
+      }
+    }
+  }
+
   def runVerifier(): Unit = {
     val v = new Verifier
     var root = v.initRoot
@@ -221,6 +347,5 @@ trait BenchmarkLaunchers extends BenchmarkCommons {
 
 
 object BlockchainBench extends BenchmarkLaunchers with App {
-  runProver()
-  //runVerifier()
+  runBatchVerifier()
 }
