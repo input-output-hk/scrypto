@@ -123,7 +123,10 @@ class BatchProver extends TwoPartyCommons with Batching with Initializing {
   val newProver = new BatchAVLProver()
 
   override protected def initStep(i: Int) = {
-    if (i % 10000 == 0) println("init: i = " + i)
+    if (i % 10000 == 0) {
+      println("init: i = " + i)
+      newProver.generateProof
+    }
     newProver.performOneModification2(Insert(hf("1-1" + i), Array.fill(8)(0: Byte)))
     newProver.rootHash
   }
