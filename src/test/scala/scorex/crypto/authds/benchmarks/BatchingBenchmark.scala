@@ -93,21 +93,23 @@ object BatchingBenchmark extends App with TwoPartyTests {
       var digest = oldProver.rootHash
       
       
-      val (oldProverTimeT, (oldProofs: Seq[AVLModifyProof], oldBytes : Array[Byte])) = time {
+      val (oldProverTimeT, oldProofs: Seq[AVLModifyProof]) = time {
         oldProver.applyUpdates(converted) match {
           case a: BatchSuccessSimple => 
             oldProver.rootHash
             // TODO: THIS IS NOT THE MOST EFFICIENCT SERIALIZATION,
             // SO IT'S A BIT UNFAIR TO OLDPROVER
-            val oldBytes = a.proofs.foldLeft(Array[Byte]()) { (a, b) =>
-                 a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
-            }
-            (a.proofs, oldBytes)
+            a.proofs foreach (p=>p.bytes)
+            a.proofs
           case BatchFailure(e) => throw e
         }
       }
       
       oldProverTime+=oldProverTimeT
+
+      val oldBytes = oldProofs.foldLeft(Array[Byte]()) { (a, b) =>
+           a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
+      }
       
       // TODO: THERE IS NO DESERIALIZATION
       // SO IT'S A BIT TOO NICE TO OLDVERIFIER
