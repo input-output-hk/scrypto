@@ -18,7 +18,7 @@ trait BenchmarkCommons {
 
   val initElements = 5000000
 
-  val blocks = 90
+  val blocks = 90000
 
   val additionsInBlock: Int = 500
   val modificationsInBlock: Int = 1500
