@@ -203,7 +203,8 @@ class BatchVerifier extends TwoPartyCommons with Batching {
 
     val modificationKeys = (0 until additionsInBlock + modificationsInBlock).map { idx =>
       idx -> modsMap.get(s"$blockNum--$idx")
-    }.toMap println("v. : root before: " + Base58.encode(rootBefore))
+    }.toMap
+    println("v. : root before: " + Base58.encode(rootBefore))
     (proof, rootBefore, rootAfter, modificationKeys)
   }
 

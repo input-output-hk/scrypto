@@ -7,8 +7,10 @@ import scorex.utils.Random
 
 object BatchingBenchmark extends App with TwoPartyTests {
 
-  val InitilaMods = 1000000
-  val NumMods = InitilaMods + 4096 * 64
+  //  val InitilaMods = 1000000
+  //  val NumMods = InitilaMods + 4096 * 64
+  val InitilaMods = 0
+  val NumMods = 2000000
 
   var digest = Array[Byte]()
 
@@ -19,7 +21,25 @@ object BatchingBenchmark extends App with TwoPartyTests {
   println(s"NumInserts = $numInserts")
   println("Step, Plain size, GZiped size, Batched size, Old apply time, New apply time, Old verify time, New verify time")
 
-  bench2()
+  bench1()
+
+  def bench1(): Unit = {
+    val oldProver = new oldProver(new AVLTree(32))
+    val newProver = new BatchAVLProver()
+
+    val initialModifications = Modification.convert(mods.slice(0, InitilaMods))
+    oldProver.applyUpdates(initialModifications)
+    initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
+    newProver.generateProof
+    digest = newProver.rootHash
+    require(oldProver.rootHash sameElements digest)
+
+    val Step = 2000
+    (InitilaMods until(NumMods, Step)) foreach { i =>
+      oneStep(i, Step, i / 2, oldProver, newProver)
+    }
+  }
+
 
   def bench2(): Unit = {
 
@@ -42,24 +62,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
       oneStep(InitilaMods, j, j, oldProver, newProver)
     }
   }
-
-  def bench1(): Unit = {
-    val oldProver = new oldProver(new AVLTree(32))
-    val newProver = new BatchAVLProver()
-
-    val initialModifications = Modification.convert(mods.slice(0, InitilaMods))
-    oldProver.applyUpdates(initialModifications)
-    initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
-    newProver.generateProof
-    digest = newProver.rootHash
-    require(oldProver.rootHash sameElements digest)
-
-    val Step = 1000
-    (InitilaMods until(NumMods, Step)) foreach { i =>
-      oneStep(i, Step, i, oldProver, newProver)
-    }
-  }
-
 
   def oneStep(i: Int, step: Int, toPrint: Int, oldProver: oldProver, newProver: BatchAVLProver[_]): Unit = {
     System.gc()
@@ -142,7 +144,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
     numInserts += 1
 
     for (i <- 1 until NumMods) {
-      if (i < InitilaMods) {
+      if (i < InitilaMods || i % 2 == 0) {
         // with prob ~.5 insert a new one, with prob ~.5 update an existing one
         mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
         numInserts += 1
