@@ -7,10 +7,10 @@ import scorex.utils.Random
 
 object BatchingBenchmark extends App with TwoPartyTests {
 
-  //  val InitilaMods = 1000000
-  //  val NumMods = InitilaMods + 4096 * 64
-  val InitilaMods = 0
-  val NumMods = 2000000
+    val InitilaMods = 1000000
+    val NumMods = InitilaMods + 4096 * 64
+//  val InitilaMods = 0
+//  val NumMods = 2000000
 
   var digest = Array[Byte]()
 
@@ -21,7 +21,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
   println(s"NumInserts = $numInserts")
   println("Step, Plain size, GZiped size, Batched size, Old apply time, New apply time, Old verify time, New verify time")
 
-  bench1()
+  bench2()
 
   def bench1(): Unit = {
     val oldProver = new oldProver(new AVLTree(32))
@@ -45,20 +45,21 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
     val steps = Seq(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 4096 * 2, 4096 * 4, 4096 * 8, 4096 * 16,
       4096 * 32, 4096 * 64)
-    val oldProver = new oldProver(new AVLTree(32))
-    val newProver = new BatchAVLProver()
-
-    val Step = InitilaMods / 1000
-    (0 until(InitilaMods, Step)) foreach { cur =>
-      val initialModifications = Modification.convert(mods.slice(cur, cur + Step))
-      oldProver.applyUpdates(initialModifications)
-      initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
-      newProver.generateProof
-      digest = newProver.rootHash
-      require(oldProver.rootHash sameElements digest)
-    }
 
     steps foreach { j =>
+      val oldProver = new oldProver(new AVLTree(32))
+      val newProver = new BatchAVLProver()
+
+      val Step = InitilaMods / 1000
+      (0 until(InitilaMods, Step)) foreach { cur =>
+        val initialModifications = Modification.convert(mods.slice(cur, cur + Step))
+        oldProver.applyUpdates(initialModifications)
+        initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
+        newProver.generateProof
+        digest = newProver.rootHash
+        require(oldProver.rootHash sameElements digest)
+      }
+
       oneStep(InitilaMods, j, j, oldProver, newProver)
     }
   }
