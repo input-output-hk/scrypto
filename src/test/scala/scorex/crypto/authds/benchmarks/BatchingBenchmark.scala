@@ -141,11 +141,9 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
   def generateModifications(): Array[Modification] = {
     val mods = new Array[Modification](NumMods)
-    mods(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
-    numInserts += 1
 
-    for (i <- 1 until NumMods) {
-      if (i < InitilaMods || i % 2 == 0) {
+    for (i <- 0 until NumMods) {
+      if (i == 0 || i < InitilaMods || i % 2 == 0) {
         // with prob ~.5 insert a new one, with prob ~.5 update an existing one
         mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
         numInserts += 1

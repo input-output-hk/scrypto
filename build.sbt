@@ -15,6 +15,7 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.+",
   "org.whispersystems" % "curve25519-java" % "+"
 )
+scalacOptions ++= Seq("-Xdisable-assertions")
 
 licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
 
