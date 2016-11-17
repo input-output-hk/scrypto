@@ -10,8 +10,10 @@ import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
 // TODO: interaces/inheritance/signatures
-class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[Byte], labelLength: Int = 32, keyLength: Int = 32, valueLength: Int = 8)
-                                              (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]] with BatchProofConstants /*TwoPartyProof[AVLKey, AVLValue]*/ {
+class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[Byte], labelLength: Int = 32,
+                                               keyLength: Int = 32, valueLength: Int = 8)
+                                              (implicit hf: HF = new Blake2b256Unsafe)
+  extends UpdateF[Array[Byte]] with BatchProofConstants {
 
   private var directionsIndex = 0
 
@@ -65,6 +67,11 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
   }
 
   def digest: Option[Label] = topNode.map(_.label)
+
+  def verifyOneModification(modification: Modification): Option[Label] = {
+    val (key: AVLKey, updateFunction: UpdateFunction) = Modification.convert(modification)
+    verifyOneModification(key: AVLKey, updateFunction: UpdateFunction)
+  }
 
   def verifyOneModification(key: AVLKey, updateFunction: UpdateFunction): Option[Label] = {
 

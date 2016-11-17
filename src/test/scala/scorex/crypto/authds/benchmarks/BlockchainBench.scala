@@ -124,7 +124,7 @@ class BatchProver extends TwoPartyCommons with Batching with Initializing {
       newProver.generateProof
     }
     val k = hf("1-1" + i)
-    newProver.performOneModification2(Insert(k, Array.fill(8)(0: Byte)))
+    newProver.performOneModification(Insert(k, Array.fill(8)(0: Byte)))
     k
   }
 

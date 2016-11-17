@@ -30,8 +30,8 @@ trait BatchProofConstants {
   * @param valueLength - length of values in tree
   * @param hf - hash function
   */
-class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLength: Int = 32,
-                                             valueLength: Int = 8)(implicit hf: HF = new Blake2b256Unsafe)
+class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None, val keyLength: Int = 32,
+                                             val valueLength: Int = 8)(implicit val hf: HF = new Blake2b256Unsafe)
   extends UpdateF[Array[Byte]] with BatchProofConstants {
 
   val labelLength = hf.DigestSize
@@ -46,7 +46,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
 
   topNode.isNew = false
   private var oldTopNode = topNode
-  private val newNodes = new mutable.ListBuffer[ProverNodes]
+  private[batch] val newNodes = new mutable.ListBuffer[ProverNodes]
 
   // Directions are just a bit string representing booleans
   private var directions = new mutable.ArrayBuffer[Byte]
@@ -69,7 +69,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
 
   def rootHash: Label = topNode.label
 
-  def performOneModification2(modification: Modification): Unit = {
+  def performOneModification(modification: Modification): Unit = {
     val (key: AVLKey, uf: UpdateFunction) = Modification.convert(modification)
     performOneModification(key, uf)
   }

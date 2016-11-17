@@ -10,12 +10,38 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   val KL = 26
   val VL = 8
+  val HL = 32
+
+  property("Persistence AVL batch prover") {
+    val storage = new VersionedAVLStorageMock
+    val prover = new PersistentBatchAVLProver(new BatchAVLProver(None, KL, VL), storage)
+    var digest = prover.rootHash
+
+    forAll(kvGen) { case (aKey, aValue) =>
+      val m = Insert(aKey, aValue)
+      prover.performOneModification(m)
+      val pf = prover.generateProof
+      val verifier = new BatchAVLVerifier(digest, pf, HL, KL, VL)
+      verifier.verifyOneModification(m)
+      prover.rootHash should not equal digest
+      prover.rootHash shouldEqual verifier.digest.get
+
+      prover.rollback(digest).isSuccess shouldBe true
+      prover.rootHash shouldEqual digest
+      prover.performOneModification(m)
+      prover.generateProof
+      digest = prover.rootHash
+    }
+
+    val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(None, KL, VL), storage)
+    prover2.rootHash shouldEqual prover.rootHash
+  }
 
   property("Updates with and without batching should lead to the same tree") {
-    val tree = new AVLTree(26)
+    val tree = new AVLTree(KL)
     var digest = tree.rootHash()
     val oldProver = new oldProver(tree)
-    val newProver = new BatchAVLProver(None, 26, 8)
+    val newProver = new BatchAVLProver(None, KL, VL)
     oldProver.rootHash shouldBe newProver.rootHash
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -45,7 +71,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       currentMods foreach (m => prover.performOneModification(m._1, m._2))
       val pf = prover.generateProof.toArray
 
-      val verifier = new BatchAVLVerifier(digest, pf, 32, KL, VL)
+      val verifier = new BatchAVLVerifier(digest, pf, HL, KL, VL)
       currentMods foreach (m => verifier.verifyOneModification(m._1, m._2))
       digest = verifier.digest.get
 
