@@ -9,10 +9,10 @@ import scala.util.Try
 
 class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: BatchAVLProver[HF],
                                                        storage: VersionedAVLStorage) extends UpdateF[Array[Byte]] {
-  if (!(storage.version sameElements VersionedAVLStorage.InitialVersion)) {
-    rollback(storage.version)
+  if (storage.nonEmpty) {
+    rollback(storage.version).get
   } else {
-    storage.update(prover.topNode)
+    storage.update(prover.topNode).get
   }
 
   def rootHash: Label = prover.rootHash
@@ -28,7 +28,7 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
   }
 
   def rollback(version: VersionedAVLStorage.Version): Try[Unit] = Try {
-    val recoveredTop: ProverNodes = storage.rollback(version)
+    val recoveredTop: ProverNodes = storage.rollback(version).get
     prover = new BatchAVLProver(Some(recoveredTop), prover.keyLength, prover.valueLength)(prover.hf)
   }
 }
