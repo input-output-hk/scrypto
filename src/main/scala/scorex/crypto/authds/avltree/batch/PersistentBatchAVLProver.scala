@@ -9,7 +9,7 @@ import scala.util.Try
 
 class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: BatchAVLProver[HF],
                                                        storage: VersionedAVLStorage) extends UpdateF[Array[Byte]] {
-  if (!(storage.version sameElements VersionedAVLStorage.InitialVersion)) {
+  if (storage.nonEmpty) {
     rollback(storage.version)
   } else {
     storage.update(prover.topNode)

@@ -12,11 +12,12 @@ trait VersionedAVLStorage {
 
   def version: Version
 
+  def isEmpty: Boolean
+
+  def nonEmpty: Boolean = !isEmpty
 
 }
 
 object VersionedAVLStorage {
   type Version = Array[Byte]
-
-  val InitialVersion: Version = Array.fill[Byte](32)(0: Byte)
 }
