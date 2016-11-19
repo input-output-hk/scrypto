@@ -82,7 +82,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
 
     /**
       * foundAbove tells us if x has been already found above r in the tree
-      * returns the new root and an indicator whether tree has been modified at r or below
+      * returns the new root, an indicator whether tree has been modified at r or below,
+      * and an indicator whether the height has increased
       *
       */
     def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = {
@@ -92,7 +93,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None, keyLe
           if (foundAbove) {
             // we already know it's in the tree, so it must be at the current leaf
             updateFunction(Some(r.value)) match {
-              case Success(None) => //delete value
+              case Success(None) => //delete key
                 ???
               case Success(Some(v)) => //update value
                 require(v.length == valueLength)

@@ -5,17 +5,28 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
 import scorex.utils.Random
 
+import scorex.crypto.authds.UpdateF
+import scorex.crypto.authds.avltree._
+
+import scala.util.{Failure, Success}
+
+
 object BatchingBenchmark extends App with TwoPartyTests {
 
  
 
-  bench2
-  
-  // timeBenchmarksNewContinuous
+  println ("treeSize, numLookups, proofSizeForEach")
+  benchSizeLookupsInTree(1000000, Seq(1000), false, false)
+  benchSizeLookupsInTree(1000000, Seq(1000), true, false)
+  benchSizeLookupsInTree(1000000, Seq(1000), false, true)
+  benchSizeLookupsInTree(1000000, Seq(1000), true, true)
+  //bench2
+  //timeBenchmarksNewContinuous
   //timeBenchmarksOldContinuous
   //timeBenchmarksNew
   //timeBenchmarksOld
 
+  
 
   def bench2(): Unit = {
 
@@ -324,6 +335,43 @@ object BatchingBenchmark extends App with TwoPartyTests {
   }
    
 
+  def benchSizeLookupsInTree(treeSize:Int, lookups: Seq[Int], useFreshLookups : Boolean, halfInserts: Boolean) = {
+    val mods = new Array[(AVLKey, UpdateFunction)](treeSize)
+    for (i<-0 until treeSize)
+      mods(i) = Modification.convert(Insert(Random.randomBytes(), Random.randomBytes(8)))
+
+    val newProver = new BatchAVLProver()
+    mods.foreach (m => newProver.performOneModification(m._1, m._2))
+    newProver.generateProof
+    val digest = newProver.rootHash
+        
+    for (n <- lookups) {
+      // perform n lookups for random values, or n/2 lookups/inserts
+      for (i<-0 until n) {
+        if (!halfInserts || i%2 == 0) {
+          if (useFreshLookups) { // unsuccessful lookup
+            newProver.performOneModification(Random.randomBytes(), (k=>Success(None)):UpdateFunction)
+          } else { // successful lookup with a change
+            val j = Random.randomBytes(3)
+            val m = Update(mods((j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % treeSize)._1, Random.randomBytes(8))
+            val c = Modification.convert(m)
+            newProver.performOneModification(c._1, c._2)
+          }
+        } else { // new insert
+          val m = Insert(Random.randomBytes(), Random.randomBytes(8))
+          val c = Modification.convert(m)
+          newProver.performOneModification(c._1, c._2)
+        }
+      }
+      if (useFreshLookups && !halfInserts) assert (digest sameElements newProver.rootHash)
+      print(treeSize)
+      print(",")
+      print(n)
+      print(",")
+      println(newProver.generateProof.length.toFloat/n)
+    }
+  }
+  
 
   def generateModifications(NumMods : Int): Array[Modification] = {
     val mods = new Array[Modification](NumMods)
