@@ -23,7 +23,7 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
     prover.performOneModification(key, updateFunction)
 
   def generateProof: Array[Byte] = {
-    storage.update(prover.topNode)
+    storage.update(prover.topNode).get
     prover.generateProof.toArray
   }
 
