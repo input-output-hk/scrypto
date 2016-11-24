@@ -25,10 +25,10 @@ trait BatchProofConstants {
 
 /**
   *
-  * @param rootOpt - option root hash of lold tree. Should contain new nodes only
-  * @param keyLength - length of keys in tree
+  * @param rootOpt     - option root hash of lold tree. Should contain new nodes only
+  * @param keyLength   - length of keys in tree
   * @param valueLength - length of values in tree
-  * @param hf - hash function
+  * @param hf          - hash function
   */
 class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None, val keyLength: Int = 32,
                                              val valueLength: Int = 8)(implicit val hf: HF = new Blake2b256Unsafe)
@@ -77,7 +77,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
   def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Unit = {
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
-    require(key.length == keyLength)
+    require(key.length == keyLength, s"Key length don't match: expected $keyLength, found ${key.length}")
 
 
     /**

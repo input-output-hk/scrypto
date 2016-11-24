@@ -17,7 +17,7 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.scala-lang.modules" % "scala-parser-combinators_2.11" % "1.0.4",
   "org.scala-lang.modules" % "scala-xml_2.11" % "1.0.2",
   "org.scala-sbt" % "test-interface" % "1.0",
-  "org.scalacheck" % "scalacheck_2.11" % "1.12.5",
+  "org.scalacheck" % "scalacheck_2.11" % "1.12.6",
   "org.scalactic" % "scalactic_2.11" % "2.3.0-SNAP2",
   "org.scalatest" % "scalatest_2.11" % "2.3.0-SNAP2",
   "org.scoverage" % "scalac-scoverage-plugin_2.11" % "1.1.1",
