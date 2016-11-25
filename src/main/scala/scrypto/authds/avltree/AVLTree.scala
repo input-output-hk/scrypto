@@ -1,9 +1,9 @@
-package scrypto.crypto.authds.avltree
+package scrypto.authds.avltree
 
-import scrypto.crypto.authds._
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.encode.Base58
-import scrypto.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scrypto.authds._
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.encode.Base58
+import scrypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scrypto.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}

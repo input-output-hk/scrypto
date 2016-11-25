@@ -1,8 +1,9 @@
-package scrypto.crypto.hash
+package scrypto.hash
+
+import scrypto.utils.BytesHex.bytes2hex
 
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scrypto.crypto._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

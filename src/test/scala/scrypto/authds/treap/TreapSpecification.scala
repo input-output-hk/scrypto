@@ -1,11 +1,11 @@
-package scrypto.crypto.authds.treap
+package scrypto.authds.treap
 
 import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import scrypto.crypto.TestingCommons
-import scrypto.crypto.authds.{TwoPartyTests, Level}
-import scrypto.crypto.hash.Blake2b256Unsafe
+import scrypto.TestingCommons
+import scrypto.authds.{TwoPartyTests, Level}
+import scrypto.hash.Blake2b256Unsafe
 
 import scala.util.Success
 

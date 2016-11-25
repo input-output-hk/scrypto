@@ -1,9 +1,9 @@
-package scrypto.crypto.authds.avltree.batch
+package scrypto.authds.avltree.batch
 
-import scrypto.crypto.authds.TwoPartyDictionary._
-import scrypto.crypto.authds.UpdateF
-import scrypto.crypto.authds.avltree.{ProverNodes, _}
-import scrypto.crypto.hash.ThreadUnsafeHash
+import scrypto.authds.TwoPartyDictionary._
+import scrypto.authds.UpdateF
+import scrypto.authds.avltree.{ProverNodes, _}
+import scrypto.hash.ThreadUnsafeHash
 
 import scala.util.Try
 

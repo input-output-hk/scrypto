@@ -1,9 +1,9 @@
-package scrypto.crypto.authds.benchmarks
+package scrypto.authds.benchmarks
 
-import scrypto.crypto.authds.avltree.AVLTree
-import scrypto.crypto.authds.treap._
-import scrypto.crypto.authds.{Level, TwoPartyTests}
-import scrypto.crypto.hash.Blake2b256Unsafe
+import scrypto.authds.avltree.AVLTree
+import scrypto.authds.treap._
+import scrypto.authds.{Level, TwoPartyTests}
+import scrypto.hash.Blake2b256Unsafe
 
 
 object PerformanceMeter extends App with TwoPartyTests {

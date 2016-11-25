@@ -1,6 +1,7 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
-import scrypto.crypto._
+import scrypto.hash.CryptographicHash
+import scrypto.utils.NatConstants.Nat32
 import shapeless.Sized
 
 trait CryptographicHash32 extends CryptographicHash {

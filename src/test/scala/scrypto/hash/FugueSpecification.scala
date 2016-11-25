@@ -1,6 +1,6 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
-import scrypto.crypto._
+import scrypto.utils.BytesHex.hex2bytes
 
 class FugueSpecification extends HashTest {
 

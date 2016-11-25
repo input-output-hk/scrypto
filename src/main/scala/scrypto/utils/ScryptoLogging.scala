@@ -1,4 +1,4 @@
-package scorex.utils
+package scrypto.utils
 
 import org.slf4j.LoggerFactory
 

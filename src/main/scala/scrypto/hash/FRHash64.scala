@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 trait FRHash64 extends CryptographicHash64 {
 

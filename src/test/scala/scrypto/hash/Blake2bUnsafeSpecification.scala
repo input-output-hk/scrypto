@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 import org.scalatest.{Matchers, PropSpec}
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}

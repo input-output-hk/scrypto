@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 class X11Specification extends HashTest {
 

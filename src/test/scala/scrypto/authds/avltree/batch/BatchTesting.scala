@@ -1,8 +1,8 @@
-package scrypto.crypto.authds.avltree.batch
+package scrypto.authds.avltree.batch
 
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.authds.UpdateF
-import scrypto.crypto.authds.avltree._
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.authds.UpdateF
+import scrypto.authds.avltree._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}

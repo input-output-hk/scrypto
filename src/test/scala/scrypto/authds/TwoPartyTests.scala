@@ -1,14 +1,14 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
 import com.google.common.primitives.Longs
-import scrypto.crypto.TestingCommons
-import scrypto.crypto.authds.avltree._
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.authds.treap._
-import scrypto.crypto.hash.Sha256
+import scrypto.TestingCommons
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.authds.avltree.AVLValue
+import scrypto.authds.treap.TreapValue
+import scrypto.hash.Sha256
 
 import scala.util.{Failure, Success}
-import scrypto.crypto.authds.TwoPartyDictionary.Label
+
 
 trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
 
@@ -67,7 +67,4 @@ trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
 
   def transactionUpdate(amount: Long): UpdateFunction = (old: Option[TreapValue]) =>
     Success(Some(Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
-
-
-
 }

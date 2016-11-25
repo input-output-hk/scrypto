@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 import java.security.MessageDigest
 

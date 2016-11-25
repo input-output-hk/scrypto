@@ -1,8 +1,8 @@
-package scrypto.crypto.authds.avltree
+package scrypto.authds.avltree
 
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.encode.Base58
-import scrypto.crypto.hash.ThreadUnsafeHash
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.encode.Base58
+import scrypto.hash.ThreadUnsafeHash
 import scala.collection.mutable
 
 sealed trait Node {

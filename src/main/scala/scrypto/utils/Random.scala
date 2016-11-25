@@ -1,4 +1,4 @@
-package scorex.utils
+package scrypto.utils
 
 import java.security.SecureRandom
 

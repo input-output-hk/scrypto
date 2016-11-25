@@ -1,6 +1,6 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
-import scrypto.crypto.hash.CryptographicHash
+import scrypto.hash.CryptographicHash
 
 import scala.util.{Failure, Success, Try}
 

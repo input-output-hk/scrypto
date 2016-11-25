@@ -1,9 +1,9 @@
-package scrypto.crypto.authds.avltree
+package scrypto.authds.avltree
 
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scrypto.crypto.authds.TwoPartyTests
-import scrypto.crypto.hash.Sha256
+import scrypto.authds.TwoPartyTests
+import scrypto.hash.Sha256
 
 class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 

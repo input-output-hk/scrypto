@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 class Blake2bSpecification extends HashTest {
 

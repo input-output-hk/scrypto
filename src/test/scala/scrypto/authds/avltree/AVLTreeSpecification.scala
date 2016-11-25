@@ -1,11 +1,11 @@
-package scrypto.crypto.authds.avltree
+package scrypto.authds.avltree
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.authds.TwoPartyTests
-import scrypto.crypto.hash.Sha256
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.authds.TwoPartyTests
+import scrypto.hash.Sha256
 import scrypto.utils.Random
 
 class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {

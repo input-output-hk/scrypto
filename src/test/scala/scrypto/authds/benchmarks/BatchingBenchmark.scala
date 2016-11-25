@@ -1,8 +1,8 @@
-package scrypto.crypto.authds.benchmarks
+package scrypto.authds.benchmarks
 
-import scrypto.crypto.authds.TwoPartyTests
-import scrypto.crypto.authds.avltree.batch._
-import scrypto.crypto.authds.avltree.{AVLModifyProof, AVLTree}
+import scrypto.authds.TwoPartyTests
+import scrypto.authds.avltree.batch._
+import scrypto.authds.avltree.{AVLModifyProof, AVLTree}
 import scrypto.utils.Random
 
 object BatchingBenchmark extends App with TwoPartyTests {

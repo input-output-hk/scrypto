@@ -1,8 +1,8 @@
-package scrypto.crypto.authds.treap
+package scrypto.authds.treap
 
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.authds._
-import scrypto.crypto.hash.ThreadUnsafeHash
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.authds._
+import scrypto.hash.ThreadUnsafeHash
 import scrypto.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}

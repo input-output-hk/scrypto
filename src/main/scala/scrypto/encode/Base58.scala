@@ -1,4 +1,4 @@
-package scrypto.crypto.encode
+package scrypto.encode
 
 import scala.util.Try
 

@@ -1,13 +1,13 @@
-package scrypto.crypto.authds.benchmarks
+package scrypto.authds.benchmarks
 
 import com.google.common.primitives.Ints
 import org.mapdb.{DBMaker, Serializer}
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.authds._
-import scrypto.crypto.authds.avltree.batch.{BatchAVLProver, BatchAVLVerifier, Insert}
-import scrypto.crypto.authds.avltree.{AVLModifyProof, AVLTree}
-import scrypto.crypto.authds.treap._
-import scrypto.crypto.hash.Blake2b256Unsafe
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.authds._
+import scrypto.authds.avltree.batch.{BatchAVLProver, BatchAVLVerifier, Insert}
+import scrypto.authds.avltree.{AVLModifyProof, AVLTree}
+import scrypto.authds.treap._
+import scrypto.hash.Blake2b256Unsafe
 
 import scala.collection.mutable
 import scala.util.{Random, Try}

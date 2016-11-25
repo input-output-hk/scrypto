@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 class GroestlSpecification extends HashTest {
 

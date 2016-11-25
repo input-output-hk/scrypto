@@ -1,6 +1,6 @@
-package scrypto.crypto.authds.avltree.batch
+package scrypto.authds.avltree.batch
 
-import scrypto.crypto.authds.avltree.ProverNodes
+import scrypto.authds.avltree.ProverNodes
 
 import scala.collection.mutable
 import scala.util.Try

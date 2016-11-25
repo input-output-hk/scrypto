@@ -1,10 +1,10 @@
-package scrypto.crypto.authds.avltree.batch
+package scrypto.authds.avltree.batch
 
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.authds.UpdateF
-import scrypto.crypto.authds.avltree._
-import scrypto.crypto.encode.Base58
-import scrypto.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.authds.UpdateF
+import scrypto.authds.avltree._
+import scrypto.encode.Base58
+import scrypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scrypto.utils.ByteArray
 
 import scala.collection.mutable

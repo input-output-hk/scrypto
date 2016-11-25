@@ -1,13 +1,13 @@
-package scrypto.crypto.authds.avltree
+package scrypto.authds.avltree
 
 import com.google.common.primitives.Bytes
-import scrypto.crypto.authds._
-import scrypto.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scrypto.authds._
+import scrypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scrypto.utils.ByteArray
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
-import scrypto.crypto.authds.TwoPartyDictionary.Label
+import scrypto.authds.TwoPartyDictionary.Label
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {

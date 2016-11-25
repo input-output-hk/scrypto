@@ -1,6 +1,7 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
-import scrypto.crypto._
+import scrypto.hash.CryptographicHash
+import scrypto.utils.NatConstants.Nat64
 import shapeless.Sized
 
 trait CryptographicHash64 extends CryptographicHash {
@@ -12,5 +13,4 @@ trait CryptographicHash64 extends CryptographicHash {
   def hashSized(in: Message): SizedDigest = Sized.wrap(hash(in))
 
   def hashSized(in: String): SizedDigest = hashSized(in.getBytes)
-
 }

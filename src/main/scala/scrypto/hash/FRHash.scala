@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 trait FRHash extends CryptographicHash {
   override lazy val DigestSize: Int = hf.getDigestLength

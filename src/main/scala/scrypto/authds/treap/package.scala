@@ -1,4 +1,4 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
 package object treap {
   type TreapKey = Array[Byte]

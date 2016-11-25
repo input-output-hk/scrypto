@@ -1,4 +1,4 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
 import scala.util.Try
 

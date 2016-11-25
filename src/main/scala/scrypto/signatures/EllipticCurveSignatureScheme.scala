@@ -1,3 +1,3 @@
 package scrypto.signatures
 
-trait EllipticCurve[SizeT <: shapeless.Nat] extends SigningFunctions[SizeT]
+trait EllipticCurveSignatureScheme[SizeT <: shapeless.Nat] extends SigningFunctions[SizeT]

@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 import fr.cryptohash.BLAKE512
 

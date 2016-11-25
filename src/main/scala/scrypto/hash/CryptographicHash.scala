@@ -1,4 +1,4 @@
-package scrypto.crypto.hash
+package scrypto.hash
 
 /**
  * From Wikipedia (https://en.wikipedia.org/wiki/Cryptographic_hash_function):
@@ -30,6 +30,5 @@ trait CryptographicHash {
   def hash(input: Message): Digest
 
   def hash(input: String): Digest = hash(input.getBytes)
-
 }
 

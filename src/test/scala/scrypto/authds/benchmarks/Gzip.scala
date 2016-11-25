@@ -1,4 +1,4 @@
-package scrypto.crypto.authds.benchmarks
+package scrypto.authds.benchmarks
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.util.zip.{GZIPInputStream, GZIPOutputStream}

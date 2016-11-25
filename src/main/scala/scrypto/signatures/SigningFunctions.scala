@@ -1,4 +1,4 @@
-package scrypto.crypto.signatures
+package scrypto.signatures
 
 import java.security.SecureRandom
 

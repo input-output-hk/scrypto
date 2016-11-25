@@ -1,7 +1,7 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
-import scrypto.crypto.authds.avltree.Balance
-import scrypto.crypto.encode.Base58
+import scrypto.authds.avltree.Balance
+import scrypto.encode.Base58
 
 trait TwoPartyProofElement {
   val bytes: Array[Byte]

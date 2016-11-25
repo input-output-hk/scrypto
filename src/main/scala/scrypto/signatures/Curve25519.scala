@@ -1,16 +1,16 @@
-package scrypto.crypto.signatures
+package scrypto.signatures
 
 import java.lang.reflect.Constructor
 
 import org.slf4j.LoggerFactory
 import org.whispersystems.curve25519.OpportunisticCurve25519Provider
-import scrypto.crypto.Nat32
-import scrypto.crypto.hash.Sha256
+import scrypto.hash.Sha256
+import scrypto.utils.NatConstants.Nat32
 
 import scala.util.{Failure, Try}
 
-
-object Curve25519 extends EllipticCurve[Nat32] {
+//todo: why Nat32, not [Nat32, Nat64]?
+object Curve25519 extends EllipticCurveSignatureScheme[Nat32] {
 
   import SigningFunctions._
 

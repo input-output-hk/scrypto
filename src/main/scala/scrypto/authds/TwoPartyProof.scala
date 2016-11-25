@@ -1,6 +1,6 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
-import scrypto.crypto.authds.TwoPartyDictionary.Label
+import scrypto.authds.TwoPartyDictionary.Label
 
 trait TwoPartyProof[Key, Value] extends UpdateF[Value] with ProofIterator {
   val key: Key

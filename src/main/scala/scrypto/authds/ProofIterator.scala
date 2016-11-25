@@ -1,7 +1,7 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
-import scrypto.crypto.authds.TwoPartyDictionary._
-import scrypto.crypto.authds.avltree._
+import scrypto.authds.TwoPartyDictionary._
+import scrypto.authds.avltree._
 
 trait ProofIterator {
   private var i = -1

@@ -1,4 +1,4 @@
-package scrypto.crypto.encode
+package scrypto.encode
 
 object Base64 {
   def encode(input: Array[Byte]): String = new String(java.util.Base64.getEncoder.encode(input))

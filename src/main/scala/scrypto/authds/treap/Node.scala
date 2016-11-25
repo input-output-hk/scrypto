@@ -1,9 +1,9 @@
-package scrypto.crypto.authds.treap
+package scrypto.authds.treap
 
-import scrypto.crypto.authds.Level
-import scrypto.crypto.authds.TwoPartyDictionary.Label
-import scrypto.crypto.encode.Base58
-import scrypto.crypto.hash.ThreadUnsafeHash
+import scrypto.authds.Level
+import scrypto.authds.TwoPartyDictionary.Label
+import scrypto.encode.Base58
+import scrypto.hash.ThreadUnsafeHash
 
 sealed trait Node {
 

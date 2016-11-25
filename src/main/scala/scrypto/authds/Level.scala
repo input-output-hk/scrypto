@@ -1,8 +1,8 @@
-package scrypto.crypto.authds
+package scrypto.authds
 
 import com.google.common.primitives.Ints
-import scrypto.crypto.authds.treap._
-import scrypto.crypto.hash.Sha256
+import scrypto.authds.treap._
+import scrypto.hash.Sha256
 import scrypto.utils.ByteArray
 
 trait Level extends Ordered[Level] {

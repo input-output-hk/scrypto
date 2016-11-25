@@ -1,10 +1,10 @@
-package scrypto.crypto.authds.avltree
+package scrypto.authds.avltree
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scrypto.crypto.authds.TwoPartyTests
-import scrypto.crypto.authds.avltree.batch.{oldProver, _}
+import scrypto.authds.TwoPartyTests
+import scrypto.authds.avltree.batch.{oldProver, _}
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
