@@ -43,8 +43,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
       }
     }
     require(s.size == 1)
-    val root = s.pop
-    require(root.label sameElements startingDigest)
+    val root = s.pop.ensuring(_.label sameElements startingDigest)
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.getOrElse(None)

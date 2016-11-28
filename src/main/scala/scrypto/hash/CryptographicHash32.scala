@@ -1,6 +1,5 @@
 package scrypto.hash
 
-import scrypto.hash.CryptographicHash
 import scrypto.utils.NatConstants.Nat32
 import shapeless.Sized
 

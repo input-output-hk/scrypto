@@ -361,4 +361,3 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
    * to get a very short piece of code
    */
 }
-
