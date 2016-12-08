@@ -1,3 +1,4 @@
+/*
 package scrypto.authds.benchmarks
 
 import com.google.common.primitives.Ints
@@ -353,3 +354,4 @@ object BlockchainBench extends BenchmarkLaunchers with App {
   runBatchProver()
    //runBatchVerifier()
 }
+*/

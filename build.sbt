@@ -9,7 +9,7 @@ scalaVersion := "2.12.1"
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.+",
   "com.google.guava" % "guava" % "19.+",
-  "org.mapdb" % "mapdb" % "3.+" % "test",
+//  "org.mapdb" % "mapdb" % "3.+" % "test",
   "org.scalatest" %% "scalatest" % "3.+" % "test",
   "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "org.slf4j" % "slf4j-api" % "1.+",
