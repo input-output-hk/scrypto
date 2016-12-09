@@ -4,6 +4,8 @@ name := "scrypto"
 
 version := "1.2.0-RC3"
 
+scalaVersion := "2.12.1"
+
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 libraryDependencies ++= Seq(
