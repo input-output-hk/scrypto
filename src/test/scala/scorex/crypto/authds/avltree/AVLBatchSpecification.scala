@@ -1,10 +1,10 @@
-package scorex.crypto.authds.avltree
+package scorex.crypto.authds.avltree.batch
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
-import scorex.crypto.authds.avltree.batch.{oldProver, _}
+import scorex.crypto.authds.avltree.batch
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -12,7 +12,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val VL = 8
 
   property("Updates with and without batching should lead to the same tree") {
-    val tree = new AVLTree(26)
+    val tree = new scorex.crypto.authds.avltree.AVLTree(26)
     var digest = tree.rootHash()
     val oldProver = new oldProver(tree)
     val newProver = new BatchAVLProver(None, 26, 8)
@@ -32,7 +32,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       digest = oldProver.rootHash
       oldProver.rootHash shouldBe newProver.rootHash
     }
-    checkTree(newProver.topNode)
+    newProver.checkTree(true)
   }
 
   property("Verifier should calculate the same digest") {
@@ -45,13 +45,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       currentMods foreach (m => prover.performOneModification(m._1, m._2))
       val pf = prover.generateProof.toArray
 
-      val verifier = new BatchAVLVerifier(digest, pf, 32, KL, VL)
+      val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
       currentMods foreach (m => verifier.verifyOneModification(m._1, m._2))
       digest = verifier.digest.get
 
       prover.rootHash shouldEqual digest
     }
-    checkTree(prover.topNode)
+    prover.checkTree(true)
   }
 
 
@@ -62,18 +62,5 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   } yield (key, value)
 
 
-  /**
-    * Checks that the isNew and visited flags are all false.
-    **/
-  def checkTree(node: ProverNodes): Unit = {
-    node.isNew shouldBe false
-    node.visited shouldBe false
-    node match {
-      case pn: ProverNode =>
-        checkTree(pn.left)
-        checkTree(pn.right)
-      case _ =>
-    }
-  }
 
 }
