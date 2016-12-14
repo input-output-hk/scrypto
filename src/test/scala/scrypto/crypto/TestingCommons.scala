@@ -4,7 +4,7 @@ import java.io.File
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Matchers
-import scrypto.hash.Sha256
+import scorex.crypto.hash.Sha256
 
 import scala.util.Random
 
