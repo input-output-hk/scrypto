@@ -1,7 +1,5 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.avltree.ProverNodes
-
 import scala.util.Try
 
 trait VersionedAVLStorage {

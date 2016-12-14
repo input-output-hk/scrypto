@@ -3,7 +3,7 @@ package scorex.crypto.authds.avltree
 import com.google.common.primitives.Bytes
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
-import scorex.crypto.utils.ByteArray
+import scorex.utils.ByteArray
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}

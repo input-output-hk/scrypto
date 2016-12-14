@@ -1,6 +1,6 @@
 package scorex.crypto.hash
 
-import scorex.crypto.utils.ByteArray
+import scorex.utils.ByteArray
 
 class CommutativeHash[HashFn <: CryptographicHash](hf: HashFn) extends CryptographicHash {
   override val DigestSize: Int = hf.DigestSize

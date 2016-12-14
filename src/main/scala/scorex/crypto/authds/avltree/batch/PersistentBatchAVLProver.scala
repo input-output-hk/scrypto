@@ -2,7 +2,6 @@ package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.TwoPartyDictionary._
 import scorex.crypto.authds.UpdateF
-import scorex.crypto.authds.avltree.{ProverNodes, _}
 import scorex.crypto.hash.ThreadUnsafeHash
 
 import scala.util.Try

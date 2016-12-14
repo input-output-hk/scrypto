@@ -1,6 +1,6 @@
 package scorex.crypto.hash
 
-import scorex.crypto.utils.HashHelpers.hashChain
+import scorex.utils.HashHelpers.hashChain
 
 class HashChainSpecification extends HashTest {
 

@@ -1,4 +1,4 @@
-package scorex.crypto.utils
+package scorex.utils
 
 object Booleans {
 

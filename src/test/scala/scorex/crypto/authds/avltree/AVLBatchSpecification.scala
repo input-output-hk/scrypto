@@ -1,10 +1,9 @@
-package scorex.crypto.authds.avltree
+package scorex.crypto.authds.avltree.batch
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
-import scorex.crypto.authds.avltree.batch.{oldProver, _}
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -21,7 +20,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val m = Insert(aKey, aValue)
       prover.performOneModification(m)
       val pf = prover.generateProof
-      val verifier = new BatchAVLVerifier(digest, pf, HL, KL, VL)
+      val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
       verifier.verifyOneModification(m)
       prover.rootHash should not equal digest
       prover.rootHash shouldEqual verifier.digest.get
@@ -38,7 +37,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Updates with and without batching should lead to the same tree") {
-    val tree = new AVLTree(KL)
+    val tree = new scorex.crypto.authds.avltree.AVLTree(KL)
     var digest = tree.rootHash()
     val oldProver = new oldProver(tree)
     val newProver = new BatchAVLProver(None, KL, VL)
@@ -58,7 +57,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       digest = oldProver.rootHash
       oldProver.rootHash shouldBe newProver.rootHash
     }
-    checkTree(newProver.topNode)
+    newProver.checkTree(true)
   }
 
   property("Verifier should calculate the same digest") {
@@ -71,13 +70,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       currentMods foreach (m => prover.performOneModification(m._1, m._2))
       val pf = prover.generateProof.toArray
 
-      val verifier = new BatchAVLVerifier(digest, pf, HL, KL, VL)
+      val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
       currentMods foreach (m => verifier.verifyOneModification(m._1, m._2))
       digest = verifier.digest.get
 
       prover.rootHash shouldEqual digest
     }
-    checkTree(prover.topNode)
+    prover.checkTree(true)
   }
 
 
@@ -86,20 +85,5 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       (k => !(k sameElements Array.fill(KL)(-1: Byte)) && !(k sameElements Array.fill(KL)(0: Byte)) && k.length == KL)
     value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)
   } yield (key, value)
-
-
-  /**
-    * Checks that the isNew and visited flags are all false.
-    **/
-  def checkTree(node: ProverNodes): Unit = {
-    node.isNew shouldBe false
-    node.visited shouldBe false
-    node match {
-      case pn: ProverNode =>
-        checkTree(pn.left)
-        checkTree(pn.right)
-      case _ =>
-    }
-  }
 
 }

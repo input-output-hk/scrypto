@@ -1,6 +1,6 @@
 package scorex.crypto.hash
 
-import scorex.crypto.utils.HashHelpers
+import scorex.utils.HashHelpers
 
 
 object X11 extends CryptographicHash32 {

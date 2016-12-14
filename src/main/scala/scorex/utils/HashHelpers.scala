@@ -1,4 +1,4 @@
-package scorex.crypto.utils
+package scorex.utils
 
 import scorex.crypto.hash.CryptographicHash
 

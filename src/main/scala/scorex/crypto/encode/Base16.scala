@@ -1,6 +1,6 @@
 package scorex.crypto.encode
 
-import scorex.crypto.utils.BytesHex
+import scorex.utils.BytesHex
 
 object Base16 {
   def encode(input: Array[Byte]): String = BytesHex.bytes2hex(input)

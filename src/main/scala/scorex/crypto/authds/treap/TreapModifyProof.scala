@@ -3,7 +3,7 @@ package scorex.crypto.authds.treap
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.hash.ThreadUnsafeHash
-import scorex.crypto.utils.ByteArray
+import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 

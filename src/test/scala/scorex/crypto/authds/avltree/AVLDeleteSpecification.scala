@@ -10,7 +10,7 @@ class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks
   val KL = 26
   val VL = 8
 
-  ignore("delete") {
+  property("delete") {
     val tree = new AVLTree(KL)
     val aKey = Sha256("key 1").take(KL)
     val aValue = Sha256("value 1").take(VL)

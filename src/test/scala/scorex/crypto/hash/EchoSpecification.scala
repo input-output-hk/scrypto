@@ -1,6 +1,6 @@
 package scorex.crypto.hash
 
-import scorex.crypto.utils.BytesHex.hex2bytes
+import scorex.utils.BytesHex.hex2bytes
 
 class EchoSpecification extends HashTest {
 

@@ -4,7 +4,7 @@ import scorex.crypto.authds._
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
-import scorex.crypto.utils.ByteArray
+import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 

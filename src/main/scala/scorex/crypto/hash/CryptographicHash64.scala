@@ -1,6 +1,6 @@
 package scorex.crypto.hash
 
-import scorex.crypto.utils.NatConstants.Nat64
+import scorex.utils.NatConstants.Nat64
 import shapeless.Sized
 
 trait CryptographicHash64 extends CryptographicHash {

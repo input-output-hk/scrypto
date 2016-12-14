@@ -5,7 +5,7 @@ import java.lang.reflect.Constructor
 import org.slf4j.LoggerFactory
 import org.whispersystems.curve25519.OpportunisticCurve25519Provider
 import scorex.crypto.hash.Sha256
-import scorex.crypto.utils.NatConstants.Nat32
+import scorex.utils.NatConstants.Nat32
 
 import scala.util.{Failure, Try}
 

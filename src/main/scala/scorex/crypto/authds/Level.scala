@@ -3,7 +3,7 @@ package scorex.crypto.authds
 import com.google.common.primitives.Ints
 import scorex.crypto.authds.treap._
 import scorex.crypto.hash.Sha256
-import scorex.crypto.utils.ByteArray
+import scorex.utils.ByteArray
 
 trait Level extends Ordered[Level] {
 
