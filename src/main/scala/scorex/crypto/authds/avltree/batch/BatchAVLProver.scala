@@ -2,7 +2,6 @@ package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -12,21 +11,25 @@ import scala.util.Try
 
 /**
   *
-  * @param o           - option root node of old tree. Tree should contain new nodes only
+  * @param rootOpt     - option root node of old tree. Tree should contain new nodes only
   * @param keyLength   - length of keys in tree
   * @param valueLength - length of values in tree
   * @param hf          - hash function
   */
-class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TODO: THIS ARGUMENT IS NOT USED*/ ,
+class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None,
                                              val keyLength: Int = 32,
-                                             val valueLength: Int = 8)(implicit val hf: HF = new Blake2b256Unsafe)
+                                             val valueLength: Int = 8)
+                                            (implicit val hf: HF = new Blake2b256Unsafe)
   extends UpdateF[Array[Byte]] with AuthenticatedTreeOps with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 
-  private[batch] var topNode: ProverNodes = new ProverLeaf(NegativeInfinityKey,
-    Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
-  topNode.isNew = false
+  private[batch] var topNode: ProverNodes = rootOpt.getOrElse({
+    val t = new ProverLeaf(NegativeInfinityKey,
+      Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
+    t.isNew = false
+    t
+  })
 
   private var oldTopNode = topNode
 
@@ -96,11 +99,13 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
   def rootHash: Label = topNode.label
 
   def performOneModification(m: Modification): Try[Unit] = {
+    // TODO How can this fail and what to do if it does?
     val converted = Modification.convert(m)
     performOneModification(converted._1, converted._2)
   }
 
   def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Try[Unit] = Try {
+    // TODO How can this fail and what to do if it does?
     replayIndex = directionsBitLength
     topNode = returnResultOfOneModification(key, updateFunction, topNode).asInstanceOf[ProverNodes]
   }
@@ -108,16 +113,13 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
 
   def generateProof: Seq[Byte] = {
     val packagedTree = new mutable.ArrayBuffer[Byte]
+    var previousLeafAvailable = false
 
     /* TODO Possible optimizations:
      * - Don't put in the key if it's in the modification stream somewhere 
      *   (savings ~32 bytes per proof for transactions with existing key; 0 for insert)
      *   (problem is that then verifier logic has to change -- 
      *   can't verify tree immediately)
-     * - Don't put in the nextLeafKey if the next leaf is in the tree, 
-     *   or equivalently, don't put in key if previous leaf is in the tree 
-     *   (savings are small if number of transactions is much smaller than  
-     *   number of leaves, because cases of two leaves in a row will be rare)
      * - Condense a sequence of balances and other non-full-byte info using 
      *   bit-level stuff and maybe even "changing base without losing space" 
      *   by Dodis-Patrascu-Thorup STOC 2010 (expected savings: 5-15 bytes 
@@ -131,17 +133,19 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
         packagedTree += LabelInPackagedProof
         packagedTree ++= rNode.label
         assert(rNode.label.length == labelLength)
+        previousLeafAvailable = false
       } else {
         rNode.visited = false
         rNode match {
           case r: ProverLeaf =>
             packagedTree += LeafWithKeyInPackagedProof
-            packagedTree ++= r.key
+            if (!previousLeafAvailable) packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
             packagedTree ++= r.value
+            previousLeafAvailable = true
           case r: InternalProverNode =>
-            packTree(r.right.asInstanceOf[ProverNodes])
             packTree(r.left.asInstanceOf[ProverNodes])
+            packTree(r.right.asInstanceOf[ProverNodes])
             packagedTree += r.balance
         }
       }
@@ -173,7 +177,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
   }
 
   /* a simple non-modifying non-proof-generating lookup
-   * returns Some[value] for this key if key is in the tree, and None otherwise
+   * returns Some(value) for value associated with the given key if key is in the tree, and None otherwise
    */
   def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = {
     def unauthenticatedLookupHelper(rNode: ProverNodes, found: Boolean): Option[AVLValue] = {
@@ -254,7 +258,6 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
 
 
   override def toString: String = {
-    //    def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
 
     def stringTreeHelper(rNode: ProverNodes, depth: Int): String = {
       val nodeStr: String = rNode match {

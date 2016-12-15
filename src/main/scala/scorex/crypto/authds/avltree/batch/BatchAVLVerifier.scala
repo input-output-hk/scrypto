@@ -65,6 +65,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
   private def reconstructTree: Option[VerifierNodes] = Try {
     val s = new mutable.Stack[VerifierNodes]
     var i = 0
+    var previousLeaf: Option[Leaf] = None
     while (pf(i) != EndOfTreeInPackagedProof) {
       val n = pf(i)
       i += 1
@@ -73,17 +74,26 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
           val label = pf.slice(i, i + labelLength)
           i += labelLength
           s.push(new LabelOnlyNode(label))
+          previousLeaf = None
         case LeafWithKeyInPackagedProof =>
-          val key = pf.slice(i, i + keyLength)
-          i += keyLength
+          val key = if (previousLeaf != None) {
+            previousLeaf.get.nextLeafKey
+          }
+          else {
+            val start=i
+            i += keyLength
+            pf.slice(start, i)
+          }
           val nextLeafKey = pf.slice(i, i + keyLength)
           i += keyLength
           val value = pf.slice(i, i + valueLength)
           i += valueLength
-          s.push(new VerifierLeaf(key, value, nextLeafKey))
+          val leaf = new VerifierLeaf(key, value, nextLeafKey)
+          s.push(leaf)
+          previousLeaf = Some(leaf)
         case _ =>
-          val left = s.pop
           val right = s.pop
+          val left = s.pop
           s.push(new InternalVerifierNode(left, right, n))
       }
     }

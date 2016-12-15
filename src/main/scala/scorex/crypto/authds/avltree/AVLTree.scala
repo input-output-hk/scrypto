@@ -8,7 +8,7 @@ import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
-class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, rootOpt: Option[Leaf] = None)
+class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, rootOpt: Option[ProverNodes] = None)
                                      (implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] {
 
