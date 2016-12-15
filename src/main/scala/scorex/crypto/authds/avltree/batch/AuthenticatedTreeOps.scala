@@ -87,7 +87,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
         case r: Leaf =>
           if (keyMatchesLeaf(key, r)) {
             updateFunction(Some(r.value)) match {
-              case Success(None) => //delete key 
+              case Success(None) => //delete key
                 (r, false, false, true)
               case Success(Some(v)) => //update value
                 require(v.length == valueLength)
@@ -197,7 +197,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
       // and delete the left child.
       //
       // Things get more complicated key is found in a node that has two non-leaf children.
-      // In that case, we perform a deleteMax operation on the left subtree 
+      // In that case, we perform a deleteMax operation on the left subtree
       // (recursively call ourselves on the left child with
       // with deleteMax = true), and copy the information from that deleted leaf into the node where the
       // key was found and into the leftmost leaf of its right subtree
@@ -244,7 +244,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
         val rightChild = r.right.asInstanceOf[Leaf]
         rightChild.visited = true
         if (deleteMax) {
-          // If we are in deleteMax mode, 
+          // If we are in deleteMax mode,
           // we should save the info of leaf we are deleting,
           // because it will be copied over to its successor
           savedNode = Some(rightChild)
@@ -263,7 +263,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
         leftChild.visited = true
         (changeKeyAndValueOfMinNode(r.right, leftChild.key, leftChild.value), true)
       } else {
-        // Potential hard deletion cases: 
+        // Potential hard deletion cases:
         if (direction <= 0) {
           // going left; know left child is not a leaf; deleteMax if and only if direction == 0
           val (newLeft, childHeightDecreased) = deleteHelper(r.left.asInstanceOf[InternalNode], direction == 0)

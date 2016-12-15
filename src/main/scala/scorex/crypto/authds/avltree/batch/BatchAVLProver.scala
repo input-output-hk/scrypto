@@ -6,6 +6,7 @@ import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
+import scala.util.Try
 
 
 /**
@@ -93,12 +94,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
 
   def rootHash: Label = topNode.label
 
-  def performOneModification(m: Modification): Unit = {
+  def performOneModification(m: Modification): Try[Unit] = {
     val converted = Modification.convert(m)
     performOneModification(converted._1, converted._2)
   }
 
-  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Unit = {
+  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Try[Unit] = Try {
     replayIndex = directionsBitLength
     topNode = returnResultOfOneModification(key, updateFunction, topNode).asInstanceOf[ProverNodes]
   }
