@@ -30,4 +30,6 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
     val recoveredTop: ProverNodes = storage.rollback(version).get
     prover = new BatchAVLProver(Some(recoveredTop), prover.keyLength, prover.valueLength)(prover.hf)
   }
+
+  def checkTree(postProof: Boolean = false): Unit = prover.checkTree(postProof)
 }

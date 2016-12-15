@@ -8,11 +8,12 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-// TODO: should this be "case"?
-case class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[Byte], keyLength: Int = 32, valueLength: Int = 8)
-                                                   (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]] with AuthenticatedTreeOps /*TODO: need this? TwoPartyProof[AVLKey, AVLValue]*/ {
+class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[Byte],
+                                               val keyLength: Int = 32, val valueLength: Int = 8)
+                                              (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]]
+  with AuthenticatedTreeOps {
 
-  protected val labelLength = hf.DigestSize // TODO: we shouldn't pass labelLength in, but should get it from the digest
+  protected val labelLength = hf.DigestSize
 
   def digest: Option[Label] = topNode.map(_.label)
 
