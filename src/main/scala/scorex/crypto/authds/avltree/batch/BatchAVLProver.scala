@@ -15,9 +15,9 @@ import scala.collection.mutable
   * @param valueLength - length of values in tree
   * @param hf          - hash function
   */
-case class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TODO: THIS ARGUMENT IS NOT USED*/ ,
-                                                  keyLength: Int = 32,
-                                                  valueLength: Int = 8)(implicit val hf: HF = new Blake2b256Unsafe)
+class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TODO: THIS ARGUMENT IS NOT USED*/ ,
+                                             val keyLength: Int = 32,
+                                             val valueLength: Int = 8)(implicit val hf: HF = new Blake2b256Unsafe)
   extends UpdateF[Array[Byte]] with AuthenticatedTreeOps {
 
   protected val labelLength = hf.DigestSize
