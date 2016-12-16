@@ -2,6 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -249,46 +250,27 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
 
 
     val (minTree, maxTree, treeHeight) = checkTreeHelper(topNode)
-    assert(minTree.key == NegativeInfinityKey)
-    assert(maxTree.nextLeafKey == PositiveInfinityKey)
-    if (fail) {
-      printTree
-      assert(false)
-    }
+    assert(minTree.key sameElements NegativeInfinityKey)
+    assert(maxTree.nextLeafKey sameElements PositiveInfinityKey)
+    assert(!fail, "Tree failed: \n" + toString)
   }
 
 
-  def printTree = {
-    println
-    def printByteArray(a: Array[Byte]) = {
-      var x: Int = a(0)
-      if (x < 0) x = 256 + x
-      print(x)
-    }
-    def printTreeHelper(rNode: ProverNodes, depth: Int): Unit = {
-      for (i <- 0 until depth + 2)
-        print(" ")
-      rNode match {
+  override def toString: String = {
+    def printByteArray(a: Array[Byte]): String = Base58.encode(a).take(8)
+
+    def printTreeHelper(rNode: ProverNodes, depth: Int): String = {
+      for (i <- 0 until depth + 2) print(" ")
+      val nodeStr: String = rNode match {
         case leaf: ProverLeaf =>
-          print("At leaf label = ")
-          printByteArray(leaf.label)
-          print(" key = ")
-          printByteArray(leaf.key)
-          print(" nextLeafKey = ")
-          printByteArray(leaf.nextLeafKey)
-          println
+          "At leaf label = " + printByteArray(leaf.label) + " key = " + printByteArray(leaf.key) +
+            " nextLeafKey = " + printByteArray(leaf.nextLeafKey) + "\n"
         case r: InternalProverNode =>
-          print("Internal node label = ")
-          printByteArray(r.label)
-          print(" key = ")
-          printByteArray(r.key)
-          print(" balance = ")
-          print(r.balance)
-          print(" height = ")
-          println(r.height)
-          printTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1)
-          printTreeHelper(r.right.asInstanceOf[ProverNodes], depth + 1)
+          "Internal node label = " + printByteArray(r.label) + " key = " + printByteArray(r.key) + " balance = " +
+            r.balance + " height = " + r.height + "\n" + printTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1) +
+            printTreeHelper(r.right.asInstanceOf[ProverNodes], depth + 1)
       }
+      nodeStr
     }
     printTreeHelper(topNode, 0)
   }

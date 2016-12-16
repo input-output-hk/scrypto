@@ -37,12 +37,12 @@ object BatchingPlayground extends App {
     var newProver = new BatchAVLProver()
 
     def ins(k: Int) = {
-      var c = Modification.convert((Insert(intToKey(k), value)))
+      var c = Modification.convert(Insert(intToKey(k), value))
       newProver.performOneModification(c._1, c._2)
       print("Inserted ")
       println(k)
       newProver.checkTree()
-      newProver.printTree
+      println(newProver)
     }
 
     def del(k: Int) = {
@@ -51,7 +51,7 @@ object BatchingPlayground extends App {
       print("Removed ")
       println(k)
       newProver.checkTree()
-      newProver.printTree
+      println(newProver)
     }
 
 

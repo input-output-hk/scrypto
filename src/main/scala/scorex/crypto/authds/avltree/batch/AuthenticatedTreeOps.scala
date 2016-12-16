@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.encode.Base58
-import scorex.utils.ByteArray
+import scorex.utils.{ByteArray, ScryptoLogging}
 
 import scala.util.{Failure, Success}
 
@@ -15,8 +15,7 @@ trait BatchProofConstants {
   val EndOfTreeInPackagedProof: Byte = 5
 }
 
-trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants {
-  // TODO: What here and in other classes should be private/protected/etc.
+trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants with ScryptoLogging {
 
   protected val keyLength: Int
   protected val valueLength: Int
@@ -168,8 +167,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
             }
           }
         case r: LabelOnlyNode =>
-          require(false) // TODO: IS THIS THE RIGHT WAY TO SAY THAT IT SHOULD NEVER BE LabelOnlyNode?
-          (r, false, false, false) // TODO: THIS LINE IS NEVER REACHED
+          throw new Error("Should never reach this point. Look like tree is broken.")
       }
     }
 
@@ -210,8 +208,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
           case rN: InternalNode =>
             rN.getNew(newRight = changeNextLeafKeyOfMaxNode(rN.right, nextLeafKey))
           case rN: LabelOnlyNode =>
-            require(false) // TODO: IS THIS THE RIGHT WAY TO SAY THAT IT SHOULD NEVER BE LabelOnlyNode?
-            rN // TODO: THIS LINE IS NEVER REACHED
+            throw new Error("Should never reach this point. Look like tree is broken.")
         }
       }
       def changeKeyAndValueOfMinNode(rNode: Node, newKey: AVLKey, newValue: AVLValue): Node = {
@@ -222,8 +219,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
           case rN: InternalNode =>
             rN.getNew(newLeft = changeKeyAndValueOfMinNode(rN.left, newKey, newValue))
           case rN: LabelOnlyNode =>
-            require(false) // TODO: IS THIS THE RIGHT WAY TO SAY THAT IT SHOULD NEVER BE LabelOnlyNode?
-            rN // TODO: THIS LINE IS NEVER REACHED
+            throw new Error("Should never reach this point. Look like tree is broken.")
         }
       }
 
