@@ -1,9 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
-import scala.collection.mutable
 
 sealed trait Node extends ToStringHelper {
 
@@ -29,8 +27,6 @@ sealed trait ProverNodes extends Node {
 
   def key = k
 
-  // TODO: Debug only
-  var height: Int
 }
 
 sealed trait VerifierNodes extends Node
@@ -48,7 +44,7 @@ sealed trait InternalNode extends Node {
 
   protected val hf: ThreadUnsafeHash
 
-  protected def computeLabel: Label = hf.prefixedHash(1: Byte, Array(b), l.label, r.label) // TODO: why Array(balance)?
+  protected def computeLabel: Label = hf.prefixedHash(1: Byte, Array(b), l.label, r.label)
 
   def balance: Balance = b
 
@@ -63,7 +59,7 @@ sealed trait InternalNode extends Node {
 }
 
 class InternalProverNode(protected var k: AVLKey, protected var l: Node, protected var r: Node,
-                         protected var b: Balance = 0)(implicit val hf: ThreadUnsafeHash)
+                         protected var b: Balance = 0.toByte)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
 
@@ -85,27 +81,11 @@ class InternalProverNode(protected var k: AVLKey, protected var l: Node, protect
       l = newLeft
       r = newRight
       b = newBalance
-      assert(checkHeight)
       labelOpt = None
       this
     } else {
-      val ret = new InternalProverNode(k, newLeft, newRight, newBalance)
-      assert(ret.checkHeight)
-      ret
+      new InternalProverNode(k, newLeft, newRight, newBalance)
     }
-
-  }
-
-  // TODO needed for debug only
-  var height = 1
-
-  private def checkHeight: Boolean = {
-    val lh = left.asInstanceOf[ProverNodes].height
-    val rh = right.asInstanceOf[ProverNodes].height
-
-    height = math.max(lh, rh) + 1
-    balance == rh - lh && balance >= -1 && balance <= 1
-    true
   }
 
   override def toString: String = {
@@ -189,7 +169,6 @@ class ProverLeaf(protected var k: AVLKey, protected var v: AVLValue, protected v
     }
   }
 
-  var height = 0 // TODO: needed for debug only
 }
 
 

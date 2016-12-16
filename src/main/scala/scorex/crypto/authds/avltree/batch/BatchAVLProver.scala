@@ -238,7 +238,6 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
           assert1(minRight.key sameElements r.key, "min of right subtree doesn't match")
           assert1(r.balance >= -1 && r.balance <= 1 && r.balance == rightHeight - leftHeight, "wrong balance")
           val height = math.max(leftHeight, rightHeight) + 1
-          assert1(height == r.height, "height doesn't match")
           (minLeft, maxRight, height)
 
         case l: ProverLeaf =>
@@ -264,7 +263,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
             " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
         case r: InternalProverNode =>
           "Internal node label = " + arrayToString(r.label) + " key = " + arrayToString(r.key) + " balance = " +
-            r.balance + " height = " + r.height + "\n" + stringTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1) +
+            r.balance + "\n" + stringTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1) +
             stringTreeHelper(r.right.asInstanceOf[ProverNodes], depth + 1)
       }
       Seq.fill(depth + 2)(" ").mkString + nodeStr
