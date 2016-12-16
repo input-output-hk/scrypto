@@ -20,7 +20,7 @@ import scala.util.Try
 class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TODO: THIS ARGUMENT IS NOT USED*/ ,
                                              val keyLength: Int = 32,
                                              val valueLength: Int = 8)(implicit val hf: HF = new Blake2b256Unsafe)
-  extends UpdateF[Array[Byte]] with AuthenticatedTreeOps {
+  extends UpdateF[Array[Byte]] with AuthenticatedTreeOps with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 
@@ -255,15 +255,15 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
 
 
   override def toString: String = {
-    def stringByteArray(a: Array[Byte]): String = Base58.encode(a).take(8)
+    //    def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
 
     def stringTreeHelper(rNode: ProverNodes, depth: Int): String = {
       val nodeStr: String = rNode match {
         case leaf: ProverLeaf =>
-          "At leaf label = " + stringByteArray(leaf.label) + " key = " + stringByteArray(leaf.key) +
-            " nextLeafKey = " + stringByteArray(leaf.nextLeafKey) + "\n"
+          "At leaf label = " + arrayToString(leaf.label) + " key = " + arrayToString(leaf.key) +
+            " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
         case r: InternalProverNode =>
-          "Internal node label = " + stringByteArray(r.label) + " key = " + stringByteArray(r.key) + " balance = " +
+          "Internal node label = " + arrayToString(r.label) + " key = " + arrayToString(r.key) + " balance = " +
             r.balance + " height = " + r.height + "\n" + stringTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1) +
             stringTreeHelper(r.right.asInstanceOf[ProverNodes], depth + 1)
       }
