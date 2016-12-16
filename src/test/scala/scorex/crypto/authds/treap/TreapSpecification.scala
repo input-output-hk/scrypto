@@ -3,7 +3,7 @@ package scorex.crypto.authds.treap
 import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.TestingCommons
+import scrypto.TestingCommons
 import scorex.crypto.authds.{TwoPartyTests, Level}
 import scorex.crypto.hash.Blake2b256Unsafe
 

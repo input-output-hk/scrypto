@@ -1,4 +1,4 @@
-package scorex.crypto
+package scrypto
 
 import java.io.File
 

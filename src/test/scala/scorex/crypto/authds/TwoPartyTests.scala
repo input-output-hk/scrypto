@@ -1,14 +1,14 @@
 package scorex.crypto.authds
 
 import com.google.common.primitives.Longs
-import scorex.crypto.TestingCommons
-import scorex.crypto.authds.avltree._
+import scrypto.TestingCommons
 import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.authds.treap._
+import scorex.crypto.authds.avltree.AVLValue
+import scorex.crypto.authds.treap.TreapValue
 import scorex.crypto.hash.Sha256
 
 import scala.util.{Failure, Success}
-import scorex.crypto.authds.TwoPartyDictionary.Label
+
 
 trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
 
@@ -38,9 +38,10 @@ trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
     }
     val pl: Float = proofs.length
 
-    val proofSize = proofs.foldLeft(Array[Byte]()) { (a, b) =>
-      a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
-    }.length / elements.length
+    val proofSize = proofs.foldLeft(0) { (a, b) =>
+      a + b.proofSeq.map(_.bytes.length).sum
+    } / elements.length
+
     Seq(insertTime, verifyTime, proofSize, m(0) / pl, m(1) / pl, m(2) / pl, m(3) / pl, m(4) / pl, m(5) / pl)
   }
 
@@ -66,7 +67,4 @@ trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
 
   def transactionUpdate(amount: Long): UpdateFunction = (old: Option[TreapValue]) =>
     Success(Some(Longs.toByteArray(old.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
-
-
-
 }

@@ -3,6 +3,7 @@ package scorex.crypto.authds.avltree
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
+import scala.collection.mutable
 
 sealed trait Node {
 
@@ -46,7 +47,8 @@ trait InternalNode extends Node {
 sealed trait ProverNodes extends Node {
   val key: AVLKey
   protected[avltree] var height: Int
-
+  var isNew: Boolean = true
+  var visited: Boolean = false
 }
 
 sealed trait VerifierNodes extends Node
@@ -89,7 +91,7 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
 
   override def toString: String = {
     s"${arrayToString(label)}: ProverNode(${arrayToString(key)}, ${arrayToString(leftLabel)}, " +
-      "${arrayToString(rightLabel)}, $balance)"
+      s"${arrayToString(rightLabel)}, $balance)"
   }
 
 }
@@ -125,6 +127,7 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
 
 case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
                (implicit val hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
+
 
   protected[avltree] var height = 0 //needed for debug only
 

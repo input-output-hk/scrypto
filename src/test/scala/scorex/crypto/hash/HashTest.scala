@@ -1,8 +1,9 @@
 package scorex.crypto.hash
 
+import scorex.utils.BytesHex.bytes2hex
+
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto._
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}

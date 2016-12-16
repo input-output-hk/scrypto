@@ -5,23 +5,14 @@ dependencyOverrides in ThisBuild ++= Set(
   "com.chuusai" % "shapeless_2.12" % "2.3.2",
   "com.google.guava" % "guava" % "19.0",
   "jline" % "jline" % "2.14.1",
-  "net.jcip" % "jcip-annotations" % "1.0",
-  "net.jpountz.lz4" % "lz4" % "1.3.0",
-  "org.eclipse.collections" % "eclipse-collections" % "7.1.0",
-  "org.eclipse.collections" % "eclipse-collections-api" % "7.1.0",
-  "org.eclipse.collections" % "eclipse-collections-forkjoin" % "7.1.0",
-  "org.jetbrains.kotlin" % "kotlin-runtime" % "1.0.2",
-  "org.jetbrains.kotlin" % "kotlin-stdlib" % "1.0.2",
-  "org.mapdb" % "elsa" % "3.0.0-M5",
-  "org.mapdb" % "mapdb" % "3.0.2",
   "org.scala-lang.modules" % "scala-parser-combinators_2.12" % "1.0.4",
   "org.scala-lang.modules" % "scala-xml_2.12" % "1.0.6",
   "org.scala-sbt" % "test-interface" % "1.0",
   "org.scalacheck" % "scalacheck_2.12" % "1.13.4",
   "org.scalactic" % "scalactic_2.12" % "3.0.1",
   "org.scalatest" % "scalatest_2.12" % "3.0.1",
-  "org.slf4j" % "slf4j-api" % "1.7.21",
+  "org.slf4j" % "slf4j-api" % "1.7.22",
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.3.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 82c7228af5c828c5eacd1f3df1597b41903b6867
+// LIBRARY_DEPENDENCIES_HASH c2d699ca9f0a09da8369f96f1414e83b4c7f9f0e

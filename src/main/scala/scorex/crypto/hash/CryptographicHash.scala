@@ -30,6 +30,5 @@ trait CryptographicHash {
   def hash(input: Message): Digest
 
   def hash(input: String): Digest = hash(input.getBytes)
-
 }
 

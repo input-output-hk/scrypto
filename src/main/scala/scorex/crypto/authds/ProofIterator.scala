@@ -53,5 +53,4 @@ trait ProofIterator {
       case 1 => 1: Byte
     }
   }
-
 }

@@ -11,5 +11,4 @@ trait UpdateF[Value] {
     * Return Failure() to ensure, if found value is not expected (e.g. no old value expected).
     */
   type UpdateFunction = Option[Value] => Try[Option[Value]]
-
 }

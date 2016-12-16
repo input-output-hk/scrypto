@@ -1,6 +1,6 @@
 package scorex.crypto.hash
 
-import scorex.crypto._
+import scorex.utils.NatConstants.Nat64
 import shapeless.Sized
 
 trait CryptographicHash64 extends CryptographicHash {
@@ -12,5 +12,4 @@ trait CryptographicHash64 extends CryptographicHash {
   def hashSized(in: Message): SizedDigest = Sized.wrap(hash(in))
 
   def hashSized(in: String): SizedDigest = hashSized(in.getBytes)
-
 }
