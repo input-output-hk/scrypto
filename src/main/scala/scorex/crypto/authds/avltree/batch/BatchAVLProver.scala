@@ -210,7 +210,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
    * If postProof, then also checks for visited and isNew fields being false
    * Warning: slow -- takes linear time in tree size
    * */
-  def checkTree(postProof: Boolean = false): Unit = {
+  private[batch] def checkTree(postProof: Boolean = false): Unit = {
     var fail: Boolean = false
 
     def checkTreeHelper(rNode: ProverNodes): (ProverLeaf, ProverLeaf, Int) = {

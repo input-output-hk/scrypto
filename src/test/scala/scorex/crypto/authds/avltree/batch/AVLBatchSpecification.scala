@@ -1,8 +1,7 @@
-package scorex.crypto.authds.avltree
+package scorex.crypto.authds.avltree.batch
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
-import scorex.crypto.authds.avltree.batch._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 
