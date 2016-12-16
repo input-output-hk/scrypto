@@ -202,26 +202,24 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
     unauthenticatedLookupHelper(topNode, false)
   }
 
-
-  /* TODO: below is for debug only */
-
-  /* Checks the BST order, AVL balance, correctness of leaf positions, correctness of first and last
-   * leaf, correctness of nextLeafKey fields
-   * If postProof, then also checks for visited and isNew fields being false
-   * Warning: slow -- takes linear time in tree size
-   * */
+  /**
+    * Is for debug only
+    *
+    * Checks the BST order, AVL balance, correctness of leaf positions, correctness of first and last
+    * leaf, correctness of nextLeafKey fields
+    * If postProof, then also checks for visited and isNew fields being false
+    * Warning: slow -- takes linear time in tree size
+    * Throws exception if something is wrong
+    **/
   private[batch] def checkTree(postProof: Boolean = false): Unit = {
     var fail: Boolean = false
 
     def checkTreeHelper(rNode: ProverNodes): (ProverLeaf, ProverLeaf, Int) = {
       def assert1(t: Boolean, s: String) = {
         if (!t) {
-          print("Tree failed at key = ")
           var x = rNode.key(0).toInt
           if (x < 0) x = x + 256
-          print(x);
-          print(": ")
-          println(s)
+          log.error("Tree failed at key = " + x + ": " + s)
           fail = true
         }
       }
@@ -236,8 +234,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
 
           val (minLeft, maxLeft, leftHeight) = checkTreeHelper(r.left.asInstanceOf[ProverNodes])
           val (minRight, maxRight, rightHeight) = checkTreeHelper(r.right.asInstanceOf[ProverNodes])
-          assert1(maxLeft.nextLeafKey == minRight.key, "children don't match")
-          assert1(minRight.key == r.key, "min of right subtree doesn't match")
+          assert1(maxLeft.nextLeafKey sameElements minRight.key, "children don't match")
+          assert1(minRight.key sameElements r.key, "min of right subtree doesn't match")
           assert1(r.balance >= -1 && r.balance <= 1 && r.balance == rightHeight - leftHeight, "wrong balance")
           val height = math.max(leftHeight, rightHeight) + 1
           assert1(height == r.height, "height doesn't match")
@@ -250,29 +248,28 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](o: Option[ProverNodes] = None /*TOD
 
 
     val (minTree, maxTree, treeHeight) = checkTreeHelper(topNode)
-    assert(minTree.key sameElements NegativeInfinityKey)
-    assert(maxTree.nextLeafKey sameElements PositiveInfinityKey)
-    assert(!fail, "Tree failed: \n" + toString)
+    require(minTree.key sameElements NegativeInfinityKey)
+    require(maxTree.nextLeafKey sameElements PositiveInfinityKey)
+    require(!fail, "Tree failed: \n" + toString)
   }
 
 
   override def toString: String = {
-    def printByteArray(a: Array[Byte]): String = Base58.encode(a).take(8)
+    def stringByteArray(a: Array[Byte]): String = Base58.encode(a).take(8)
 
-    def printTreeHelper(rNode: ProverNodes, depth: Int): String = {
-      for (i <- 0 until depth + 2) print(" ")
+    def stringTreeHelper(rNode: ProverNodes, depth: Int): String = {
       val nodeStr: String = rNode match {
         case leaf: ProverLeaf =>
-          "At leaf label = " + printByteArray(leaf.label) + " key = " + printByteArray(leaf.key) +
-            " nextLeafKey = " + printByteArray(leaf.nextLeafKey) + "\n"
+          "At leaf label = " + stringByteArray(leaf.label) + " key = " + stringByteArray(leaf.key) +
+            " nextLeafKey = " + stringByteArray(leaf.nextLeafKey) + "\n"
         case r: InternalProverNode =>
-          "Internal node label = " + printByteArray(r.label) + " key = " + printByteArray(r.key) + " balance = " +
-            r.balance + " height = " + r.height + "\n" + printTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1) +
-            printTreeHelper(r.right.asInstanceOf[ProverNodes], depth + 1)
+          "Internal node label = " + stringByteArray(r.label) + " key = " + stringByteArray(r.key) + " balance = " +
+            r.balance + " height = " + r.height + "\n" + stringTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1) +
+            stringTreeHelper(r.right.asInstanceOf[ProverNodes], depth + 1)
       }
-      nodeStr
+      Seq.fill(depth + 2)(" ").mkString + nodeStr
     }
-    printTreeHelper(topNode, 0)
+    stringTreeHelper(topNode, 0)
   }
 
 
