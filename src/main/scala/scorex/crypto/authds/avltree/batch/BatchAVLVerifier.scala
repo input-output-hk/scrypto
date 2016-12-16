@@ -95,12 +95,6 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
 
   private var topNode: Option[VerifierNodes] = reconstructTree
 
-  // TODO: SCALA QUESTION: should we copy the rest of pf into a class variable because 
-  // it's mutable and so can change on us while we use it? 
-  // Will there ever be a case when someone else mutates it? And also, if we copy it into the class, will we free up
-  // the space that's taken up by the tree portion of the proof (which is most of the proof) --- will it get garbage collected?
-
-
   def verifyOneModification(m: Modification): Option[Label] = {
     val converted = Modification.convert(m)
     verifyOneModification(converted._1, converted._2)
