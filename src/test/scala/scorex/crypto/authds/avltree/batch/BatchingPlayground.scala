@@ -592,14 +592,15 @@ object BatchingPlayground extends App {
       while (i < j) {
         if (keysAndVals.size == 0 || (Random.randomBytes(1)) (0).toInt > 0) {
           // with prob ~.5 insert a new one, with prob ~.5 update or delete an existing one
-          /*if (Random.randomBytes() == 1) { // with probability 1/256 cause a fail
+          if (false) { //((Random.randomBytes(1))(0).toInt == 0) { // with probability 1/256 cause a fail
+             val j = Random.randomBytes(3)
              val index = (j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % keysAndVals.size
              val key = keysAndVals(index)._1
-             val m = Modification.convert(Insert(key, newVal))
-            newProver.performOneModification(m._1, m._2);
-            newProver.checkTree()
-            assert(newProver.unauthenticatedLookup(key).get == newVal) // check insert didn't do damage
-          }*/
+             val m = Modification.convert(Insert(key, Random.randomBytes(8)))
+             newProver.performOneModification(m._1, m._2);
+             newProver.checkTree()
+             assert(newProver.unauthenticatedLookup(key).get == keysAndVals(index)._2) // check insert didn't do damage
+          }
           val key = Random.randomBytes()
           val newVal = Random.randomBytes(8)
           keysAndVals += ((key, newVal))

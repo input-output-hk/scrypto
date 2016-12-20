@@ -261,6 +261,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
     val (minTree, maxTree, treeHeight) = checkTreeHelper(topNode)
     require(minTree.key sameElements NegativeInfinityKey)
     require(maxTree.nextLeafKey sameElements PositiveInfinityKey)
+    require(treeHeight == topNodeHeight)
     require(!fail, "Tree failed: \n" + toString)
   }
 
