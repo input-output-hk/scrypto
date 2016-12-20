@@ -509,7 +509,7 @@ object BatchingPlayground extends App {
 
   def deleteProofSizeTest = {
     val newProver = new BatchAVLProver()
-    val numMods = 100000
+    val numMods = 1000000
     val testAtTheEnd = 2000
 
     // TODO: SEE COMMENT IN BIG DELETE TEST ON WHY THIS IS A BAD DATA STRUCTURE TO USE HERE 
@@ -531,8 +531,9 @@ object BatchingPlayground extends App {
       keys += key
       val m = Modification.convert(Insert(key, Random.randomBytes(8)))
       newProver.performOneModification(m._1, m._2)
+      len += newProver.generateProof.toArray.length
     }
-    len = newProver.generateProof.toArray.length
+//    len = newProver.generateProof.toArray.length
     println(len.toFloat / testAtTheEnd)
 
     len = 0
@@ -542,8 +543,9 @@ object BatchingPlayground extends App {
       keys -= key
       val m = Modification.convert(Remove(key))
       newProver.performOneModification(m._1, m._2)
+      len += newProver.generateProof.toArray.length
     }
-    len = newProver.generateProof.toArray.length
+//    len = newProver.generateProof.toArray.length
     println(len.toFloat / testAtTheEnd)
 
   }
@@ -573,6 +575,7 @@ object BatchingPlayground extends App {
     val t0 = System.nanoTime()
     while (i < numMods) {
       val digest = newProver.rootHash
+      val oldHeight = newProver.rootHeight
       var j =
         if (i == 0 && firstTime) {
           firstTime = false;
@@ -589,6 +592,14 @@ object BatchingPlayground extends App {
       while (i < j) {
         if (keysAndVals.size == 0 || (Random.randomBytes(1)) (0).toInt > 0) {
           // with prob ~.5 insert a new one, with prob ~.5 update or delete an existing one
+          /*if (Random.randomBytes() == 1) { // with probability 1/256 cause a fail
+             val index = (j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % keysAndVals.size
+             val key = keysAndVals(index)._1
+             val m = Modification.convert(Insert(key, newVal))
+            newProver.performOneModification(m._1, m._2);
+            newProver.checkTree()
+            assert(newProver.unauthenticatedLookup(key).get == newVal) // check insert didn't do damage
+          }*/
           val key = Random.randomBytes()
           val newVal = Random.randomBytes(8)
           keysAndVals += ((key, newVal))
@@ -640,13 +651,14 @@ object BatchingPlayground extends App {
         println((System.nanoTime() - t0) / i)
       }
 
-      val newVerifier = new BatchAVLVerifier(digest, pf)
+      val newVerifier = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, n)
       newVerifier.digest match {
         case None =>
           println("ERROR VERIFICATION FAILED TO CONSTRUCT THE TREE")
           assert(false)
         case Some(d) =>
           assert(d sameElements digest) // Tree built successfully
+          assert(newVerifier.rootHeight == oldHeight)
       }
 
       Modification.convert(currentMods) foreach (m => newVerifier.verifyOneModification(m._1, m._2))
@@ -656,6 +668,7 @@ object BatchingPlayground extends App {
           assert(false)
         case Some(d) =>
           assert(d sameElements newProver.rootHash)
+          assert(newVerifier.rootHeight == newProver.rootHeight)
       }
     }
 

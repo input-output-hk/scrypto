@@ -8,8 +8,14 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[Byte],
-                                               val keyLength: Int = 32, val valueLength: Int = 8)
+// TODO: the way we indicate "don't check if the proof is too long" is by not passing in numOperations
+// (or passing in numOperations = 0)
+class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, 
+                                               pf: Array[Byte],
+                                               val keyLength: Int = 32,
+                                               val valueLength: Int = 8,
+                                               startingHeight: Int = 100, // TODO: this is enough for about 2^70 nodes -- right amount for the default? 
+                                               numOperations: Int = 0) // TODO: which of these need val? In what order should the be?
                                               (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]]
   with AuthenticatedTreeOps {
 
@@ -63,12 +69,29 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
   }
 
   private def reconstructTree: Option[VerifierNodes] = Try {
+
+    // compute log (number of operations), rounded up
+    var logNumOps = 0
+    var temp = 1
+    while (temp < numOperations) {
+      temp = temp*2 // TODO: if numOperations > maxInt/2, this will overflow. Should we worry?
+      logNumOps += 1
+    }
+    
+    // compute maximum height that the tre can be before an operation
+    temp = 1+math.max(topNodeHeight, logNumOps)
+    val hnew = temp+temp/2 // this will replace 1.4405 with 1.5 and will round down, which is safe, because hnew is an integer
+    val maxNodes = 2*numOperations*(2*topNodeHeight+1)+numOperations*hnew
+
+    var numNodes = 0
     val s = new mutable.Stack[VerifierNodes]
     var i = 0
     var previousLeaf: Option[Leaf] = None
     while (pf(i) != EndOfTreeInPackagedProof) {
       val n = pf(i)
       i += 1
+      numNodes += 1
+      require (numOperations == 0 || numNodes <= maxNodes, "Proof too long") // TODO: write some tests that make this fail
       n match {
         case LabelInPackagedProof =>
           val label = pf.slice(i, i + labelLength)
@@ -103,6 +126,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, pf: Array[
     Some(root)
   }.getOrElse(None)
 
+  protected var topNodeHeight = startingHeight
   private var topNode: Option[VerifierNodes] = reconstructTree
 
   def verifyOneModification(m: Modification): Option[Label] = {

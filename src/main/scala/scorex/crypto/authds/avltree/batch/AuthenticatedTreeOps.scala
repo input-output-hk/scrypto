@@ -22,6 +22,10 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
 
   protected val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   protected val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
+  
+  protected var topNodeHeight: Int
+  
+  def rootHeight = topNodeHeight
 
   protected def replayComparison: Int
 
@@ -327,10 +331,17 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
     }
 
     val (newRootNode, changeHappened, heightIncreased, toDelete) = modifyHelper(rootNode)
-    if (toDelete)
-      deleteHelper(newRootNode.asInstanceOf[InternalNode], deleteMax = false)._1
-    else
+    if (toDelete) {
+      val (postDeleteRootNode, heightDecreased) = deleteHelper(newRootNode.asInstanceOf[InternalNode], deleteMax = false)
+      if (heightDecreased)
+        topNodeHeight -= 1
+      postDeleteRootNode
+    }
+    else {
+      if (heightIncreased)
+        topNodeHeight += 1
       newRootNode
+    }
   }
 }
 

@@ -18,7 +18,8 @@ import scala.util.Try
   */
 class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None,
                                              val keyLength: Int = 32,
-                                             val valueLength: Int = 8)
+                                             val valueLength: Int = 8,
+                                             rootOptHeight: Int = 0) // TODO: reorder these? Which should be val?
                                             (implicit val hf: HF = new Blake2b256Unsafe)
   extends UpdateF[Array[Byte]] with AuthenticatedTreeOps with ToStringHelper {
 
@@ -30,6 +31,13 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
     t.isNew = false
     t
   })
+
+   // TODO: if rootOpt != None, are we sure isNew and visited flags are set correctly? And are we sure we pass in correct height?
+
+  protected var topNodeHeight = if (rootOpt != None)
+    rootOptHeight
+  else 
+    0
 
   private var oldTopNode = topNode
 
