@@ -6,7 +6,7 @@ import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
-import scala.util.Try
+import scala.util.{Success,Failure,Try}
 
 
 /**
@@ -32,7 +32,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
     t
   })
 
-   // TODO: if rootOpt != None, are we sure isNew and visited flags are set correctly? And are we sure we pass in correct height?
+   // TODO: if rootOpt != None, are we sure isNew and visited flags are set correctly? And are we sure we pass in correct height? 
 
   protected var topNodeHeight = if (rootOpt != None)
     rootOptHeight
@@ -107,15 +107,29 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
   def rootHash: Label = topNode.label
 
   def performOneModification(m: Modification): Try[Unit] = {
-    // TODO How can this fail and what to do if it does?
     val converted = Modification.convert(m)
     performOneModification(converted._1, converted._2)
   }
 
   def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Try[Unit] = Try {
-    // TODO How can this fail and what to do if it does?
     replayIndex = directionsBitLength
-    topNode = returnResultOfOneModification(key, updateFunction, topNode).asInstanceOf[ProverNodes]
+    Try (returnResultOfOneModification(key, updateFunction, topNode)) match {
+      case Success(n) =>
+        topNode = n.asInstanceOf[ProverNodes]
+      case Failure(e) =>
+        // take the bit length before fail and divide by 8 with rounding up
+        val oldDirectionsByteLength = (replayIndex+7)/8 
+        // undo the changes to the directions array
+        directions.trimEnd (directions.length-oldDirectionsByteLength)
+        directionsBitLength = replayIndex
+        if ((directionsBitLength & 7) > 0) {
+          // 0 out the bits of the last element of the directions array
+          // that are above directionsBitLength
+          val mask = (1<<(directionsBitLength & 7))-1
+          directions(directions.length-1) = (directions(directions.length-1) & mask).toByte
+        }
+        throw e
+    }
   }
 
 
@@ -227,7 +241,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
     var fail: Boolean = false
 
     def checkTreeHelper(rNode: ProverNodes): (ProverLeaf, ProverLeaf, Int) = {
-      def assert1(t: Boolean, s: String) = {
+      def myRequire(t: Boolean, s: String) = {
         if (!t) {
           var x = rNode.key(0).toInt
           if (x < 0) x = x + 256
@@ -236,19 +250,19 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
         }
       }
 
-      assert1(!postProof || (!rNode.visited && !rNode.isNew), "postproof flags")
+      myRequire(!postProof || (!rNode.visited && !rNode.isNew), "postproof flags")
       rNode match {
         case r: InternalProverNode =>
           if (r.left.isInstanceOf[InternalProverNode])
-            assert1(ByteArray.compare(r.left.asInstanceOf[ProverNodes].key, r.key) < 0, "wrong left key")
+            myRequire(ByteArray.compare(r.left.asInstanceOf[ProverNodes].key, r.key) < 0, "wrong left key")
           if (r.right.isInstanceOf[InternalProverNode])
-            assert1(ByteArray.compare(r.right.asInstanceOf[ProverNodes].key, r.key) > 0, "wrong right key")
+            myRequire(ByteArray.compare(r.right.asInstanceOf[ProverNodes].key, r.key) > 0, "wrong right key")
 
           val (minLeft, maxLeft, leftHeight) = checkTreeHelper(r.left.asInstanceOf[ProverNodes])
           val (minRight, maxRight, rightHeight) = checkTreeHelper(r.right.asInstanceOf[ProverNodes])
-          assert1(maxLeft.nextLeafKey sameElements minRight.key, "children don't match")
-          assert1(minRight.key sameElements r.key, "min of right subtree doesn't match")
-          assert1(r.balance >= -1 && r.balance <= 1 && r.balance == rightHeight - leftHeight, "wrong balance")
+          myRequire(maxLeft.nextLeafKey sameElements minRight.key, "children don't match")
+          myRequire(minRight.key sameElements r.key, "min of right subtree doesn't match")
+          myRequire(r.balance >= -1 && r.balance <= 1 && r.balance == rightHeight - leftHeight, "wrong balance")
           val height = math.max(leftHeight, rightHeight) + 1
           (minLeft, maxRight, height)
 
@@ -262,7 +276,13 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
     require(minTree.key sameElements NegativeInfinityKey)
     require(maxTree.nextLeafKey sameElements PositiveInfinityKey)
     require(treeHeight == topNodeHeight)
-    require(!fail, "Tree failed: \n" + toString)
+
+    if (fail)
+      // Doing it this way instead of require(!fail) saves
+      // a toString call unless fail=true
+      // toString on a tree is very slow, because
+      // it performs a full tree traversal
+      require (false, "Tree failed: \n" + toString)
   }
 
 

@@ -9,15 +9,19 @@ import scala.collection.mutable
 import scala.util.Try
 
 // TODO: the way we indicate "don't check if the proof is too long" is by not passing in numOperations
-// (or passing in numOperations = 0)
+// (or passing in numOperations = -1)
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label, 
                                                pf: Array[Byte],
                                                val keyLength: Int = 32,
                                                val valueLength: Int = 8,
                                                startingHeight: Int = 100, // TODO: this is enough for about 2^70 nodes -- right amount for the default? 
-                                               numOperations: Int = 0) // TODO: which of these need val? In what order should the be?
+                                               numOperations: Int = -1,
+                                               maxDeletes: Int = -1 // Indicates maximum deletes out of the operations; -1 indicates that it could be as high as numOperations itself
+                                               )
+                                               // TODO: which of these need val? In what order should the arguments be?
+                                               // Note: -1 indicates that we don't want the proof length check done
                                               (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]]
-  with AuthenticatedTreeOps {
+  with AuthenticatedTreeOps with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 
@@ -74,14 +78,16 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
     var logNumOps = 0
     var temp = 1
     while (temp < numOperations) {
-      temp = temp*2 // TODO: if numOperations > maxInt/2, this will overflow. Should we worry?
+      temp = temp*2 
       logNumOps += 1
     }
     
     // compute maximum height that the tre can be before an operation
     temp = 1+math.max(topNodeHeight, logNumOps)
     val hnew = temp+temp/2 // this will replace 1.4405 with 1.5 and will round down, which is safe, because hnew is an integer
-    val maxNodes = 2*numOperations*(2*topNodeHeight+1)+numOperations*hnew
+    val realMaxDeletes = if (maxDeletes == -1) numOperations else maxDeletes
+    // Note: this is quite likely a lot more than there will really be nodes
+    val maxNodes = (numOperations+realMaxDeletes)*(2*topNodeHeight+1)+realMaxDeletes*hnew+1 // +1 needed in case numOperations == 0
 
     var numNodes = 0
     val s = new mutable.Stack[VerifierNodes]
@@ -91,7 +97,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
       val n = pf(i)
       i += 1
       numNodes += 1
-      require (numOperations == 0 || numNodes <= maxNodes, "Proof too long") // TODO: write some tests that make this fail
+      require (numOperations == -1 || numNodes <= maxNodes, "Proof too long")
       n match {
         case LabelInPackagedProof =>
           val label = pf.slice(i, i + labelLength)
@@ -120,8 +126,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
           s.push(new InternalVerifierNode(left, right, n))
       }
     }
+
     require(s.size == 1)
-    val root = s.pop.ensuring(_.label sameElements startingDigest)
+    val root = s.pop.ensuring(_.label sameElements startingDigest) // TODO: the use of "ensuring worries" me because it fails via "java.lang.AssertionError" rather than "scala.Predef$.require" like require fails. I am afraid assertions may be turned off, in which case verifier will fail to detect a cheating prover. Can this get turned off somehow?
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.getOrElse(None)
@@ -129,16 +136,39 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
   protected var topNodeHeight = startingHeight
   private var topNode: Option[VerifierNodes] = reconstructTree
 
-  def verifyOneModification(m: Modification): Option[Label] = {
+  def performOneModification(m: Modification): Option[Label] = {
     val converted = Modification.convert(m)
-    verifyOneModification(converted._1, converted._2)
+    performOneModification(converted._1, converted._2)
   }
 
-  def verifyOneModification(key: AVLKey, updateFunction: UpdateFunction): Option[Label] = {
+  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Option[Label] = {
     replayIndex = directionsIndex
     topNode = Try(Some(returnResultOfOneModification(key, updateFunction, topNode.get).asInstanceOf[VerifierNodes])).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
     topNode.map(_.label)
   }
+
+  override def toString: String = {
+  
+    def stringTreeHelper(rNode: VerifierNodes, depth: Int): String = {
+      val nodeStr: String = rNode match {
+        case leaf: VerifierLeaf =>
+          "At leaf label = " + arrayToString(leaf.label) + " key = " + arrayToString(leaf.key) + 
+            " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
+        case r: InternalVerifierNode =>
+          "Internal node label = " + arrayToString(r.label) + " balance = " +
+            r.balance + "\n" + stringTreeHelper(r.left.asInstanceOf[VerifierNodes], depth + 1) +
+            stringTreeHelper(r.right.asInstanceOf[VerifierNodes], depth + 1)
+        case n: LabelOnlyNode =>
+          "Label-only node label = " + arrayToString(n.label)+"\n"
+      }
+      Seq.fill(depth + 2)(" ").mkString + nodeStr
+    }
+    topNode match {
+      case None => "None"
+      case Some(t) => stringTreeHelper(t, 0)
+    }
+  }
+
 
 }

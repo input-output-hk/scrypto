@@ -204,12 +204,12 @@ class BatchVerifier extends TwoPartyCommons with Batching with Initializing {
         keyCache.remove(Ints.fromByteArray(Array(0:Byte) ++ k.take(3)) % keyCache.length)
         keyCache.append(k)
       }
-      verifier.verifyOneModification(k, bfn).get
+      verifier.performOneModification(k, bfn).get
     }
 
     (0 until modificationsInBlock).foreach { i =>
       val k = keyCache(Ints.fromByteArray(Array(0:Byte) ++ hf(s"p$blockNum-n$i").take(3)) % keyCache.length)
-      val root = verifier.verifyOneModification(k, bfn).get
+      val root = verifier.performOneModification(k, bfn).get
       if (i == additionsInBlock + modificationsInBlock - 1) assert(root sameElements rootAfter)
     }
   }

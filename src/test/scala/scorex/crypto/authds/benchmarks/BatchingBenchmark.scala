@@ -188,7 +188,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
       val (newVerifierTimeT, _) = time {
         val newVerifier = new BatchAVLVerifier(digest, pf)
-        converted foreach (m => newVerifier.verifyOneModification(m._1, m._2))
+        converted foreach (m => newVerifier.performOneModification(m._1, m._2))
         newVerifier.digest
       }
       newVerifierTime += newVerifierTimeT

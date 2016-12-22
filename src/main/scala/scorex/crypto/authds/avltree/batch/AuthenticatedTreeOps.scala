@@ -85,29 +85,32 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
       * and an indicator whether we need to go delete the leaf that was just reached
       */
     def modifyHelper(rNode: Node): (Node, Boolean, Boolean, Boolean) = {
-      rNode.visited = true
       rNode match {
         case r: Leaf =>
           if (keyMatchesLeaf(key, r)) {
             updateFunction(Some(r.value)) match {
-              case Success(None) => //delete key
+              case Success(None) => // delete key
+                r.visited = true
                 (r, false, false, true)
-              case Success(Some(v)) => //update value
+              case Success(Some(v)) => // update value
+                r.visited = true
                 require(v.length == valueLength)
                 val rNew = r.getNew(newValue = v)
                 (rNew, true, false, false)
-              case Failure(e) => // found incorrect value // TODO: what does this even mean? // what will this do to the tree?
+              case Failure(e) => // updateFunction doesn't like the value we found
                 throw e
             }
           } else {
             // x > r.key
             updateFunction(None) match {
               case Success(None) => // don't change anything, just lookup
+                rNode.visited = true
                 (r, false, false, false)
               case Success(Some(v)) => // insert new value
+                rNode.visited = true
                 require(v.length == valueLength)
                 (addNode(r, key, v), true, true, false)
-              case Failure(e) => // found incorrect value // TODO: what does this even mean? what will this do to the tree
+              case Failure(e) => // updateFunctions doesn't like that we found nothing
                 throw e
             }
           }
@@ -117,6 +120,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
           // See if a single or double rotation is needed for AVL tree balancing
           if (nextDirectionIsLeft(key, r)) {
             val (newLeftM, changeHappened, childHeightIncreased, toDelete) = modifyHelper(r.left)
+            r.visited = true
 
             // balance = -1 if left higher, +1 if left lower
             if (changeHappened) {
@@ -144,6 +148,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
             }
           } else {
             val (newRightM, changeHappened, childHeightIncreased, toDelete) = modifyHelper(r.right)
+            r.visited = true
 
             // balance = -1 if left higher, +1 if left lower
             if (changeHappened) {
@@ -171,7 +176,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
             }
           }
         case r: LabelOnlyNode =>
-          throw new Error("Should never reach this point. Look like tree is broken.")
+          throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
       }
     }
 
@@ -212,7 +217,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
           case rN: InternalNode =>
             rN.getNew(newRight = changeNextLeafKeyOfMaxNode(rN.right, nextLeafKey))
           case rN: LabelOnlyNode =>
-            throw new Error("Should never reach this point. Look like tree is broken.")
+            throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
         }
       }
       def changeKeyAndValueOfMinNode(rNode: Node, newKey: AVLKey, newValue: AVLValue): Node = {
@@ -223,7 +228,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
           case rN: InternalNode =>
             rN.getNew(newLeft = changeKeyAndValueOfMinNode(rN.left, newKey, newValue))
           case rN: LabelOnlyNode =>
-            throw new Error("Should never reach this point. Look like tree is broken.")
+            throw new Error("Should never reach this point. If in prover, this is a bug. If in verifier, this proof is wrong.")
         }
       }
 

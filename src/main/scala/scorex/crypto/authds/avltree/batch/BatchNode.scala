@@ -90,7 +90,7 @@ class InternalProverNode(protected var k: AVLKey, protected var l: Node, protect
 
   override def toString: String = {
     s"${arrayToString(label)}: ProverNode(${arrayToString(key)}, ${arrayToString(left.label)}, " +
-      s"${arrayToString(right.label)}, $balance)" // TODO: Fix in node.java
+      s"${arrayToString(right.label)}, $balance)" 
   }
 }
 
