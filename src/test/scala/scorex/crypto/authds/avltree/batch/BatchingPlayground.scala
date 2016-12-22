@@ -593,11 +593,6 @@ object BatchingPlayground extends App {
       v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, 50, 0)
       require (v.digest == None, "Failed to reject wrong digest")
 
-      // see if too low height will be allowed
-      // crank up number of modifications to make sure you don't fail on total proof length
-      v = new BatchAVLVerifier(digest, pf, 32, 8, 5, 10000, 0)
-      require (v.digest == None, "Failed to reject wrong height")
-  
       for (i<-0 until 10) {
         digest = p.rootHash
         oldHeight = p.rootHeight

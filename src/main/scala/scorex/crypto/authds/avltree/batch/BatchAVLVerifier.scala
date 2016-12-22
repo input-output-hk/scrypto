@@ -90,7 +90,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
     val maxNodes = (numOperations+realMaxDeletes)*(2*topNodeHeight+1)+realMaxDeletes*hnew+1 // +1 needed in case numOperations == 0
 
     var numNodes = 0
-    val s = new mutable.Stack[(VerifierNodes, Int)] // Nodes and depths
+    val s = new mutable.Stack[VerifierNodes] // Nodes and depths
     var i = 0
     var previousLeaf: Option[Leaf] = None
     while (pf(i) != EndOfTreeInPackagedProof) {
@@ -102,7 +102,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
         case LabelInPackagedProof =>
           val label = pf.slice(i, i + labelLength)
           i += labelLength
-          s.push((new LabelOnlyNode(label),0))
+          s.push(new LabelOnlyNode(label))
           previousLeaf = None
         case LeafInPackagedProof =>
           val key = if (previousLeaf != None) {
@@ -118,19 +118,17 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
           val value = pf.slice(i, i + valueLength)
           i += valueLength
           val leaf = new VerifierLeaf(key, value, nextLeafKey)
-          s.push((leaf,0))
+          s.push(leaf)
           previousLeaf = Some(leaf)
         case _ =>
-          val (right, rightHeight) = s.pop
-          val (left, leftHeight) = s.pop
-          val newHeight = math.max(leftHeight, rightHeight)+1
-          require (newHeight<=startingHeight, "tree too deep")
-          s.push((new InternalVerifierNode(left, right, n), newHeight))
+          val right = s.pop
+          val left = s.pop
+          s.push(new InternalVerifierNode(left, right, n))
       }
     }
 
     require(s.size == 1)
-    val root = s.pop._1.ensuring(_.label sameElements startingDigest) // TODO: the use of "ensuring worries" me because it fails via "java.lang.AssertionError" rather than "scala.Predef$.require" like require fails. I am afraid assertions may be turned off, in which case verifier will fail to detect a cheating prover. Can this get turned off somehow?
+    val root = s.pop.ensuring(_.label sameElements startingDigest) // TODO: the use of "ensuring worries" me because it fails via "java.lang.AssertionError" rather than "scala.Predef$.require" like require fails. I am afraid assertions may be turned off, in which case verifier will fail to detect a cheating prover. Can this get turned off somehow?
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.getOrElse(None)
