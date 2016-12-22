@@ -160,7 +160,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
         rNode.visited = false
         rNode match {
           case r: ProverLeaf =>
-            packagedTree += LeafWithKeyInPackagedProof
+            packagedTree += LeafInPackagedProof
             if (!previousLeafAvailable) packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
             packagedTree ++= r.value
