@@ -24,7 +24,6 @@ object BatchingPlayground extends App {
   //timeBenchmarksNew
   //timeBenchmarksOld
   //spaceBenchmarks
-  //TestsForInsertAndModifyWithAndWithoutBatching
 
 
   def smallDeleteTest = {
