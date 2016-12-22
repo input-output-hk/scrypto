@@ -6,8 +6,6 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.utils.Random
 
-import scala.util.{Failure, Success}
-
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
   val KL = 26
@@ -36,7 +34,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     p.checkTree()
     for (i <- 0 until 1000) {
-      require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isInstanceOf[Success[Unit]], "failed to insert")
+      require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
       p.checkTree()
     }
     p.generateProof
@@ -44,30 +42,30 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     var digest = p.rootHash
     var oldHeight = p.rootHeight
     for (i <- 0 until 50)
-      require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isInstanceOf[Success[Unit]], "failed to insert")
+      require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
     var pf = p.generateProof.toArray
     // see if the proof for 50 mods will be allowed when we permit only 2
     var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 2, 0)
-    require(v.digest == None, "Failed to reject too long a proof")
+    require(v.digest.isEmpty, "Failed to reject too long a proof")
 
     // see if wrong digest will be allowed
     v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, 50, 0)
-    require(v.digest == None, "Failed to reject wrong digest")
+    require(v.digest.isEmpty, "Failed to reject wrong digest")
 
     for (i <- 0 until 10) {
       digest = p.rootHash
       oldHeight = p.rootHeight
       for (i <- 0 until 8)
-        require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isInstanceOf[Success[Unit]], "failed to insert")
+        require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
       v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, oldHeight, 8, 0)
-      require(v.digest != None, "verification failed to construct tree")
+      require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
       for (i <- 0 until 5)
         v.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8)))
-      require(v.digest == None, "verification succeeded when it should have failed, because of a missing leaf")
+      require(v.digest.isEmpty, "verification succeeded when it should have failed, because of a missing leaf")
 
       digest = p.rootHash
       oldHeight = p.rootHeight
@@ -79,9 +77,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       // Change the direction of the proof and make sure verifier fails
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
       v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 1, 0)
-      require(v.digest != None, "verification failed to construct tree")
+      require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneModification(Insert(key, Random.randomBytes(8)))
-      require(v.digest == None, "verification succeeded when it should have failed, because of the wrong direction")
+      require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
 
       // Change the key by a large amount -- verification should fail with overwhelming probability
       // because there are 1000 keys in the tree
@@ -90,9 +88,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val oldKey = key(0)
       key(0) = (key(0) ^ (1 << 7)).toByte
       v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 1, 0)
-      require(v.digest != None, "verification failed to construct tree")
+      require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneModification(Insert(key, Random.randomBytes(8)))
-      require(v.digest == None, "verification succeeded when it should have failed because of the wrong key")
+      require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
       // put the key back the way it should be, because otherwise it's messed up in the prover tree
       key(0) = (key(0) ^ (1 << 7)).toByte
 
@@ -142,16 +140,16 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       var numCurrentDeletes = 0
       val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](n)
       while (i < j) {
-        if (keysAndVals.size == 0 || randomInt(2) == 0) {
+        if (keysAndVals.isEmpty || randomInt(2) == 0) {
           // with prob .5 insert a new one, with prob .5 update or delete an existing one
-          if (keysAndVals.size > 0 && randomInt(10) == 0) {
+          if (keysAndVals.nonEmpty && randomInt(10) == 0) {
             // with probability 1/10 cause a fail by inserting already existing
             val j = Random.randomBytes(3)
             val index = randomInt(keysAndVals.size)
             val key = keysAndVals(index)._1
-            require(p.performOneModification(Insert(key, Random.randomBytes(8))).isInstanceOf[Failure[Unit]], "prover succeeded on inserting a value that's already in tree")
+            require(p.performOneModification(Insert(key, Random.randomBytes(8))).isFailure, "prover succeeded on inserting a value that's already in tree")
             p.checkTree()
-            require(p.unauthenticatedLookup(key).get == keysAndVals(index)._2, "value changed after duplicate insert") // check insert didn't do damage
+            require(p.unauthenticatedLookup(key).get sameElements keysAndVals(index)._2, "value changed after duplicate insert") // check insert didn't do damage
             numFailures += 1
           }
           else {
@@ -160,9 +158,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             keysAndVals += ((key, newVal))
             val mod = Insert(key, newVal)
             currentMods += mod
-            require(p.performOneModification(mod).isInstanceOf[Success[Unit]], "prover failed to insert")
+            require(p.performOneModification(mod).isSuccess, "prover failed to insert")
             p.checkTree()
-            require(p.unauthenticatedLookup(key).get == newVal, "inserted key is missing") // check insert
+            require(p.unauthenticatedLookup(key).get sameElements newVal, "inserted key is missing") // check insert
             numInserts += 1
           }
         }
@@ -173,9 +171,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             if (randomInt(10) == 0) {
               // with probability 1/10 cause a fail by modifying a nonexisting key
               val key = Random.randomBytes()
-              require(p.performOneModification(Update(key, Random.randomBytes(8))).isInstanceOf[Failure[Unit]], "prover updated a nonexistent value")
+              require(p.performOneModification(Update(key, Random.randomBytes(8))).isFailure, "prover updated a nonexistent value")
               p.checkTree()
-              require(p.unauthenticatedLookup(key) == None, "a nonexistent value appeared after an update") // check update didn't do damage
+              require(p.unauthenticatedLookup(key).isEmpty, "a nonexistent value appeared after an update") // check update didn't do damage
               numFailures += 1
             }
             else {
@@ -184,9 +182,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
               val newVal = Random.randomBytes(8)
               val mod = Update(key, newVal)
               currentMods += mod
-              require(p.performOneModification(mod).isInstanceOf[Success[Unit]], "prover failed to update value")
-              keysAndVals(index) = ((key, newVal))
-              require(p.unauthenticatedLookup(key).get == newVal, "wrong value after update") // check update
+              require(p.performOneModification(mod).isSuccess, "prover failed to update value")
+              keysAndVals(index) = (key, newVal)
+              require(p.unauthenticatedLookup(key).get sameElements newVal, "wrong value after update") // check update
               numModifies += 1
             }
           } else {
@@ -197,7 +195,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
               val mod = RemoveIfExists(key)
               val d = p.rootHash
               currentMods += mod
-              require(p.performOneModification(mod).isInstanceOf[Success[Unit]], "prover failed when it should have done nothing")
+              require(p.performOneModification(mod).isSuccess, "prover failed when it should have done nothing")
               require(d sameElements p.rootHash, "Tree changed when it shouldn't have")
               p.checkTree()
               numNonDeletes += 1
@@ -210,10 +208,10 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
               val oldVal = keysAndVals(index)._2
               currentMods += mod
               val m = Modification.convert(mod)
-              require(p.performOneModification(m._1, m._2).isInstanceOf[Success[Unit]], "failed ot delete")
+              require(p.performOneModification(m._1, m._2).isSuccess, "failed ot delete")
               keysAndVals -= ((key, oldVal))
               deletedKeys += key
-              require(p.unauthenticatedLookup(key) == None, "deleted key still in tree") // check delete
+              require(p.unauthenticatedLookup(key).isEmpty, "deleted key still in tree") // check delete
               numDeletes += 1
               numCurrentDeletes += 1
             }
@@ -245,8 +243,8 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     }
 
     // Check that all the inserts, deletes, and updates we did actually stayed
-    deletedKeys foreach (k => require(p.unauthenticatedLookup(k) == None, "Key that was deleted is still in the tree"))
-    keysAndVals foreach (pair => require(p.unauthenticatedLookup(pair._1).get == pair._2, "Key has wrong value"))
+    deletedKeys foreach (k => require(p.unauthenticatedLookup(k).isEmpty, "Key that was deleted is still in the tree"))
+    keysAndVals foreach (pair => require(p.unauthenticatedLookup(pair._1).get sameElements pair._2, "Key has wrong value"))
   }
 
 
