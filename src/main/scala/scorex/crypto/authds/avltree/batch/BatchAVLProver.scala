@@ -32,9 +32,9 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
     t
   })
 
-   // TODO: if rootOpt != None, are we sure isNew and visited flags are set correctly? And are we sure we pass in correct height? 
+   // TODO: if rootOpt.nonEmpty, are we sure isNew and visited flags are set correctly? And are we sure we pass in correct height?
 
-  protected var topNodeHeight = if (rootOpt != None)
+  protected var topNodeHeight = if (rootOpt.nonEmpty)
     rootOptHeight
   else 
     0

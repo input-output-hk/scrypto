@@ -1,8 +1,7 @@
 package scorex.crypto.authds.avltree.batch
-import scorex.utils.ByteArray
+
 import scorex.crypto.authds.avltree._
 import scorex.utils.Random
-import scala.util.{Success,Failure,Try}
 
 
 object BatchingPlayground extends App {
@@ -15,7 +14,7 @@ object BatchingPlayground extends App {
 
   //smallDeleteTest
   batchingSelfTest
-  
+
 
   //deleteProofSizeTest
 
@@ -252,7 +251,7 @@ object BatchingPlayground extends App {
       generateKey(j, key2)
       val mod = (Update(key2, Random.randomBytes(8)))
       val c = Modification.convert(mod)
-      newProver.performOneModification(c._1, c._2) 
+      newProver.performOneModification(c._1, c._2)
       if (i % 2000 == 0) {
         newProver.generateProof
         newProver.rootHash
@@ -353,7 +352,7 @@ object BatchingPlayground extends App {
     val mod = new Array[Modification](1)
     for (i <- 0 until numMods) {
       mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
-      Modification.convert(mod) foreach (m => newProver.performOneModification(m._1, m._2)) 
+      Modification.convert(mod) foreach (m => newProver.performOneModification(m._1, m._2))
       if (i % 100000 == 0)
         println(i)
     }
@@ -482,7 +481,7 @@ object BatchingPlayground extends App {
     val mod = new Array[Modification](1)
     for (i <- 0 until numMods) {
       mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
-      Modification.convert(mod) foreach (m => newProver.performOneModification(m._1, m._2)) 
+      Modification.convert(mod) foreach (m => newProver.performOneModification(m._1, m._2))
       if (i % 10000 == 0)
         println(i)
     }
@@ -493,7 +492,7 @@ object BatchingPlayground extends App {
     while (j < 2000000) {
       for (i <- 0 until j) {
         mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
-        Modification.convert(mod) foreach (m => newProver.performOneModification(m._1, m._2)) 
+        Modification.convert(mod) foreach (m => newProver.performOneModification(m._1, m._2))
       }
       print("j = ")
       println(j)
@@ -532,7 +531,7 @@ object BatchingPlayground extends App {
       newProver.performOneModification(m._1, m._2)
       len += newProver.generateProof.toArray.length
     }
-//    len = newProver.generateProof.toArray.length
+    //    len = newProver.generateProof.toArray.length
     println(len.toFloat / testAtTheEnd)
 
     len = 0
@@ -544,13 +543,13 @@ object BatchingPlayground extends App {
       newProver.performOneModification(m._1, m._2)
       len += newProver.generateProof.toArray.length
     }
-//    len = newProver.generateProof.toArray.length
+    //    len = newProver.generateProof.toArray.length
     println(len.toFloat / testAtTheEnd)
 
   }
 
 
-// TODO: This should go into standard tests
+  // TODO: This should go into standard tests
   def batchingSelfTest = {
     def testZeroModProofOnEmptyTree = {
       val p = new BatchAVLProver()
@@ -559,7 +558,7 @@ object BatchingPlayground extends App {
       val oldHeight = p.rootHeight
       val pf = p.generateProof.toArray
       p.checkTree(true)
-      val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 0, 0)
+      val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(0), Some(0))
       v.digest match {
         case None =>
           require(false, "zero-mods verification failed to construct tree")
@@ -571,42 +570,42 @@ object BatchingPlayground extends App {
 
     def testVariousVerifierFails = {
       val p = new BatchAVLProver()
-      
+
       p.checkTree()
-      for(i <- 0 until 1000) {
-        require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isInstanceOf[Success[Unit]], "failed to insert")
+      for (i <- 0 until 1000) {
+        require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
         p.checkTree()
       }
       p.generateProof
 
       var digest = p.rootHash
       var oldHeight = p.rootHeight
-      for(i <- 0 until 50)
-        require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isInstanceOf[Success[Unit]], "failed to insert")
+      for (i <- 0 until 50)
+        require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
       var pf = p.generateProof.toArray
       // see if the proof for 50 mods will be allowed when we permit only 2
-      var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 2, 0) 
-      require (v.digest == None, "Failed to reject too long a proof")
-      
-      // see if wrong digest will be allowed
-      v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, 50, 0)
-      require (v.digest == None, "Failed to reject wrong digest")
+      var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(2), Some(0))
+      require(v.digest.isEmpty, "Failed to reject too long a proof")
 
-      for (i<-0 until 10) {
+      // see if wrong digest will be allowed
+      v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, Some(50), Some(0))
+      require(v.digest.isEmpty, "Failed to reject wrong digest")
+
+      for (i <- 0 until 10) {
         digest = p.rootHash
         oldHeight = p.rootHeight
-        for(i <- 0 until 8) 
-          require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isInstanceOf[Success[Unit]], "failed to insert")
-      
-        v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, oldHeight, 8, 0)
-        require(v.digest != None, "verification failed to construct tree")
+        for (i <- 0 until 8)
+          require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
+
+        v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, oldHeight, Some(8), Some(0))
+        require(v.digest.nonEmpty, "verification failed to construct tree")
         // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
         // that is not in the conveyed tree, and verifier will complain
-        for(i <- 0 until 5) 
+        for (i <- 0 until 5)
           v.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8)))
-        require (v.digest == None, "verification succeeded when it should have failed, because of a missing leaf")
-      
+        require(v.digest.isEmpty, "verification succeeded when it should have failed, because of a missing leaf")
+
         digest = p.rootHash
         oldHeight = p.rootHeight
         val key = Random.randomBytes()
@@ -615,39 +614,39 @@ object BatchingPlayground extends App {
         p.checkTree()
 
         // Change the direction of the proof and make sure verifier fails
-        pf(pf.length-1) = (~pf(pf.length-1)).toByte 
-        v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 1, 0)
-        require(v.digest != None, "verification failed to construct tree")
+        pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
+        v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
+        require(v.digest.nonEmpty, "verification failed to construct tree")
         v.performOneModification(Insert(key, Random.randomBytes(8)))
-        require(v.digest == None, "verification succeeded when it should have failed, because of the wrong direction")
+        require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
 
         // Change the key by a large amount -- verification should fail with overwhelming probability
         // because there are 1000 keys in the tree
         // First, change the proof back to be correct
-        pf(pf.length-1) = (~pf(pf.length-1)).toByte 
+        pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
         val oldKey = key(0)
-        key(0)=(key(0)^(1<<7)).toByte
-        v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 1, 0)
-        require(v.digest != None, "verification failed to construct tree")
+        key(0) = (key(0) ^ (1 << 7)).toByte
+        v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
+        require(v.digest.nonEmpty, "verification failed to construct tree")
         v.performOneModification(Insert(key, Random.randomBytes(8)))
-        require(v.digest == None, "verification succeeded when it should have failed because of the wrong key")
+        require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
         // put the key back the way it should be, because otherwise it's messed up in the prover tree
-        key(0)=(key(0)^(1<<7)).toByte
+        key(0) = (key(0) ^ (1 << 7)).toByte
 
-        }
+      }
     }
 
-    
 
-    def testSuccessfulChanges(toPrint:Boolean) = {
+
+    def testSuccessfulChanges(toPrint: Boolean) = {
       // returns between 0 and max-1
       // TODO: switch to some library function -- this is quick and dirty, I just couldn't find the right
       // function to use
       def randomInt(max: Int) = {
-         require(max<2000000)
-         require(max>0)
-         val j = Random.randomBytes(3)
-         ((j(0) & 127) + (j(1) & 127) * 128 + (j(2) & 127) * 128 * 128) % max
+        require(max < 2000000)
+        require(max > 0)
+        val j = Random.randomBytes(3)
+        ((j(0) & 127) + (j(1) & 127) * 128 + (j(2) & 127) * 128 * 128) % max
       }
 
       val p = new BatchAVLProver()
@@ -677,7 +676,7 @@ object BatchingPlayground extends App {
         val digest = p.rootHash
         val oldHeight = p.rootHeight
         val n = randomInt(100)
-        val j = i+n
+        val j = i + n
         if (toPrint) {
           print("Now making ")
           print(n)
@@ -688,16 +687,17 @@ object BatchingPlayground extends App {
         var numCurrentDeletes = 0
         val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](n)
         while (i < j) {
-          if (keysAndVals.size == 0 || randomInt(2) == 0) {
+          if (keysAndVals.isEmpty || randomInt(2) == 0) {
             // with prob .5 insert a new one, with prob .5 update or delete an existing one
-            if (keysAndVals.size > 0 && randomInt(10) == 0) { // with probability 1/10 cause a fail by inserting already existing
-               val j = Random.randomBytes(3)
-               val index = randomInt(keysAndVals.size)
-               val key = keysAndVals(index)._1
-               require(p.performOneModification(Insert(key, Random.randomBytes(8))).isInstanceOf[Failure[Unit]], "prover succeeded on inserting a value that's already in tree")
-               p.checkTree()
-               require(p.unauthenticatedLookup(key).get == keysAndVals(index)._2, "value changed after duplicate insert") // check insert didn't do damage
-               numFailures+=1
+            if (keysAndVals.nonEmpty && randomInt(10) == 0) {
+              // with probability 1/10 cause a fail by inserting already existing
+              val j = Random.randomBytes(3)
+              val index = randomInt(keysAndVals.size)
+              val key = keysAndVals(index)._1
+              require(p.performOneModification(Insert(key, Random.randomBytes(8))).isFailure, "prover succeeded on inserting a value that's already in tree")
+              p.checkTree()
+              require(p.unauthenticatedLookup(key).get == keysAndVals(index)._2, "value changed after duplicate insert") // check insert didn't do damage
+              numFailures += 1
             }
             else {
               val key = Random.randomBytes()
@@ -705,7 +705,7 @@ object BatchingPlayground extends App {
               keysAndVals += ((key, newVal))
               val mod = Insert(key, newVal)
               currentMods += mod
-              require(p.performOneModification(mod).isInstanceOf[Success[Unit]], "prover failed to insert")
+              require(p.performOneModification(mod).isSuccess, "prover failed to insert")
               p.checkTree()
               require(p.unauthenticatedLookup(key).get == newVal, "inserted key is missing") // check insert
               numInserts += 1
@@ -713,13 +713,15 @@ object BatchingPlayground extends App {
           }
           else {
             // with probability .25 update, with .25 delete
-            if (randomInt(2)==0) { // update
-               if (randomInt(10) == 0) { // with probability 1/10 cause a fail by modifying a nonexisting key
-                 val key = Random.randomBytes()
-                 require(p.performOneModification(Update(key, Random.randomBytes(8))).isInstanceOf[Failure[Unit]], "prover updated a nonexistent value")
-                 p.checkTree()
-                 require(p.unauthenticatedLookup(key) == None, "a nonexistent value appeared after an update") // check update didn't do damage
-                 numFailures+=1
+            if (randomInt(2) == 0) {
+              // update
+              if (randomInt(10) == 0) {
+                // with probability 1/10 cause a fail by modifying a nonexisting key
+                val key = Random.randomBytes()
+                require(p.performOneModification(Update(key, Random.randomBytes(8))).isFailure, "prover updated a nonexistent value")
+                p.checkTree()
+                require(p.unauthenticatedLookup(key).isEmpty, "a nonexistent value appeared after an update") // check update didn't do damage
+                numFailures += 1
               }
               else {
                 val index = randomInt(keysAndVals.size)
@@ -727,33 +729,36 @@ object BatchingPlayground extends App {
                 val newVal = Random.randomBytes(8)
                 val mod = Update(key, newVal)
                 currentMods += mod
-                require(p.performOneModification(mod).isInstanceOf[Success[Unit]], "prover failed to update value")
+                require(p.performOneModification(mod).isSuccess, "prover failed to update value")
                 keysAndVals(index) = ((key, newVal))
                 require(p.unauthenticatedLookup(key).get == newVal, "wrong value after update") // check update
                 numModifies += 1
               }
-            } else { // delete
-              if (randomInt(10) == 0) { // with probability 1/10 remove a nonexisting one but without failure -- shouldn't change the tree
-                 val key = Random.randomBytes()
-                 val mod = RemoveIfExists(key)
-                 val d = p.rootHash
-                 currentMods += mod
-                 require(p.performOneModification(mod).isInstanceOf[Success[Unit]], "prover failed when it should have done nothing")
-                 require(d sameElements p.rootHash, "Tree changed when it shouldn't have")
-                 p.checkTree()
-                 numNonDeletes += 1
+            } else {
+              // delete
+              if (randomInt(10) == 0) {
+                // with probability 1/10 remove a nonexisting one but without failure -- shouldn't change the tree
+                val key = Random.randomBytes()
+                val mod = RemoveIfExists(key)
+                val d = p.rootHash
+                currentMods += mod
+                require(p.performOneModification(mod).isSuccess, "prover failed when it should have done nothing")
+                require(d sameElements p.rootHash, "Tree changed when it shouldn't have")
+                p.checkTree()
+                numNonDeletes += 1
               }
-              else { // remove an existing key
+              else {
+                // remove an existing key
                 val index = randomInt(keysAndVals.size)
                 val key = keysAndVals(index)._1
                 val mod = Remove(key)
                 val oldVal = keysAndVals(index)._2
                 currentMods += mod
                 val m = Modification.convert(mod)
-                require(p.performOneModification(m._1, m._2).isInstanceOf[Success[Unit]], "failed ot delete")
+                require(p.performOneModification(m._1, m._2).isSuccess, "failed ot delete")
                 keysAndVals -= ((key, oldVal))
                 deletedKeys += key
-                require(p.unauthenticatedLookup(key) == None, "deleted key still in tree") // check delete
+                require(p.unauthenticatedLookup(key).isEmpty, "deleted key still in tree") // check delete
                 numDeletes += 1
                 numCurrentDeletes += 1
               }
@@ -774,7 +779,7 @@ object BatchingPlayground extends App {
           }
         }
 
-        val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, n, numCurrentDeletes)
+        val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(n), Some(numCurrentDeletes))
         v.digest match {
           case None =>
             require(false, "Verification failed to construct the tree")
@@ -794,7 +799,7 @@ object BatchingPlayground extends App {
       }
 
       // Check that all the inserts, deletes, and updates we did actually stayed 
-      deletedKeys foreach (k => require(p.unauthenticatedLookup(k) == None, "Key that was deleted is still in the tree"))
+      deletedKeys foreach (k => require(p.unauthenticatedLookup(k).isEmpty, "Key that was deleted is still in the tree"))
       keysAndVals foreach (pair => require(p.unauthenticatedLookup(pair._1).get == pair._2, "Key has wrong value"))
 
       if (toPrint) {
@@ -813,7 +818,7 @@ object BatchingPlayground extends App {
 
     testZeroModProofOnEmptyTree
     testVariousVerifierFails
-    testSuccessfulChanges(false)   
+    testSuccessfulChanges(false)
   }
 
 }

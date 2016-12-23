@@ -19,7 +19,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val oldHeight = p.rootHeight
     val pf = p.generateProof.toArray
     p.checkTree(true)
-    val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 0, 0)
+    val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(0), Some(0))
     v.digest match {
       case None =>
         require(false, "zero-mods verification failed to construct tree")
@@ -46,11 +46,11 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     var pf = p.generateProof.toArray
     // see if the proof for 50 mods will be allowed when we permit only 2
-    var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 2, 0)
+    var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(2), Some(0))
     require(v.digest.isEmpty, "Failed to reject too long a proof")
 
     // see if wrong digest will be allowed
-    v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, 50, 0)
+    v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, Some(50), Some(0))
     require(v.digest.isEmpty, "Failed to reject wrong digest")
 
     for (i <- 0 until 10) {
@@ -59,7 +59,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       for (i <- 0 until 8)
         require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-      v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, oldHeight, 8, 0)
+      v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, oldHeight, Some(8), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
@@ -76,7 +76,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       // Change the direction of the proof and make sure verifier fails
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
-      v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 1, 0)
+      v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneModification(Insert(key, Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
@@ -87,7 +87,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
       val oldKey = key(0)
       key(0) = (key(0) ^ (1 << 7)).toByte
-      v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, 1, 0)
+      v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneModification(Insert(key, Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
@@ -223,7 +223,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val pf = p.generateProof.toArray
       p.checkTree(true)
 
-      val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, n, numCurrentDeletes)
+      val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(n), Some(numCurrentDeletes))
       v.digest match {
         case None =>
           require(false, "Verification failed to construct the tree")
