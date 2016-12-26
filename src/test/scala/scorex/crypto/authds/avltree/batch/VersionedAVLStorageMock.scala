@@ -18,7 +18,11 @@ class VersionedAVLStorageMock extends VersionedAVLStorage {
     savedNodes(topNode.label) = topNode
   }
 
-  override def rollback(version: Version): Try[ProverNodes] = Try(savedNodes(version))
+  override def rollback(version: Version): Try[(ProverNodes, Int)] = {
+    Try(savedNodes(version))
+    //TODO
+    ???
+  }
 
   override def version: Version = v
 }

@@ -8,7 +8,10 @@ trait VersionedAVLStorage {
 
   def update(topNode: ProverNodes): Try[Unit]
 
-  def rollback(version: Version): Try[ProverNodes]
+  /**
+    * Return root node and tree height at version
+    */
+  def rollback(version: Version): Try[(ProverNodes, Int)]
 
   def version: Version
 

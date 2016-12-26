@@ -13,7 +13,7 @@ class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks
 
 
   property("Batch delete") {
-    var newProver = new BatchAVLProver(None, KL, VL)
+    var newProver = new BatchAVLProver(KL, VL)
 
     val aKey = Sha256("key 1").take(KL)
     val aValue = Sha256("value 1").take(VL)

@@ -6,26 +6,25 @@ import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
-import scala.util.{Success, Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 
 /**
   *
-  * @param rootOpt     - option root node of old tree. Tree should contain new nodes only
-  * @param keyLength   - length of keys in tree
-  * @param valueLength - length of values in tree
-  * @param hf          - hash function
+  * @param keyLength        - length of keys in tree
+  * @param valueLength      - length of values in tree
+  * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
+  * @param hf               - hash function
   */
-class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None,
-                                             val keyLength: Int = 32,
+class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
                                              val valueLength: Int = 8,
-                                             rootOptHeight: Int = 0) // TODO: reorder these? Which should be val?
+                                             oldRootAndHeight: Option[(ProverNodes, Int)] = None)
                                             (implicit val hf: HF = new Blake2b256Unsafe)
   extends UpdateF[Array[Byte]] with AuthenticatedTreeOps with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 
-  private[batch] var topNode: ProverNodes = rootOpt.getOrElse({
+  private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
       Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
     t.isNew = false
@@ -34,10 +33,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](rootOpt: Option[ProverNodes] = None
 
   // TODO: if rootOpt.nonEmpty, are we sure isNew and visited flags are set correctly? And are we sure we pass in correct height?
 
-  protected var topNodeHeight = if (rootOpt.nonEmpty)
-    rootOptHeight
-  else
-    0
+  protected var topNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
 
   private var oldTopNode = topNode
 

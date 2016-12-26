@@ -251,7 +251,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   //TODO rollback and recover
   property("Persistence AVL batch prover") {
     val storage = new VersionedAVLStorageMock
-    val prover = new PersistentBatchAVLProver(new BatchAVLProver(None, KL, VL), storage)
+    val prover = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
     var digest = prover.rootHash
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -270,7 +270,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       digest = prover.rootHash
     }
 
-    //    val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(None, KL, VL), storage)
+    //    val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
     //    prover2.rootHash shouldEqual prover.rootHash
   }
 
@@ -278,7 +278,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val tree = new scorex.crypto.authds.avltree.AVLTree(KL)
     var digest = tree.rootHash()
     val oldProver = new oldProver(tree)
-    val newProver = new BatchAVLProver(None, KL, VL)
+    val newProver = new BatchAVLProver(KL, VL)
     oldProver.rootHash shouldBe newProver.rootHash
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -299,7 +299,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Verifier should calculate the same digest") {
-    val prover = new BatchAVLProver(None, KL, VL)
+    val prover = new BatchAVLProver(KL, VL)
     var digest = prover.rootHash
 
     forAll(kvGen) { case (aKey, aValue) =>
