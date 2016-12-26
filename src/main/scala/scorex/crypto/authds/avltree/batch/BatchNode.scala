@@ -38,30 +38,33 @@ class LabelOnlyNode(l: Label) extends VerifierNodes {
 }
 
 sealed trait InternalNode extends Node {
-  protected var l: Node
-  protected var r: Node
   protected var b: Balance
 
   protected val hf: ThreadUnsafeHash
 
-  protected def computeLabel: Label = hf.prefixedHash(1: Byte, Array(b), l.label, r.label)
+  protected def computeLabel: Label = hf.prefixedHash(1: Byte, Array(b), left.label, right.label)
 
   def balance: Balance = b
 
-  def left: Node = l
+  def left: Node
 
-  def right: Node = r
+  def right: Node
 
   /* These two method may either mutate the existing node or create a new one */
-  def getNew(newLeft: Node = l, newRight: Node = r, newBalance: Balance = b): InternalNode
+  def getNew(newLeft: Node = left, newRight: Node = right, newBalance: Balance = b): InternalNode
 
   def getNewKey(newKey: AVLKey): InternalNode
 }
 
-class InternalProverNode(protected var k: AVLKey, protected var l: Node, protected var r: Node,
+class InternalProverNode(protected var k: AVLKey, protected var l: ProverNodes, protected var r: ProverNodes,
                          protected var b: Balance = 0.toByte)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
+
+
+  override def left: ProverNodes = l.asInstanceOf[ProverNodes]
+
+  override def right: ProverNodes = r.asInstanceOf[ProverNodes]
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNewKey(newKey: AVLKey): InternalProverNode = {
@@ -78,13 +81,13 @@ class InternalProverNode(protected var k: AVLKey, protected var l: Node, protect
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNew(newLeft: Node = l, newRight: Node = r, newBalance: Balance = b): InternalProverNode = {
     if (isNew) {
-      l = newLeft
-      r = newRight
+      l = newLeft.asInstanceOf[ProverNodes]
+      r = newRight.asInstanceOf[ProverNodes]
       b = newBalance
       labelOpt = None
       this
     } else {
-      new InternalProverNode(k, newLeft, newRight, newBalance)
+      new InternalProverNode(k, newLeft.asInstanceOf[ProverNodes], newRight.asInstanceOf[ProverNodes], newBalance)
     }
   }
 
@@ -97,6 +100,10 @@ class InternalProverNode(protected var k: AVLKey, protected var l: Node, protect
 class InternalVerifierNode(protected var l: Node, protected var r: Node, protected var b: Balance)
                           (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
 
+
+  override def left: Node = l
+
+  override def right: Node = r
 
   def getNewKey(newKey: AVLKey): InternalNode = {
     this

@@ -97,7 +97,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
 
   protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalProverNode = {
     val n = r.nextLeafKey
-    new InternalProverNode(key, r.getNew(newNextLeafKey = key), new ProverLeaf(key, v, n), 0: Byte)
+    new InternalProverNode(key, r.getNew(newNextLeafKey = key).asInstanceOf[ProverLeaf],
+      new ProverLeaf(key, v, n), 0: Byte)
   }
 
 
@@ -163,8 +164,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
             packagedTree ++= r.value
             previousLeafAvailable = true
           case r: InternalProverNode =>
-            packTree(r.left.asInstanceOf[ProverNodes])
-            packTree(r.right.asInstanceOf[ProverNodes])
+            packTree(r.left)
+            packTree(r.right)
             packagedTree += r.balance
         }
       }
@@ -174,8 +175,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
       if (r.isNew) {
         r match {
           case rn: InternalProverNode =>
-            resetNew(rn.left.asInstanceOf[ProverNodes])
-            resetNew(rn.right.asInstanceOf[ProverNodes])
+            resetNew(rn.left)
+            resetNew(rn.right)
           case _ =>
         }
         r.isNew = false
@@ -210,15 +211,15 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
 
         case r: InternalProverNode =>
           if (found) // left all the way to the leaf
-            unauthenticatedLookupHelper(r.left.asInstanceOf[ProverNodes], found = true)
+            unauthenticatedLookupHelper(r.left, found = true)
           else {
             ByteArray.compare(key, r.key) match {
               case 0 => // found in the tree -- go one step right, then left to the leaf
-                unauthenticatedLookupHelper(r.right.asInstanceOf[ProverNodes], found = true)
+                unauthenticatedLookupHelper(r.right, found = true)
               case o if o < 0 => // going left, not yet found
-                unauthenticatedLookupHelper(r.left.asInstanceOf[ProverNodes], found = false)
+                unauthenticatedLookupHelper(r.left, found = false)
               case _ => // going right, not yet found
-                unauthenticatedLookupHelper(r.right.asInstanceOf[ProverNodes], found = false)
+                unauthenticatedLookupHelper(r.right, found = false)
             }
           }
       }
@@ -252,12 +253,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
       rNode match {
         case r: InternalProverNode =>
           if (r.left.isInstanceOf[InternalProverNode])
-            myRequire(ByteArray.compare(r.left.asInstanceOf[ProverNodes].key, r.key) < 0, "wrong left key")
+            myRequire(ByteArray.compare(r.left.key, r.key) < 0, "wrong left key")
           if (r.right.isInstanceOf[InternalProverNode])
-            myRequire(ByteArray.compare(r.right.asInstanceOf[ProverNodes].key, r.key) > 0, "wrong right key")
+            myRequire(ByteArray.compare(r.right.key, r.key) > 0, "wrong right key")
 
-          val (minLeft, maxLeft, leftHeight) = checkTreeHelper(r.left.asInstanceOf[ProverNodes])
-          val (minRight, maxRight, rightHeight) = checkTreeHelper(r.right.asInstanceOf[ProverNodes])
+          val (minLeft, maxLeft, leftHeight) = checkTreeHelper(r.left)
+          val (minRight, maxRight, rightHeight) = checkTreeHelper(r.right)
           myRequire(maxLeft.nextLeafKey sameElements minRight.key, "children don't match")
           myRequire(minRight.key sameElements r.key, "min of right subtree doesn't match")
           myRequire(r.balance >= -1 && r.balance <= 1 && r.balance.toInt == rightHeight - leftHeight, "wrong balance")
@@ -288,8 +289,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
             " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
         case r: InternalProverNode =>
           "Internal node label = " + arrayToString(r.label) + " key = " + arrayToString(r.key) + " balance = " +
-            r.balance + "\n" + stringTreeHelper(r.left.asInstanceOf[ProverNodes], depth + 1) +
-            stringTreeHelper(r.right.asInstanceOf[ProverNodes], depth + 1)
+            r.balance + "\n" + stringTreeHelper(r.left, depth + 1) +
+            stringTreeHelper(r.right, depth + 1)
       }
       Seq.fill(depth + 2)(" ").mkString + nodeStr
     }
