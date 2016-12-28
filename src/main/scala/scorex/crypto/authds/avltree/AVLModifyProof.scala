@@ -4,8 +4,6 @@ import com.google.common.primitives.Bytes
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
-
-import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 import scorex.crypto.authds.TwoPartyDictionary.Label
 
@@ -20,186 +18,187 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
+
+  /**
+   * Returns the new root and indicators whether tree has been modified at r or below
+   * and whether the height has increased
+   * Also returns the label of the old root
+   */
+  private def verifyHelper(updateFunction: UpdateFunction): (VerifierNodes, Boolean, Boolean, Label) = {
+    dequeueDirection() match {
+      case LeafFound =>
+        val nextLeafKey: AVLKey = dequeueNextLeafKey()
+        val value: AVLValue = dequeueValue()
+        updateFunction(Some(value)) match {
+          case Success(None) => //delete value
+            ???
+          case Success(Some(v)) => //update value
+            val oldLeaf = Leaf(key, value, nextLeafKey)
+            val newLeaf = Leaf(key, v, nextLeafKey)
+            (newLeaf, true, false, oldLeaf.label)
+          case Failure(e) => // found incorrect value
+            throw e
+        }
+      case LeafNotFound =>
+        val neighbourLeafKey = dequeueKey()
+        val nextLeafKey: AVLKey = dequeueNextLeafKey()
+        val value: AVLValue = dequeueValue()
+        require(ByteArray.compare(neighbourLeafKey, key) < 0)
+        require(ByteArray.compare(key, nextLeafKey) < 0)
+
+        val r = Leaf(neighbourLeafKey, value, nextLeafKey)
+        val oldLabel = r.label
+        updateFunction(None) match {
+          case Success(None) => //don't change anything, just lookup
+            (r, false, false, oldLabel)
+          case Success(Some(v)) => //insert new value
+            val newLeaf = Leaf(key, v, r.nextLeafKey)
+            r.nextLeafKey = key
+            val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0: Byte)
+            (newR, true, true, oldLabel)
+          case Failure(e) => // found incorrect value
+            // (r, false, false, oldLabel)
+            throw e
+        }
+      case GoingLeft =>
+        val rightLabel: Label = dequeueRightLabel()
+        val balance: Balance = dequeueBalance()
+
+        val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper(updateFunction)
+
+        val r = VerifierNode(LabelOnlyNode(oldLeftLabel), LabelOnlyNode(rightLabel), balance)
+        val oldLabel = r.label
+
+        // balance = -1 if left higher, +1 if left lower
+        if (changeHappened) {
+          if (childHeightIncreased && r.balance < 0) {
+            // need to rotate
+            newLeftM match {
+              // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;
+              case newLeft: VerifierNode =>
+                if (newLeft.balance < 0) {
+                  // single rotate
+                  r.left = newLeft.right
+                  r.balance = 0: Byte
+                  newLeft.right = r
+                  newLeft.balance = 0: Byte
+                  (newLeft, true, false, oldLabel)
+                }
+
+                else {
+                  // double rotate
+                  val newRootM = newLeft.right
+                  val newRoot = newRootM.asInstanceOf[VerifierNode]
+
+                  r.left = newRoot.right
+                  newRoot.right = r
+                  newLeft.right = newRoot.left
+                  newRoot.left = newLeft
+                  newRoot.balance match {
+                    case 0 =>
+                      // newRoot is a newly created node
+                      newLeft.balance = 0: Byte
+                      r.balance = 0: Byte
+                    case -1 =>
+                      newLeft.balance = 0: Byte
+                      r.balance = 1: Byte
+                    case 1 =>
+                      newLeft.balance = -1: Byte
+                      r.balance = 0: Byte
+                  }
+                  newRoot.balance = 0: Byte
+                  (newRoot, true, false, oldLabel)
+                }
+
+              case newLeft =>
+                throw new Error("Got a leaf, internal node expected")
+            }
+
+          } else {
+            // no need to rotate
+            r.left = newLeftM
+            val myHeightIncreased: Boolean = childHeightIncreased && (r.balance == (0: Byte))
+            if (childHeightIncreased) r.balance = (r.balance - 1).toByte
+            (r, true, myHeightIncreased, oldLabel)
+          }
+
+        } else {
+          // no change happened
+          (r, false, false, oldLabel)
+        }
+
+      case GoingRight =>
+        val leftLabel: Label = dequeueLeftLabel()
+        val balance: Balance = dequeueBalance()
+
+        val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper(updateFunction)
+
+        val r = VerifierNode(LabelOnlyNode(leftLabel), LabelOnlyNode(oldRightLabel), balance)
+        val oldLabel = r.label
+
+        if (changeHappened) {
+          if (childHeightIncreased && r.balance > 0) {
+            // need to rotate
+            newRightM match {
+              // at this point we know newRightM must be an internal node an not a leaf -- b/c height increased
+              case newRight: VerifierNode =>
+                if (newRight.balance > 0) {
+                  // single rotate
+                  r.right = newRight.left
+                  r.balance = 0: Byte
+                  newRight.left = r
+                  newRight.balance = 0: Byte
+                  (newRight, true, false, oldLabel)
+                }
+
+                else {
+                  // double rotate
+                  val newRootM = newRight.left
+                  val newRoot = newRootM.asInstanceOf[VerifierNode]
+
+                  r.right = newRoot.left
+                  newRoot.left = r
+                  newRight.left = newRoot.right
+                  newRoot.right = newRight
+
+                  newRoot.balance match {
+                    case 0 =>
+                      // newRoot is a newly created node
+                      newRight.balance = 0: Byte
+                      r.balance = 0: Byte
+                    case -1 =>
+                      newRight.balance = 1: Byte
+                      r.balance = 0: Byte
+                    case 1 =>
+                      newRight.balance = 0: Byte
+                      r.balance = -1: Byte
+                  }
+                  newRoot.balance = 0: Byte
+
+                  (newRoot, true, false, oldLabel)
+                }
+
+              case newRight =>
+                throw new Error("Got a leaf, internal node expected")
+            }
+          } else {
+            // no need to rotate
+            r.right = newRightM
+            val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
+            if (childHeightIncreased) r.balance = (r.balance + 1).toByte
+            (r, true, myHeightIncreased, oldLabel)
+          }
+        } else {
+          // no change happened
+          (r, false, false, oldLabel)
+        }
+    }
+  }
+
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     initializeIterator()
 
-    /*
-     * Returns the new root and indicators whether tree has been modified at r or below
-     * and whether the height has increased
-     * Also returns the label of the old root
-     */
-    def verifyHelper(): (VerifierNodes, Boolean, Boolean, Label) = {
-      dequeueDirection() match {
-        case LeafFound =>
-          val nextLeafKey: AVLKey = dequeueNextLeafKey()
-          val value: AVLValue = dequeueValue()
-          updateFunction(Some(value)) match {
-            case Success(None) => //delete value
-              ???
-            case Success(Some(v)) => //update value
-              val oldLeaf = Leaf(key, value, nextLeafKey)
-              val newLeaf = Leaf(key, v, nextLeafKey)
-              (newLeaf, true, false, oldLeaf.label)
-            case Failure(e) => // found incorrect value
-              throw e
-          }
-        case LeafNotFound =>
-          val neighbourLeafKey = dequeueKey()
-          val nextLeafKey: AVLKey = dequeueNextLeafKey()
-          val value: AVLValue = dequeueValue()
-          require(ByteArray.compare(neighbourLeafKey, key) < 0)
-          require(ByteArray.compare(key, nextLeafKey) < 0)
-
-          val r = new Leaf(neighbourLeafKey, value, nextLeafKey)
-          val oldLabel = r.label
-          updateFunction(None) match {
-            case Success(None) => //don't change anything, just lookup
-              (r, false, false, oldLabel)
-            case Success(Some(v)) => //insert new value
-              val newLeaf = new Leaf(key, v, r.nextLeafKey)
-              r.nextLeafKey = key
-              val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0: Byte)
-              (newR, true, true, oldLabel)
-            case Failure(e) => // found incorrect value
-              // (r, false, false, oldLabel)
-              throw e
-          }
-        case GoingLeft =>
-          val rightLabel: Label = dequeueRightLabel()
-          val balance: Balance = dequeueBalance()
-
-          val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper()
-
-          val r = VerifierNode(LabelOnlyNode(oldLeftLabel), LabelOnlyNode(rightLabel), balance)
-          val oldLabel = r.label
-
-          // balance = -1 if left higher, +1 if left lower
-          if (changeHappened) {
-            if (childHeightIncreased && r.balance < 0) {
-              // need to rotate
-              newLeftM match {
-                // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;
-                case newLeft: VerifierNode =>
-                  if (newLeft.balance < 0) {
-                    // single rotate
-                    r.left = newLeft.right
-                    r.balance = 0: Byte
-                    newLeft.right = r
-                    newLeft.balance = 0: Byte
-                    (newLeft, true, false, oldLabel)
-                  }
-
-                  else {
-                    // double rotate
-                    val newRootM = newLeft.right
-                    val newRoot = newRootM.asInstanceOf[VerifierNode]
-
-                    r.left = newRoot.right
-                    newRoot.right = r
-                    newLeft.right = newRoot.left
-                    newRoot.left = newLeft
-                    newRoot.balance match {
-                      case 0 =>
-                        // newRoot is a newly created node
-                        newLeft.balance = 0: Byte
-                        r.balance = 0: Byte
-                      case -1 =>
-                        newLeft.balance = 0: Byte
-                        r.balance = 1: Byte
-                      case 1 =>
-                        newLeft.balance = -1: Byte
-                        r.balance = 0: Byte
-                    }
-                    newRoot.balance = 0: Byte
-                    (newRoot, true, false, oldLabel)
-                  }
-
-                case newLeft =>
-                  throw new Error("Got a leaf, internal node expected")
-              }
-
-            } else {
-              // no need to rotate
-              r.left = newLeftM
-              val myHeightIncreased: Boolean = childHeightIncreased && (r.balance == (0: Byte))
-              if (childHeightIncreased) r.balance = (r.balance - 1).toByte
-              (r, true, myHeightIncreased, oldLabel)
-            }
-
-          } else {
-            // no change happened
-            (r, false, false, oldLabel)
-          }
-
-        case GoingRight =>
-          val leftLabel: Label = dequeueLeftLabel()
-          val balance: Balance = dequeueBalance()
-
-          val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper()
-
-          val r = VerifierNode(LabelOnlyNode(leftLabel), LabelOnlyNode(oldRightLabel), balance)
-          val oldLabel = r.label
-
-          if (changeHappened) {
-            if (childHeightIncreased && r.balance > 0) {
-              // need to rotate
-              newRightM match {
-                // at this point we know newRightM must be an internal node an not a leaf -- b/c height increased
-                case newRight: VerifierNode =>
-                  if (newRight.balance > 0) {
-                    // single rotate
-                    r.right = newRight.left
-                    r.balance = 0: Byte
-                    newRight.left = r
-                    newRight.balance = 0: Byte
-                    (newRight, true, false, oldLabel)
-                  }
-
-                  else {
-                    // double rotate
-                    val newRootM = newRight.left
-                    val newRoot = newRootM.asInstanceOf[VerifierNode]
-
-                    r.right = newRoot.left
-                    newRoot.left = r
-                    newRight.left = newRoot.right
-                    newRoot.right = newRight
-
-                    newRoot.balance match {
-                      case 0 =>
-                        // newRoot is a newly created node
-                        newRight.balance = 0: Byte
-                        r.balance = 0: Byte
-                      case -1 =>
-                        newRight.balance = 1: Byte
-                        r.balance = 0: Byte
-                      case 1 =>
-                        newRight.balance = 0: Byte
-                        r.balance = -1: Byte
-                    }
-                    newRoot.balance = 0: Byte
-
-                    (newRoot, true, false, oldLabel)
-                  }
-
-                case newRight =>
-                  throw new Error("Got a leaf, internal node expected")
-              }
-            } else {
-              // no need to rotate
-              r.right = newRightM
-              val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-              if (childHeightIncreased) r.balance = (r.balance + 1).toByte
-              (r, true, myHeightIncreased, oldLabel)
-            }
-          } else {
-            // no change happened
-            (r, false, false, oldLabel)
-          }
-      }
-    }
-
-    val (newTopNode, changeHappened, heighIncreased, oldLabel) = verifyHelper()
+    val (newTopNode, changeHappened, heighIncreased, oldLabel) = verifyHelper(updateFunction)
     if (oldLabel sameElements digest) {
       Some(newTopNode.label)
     } else {
@@ -292,6 +291,4 @@ object AVLModifyProof {
     val (b1, b2) = splitBytes(b)
     (parseDirection(b1), ProofBalance(b2))
   }
-
-
 }
