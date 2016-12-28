@@ -9,6 +9,8 @@ import scorex.crypto.authds.TwoPartyDictionary.Label
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
+  type ChangeHappened = Boolean
+  type HeightIncreased = Boolean
 
   def verifyLookup(digest: Label, existence: Boolean): Option[Label] = {
     if(existence) {
@@ -18,13 +20,12 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
-
   /**
    * Returns the new root and indicators whether tree has been modified at r or below
    * and whether the height has increased
    * Also returns the label of the old root
    */
-  private def verifyHelper(updateFunction: UpdateFunction): (VerifierNodes, Boolean, Boolean, Label) = {
+  private def verifyHelper(updateFunction: UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
     dequeueDirection() match {
       case LeafFound =>
         val nextLeafKey: AVLKey = dequeueNextLeafKey()
@@ -198,7 +199,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
   def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
     initializeIterator()
 
-    val (newTopNode, changeHappened, heighIncreased, oldLabel) = verifyHelper(updateFunction)
+    val (newTopNode, _, _, oldLabel) = verifyHelper(updateFunction)
     if (oldLabel sameElements digest) {
       Some(newTopNode.label)
     } else {
@@ -240,8 +241,7 @@ object AVLModifyProof {
 
   def parseBytes(bytes: Array[Byte])(implicit keyLength: Int = 32, digestSize: Int = 32,
                                      hf: ThreadUnsafeHash = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
-    val pathLength: Int = bytes.head
-    require(pathLength % 3 == 0)
+    val pathLength: Int = bytes.head.ensuring(_ % 3 == 0)
 
     val key = bytes.slice(1, 1 + keyLength)
     val pathProofs: Seq[AVLProofElement] = (0 until pathLength / 3) flatMap { i: Int =>
