@@ -15,8 +15,9 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
   private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
 
-  var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinityKey, Array.fill(valueLength)(0:Byte),
-    PositiveInfinityKey))
+  val DefaultTopNode = Leaf(NegativeInfinityKey, Array.fill(valueLength)(0:Byte), PositiveInfinityKey)
+
+  private var topNode: ProverNodes = rootOpt.getOrElse(DefaultTopNode)
 
   def rootHash(): Label = topNode.label
 
