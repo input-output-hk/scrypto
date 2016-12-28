@@ -150,9 +150,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   newRight.left = r
                   newRight.balance = 0: Byte
                   (newRight, true, false, oldLabel)
-                }
-
-                else {
+                } else {
                   // double rotate
                   val newRootM = newRight.left
                   val newRoot = newRootM.asInstanceOf[VerifierNode]
@@ -200,11 +198,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     initializeIterator()
 
     val (newTopNode, _, _, oldLabel) = verifyHelper(updateFunction)
-    if (oldLabel sameElements digest) {
-      Some(newTopNode.label)
-    } else {
-      None
-    }
+    if (oldLabel sameElements digest) Some(newTopNode.label) else None
   }.getOrElse(None)
 
   /**
@@ -234,7 +228,6 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
         proofSeq(proofSeq.length - 2).bytes, proofSeq(proofSeq.length - 3).bytes, proofSeq.last.bytes)
     }
   }
-
 }
 
 object AVLModifyProof {
