@@ -1,6 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.UpdateF
+import scorex.crypto.authds.avltree.AVLKey
 
 import scala.util.{Failure, Success}
 

@@ -2,6 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
+import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 

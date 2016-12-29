@@ -1,6 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.UpdateF
+import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.encode.Base58
 import scorex.utils.{ByteArray, ScryptoLogging}
 

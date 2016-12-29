@@ -1,6 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds.avltree.{AVLKey, AVLValue, Balance}
 import scorex.crypto.hash.ThreadUnsafeHash
 
 sealed trait Node extends ToStringHelper {

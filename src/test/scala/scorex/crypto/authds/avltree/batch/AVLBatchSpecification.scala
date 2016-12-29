@@ -4,6 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
+import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.authds.avltree.legacy.AVLTree
 import scorex.utils.Random
 
