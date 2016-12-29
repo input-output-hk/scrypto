@@ -1,6 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.avltree._
+import scorex.crypto.authds.avltree.legacy.{AVLModifyProof, AVLTree}
 import scorex.utils.Random
 
 
@@ -307,7 +308,7 @@ object BatchingPlayground extends App {
   def memoryTestNoBatching {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
-    var p: Option[scala.util.Try[scorex.crypto.authds.avltree.AVLModifyProof]] = None
+    var p: Option[scala.util.Try[AVLModifyProof]] = None
     var prevMemory: Long = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
     var curMemory: Long = prevMemory
 

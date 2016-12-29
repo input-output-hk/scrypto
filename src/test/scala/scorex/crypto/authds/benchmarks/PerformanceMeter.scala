@@ -1,6 +1,6 @@
 package scorex.crypto.authds.benchmarks
 
-import scorex.crypto.authds.avltree.AVLTree
+import scorex.crypto.authds.avltree.legacy.AVLTree
 import scorex.crypto.authds.treap._
 import scorex.crypto.authds.{Level, TwoPartyTests}
 import scorex.crypto.hash.Blake2b256Unsafe

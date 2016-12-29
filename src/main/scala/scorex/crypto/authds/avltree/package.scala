@@ -6,5 +6,4 @@ package object avltree {
   type AVLValue = Array[Byte]
 
   val LabelOfNone: Array[Byte] = Array()
-
 }

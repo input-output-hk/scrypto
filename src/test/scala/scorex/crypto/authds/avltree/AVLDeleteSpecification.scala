@@ -4,6 +4,7 @@ import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.batch._
+import scorex.crypto.authds.avltree.legacy.AVLTree
 import scorex.crypto.hash.Sha256
 
 class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {

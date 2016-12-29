@@ -31,9 +31,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
 
   // Decode bits as Booleans
   protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
-    val ret = if ((pf(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0)
+    val ret = if ((pf(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0) {
       true
-    else {
+    } else {
       lastRightStep = directionsIndex
       false
     }
@@ -42,24 +42,23 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
   }
 
   protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
-    val c = ByteArray.compare(key, r.key)
+    val c = ByteArray.compare(key, r.key).ensuring(_ >= 0)
     if (c == 0) {
       true
-    }
-    else {
-      require(c > 0)
+    } else {
       require(ByteArray.compare(key, r.nextLeafKey) < 0)
       false
     }
   }
 
   protected def replayComparison: Int = {
-    val ret = if (replayIndex == lastRightStep)
+    val ret = if (replayIndex == lastRightStep) {
       0
-    else if ((pf(replayIndex >> 3) & (1 << (replayIndex & 7)).toByte) == 0 && replayIndex < lastRightStep)
+    } else if ((pf(replayIndex >> 3) & (1 << (replayIndex & 7)).toByte) == 0 && replayIndex < lastRightStep) {
       1
-    else
+    } else {
       -1
+    }
     replayIndex += 1
     ret
   }

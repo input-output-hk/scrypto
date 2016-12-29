@@ -25,8 +25,7 @@ sealed trait ProverNodes extends Node {
   var isNew: Boolean = true
   protected var k: AVLKey
 
-  def key = k
-
+  def key: AVLKey = k
 }
 
 sealed trait VerifierNodes extends Node
@@ -61,7 +60,6 @@ class InternalProverNode(protected var k: AVLKey, protected var l: ProverNodes, 
   extends ProverNodes with InternalNode {
 
 
-
   override def left: ProverNodes = l.asInstanceOf[ProverNodes]
 
   override def right: ProverNodes = r.asInstanceOf[ProverNodes]
@@ -93,7 +91,7 @@ class InternalProverNode(protected var k: AVLKey, protected var l: ProverNodes, 
 
   override def toString: String = {
     s"${arrayToString(label)}: ProverNode(${arrayToString(key)}, ${arrayToString(left.label)}, " +
-      s"${arrayToString(right.label)}, $balance)" 
+      s"${arrayToString(right.label)}, $balance)"
   }
 }
 
@@ -175,7 +173,6 @@ class ProverLeaf(protected var k: AVLKey, protected var v: AVLValue, protected v
       new ProverLeaf(newKey, newValue, newNextLeafKey)
     }
   }
-
 }
 
 

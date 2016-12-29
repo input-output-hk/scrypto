@@ -1,9 +1,9 @@
-package scorex.crypto.authds.avltree
+package scorex.crypto.authds.avltree.legacy
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds.avltree._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
-import scala.collection.mutable
 
 sealed trait Node {
 

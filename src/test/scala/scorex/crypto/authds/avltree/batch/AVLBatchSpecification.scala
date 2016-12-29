@@ -4,6 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
+import scorex.crypto.authds.avltree.legacy.AVLTree
 import scorex.utils.Random
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
@@ -275,7 +276,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Updates with and without batching should lead to the same tree") {
-    val tree = new scorex.crypto.authds.avltree.AVLTree(KL)
+    val tree = new AVLTree(KL)
     var digest = tree.rootHash()
     val oldProver = new oldProver(tree)
     val newProver = new BatchAVLProver(KL, VL)

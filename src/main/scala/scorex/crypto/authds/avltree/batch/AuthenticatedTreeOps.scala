@@ -7,12 +7,7 @@ import scorex.utils.{ByteArray, ScryptoLogging}
 import scala.util.{Failure, Success}
 
 
-trait BatchProofConstants {
-  // Do not use bytes -1, 0, or 1 -- these are for balance
-  val LeafInPackagedProof: Byte = 2
-  val LabelInPackagedProof: Byte = 3
-  val EndOfTreeInPackagedProof: Byte = 4
-}
+
 
 trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants with ScryptoLogging {
 

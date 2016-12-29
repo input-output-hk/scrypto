@@ -1,11 +1,13 @@
-package scorex.crypto.authds.avltree
+package scorex.crypto.authds.avltree.legacy
 
 import com.google.common.primitives.Bytes
+import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
+import scorex.crypto.authds.avltree._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
+
 import scala.util.{Failure, Success, Try}
-import scorex.crypto.authds.TwoPartyDictionary.Label
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
