@@ -5,7 +5,6 @@ import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
-
 import scala.collection.mutable
 import scala.util.Try
 
@@ -148,8 +147,8 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
 
   override def toString: String = {
 
-    def stringTreeHelper(rNode: VerifierNodes, depth: Int): String = {
-      val nodeStr: String = rNode match {
+    def stringTreeHelper(rNode: VerifierNodes, depth: Int): String =
+      Seq.fill(depth + 2)(" ").mkString + (rNode match {
         case leaf: VerifierLeaf =>
           "At leaf label = " + arrayToString(leaf.label) + " key = " + arrayToString(leaf.key) +
             " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
@@ -159,14 +158,11 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
             stringTreeHelper(r.right.asInstanceOf[VerifierNodes], depth + 1)
         case n: LabelOnlyNode =>
           "Label-only node label = " + arrayToString(n.label) + "\n"
-      }
-      Seq.fill(depth + 2)(" ").mkString + nodeStr
-    }
+      })
+
     topNode match {
       case None => "None"
       case Some(t) => stringTreeHelper(t, 0)
     }
   }
-
-
 }
