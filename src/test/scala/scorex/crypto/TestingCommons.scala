@@ -1,10 +1,9 @@
-package scrypto
+package scorex.crypto
 
 import java.io.File
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.Matchers
-import scorex.crypto.hash.Sha256
 
 import scala.util.Random
 

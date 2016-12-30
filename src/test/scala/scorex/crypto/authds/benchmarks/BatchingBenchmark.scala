@@ -1,57 +1,32 @@
-/*
 package scorex.crypto.authds.benchmarks
 
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
+import scorex.crypto.authds.avltree.legacy.{AVLModifyProof, AVLTree}
 import scorex.utils.Random
 
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree._
 
-<<<<<<< HEAD
-    val InitilaMods = 1000000
-    val NumMods = InitilaMods + 4096 * 64
-//  val InitilaMods = 0
-//  val NumMods = 2000000
-=======
 import scala.util.{Failure, Success}
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
 
-
+/**
+  * TODO: describe benchmark
+  */
 object BatchingBenchmark extends App with TwoPartyTests {
-
-
 
   println ("treeSize, numLookups, proofSizeForEach")
   benchSizeLookupsInTree(1000000, Seq(1000), false, false)
   benchSizeLookupsInTree(1000000, Seq(1000), true, false)
   benchSizeLookupsInTree(1000000, Seq(1000), false, true)
   benchSizeLookupsInTree(1000000, Seq(1000), true, true)
-  //bench2
-  //timeBenchmarksNewContinuous
-  //timeBenchmarksOldContinuous
-  //timeBenchmarksNew
-  //timeBenchmarksOld
 
+  bench2()
+//  timeBenchmarksNewContinuous
+//  timeBenchmarksOldContinuous
+//  timeBenchmarksNew
+//  timeBenchmarksOld
 
-
-  def bench1(): Unit = {
-    val oldProver = new oldProver(new AVLTree(32))
-    val newProver = new BatchAVLProver()
-
-    val initialModifications = Modification.convert(mods.slice(0, InitilaMods))
-    oldProver.applyUpdates(initialModifications)
-    initialModifications foreach (m => newProver.performOneModification(m._1, m._2))
-    newProver.generateProof
-    digest = newProver.rootHash
-    require(oldProver.rootHash sameElements digest)
-
-    val Step = 2000
-    (InitilaMods until(NumMods, Step)) foreach { i =>
-      oneStep(i, Step, i / 2, oldProver, newProver)
-    }
-  }
 
 
   def bench2(): Unit = {
@@ -67,11 +42,11 @@ object BatchingBenchmark extends App with TwoPartyTests {
     val steps = Seq(64, 32, 16, 8, 4, 2, 1)
 
 
-//    val steps = Seq(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 4096 * 2, 4096 * 4, 4096 * 8, 4096 * 16,
- //     4096 * 32, 4096 * 64)
+    //    val steps = Seq(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 4096 * 2, 4096 * 4, 4096 * 8, 4096 * 16,
+    //     4096 * 32, 4096 * 64)
 
     steps foreach { j =>
-      val oldProver = new oldProver(new AVLTree(32))
+      val oldProver = new LegacyProver(new AVLTree(32))
       val newProver = new BatchAVLProver()
 
       val Step = InitialMods / 1000
@@ -88,9 +63,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
     }
   }
 
-<<<<<<< HEAD
-  def oneStep(i: Int, step: Int, toPrint: Int, oldProver: oldProver, newProver: BatchAVLProver[_]): Unit = {
-=======
   def bench1(): Unit = {
     val InitialMods = 1000000
     val NumMods = InitialMods + 4096 * 64
@@ -100,7 +72,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
     println("Step, Plain size, GZiped size, Batched size, Old apply time, New apply time, Old verify time, New verify time")
 
-    val oldProver = new oldProver(new AVLTree(32))
+    val oldProver = new LegacyProver(new AVLTree(32))
     val newProver = new BatchAVLProver()
 
     val initialModifications = Modification.convert(mods.slice(0, InitialMods))
@@ -116,8 +88,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
     }
   }
 
-  def oneStep(i: Int, step: Int, toPrint: Int, totalSize: Int, oldProver: oldProver, newProver: BatchAVLProver[_], mods: Array[Modification]): Unit = {
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
+  def oneStep(i: Int, step: Int, toPrint: Int, totalSize: Int, oldProver: LegacyProver, newProver: BatchAVLProver[_], mods: Array[Modification]): Unit = {
     System.gc()
 
     var oldProverTime = 0.0
@@ -148,17 +119,8 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
       oldProverTime+=oldProverTimeT
 
-<<<<<<< HEAD
-    val (oldProverTime, oldProves: Seq[AVLModifyProof]) = time {
-      oldProver.applyUpdates(converted) match {
-        case a: BatchSuccessSimple =>
-          val proofs = a.proofs
-          a.proofs.foreach(_.bytes)
-          proofs
-        case BatchFailure(e) => throw e
-=======
       val oldBytes = oldProofs.foldLeft(Array[Byte]()) { (a, b) =>
-           a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
+        a ++ b.proofSeq.map(_.bytes).reduce(_ ++ _)
       }
 
       // TODO: THERE IS NO DESERIALIZATION
@@ -217,7 +179,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
           newProver.rootHash
           j+=batchSize
         }
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
       }
       print(i)
       print(" ")
@@ -248,14 +209,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
       print(" ")
       println(t)
     }
-<<<<<<< HEAD
-    val oldVerifierTime: Float = time {
-      var h = 0
-      oldProves.foldLeft(digest) { (prevDigest, proof) =>
-        val newDigest = proof.verify(prevDigest, converted(h)._2).get
-        h = h + 1
-        newDigest
-=======
   }
 
 
@@ -267,23 +220,22 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
 
 
-  /*  for (k<-0 until 10) { //NOTE: if you comment out this loop, the first few batches are slower by factor of 3-6
-      val (newProverTime, pf) = time {
-        var ctr = 0
-        while(ctr<1000) {
-          for (j<-0 until 1) {
-            val m = Modification.convert(mods(i))
-            newProver.performOneModification(m._1, m._2)
-            i+=1
-            ctr+=1
+    /*  for (k<-0 until 10) { //NOTE: if you comment out this loop, the first few batches are slower by factor of 3-6
+        val (newProverTime, pf) = time {
+          var ctr = 0
+          while(ctr<1000) {
+            for (j<-0 until 1) {
+              val m = Modification.convert(mods(i))
+              newProver.performOneModification(m._1, m._2)
+              i+=1
+              ctr+=1
+            }
+            newProver.rootHash
+            newProver.generateProof.toArray
           }
-          newProver.rootHash
-          newProver.generateProof.toArray
         }
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
-      }
-      println(newProverTime)
-    }*/
+        println(newProverTime)
+      }*/
 
     println("batchSize,UnitCost")
     var batchSize = totalSize
@@ -299,13 +251,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
       System.gc()
 
-<<<<<<< HEAD
-    newProver.rootHash
-    val (newProverTime, pf) = time {
-      converted foreach (m => newProver.performOneModification(m._1, m._2))
-      newProver.rootHash
-      newProver.generateProof
-=======
       var i = initialMods
 
       var numBatches = 0
@@ -327,7 +272,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
       print(",")
       println(newProverTime/numBatches/batchSize)
       batchSize/=2
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
     }
   }
 
@@ -339,26 +283,22 @@ object BatchingBenchmark extends App with TwoPartyTests {
 
 
 
-  /*  for (k<-0 until 10) { //NOTE: if you comment out this loop, the first few batches are slower by factor of 3-6
-      val (oldProverTime, pf) = time {
-        var ctr = 0
-        while(ctr<1000) {
-          for (j<-0 until 1) {
-            val m = Modification.convert(mods(i))
-            oldProver.modify(m._1, m._2).get.bytes
-            i+=1
-            ctr+=1
+    /*  for (k<-0 until 10) { //NOTE: if you comment out this loop, the first few batches are slower by factor of 3-6
+        val (oldProverTime, pf) = time {
+          var ctr = 0
+          while(ctr<1000) {
+            for (j<-0 until 1) {
+              val m = Modification.convert(mods(i))
+              oldProver.modify(m._1, m._2).get.bytes
+              i+=1
+              ctr+=1
+            }
+            oldProver.rootHash
           }
-          oldProver.rootHash
         }
-      }
-      println(oldProverTime)
-    }*/
+        println(oldProverTime)
+      }*/
 
-<<<<<<< HEAD
-    val newVerifier = new BatchAVLVerifier(digest, pf.toArray)
-    newVerifier.digest.get shouldEqual digest
-=======
     println("batchSize,UnitCost")
     var batchSize = totalSize
     while (batchSize > 0) {
@@ -371,7 +311,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
       oldProver.rootHash // NOTE: if you comment out this line, the first batch becomes about 2 seconds slower
 
       System.gc()
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
 
       var i = initialMods
 
@@ -414,13 +353,13 @@ object BatchingBenchmark extends App with TwoPartyTests {
           if (useFreshLookups) { // unsuccessful lookup
             newProver.performOneModification(Random.randomBytes(), (k=>Success(None)):UpdateFunction)
           } else { // successful lookup with a change
-            val j = Random.randomBytes(3)
+          val j = Random.randomBytes(3)
             val m = Update(mods((j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % treeSize)._1, Random.randomBytes(8))
             val c = Modification.convert(m)
             newProver.performOneModification(c._1, c._2)
           }
         } else { // new insert
-          val m = Insert(Random.randomBytes(), Random.randomBytes(8))
+        val m = Insert(Random.randomBytes(), Random.randomBytes(8))
           val c = Modification.convert(m)
           newProver.performOneModification(c._1, c._2)
         }
@@ -435,46 +374,13 @@ object BatchingBenchmark extends App with TwoPartyTests {
   }
 
 
-<<<<<<< HEAD
-  def bench3(): Unit = {
-    val newProver = new BatchAVLProver()
-    val numMods = 1024 * 1024
-    val batchSize = 1 // change to see different timings
-
-    var mods = new Array[Modification](1024)
-    for (i <- 0 until 1024) {
-      for (j <- 0 until 1024)
-        mods(j) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
-      val converted = Modification.convert(mods)
-      val (t, d) = time {
-        var j = 0
-        while (j < 1024) {
-          for (k <- 0 until batchSize)
-            newProver.performOneModification(converted(j + k)._1, converted(j + k)._2)
-          newProver.generateProof.toArray // this is what you give to the verifier, together with the OLD digest
-          newProver.rootHash // this should go into the blockchain header -- NEW digest
-          j += batchSize
-        }
-      }
-      println(s"$i $t")
-    }
-  }
-
-  def generateModifications(): Array[Modification] = {
-=======
   def generateModifications(NumMods : Int): Array[Modification] = {
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
     val mods = new Array[Modification](NumMods)
+    mods(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
 
-<<<<<<< HEAD
-    for (i <- 0 until NumMods) {
-      if (i == 0 || i < InitilaMods || i % 2 == 0) {
-        // with prob ~.5 insert a new one, with prob ~.5 update an existing one
-=======
     for (i <- 1 until NumMods) {
       if (i % 2 == 0) {
         // half inserts, half lookups
->>>>>>> 57de92cbc3d6496bc5bdb302609f3c8cdf89aa33
         mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
       } else {
         val j = Random.randomBytes(3)
@@ -483,7 +389,4 @@ object BatchingBenchmark extends App with TwoPartyTests {
     }
     mods
   }
-
-
 }
-*/
