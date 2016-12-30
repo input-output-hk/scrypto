@@ -284,7 +284,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
   override def toString: String = {
 
     def stringTreeHelper(rNode: ProverNodes, depth: Int): String = {
-      val nodeStr: String = rNode match {
+      Seq.fill(depth + 2)(" ").mkString + (rNode match {
         case leaf: ProverLeaf =>
           "At leaf label = " + arrayToString(leaf.label) + " key = " + arrayToString(leaf.key) +
             " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
@@ -292,11 +292,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
           "Internal node label = " + arrayToString(r.label) + " key = " + arrayToString(r.key) + " balance = " +
             r.balance + "\n" + stringTreeHelper(r.left, depth + 1) +
             stringTreeHelper(r.right, depth + 1)
-      }
-      Seq.fill(depth + 2)(" ").mkString + nodeStr
+      })
     }
     stringTreeHelper(topNode, 0)
   }
-
-
 }

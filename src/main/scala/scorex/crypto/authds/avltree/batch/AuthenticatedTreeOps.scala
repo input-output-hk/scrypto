@@ -8,9 +8,11 @@ import scorex.utils.{ByteArray, ScryptoLogging}
 import scala.util.{Failure, Success}
 
 
-
-
 trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants with ScryptoLogging {
+
+  type ChangeHappened = Boolean
+  type HeightIncreased = Boolean
+  type ToDelete = Boolean
 
   protected val keyLength: Int
   protected val valueLength: Int
@@ -20,7 +22,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
   
   protected var topNodeHeight: Int
   
-  def rootHeight = topNodeHeight
+  def rootHeight: Int = topNodeHeight
 
   protected def replayComparison: Int
 
@@ -31,164 +33,166 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
   protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalNode
 
 
+  /**
+    * Assumes the conditions for the double left rotation have already been established
+    * and rightChild.left.visited = true
+    * neither child needs to be attached to currentRoot
+    */
+  private def doubleLeftRotate(currentRoot: InternalNode, leftChild: Node, rightChild: InternalNode): InternalNode = {
+    val newRoot = rightChild.left.asInstanceOf[InternalNode]
+    val (newLeftBalance, newRightBalance) = newRoot.balance match {
+      case 0 =>
+        (0: Byte, 0: Byte)
+      case -1 =>
+        (0: Byte, 1: Byte)
+      case 1 =>
+        (-1: Byte, 0: Byte)
+    }
+    val newLeftChild = currentRoot.getNew(newLeft = leftChild, newRight = newRoot.left, newBalance = newLeftBalance)
+    val newRightChild = rightChild.getNew(newLeft = newRoot.right, newBalance = newRightBalance)
+    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
+  }
+
+  /**
+    * Assumes the conditions for the double right rotation have already been established
+    * and leftChild.right.visited = true
+    * neither child needs to be attached to currentRoot
+    */
+  private def doubleRightRotate(currentRoot: InternalNode, leftChild: InternalNode, rightChild: Node): InternalNode = {
+    val newRoot = leftChild.right.asInstanceOf[InternalNode]
+    val (newLeftBalance, newRightBalance) = newRoot.balance match {
+      case 0 =>
+        (0: Byte, 0: Byte)
+      case -1 =>
+        (0: Byte, 1: Byte)
+      case 1 =>
+        (-1: Byte, 0: Byte)
+    }
+    val newRightChild = currentRoot.getNew(newRight = rightChild, newLeft = newRoot.right, newBalance = newRightBalance)
+    val newLeftChild = leftChild.getNew(newRight = newRoot.left, newBalance = newLeftBalance)
+    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
+  }
+
+  /**
+    * returns the new root, an indicator whether tree has been modified at r or below,
+    * an indicator whether the height has increased,
+    * and an indicator whether we need to go delete the leaf that was just reached
+    */
+  def modifyHelper(rNode: Node, key: AVLKey, updateFunction: UpdateFunction): (Node, ChangeHappened, HeightIncreased, ToDelete) = {
+    rNode match {
+      case r: Leaf =>
+        if (keyMatchesLeaf(key, r)) {
+          updateFunction(Some(r.value)) match {
+            case Success(None) => // delete key
+              r.visited = true
+              (r, false, false, true)
+            case Success(Some(v)) => // update value
+              r.visited = true
+              require(v.length == valueLength)
+              val rNew = r.getNew(newValue = v)
+              (rNew, true, false, false)
+            case Failure(e) => // updateFunction doesn't like the value we found
+              throw e
+          }
+        } else {
+          // x > r.key
+          updateFunction(None) match {
+            case Success(None) => // don't change anything, just lookup
+              rNode.visited = true
+              (r, false, false, false)
+            case Success(Some(v)) => // insert new value
+              rNode.visited = true
+              require(v.length == valueLength)
+              (addNode(r, key, v), true, true, false)
+            case Failure(e) => // updateFunctions doesn't like that we found nothing
+              throw e
+          }
+        }
+      case r: InternalNode =>
+        // Go recursively in the correct direction
+        // Get a new node
+        // See if a single or double rotation is needed for AVL tree balancing
+        if (nextDirectionIsLeft(key, r)) {
+          val (newLeftM, changeHappened, childHeightIncreased, toDelete) = modifyHelper(r.left, key, updateFunction)
+          r.visited = true
+
+          // balance = -1 if left higher, +1 if left lower
+          if (changeHappened) {
+            if (childHeightIncreased && r.balance < 0) {
+              // need to rotate
+              // at this point we know newleftM must be an internal node and not a leaf -- because height increased
+              val newLeft = newLeftM.asInstanceOf[InternalNode]
+              if (newLeft.balance < 0) {
+                // single right rotate
+                val newR = r.getNew(newLeft = newLeft.right, newBalance = 0: Byte)
+                (newLeft.getNew(newRight = newR, newBalance = 0: Byte), true, false, false)
+              } else {
+                (doubleRightRotate(r, newLeft, r.right), true, false, false)
+              }
+            } else {
+              // no need to rotate
+              val myHeightIncreased = childHeightIncreased && r.balance == (0: Byte)
+              val rBalance = if (childHeightIncreased) (r.balance - 1).toByte else r.balance
+              (r.getNew(newLeft = newLeftM, newBalance = rBalance), true, myHeightIncreased, false)
+            }
+
+          } else {
+            // no change happened
+            (r, false, false, toDelete)
+          }
+        } else {
+          val (newRightM, changeHappened, childHeightIncreased, toDelete) = modifyHelper(r.right, key, updateFunction)
+          r.visited = true
+
+          // balance = -1 if left higher, +1 if left lower
+          if (changeHappened) {
+            if (childHeightIncreased && r.balance > 0) {
+              // need to rotate
+              // at this point we know newRightM must be an internal node and not a leaf -- because height increased
+              val newRight = newRightM.asInstanceOf[InternalNode]
+
+              if (newRight.balance > 0) {
+                // single left rotate
+                val newR = r.getNew(newRight = newRight.left, newBalance = 0: Byte)
+                (newRight.getNew(newLeft = newR, newBalance = 0: Byte), true, false, false)
+              } else {
+                (doubleLeftRotate(r, r.left, newRight), true, false, false)
+              }
+            } else {
+              // no need to rotate
+              val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
+              val rBalance = if (childHeightIncreased) (r.balance + 1).toByte else r.balance
+              (r.getNew(newRight = newRightM, newBalance = rBalance), true, myHeightIncreased, false)
+            }
+          } else {
+            // no change happened
+            (r, false, false, toDelete)
+          }
+        }
+      case r: LabelOnlyNode =>
+        throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
+    }
+  }
+
+
   protected def returnResultOfOneModification(key: AVLKey, updateFunction: UpdateFunction, rootNode: Node): Node = {
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength)
 
-
-    // Assumes the conditions for the double left rotation have already been established
-    // and rightChild.left.visited = true
-    // neither child needs to be attached to currentRoot
-    def doubleLeftRotate(currentRoot: InternalNode, leftChild: Node, rightChild: InternalNode): InternalNode = {
-      val newRoot = rightChild.left.asInstanceOf[InternalNode]
-      val (newLeftBalance, newRightBalance) = newRoot.balance match {
-        case 0 =>
-          (0: Byte, 0: Byte)
-        case -1 =>
-          (0: Byte, 1: Byte)
-        case 1 =>
-          (-1: Byte, 0: Byte)
-      }
-      val newLeftChild = currentRoot.getNew(newLeft = leftChild, newRight = newRoot.left, newBalance = newLeftBalance)
-      val newRightChild = rightChild.getNew(newLeft = newRoot.right, newBalance = newRightBalance)
-      newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
-    }
-
-    // Assumes the conditions for the double right rotation have already been established
-    // and leftChild.right.visited = true
-    // neither child needs to be attached to currentRoot
-    def doubleRightRotate(currentRoot: InternalNode, leftChild: InternalNode, rightChild: Node): InternalNode = {
-      val newRoot = leftChild.right.asInstanceOf[InternalNode]
-      val (newLeftBalance, newRightBalance) = newRoot.balance match {
-        case 0 =>
-          (0: Byte, 0: Byte)
-        case -1 =>
-          (0: Byte, 1: Byte)
-        case 1 =>
-          (-1: Byte, 0: Byte)
-      }
-      val newRightChild = currentRoot.getNew(newRight = rightChild, newLeft = newRoot.right, newBalance = newRightBalance)
-      val newLeftChild = leftChild.getNew(newRight = newRoot.left, newBalance = newLeftBalance)
-      newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
-    }
-
-
-    /**
-      * returns the new root, an indicator whether tree has been modified at r or below,
-      * an indicator whether the height has increased,
-      * and an indicator whether we need to go delete the leaf that was just reached
-      */
-    def modifyHelper(rNode: Node): (Node, Boolean, Boolean, Boolean) = {
-      rNode match {
-        case r: Leaf =>
-          if (keyMatchesLeaf(key, r)) {
-            updateFunction(Some(r.value)) match {
-              case Success(None) => // delete key
-                r.visited = true
-                (r, false, false, true)
-              case Success(Some(v)) => // update value
-                r.visited = true
-                require(v.length == valueLength)
-                val rNew = r.getNew(newValue = v)
-                (rNew, true, false, false)
-              case Failure(e) => // updateFunction doesn't like the value we found
-                throw e
-            }
-          } else {
-            // x > r.key
-            updateFunction(None) match {
-              case Success(None) => // don't change anything, just lookup
-                rNode.visited = true
-                (r, false, false, false)
-              case Success(Some(v)) => // insert new value
-                rNode.visited = true
-                require(v.length == valueLength)
-                (addNode(r, key, v), true, true, false)
-              case Failure(e) => // updateFunctions doesn't like that we found nothing
-                throw e
-            }
-          }
-        case r: InternalNode =>
-          // Go recursively in the correct direction
-          // Get a new node
-          // See if a single or double rotation is needed for AVL tree balancing
-          if (nextDirectionIsLeft(key, r)) {
-            val (newLeftM, changeHappened, childHeightIncreased, toDelete) = modifyHelper(r.left)
-            r.visited = true
-
-            // balance = -1 if left higher, +1 if left lower
-            if (changeHappened) {
-              if (childHeightIncreased && r.balance < 0) {
-                // need to rotate
-                // at this point we know newleftM must be an internal node and not a leaf -- because height increased
-                val newLeft = newLeftM.asInstanceOf[InternalNode]
-                if (newLeft.balance < 0) {
-                  // single right rotate
-                  val newR = r.getNew(newLeft = newLeft.right, newBalance = 0: Byte)
-                  (newLeft.getNew(newRight = newR, newBalance = 0: Byte), true, false, false)
-                } else {
-                  (doubleRightRotate(r, newLeft, r.right), true, false, false)
-                }
-              } else {
-                // no need to rotate
-                val myHeightIncreased = childHeightIncreased && r.balance == (0: Byte)
-                val rBalance = if (childHeightIncreased) (r.balance - 1).toByte else r.balance
-                (r.getNew(newLeft = newLeftM, newBalance = rBalance), true, myHeightIncreased, false)
-              }
-
-            } else {
-              // no change happened
-              (r, false, false, toDelete)
-            }
-          } else {
-            val (newRightM, changeHappened, childHeightIncreased, toDelete) = modifyHelper(r.right)
-            r.visited = true
-
-            // balance = -1 if left higher, +1 if left lower
-            if (changeHappened) {
-              if (childHeightIncreased && r.balance > 0) {
-                // need to rotate
-                // at this point we know newRightM must be an internal node and not a leaf -- because height increased
-                val newRight = newRightM.asInstanceOf[InternalNode]
-
-                if (newRight.balance > 0) {
-                  // single left rotate
-                  val newR = r.getNew(newRight = newRight.left, newBalance = 0: Byte)
-                  (newRight.getNew(newLeft = newR, newBalance = 0: Byte), true, false, false)
-                } else {
-                  (doubleLeftRotate(r, r.left, newRight), true, false, false)
-                }
-              } else {
-                // no need to rotate
-                val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-                val rBalance = if (childHeightIncreased) (r.balance + 1).toByte else r.balance
-                (r.getNew(newRight = newRightM, newBalance = rBalance), true, myHeightIncreased, false)
-              }
-            } else {
-              // no change happened
-              (r, false, false, toDelete)
-            }
-          }
-        case r: LabelOnlyNode =>
-          throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
-      }
-    }
-
     var savedNode: Option[Leaf] = None // The leaf to be saved in the hard deletion case, where we delete a leaf and copy its info over to another leaf
 
-
-    /* Deletes the node in the subtree rooted at r and its corresponding leaf
-     * as indicated by replayDirections or deleteMax. Performs AVL balancing.
-     *
-     * If deleteMax == false: deletes the first node for which replayDirections returns 0
-     * and the leaf that is the leftmost descendant of this node's child
-     *
-     * If deleteMax == true: deletes the right leaf and its parent, replacing the parent
-     * with the parent's left child
-     *
-     * Returns the new root and an indicator whether the tree height decreased
-     */
+    /** Deletes the node in the subtree rooted at r and its corresponding leaf
+      * as indicated by replayDirections or deleteMax. Performs AVL balancing.
+      *
+      * If deleteMax == false: deletes the first node for which replayDirections returns 0
+      * and the leaf that is the leftmost descendant of this node's child
+      *
+      * If deleteMax == true: deletes the right leaf and its parent, replacing the parent
+      * with the parent's left child
+      *
+      * Returns the new root and an indicator whether the tree height decreased
+      */
 
     def deleteHelper(r: InternalNode, deleteMax: Boolean): (Node, Boolean) = {
       // Overall strategy: if key is found in the node that has only a leaf as either
@@ -330,16 +334,14 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
       }
     }
 
-    val (newRootNode, changeHappened, heightIncreased, toDelete) = modifyHelper(rootNode)
+    val (newRootNode, _, heightIncreased, toDelete) = modifyHelper(rootNode, key, updateFunction)
     if (toDelete) {
       val (postDeleteRootNode, heightDecreased) = deleteHelper(newRootNode.asInstanceOf[InternalNode], deleteMax = false)
-      if (heightDecreased)
-        topNodeHeight -= 1
+      if (heightDecreased) topNodeHeight -= 1
       postDeleteRootNode
     }
     else {
-      if (heightIncreased)
-        topNodeHeight += 1
+      if (heightIncreased) topNodeHeight += 1
       newRootNode
     }
   }
