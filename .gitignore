@@ -16,3 +16,4 @@ Dockerfile
 
 # logs
 scorex-errors.log
+*.log
