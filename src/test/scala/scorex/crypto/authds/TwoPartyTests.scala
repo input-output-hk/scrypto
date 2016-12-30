@@ -4,7 +4,7 @@ import com.google.common.primitives.Longs
 import scrypto.TestingCommons
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.avltree.AVLValue
-import scorex.crypto.authds.treap.TreapValue
+import scorex.crypto.authds.legacy.treap.Constants.TreapValue
 import scorex.crypto.hash.Sha256
 
 import scala.util.{Failure, Success}

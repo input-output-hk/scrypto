@@ -1,7 +1,7 @@
-package scorex.crypto.authds.treap
+package scorex.crypto.authds.legacy.treap
 
-import scorex.crypto.authds.Level
 import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds.legacy.treap.Constants.{LevelFunction, TreapKey, TreapValue}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
 

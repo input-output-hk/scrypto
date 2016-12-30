@@ -1,6 +1,6 @@
-package scorex.crypto.authds
+package scorex.crypto.authds.legacy.treap
 
-package object treap {
+object Constants {
   type TreapKey = Array[Byte]
   type TreapValue = Array[Byte]
 

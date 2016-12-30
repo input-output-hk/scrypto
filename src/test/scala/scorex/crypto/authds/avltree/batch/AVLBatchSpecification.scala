@@ -279,7 +279,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   property("Updates with and without batching should lead to the same tree") {
     val tree = new AVLTree(KL)
     var digest = tree.rootHash()
-    val oldProver = new oldProver(tree)
+    val oldProver = new LegacyProver(tree)
     val newProver = new BatchAVLProver(KL, VL)
     oldProver.rootHash shouldBe newProver.rootHash
 
@@ -287,7 +287,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val currentMods = Seq(Insert(aKey, aValue))
       oldProver.applyBatchSimple(currentMods) match {
         case bss: BatchSuccessSimple =>
-          new oldVerifier(digest).verifyBatchSimple(currentMods, bss) shouldBe true
+          new LegacyVerifier(digest).verifyBatchSimple(currentMods, bss) shouldBe true
         case bf: BatchFailure => throw bf.error
       }
 

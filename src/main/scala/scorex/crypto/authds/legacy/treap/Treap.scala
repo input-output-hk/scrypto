@@ -1,9 +1,10 @@
-package scorex.crypto.authds.treap
+package scorex.crypto.authds.legacy.treap
 
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds.legacy.treap.Constants._
 
 import scala.util.{Failure, Success, Try}
 

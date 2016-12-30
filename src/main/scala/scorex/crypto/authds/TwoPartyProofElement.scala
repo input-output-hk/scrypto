@@ -1,6 +1,7 @@
 package scorex.crypto.authds
 
 import scorex.crypto.authds.avltree.Balance
+import scorex.crypto.authds.legacy.treap.Level
 import scorex.crypto.encode.Base58
 
 trait TwoPartyProofElement {

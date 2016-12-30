@@ -1,13 +1,10 @@
-package scorex.crypto.authds.treap
+package scorex.crypto.authds.legacy.treap
 
-import com.google.common.primitives.Longs
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import scrypto.TestingCommons
-import scorex.crypto.authds.{TwoPartyTests, Level}
+import scorex.crypto.authds.TwoPartyTests
+import scorex.crypto.authds.legacy.treap.Constants._
 import scorex.crypto.hash.Blake2b256Unsafe
-
-import scala.util.Success
 
 
 class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TwoPartyTests {
@@ -75,5 +72,4 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       }
     }
   }
-
 }

@@ -7,7 +7,7 @@ import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, BatchAVLVerifier, Insert}
 import scorex.crypto.authds.avltree.{AVLModifyProof, AVLTree}
-import scorex.crypto.authds.treap._
+import scorex.crypto.authds.legacy.treap._
 import scorex.crypto.hash.Blake2b256Unsafe
 
 import scala.collection.mutable

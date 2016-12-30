@@ -2,6 +2,7 @@ package scorex.crypto.authds
 
 import scorex.crypto.authds.TwoPartyDictionary._
 import scorex.crypto.authds.avltree._
+import scorex.crypto.authds.legacy.treap.Level
 
 trait ProofIterator {
   private var i = -1
