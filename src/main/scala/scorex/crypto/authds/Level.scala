@@ -1,5 +1,0 @@
-package scorex.crypto.authds
-
-
-
-
