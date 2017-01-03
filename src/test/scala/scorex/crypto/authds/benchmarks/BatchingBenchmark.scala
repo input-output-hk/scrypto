@@ -4,11 +4,8 @@ import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.avltree.legacy.{AVLModifyProof, AVLTree}
 import scorex.utils.Random
-
-import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree._
-
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 /**
   * TODO: describe benchmark
@@ -168,7 +165,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
     var mods = new Array[Modification](1024)
     for (i <- 0 until 1024) {
       for (j <- 0 until 1024)
-        mods(j) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
+        mods(j) = Insert(Random.randomBytes(), Random.randomBytes(8))
       val converted = Modification.convert(mods)
       val (t, d) = time {
         var j=0
@@ -194,14 +191,14 @@ object BatchingBenchmark extends App with TwoPartyTests {
     var mods = new Array[Modification](1024)
     for (i <- 0 until 1024) {
       for (j <- 0 until 1024)
-        mods(j) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
+        mods(j) = Insert(Random.randomBytes(), Random.randomBytes(8))
       val converted = Modification.convert(mods)
       val (t, d) = time {
         var j=0
         while (j<1024) {
           for (k <- 0 until batchSize)
             oldProver.modify(converted(j+k)._1, converted(j+k)._2).get.bytes
-          oldProver.rootHash
+          oldProver.rootHash()
           j+=batchSize
         }
       }
@@ -217,8 +214,6 @@ object BatchingBenchmark extends App with TwoPartyTests {
     val totalSize = 32*1024
     val measuredMods = 32*1024*20
     val mods = generateModifications(initialMods+measuredMods)
-
-
 
     /*  for (k<-0 until 10) { //NOTE: if you comment out this loop, the first few batches are slower by factor of 3-6
         val (newProverTime, pf) = time {
@@ -308,7 +303,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
         val m = Modification.convert(mods(i))
         oldProver.modify(m._1, m._2)
       }
-      oldProver.rootHash // NOTE: if you comment out this line, the first batch becomes about 2 seconds slower
+      oldProver.rootHash() // NOTE: if you comment out this line, the first batch becomes about 2 seconds slower
 
       System.gc()
 
@@ -324,7 +319,7 @@ object BatchingBenchmark extends App with TwoPartyTests {
             i+=1
             ctr+=1
           }
-          oldProver.rootHash
+          oldProver.rootHash()
           numBatches += 1
         }
       }
