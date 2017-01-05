@@ -51,3 +51,44 @@ object Modification extends UpdateF[AVLKey] {
     }
   }
 }
+
+//TODO: remove
+/*
+object BatchTest extends App {
+  val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
+  val initRoot = prover.rootHash
+  val initHeight = prover.rootHeight
+
+  print(initHeight)
+
+  val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
+  val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
+
+  prover.performOneModification(m1)
+  prover.performOneModification(m2)
+  val proof1 = prover.generateProof
+
+  val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
+  val m4 = Remove(Array(2:Byte))
+  prover.performOneModification(m3)
+  prover.performOneModification(m4)
+  val proof2 = prover.generateProof
+  val rootDeclared = prover.rootHash
+
+
+  val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
+  println(verifier1.performOneModification(m1))
+  verifier1.performOneModification(m2)
+  verifier1.digest match {
+    case Some(root1) =>
+      val verifier2 = new BatchAVLVerifier(root1, proof2, keyLength = 1, valueLength = 8)
+      verifier2.performOneModification(m3)
+      verifier2.performOneModification(m4)
+      verifier2.digest match {
+        case Some(root2) if root2.sameElements(rootDeclared) => println("declared root value and proofs are valid")
+        case _ => println("second proof or declared root value  NOT valid")
+      }
+    case None =>
+      println("first proof is invalid")
+  }
+}*/

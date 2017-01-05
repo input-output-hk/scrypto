@@ -9,9 +9,9 @@ import scala.collection.mutable
 import scala.util.Try
 
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
-                                               pf: Array[Byte],
-                                               val keyLength: Int = 32,
-                                               val valueLength: Int = 8,
+                                               proof: Array[Byte],
+                                               override val keyLength: Int = 32,
+                                               override val valueLength: Int = 8,
                                                startingHeight: Int = 100,
                                                numOperations: Option[Int] = None,
                                                maxDeletes: Option[Int] = None
@@ -31,7 +31,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
 
   // Decode bits as Booleans
   protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
-    val ret = if ((pf(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0) {
+    val ret = if ((proof(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0) {
       true
     } else {
       lastRightStep = directionsIndex
@@ -54,7 +54,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
   protected def replayComparison: Int = {
     val ret = if (replayIndex == lastRightStep) {
       0
-    } else if ((pf(replayIndex >> 3) & (1 << (replayIndex & 7)).toByte) == 0 && replayIndex < lastRightStep) {
+    } else if ((proof(replayIndex >> 3) & (1 << (replayIndex & 7)).toByte) == 0 && replayIndex < lastRightStep) {
       1
     } else {
       -1
@@ -90,14 +90,14 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
     val s = new mutable.Stack[VerifierNodes] // Nodes and depths
     var i = 0
     var previousLeaf: Option[Leaf] = None
-    while (pf(i) != EndOfTreeInPackagedProof) {
-      val n = pf(i)
+    while (proof(i) != EndOfTreeInPackagedProof) {
+      val n = proof(i)
       i += 1
       numNodes += 1
       require(numOperations.isEmpty || numNodes <= maxNodes, "Proof too long")
       n match {
         case LabelInPackagedProof =>
-          val label = pf.slice(i, i + labelLength)
+          val label = proof.slice(i, i + labelLength)
           i += labelLength
           s.push(new LabelOnlyNode(label))
           previousLeaf = None
@@ -108,11 +108,11 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
           else {
             val start = i
             i += keyLength
-            pf.slice(start, i)
+            proof.slice(start, i)
           }
-          val nextLeafKey = pf.slice(i, i + keyLength)
+          val nextLeafKey = proof.slice(i, i + keyLength)
           i += keyLength
-          val value = pf.slice(i, i + valueLength)
+          val value = proof.slice(i, i + valueLength)
           i += valueLength
           val leaf = new VerifierLeaf(key, value, nextLeafKey)
           s.push(leaf)

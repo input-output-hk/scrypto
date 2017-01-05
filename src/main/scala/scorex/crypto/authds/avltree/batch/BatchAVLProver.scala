@@ -132,7 +132,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
   }
 
 
-  def generateProof: Seq[Byte] = {
+  def generateProof: Array[Byte] = {
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 
@@ -195,7 +195,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     directionsBitLength = 0
     oldTopNode = topNode
 
-    packagedTree
+    packagedTree.toArray
   }
 
   /* a simple non-modifying non-proof-generating lookup
