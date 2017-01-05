@@ -104,7 +104,7 @@ Example:
 **Note on security:** Scrypto provides Scala wrapper for [Curve25519-Java](https://github.com/WhisperSystems/curve25519-java) by
 Whisper Systems, so has the same security properties. JDK's SecureRandom used to obtain seed bytes.
 
-### Authenticated data structure
+### Authenticated data structures
 
 Scrypto supports following authenticated data structures:
 
@@ -120,36 +120,36 @@ in a real-world application this value is whether to be a public constant or to 
 trusted dealer):
 
 
-    val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
-    val initRoot = prover.rootHash
+        val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
+        val initRoot = prover.rootHash
 
 
 * Second, we create first batch tree modifications 
 
 
-    val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
-    val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
+        val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
+        val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
 
     
 * We apply modification to an empty tree and obtain the first batch proof
     
     
-    prover.performOneModification(m1)
-    prover.performOneModification(m2)
-    val proof1 = prover.generateProof
+        prover.performOneModification(m1)
+        prover.performOneModification(m2)
+        val proof1 = prover.generateProof
     
       
-A proof is just an array of bytes, so you can immediately send it over 
+* A proof is just an array of bytes, so you can immediately send it over 
 wire or save to a disk. Prover is obtaining a second proof and declaring a
 root hash after it:
 
 
-    val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
-    val m4 = Remove(Array(2:Byte))
-    prover.performOneModification(m3)
-    prover.performOneModification(m4)
-    val proof2 = prover.generateProof
-    val rootDeclared = prover.rootHash
+        val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
+        val m4 = Remove(Array(2:Byte))
+        prover.performOneModification(m3)
+        prover.performOneModification(m4)
+        val proof2 = prover.generateProof
+        val rootDeclared = prover.rootHash
 
 
 * We now check proofs with creating a verifier for each of them and getting an 
