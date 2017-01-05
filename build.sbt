@@ -46,6 +46,3 @@ pomExtra :=
         <url>http://chepurnoy.org/</url>
       </developer>
     </developers>
-
-
-mainClass in assembly := Some("perf.PerformanceMeter")

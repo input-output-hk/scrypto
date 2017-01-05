@@ -107,11 +107,12 @@ Whisper Systems, so has the same security properties. JDK's SecureRandom used to
 
 Scrypto supports following authenticated data structures:
 
-- Skip list
 - Treap
-- AVL tree
+- AVL+ tree
 
-According our tests for dynamic data AVL tree outperform other structures http://eprint.iacr.org/2016/994.
+According our tests for dynamic data AVL+ trees performs better, see http://eprint.iacr.org/2016/994. The implementation
+of AVL+ trees with batching compression can be found in the `scorex.crypto.authds.avltree.batch` package. For usage scenarios,
+ see benchmarks in the [dedicated repository](https://github.com/input-output-hk/scrypto-benchmarks). 
 
 # Tests
 
