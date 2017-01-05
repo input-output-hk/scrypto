@@ -156,21 +156,21 @@ root hash after it:
 digest after each batch:
 
 
-    val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
-    println(verifier1.performOneModification(m1))
-    verifier1.performOneModification(m2)
-    verifier1.digest match {
-      case Some(root1) =>
-        val verifier2 = new BatchAVLVerifier(root1, proof2, keyLength = 1, valueLength = 8)
-        verifier2.performOneModification(m3)
-        verifier2.performOneModification(m4)
-        verifier2.digest match {
-          case Some(root2) if root2.sameElements(rootDeclared) => println("declared root value and proofs are valid")
-          case _ => println("second proof or declared root value  NOT valid")
+        val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
+        println(verifier1.performOneModification(m1))              
+        verifier1.performOneModification(m2)
+        verifier1.digest match {
+          case Some(root1) =>
+            val verifier2 = new BatchAVLVerifier(root1, proof2, keyLength = 1, valueLength = 8)
+            verifier2.performOneModification(m3)
+            verifier2.performOneModification(m4)
+            verifier2.digest match {
+              case Some(root2) if root2.sameElements(rootDeclared) => println("declared root value and proofs are valid")
+              case _ => println("second proof or declared root value  NOT valid")
+            }
+          case None =>
+            println("first proof is invalid")
         }
-      case None =>
-        println("first proof is invalid")
-    }
 
 # Tests
 
