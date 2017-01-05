@@ -7,7 +7,7 @@ It was extracted from [Scorex](https://github.com/ScorexProject/Scorex-Lagonaki)
 Public Domain.
 
 **If you want to check benchmarks for authenticated AVL+ trees, please visit [dedicated repository](https://github.com/input-output-hk/scrypto-benchmarks).
-Use the repository as code examples for the trees also.**
+Use the repository as code examples for the trees also, though one code example is provided in "Authenticated Data Structures" section below.**
 
 ## Get Scrypto
 
@@ -157,7 +157,7 @@ digest after each batch:
 
 
         val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
-        println(verifier1.performOneModification(m1))              
+        verifier1.performOneModification(m1)           
         verifier1.performOneModification(m2)
         verifier1.digest match {
           case Some(root1) =>
