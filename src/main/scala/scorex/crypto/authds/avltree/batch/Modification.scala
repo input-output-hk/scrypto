@@ -34,14 +34,11 @@ object Modification extends UpdateF[AVLKey] {
     case Some(_) => Success(None)
   }: UpdateFunction
 
-  private def removeIfExistsFunction() = { // TODO: there must be a better syntax here -- someone with scala knowledge please fix
-    case None => Success(None)
-    case Some(_) => Success(None)
-  }: UpdateFunction
+  private def removeIfExistsFunction() = (_ => Success(None)): UpdateFunction
 
   def convert(modifications: Seq[Modification]): Seq[(AVLKey, UpdateFunction)] = modifications.map(convert)
 
-  // TODO: to demonstrated more rich examples, add "increase value" and "decrease value, failing if below 0 and deleting if 0"
+  // TODO: to demonstrate more rich examples, add "increase value" and "decrease value, failing if below 0 and deleting if 0"
   def convert(modification: Modification): (AVLKey, UpdateFunction) = {
     modification match {
       case Insert(key, value) => key -> insertFunction(value)
