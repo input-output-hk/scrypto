@@ -6,6 +6,8 @@ It was extracted from [Scorex](https://github.com/ScorexProject/Scorex-Lagonaki)
 
 Public Domain.
 
+**If you want to check benchmarks for authenticated AVL+ trees, please visit [dedicated repository](https://github.com/input-output-hk/scrypto-benchmarks).**
+
 ## Get Scrypto
 
 Scrypto is available on Sonatype for Scala 2.11!
