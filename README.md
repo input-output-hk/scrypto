@@ -119,58 +119,60 @@ proofs and check them. In the example prover inserts two values in the tree in a
 in a real-world application this value is whether to be a public constant or to be declared by a 
 trusted dealer):
 
-
-        val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
-        val initRoot = prover.rootHash
+```scala
+  val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
+  val initRoot = prover.rootHash
+```        
 
 
 * Second, we create first batch tree modifications 
 
-
-        val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
-        val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
-
+```scala
+  val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
+  val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
+```
     
 * We apply modification to an empty tree and obtain the first batch proof
     
-    
-        prover.performOneModification(m1)
-        prover.performOneModification(m2)
-        val proof1 = prover.generateProof
-    
+```scala    
+  prover.performOneModification(m1)
+  prover.performOneModification(m2)
+  val proof1 = prover.generateProof
+```    
       
 * A proof is just an array of bytes, so you can immediately send it over 
 wire or save to a disk. Prover is obtaining a second proof and declaring a
 root hash after it:
 
-
-        val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
-        val m4 = Remove(Array(2:Byte))
-        prover.performOneModification(m3)
-        prover.performOneModification(m4)
-        val proof2 = prover.generateProof
-        val rootDeclared = prover.rootHash
-
+```scala
+  val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
+   val m4 = Remove(Array(2:Byte))
+   prover.performOneModification(m3)
+   prover.performOneModification(m4)
+   val proof2 = prover.generateProof
+   val rootDeclared = prover.rootHash
+```
 
 * We now check proofs with creating a verifier for each of them and getting an 
 digest after each batch:
 
-
-        val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
-        verifier1.performOneModification(m1)           
-        verifier1.performOneModification(m2)
-        verifier1.digest match {
-          case Some(root1) =>
-            val verifier2 = new BatchAVLVerifier(root1, proof2, keyLength = 1, valueLength = 8)
-            verifier2.performOneModification(m3)
-            verifier2.performOneModification(m4)
-            verifier2.digest match {
-              case Some(root2) if root2.sameElements(rootDeclared) => println("declared root value and proofs are valid")
-              case _ => println("second proof or declared root value  NOT valid")
-            }
-          case None =>
-            println("first proof is invalid")
-        }
+```scala
+  val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
+  verifier1.performOneModification(m1)           
+  verifier1.performOneModification(m2)
+  verifier1.digest match {
+    case Some(root1) =>
+      val verifier2 = new BatchAVLVerifier(root1, proof2, keyLength = 1, valueLength = 8)
+      verifier2.performOneModification(m3)
+      verifier2.performOneModification(m4)
+      verifier2.digest match {
+        case Some(root2) if root2.sameElements(rootDeclared) => println("declared root value and proofs are valid")
+        case _ => println("second proof or declared root value  NOT valid")
+      }
+    case None =>
+      println("first proof is invalid")
+  }
+```
 
 # Tests
 
