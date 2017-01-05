@@ -123,11 +123,13 @@ trusted dealer):
     val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
     val initRoot = prover.rootHash
 
+
 * Second, we create first batch tree modifications 
 
 
     val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
     val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
+
     
 * We apply modification to an empty tree and obtain the first batch proof
     
@@ -135,10 +137,12 @@ trusted dealer):
     prover.performOneModification(m1)
     prover.performOneModification(m2)
     val proof1 = prover.generateProof
+    
       
 A proof is just an array of bytes, so you can immediately send it over 
 wire or save to a disk. Prover is obtaining a second proof and declaring a
 root hash after it:
+
 
     val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
     val m4 = Remove(Array(2:Byte))
@@ -146,6 +150,7 @@ root hash after it:
     prover.performOneModification(m4)
     val proof2 = prover.generateProof
     val rootDeclared = prover.rootHash
+
 
 * We now check proofs with creating a verifier for each of them and getting an 
 digest after each batch:
