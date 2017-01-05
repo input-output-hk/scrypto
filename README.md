@@ -11,7 +11,7 @@ Use the repository as code examples for the trees also, though one code example 
 
 ## Get Scrypto
 
-Scrypto is available on Sonatype for Scala 2.11!
+Scrypto is available on Sonatype for Scala 2.12!
 ```scala
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 ```
