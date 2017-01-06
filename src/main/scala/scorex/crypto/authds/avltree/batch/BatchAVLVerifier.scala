@@ -13,7 +13,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
                                                override val keyLength: Int = 32,
                                                override val valueLength: Int = 8,
                                                startingHeight: Int = 100,
-                                               numOperations: Option[Int] = None,
+                                               maxNumOperations: Option[Int] = None,
                                                maxDeletes: Option[Int] = None
                                               )
                                               // Note: -1 indicates that we don't want the proof length check done
@@ -73,7 +73,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
     // compute log (number of operations), rounded up
     var logNumOps = 0
     var temp = 1
-    val realNumOperations: Int = numOperations.getOrElse(0)
+    val realNumOperations: Int = maxNumOperations.getOrElse(0)
     while (temp < realNumOperations) {
       temp = temp * 2
       logNumOps += 1
@@ -94,7 +94,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
       val n = proof(i)
       i += 1
       numNodes += 1
-      require(numOperations.isEmpty || numNodes <= maxNodes, "Proof too long")
+      require(maxNumOperations.isEmpty || numNodes <= maxNodes, "Proof too long")
       n match {
         case LabelInPackagedProof =>
           val label = proof.slice(i, i + labelLength)
