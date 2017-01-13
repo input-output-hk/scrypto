@@ -7,6 +7,7 @@ import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.authds.avltree.legacy.AVLTree
 import scorex.utils.Random
+import scala.util.Random.{nextInt => randomInt}
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -97,20 +98,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       key(0) = (key(0) ^ (1 << 7)).toByte
 
     }
-
   }
 
   property("succesful modifications") {
-    // returns between 0 and max-1
-    // TODO: switch to some library function -- this is quick and dirty, I just couldn't find the right
-    // function to use
-    def randomInt(max: Int) = {
-      require(max < 2000000)
-      require(max > 0)
-      val j = Random.randomBytes(3)
-      ((j(0) & 127) + (j(1) & 127) * 128 + (j(2) & 127) * 128 * 128) % max
-    }
-
     val p = new BatchAVLProver()
 
     val numMods = 5000
