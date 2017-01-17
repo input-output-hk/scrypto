@@ -198,9 +198,11 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     packagedTree.toArray
   }
 
-  /* a simple non-modifying non-proof-generating lookup
-   * returns Some(value) for value associated with the given key if key is in the tree, and None otherwise
-   */
+  /**
+    * A simple non-modifying non-proof-generating lookup
+    *
+    * @returns Some(value) for value associated with the given key if key is in the tree, and None otherwise
+    */
   def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = {
     def unauthenticatedLookupHelper(rNode: ProverNodes, found: Boolean): Option[AVLValue] = {
       rNode match {
