@@ -54,13 +54,12 @@ sealed trait ProverNodes extends Node {
 sealed trait VerifierNodes extends Node
 
 case class LabelOnlyNode(l: Label) extends Node {
-  labelOpt = Some(l)
-
-  def computeLabel: Label = l // TODO it doesn't make sense  to have labelOpt and Label stored here
+  override val computeLabel: Label = l
+  override val label: Label = l
 }
 
 case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes,
-                      protected var _balance: Balance = 0)(implicit val hf: ThreadUnsafeHash)
+                      protected var _balance: Balance = 0.toByte)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left

@@ -139,13 +139,6 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     val deletedKeys = new scala.collection.mutable.ArrayBuffer[AVLKey]
 
-    // TODO: Here we need a data structure that supports fast
-    // random access by index; insert, delete, and modify (by index or by value -- we can work with either)
-    // Something like a rank tree. I couldn't find anything standard in scala collections,
-    // so I am using ArrayBuffer, which is terrible, because delete is slow.
-    // ListBuffer would also be terrible here, because it doesn't have
-    // fast lookup and remove by index
-    // SetTree doesn't allow lookup by rank.
     val keysAndVals = new scala.collection.mutable.ArrayBuffer[(AVLKey, AVLValue)]
 
     var i = 0

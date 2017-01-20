@@ -511,7 +511,7 @@ object BatchingPlayground extends App {
     val numMods = 1000000
     val testAtTheEnd = 2000
 
-    // TODO: SEE COMMENT IN BIG DELETE TEST ON WHY THIS IS A BAD DATA STRUCTURE TO USE HERE 
+    // SEE COMMENT IN BIG DELETE TEST ON WHY THIS IS A BAD DATA STRUCTURE TO USE HERE
     val keys = new scala.collection.mutable.ListBuffer[AVLKey]
 
     for (i <- 0 until numMods) {
@@ -549,8 +549,6 @@ object BatchingPlayground extends App {
 
   }
 
-
-  // TODO: This should go into standard tests
   def batchingSelfTest = {
     def testZeroModProofOnEmptyTree = {
       val p = new BatchAVLProver()
@@ -640,15 +638,7 @@ object BatchingPlayground extends App {
 
 
     def testSuccessfulChanges(toPrint: Boolean) = {
-      // returns between 0 and max-1
-      // TODO: switch to some library function -- this is quick and dirty, I just couldn't find the right
-      // function to use
-      def randomInt(max: Int) = {
-        require(max < 2000000)
-        require(max > 0)
-        val j = Random.randomBytes(3)
-        ((j(0) & 127) + (j(1) & 127) * 128 + (j(2) & 127) * 128 * 128) % max
-      }
+      def randomInt(max: Int) = scala.util.Random.nextInt(max)
 
       val p = new BatchAVLProver()
 
@@ -656,7 +646,7 @@ object BatchingPlayground extends App {
 
       val deletedKeys = new scala.collection.mutable.ArrayBuffer[AVLKey]
 
-      // TODO: Here we need a data structure that supports fast
+      // Here we need a data structure that supports fast
       // random access by index; insert, delete, and modify (by index or by value -- we can work with either)
       // Something like a rank tree. I couldn't find anything standard in scala collections,
       // so I am using ArrayBuffer, which is terrible, because delete is slow.
