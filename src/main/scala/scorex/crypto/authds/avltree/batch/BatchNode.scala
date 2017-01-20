@@ -22,11 +22,8 @@ sealed trait Node extends ToStringHelper {
   }
 }
 
-sealed trait ProverNodes extends Node {
+sealed trait ProverNodes extends Node with KeyInVar {
   var isNew: Boolean = true
-  protected var k: AVLKey
-
-  def key: AVLKey = k
 }
 
 sealed trait VerifierNodes extends Node
@@ -122,12 +119,10 @@ class InternalVerifierNode(protected var l: Node, protected var r: Node, protect
   }
 }
 
-sealed trait Leaf extends Node {
-  protected var k: AVLKey
+sealed trait Leaf extends Node with KeyInVar {
   protected var nk: AVLKey
   protected var v: AVLValue
 
-  def key: AVLKey = k
 
   def nextLeafKey: AVLKey = nk
 
@@ -160,8 +155,6 @@ class VerifierLeaf(protected var k: AVLKey, protected var v: AVLValue, protected
 class ProverLeaf(protected var k: AVLKey, protected var v: AVLValue, protected var nk: AVLKey)
                 (implicit val hf: ThreadUnsafeHash) extends Leaf with ProverNodes {
 
-  override def key = k // TODO: we inherit definition of key from two places -- is this the right way to handle it?
-
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNew(newKey: AVLKey = k, newValue: AVLValue = v, newNextLeafKey: AVLKey = nk): ProverLeaf = {
     if (isNew) {
@@ -176,4 +169,9 @@ class ProverLeaf(protected var k: AVLKey, protected var v: AVLValue, protected v
   }
 }
 
+trait KeyInVar {
+  protected var k: AVLKey
+
+  def key: AVLKey = k
+}
 

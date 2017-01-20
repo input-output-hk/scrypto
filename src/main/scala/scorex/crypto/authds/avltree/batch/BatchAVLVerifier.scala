@@ -125,7 +125,8 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
     }
 
     require(s.size == 1)
-    val root = s.pop.ensuring(_.label sameElements startingDigest) // TODO: the use of "ensuring worries" me because it fails via "java.lang.AssertionError" rather than "scala.Predef$.require" like require fails. I am afraid assertions may be turned off, in which case verifier will fail to detect a cheating prover. Can this get turned off somehow?
+    val root = s.pop
+    require(root.label sameElements startingDigest)
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.getOrElse(None)

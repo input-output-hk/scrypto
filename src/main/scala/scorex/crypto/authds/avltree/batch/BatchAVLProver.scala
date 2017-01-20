@@ -15,6 +15,7 @@ import scala.util.{Failure, Success, Try}
   * @param keyLength        - length of keys in tree
   * @param valueLength      - length of values in tree
   * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
+  *     WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
 class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
@@ -31,8 +32,6 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     t.isNew = false
     t
   })
-
-  // TODO: if rootOpt.nonEmpty, are we sure isNew and visited flags are set correctly? And are we sure we pass in correct height?
 
   protected var topNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
 
