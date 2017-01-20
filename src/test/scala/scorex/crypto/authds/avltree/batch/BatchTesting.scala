@@ -19,28 +19,26 @@ sealed trait BatchProvingResult
 
 case class BatchSuccess(proof: BatchProof) extends BatchProvingResult
 
-//todo: add reason, problematicModification: Modification
-case class BatchFailure(error: Throwable)
-  extends BatchProvingResultSimple with BatchProvingResult
+case class BatchFailure(error: Throwable, reason: Modification)
+  extends Exception with BatchProvingResultSimple with BatchProvingResult
 
 class LegacyProver(tree: AVLTree[_]) extends UpdateF[AVLKey] {
   def applyBatchSimple(modifications: Seq[Modification]): BatchProvingResultSimple = {
-    applyUpdates(Modification.convert(modifications))
+    applyUpdates(modifications)
   }
 
-  def applyUpdates(modifications: Seq[(AVLKey, UpdateFunction)]): BatchProvingResultSimple = Try {
-    val aggregatedProofs: ArrayBuffer[AVLModifyProof] = ArrayBuffer()
-    modifications.foreach { case (k, uf) =>
+  def applyUpdates(modifications: Seq[Modification]): BatchProvingResultSimple = Try {
+    val aggregatedProofs = modifications.foldLeft(ArrayBuffer[AVLModifyProof]()) { (a, m) =>
+      val (k, uf) = Modification.convert(m)
       tree.modify(k, uf) match {
-        case Success(proof) =>
-          aggregatedProofs += proof
-        case Failure(e) => throw e
+        case Success(proof) => proof +: a
+        case Failure(e) => throw BatchFailure(e, m)
       }
     }
     BatchSuccessSimple(aggregatedProofs)
   } match {
     case Success(p) => p
-    case Failure(e) => BatchFailure(e)
+    case Failure(e: BatchFailure) => e
   }
 
   def rootHash: Label = tree.rootHash()
