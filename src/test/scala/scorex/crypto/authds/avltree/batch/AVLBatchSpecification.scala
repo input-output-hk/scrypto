@@ -1,13 +1,16 @@
 package scorex.crypto.authds.avltree.batch
 
+import com.google.common.primitives.Longs
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.authds.avltree.legacy.AVLTree
+import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.utils.Random
+
 import scala.util.Random.{nextInt => randomInt}
+import scala.util.Try
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -15,20 +18,49 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val VL = 8
   val HL = 32
 
+  property("Long updates") {
+    val prover = new BatchAVLProver(KL, VL)
+    var digest = prover.rootHash
+
+    forAll(kvGen) { case (aKey, aValue) =>
+      val oldValue: Long = prover.unauthenticatedLookup(aKey).map(Longs.fromByteArray).getOrElse(0L)
+      val delta = Math.abs(Longs.fromByteArray(aValue))
+      whenever(Try(Math.addExact(oldValue, delta)).isSuccess) {
+
+        val currentMods = Modification.convert(Seq(UpdateLongBy(aKey, delta)))
+
+        currentMods foreach (m => prover.performOneModification(m._1, m._2))
+        val pf = prover.generateProof
+
+        val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
+        currentMods foreach (m => verifier.performOneModification(m._1, m._2))
+        digest = verifier.digest.get
+
+        prover.rootHash shouldEqual digest
+        prover.unauthenticatedLookup(aKey) match {
+          case Some(v) => require(delta + oldValue == Longs.fromByteArray(v))
+          case None => require(delta + oldValue == 0)
+        }
+      }
+    }
+    prover.checkTree(true)
+  }
+
+
   property("zero-mods verification on empty tree") {
     val p = new BatchAVLProver()
     p.checkTree()
     val digest = p.rootHash
     val oldHeight = p.rootHeight
-    val pf = p.generateProof.toArray
+    val pf = p.generateProof
     p.checkTree(true)
     val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(0), Some(0))
     v.digest match {
-      case None =>
-        require(false, "zero-mods verification failed to construct tree")
       case Some(d) =>
         require(d sameElements digest, "wrong digest for zero-mods")
         require(v.rootHeight == oldHeight, "wrong tree height for zero-mods")
+      case None =>
+        throw new Error("zero-mods verification failed to construct tree")
     }
   }
 
@@ -47,7 +79,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     for (i <- 0 until 50)
       require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-    var pf = p.generateProof.toArray
+    var pf = p.generateProof
     // see if the proof for 50 mods will be allowed when we permit only 2
     var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(2), Some(0))
     require(v.digest.isEmpty, "Failed to reject too long a proof")
@@ -62,7 +94,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       for (i <- 0 until 8)
         require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-      v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, oldHeight, Some(8), Some(0))
+      v = new BatchAVLVerifier(digest, p.generateProof, 32, 8, oldHeight, Some(8), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
@@ -74,7 +106,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       oldHeight = p.rootHeight
       val key = Random.randomBytes()
       p.performOneModification(Insert(key, Random.randomBytes(8)))
-      pf = p.generateProof.toArray
+      pf = p.generateProof
       p.checkTree()
 
       // Change the direction of the proof and make sure verifier fails
@@ -212,7 +244,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         i += 1
       }
 
-      val pf = p.generateProof.toArray
+      val pf = p.generateProof
       p.checkTree(true)
 
       val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(n), Some(numCurrentDeletes))
@@ -282,7 +314,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       }
 
       Modification.convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2))
-      val pf = newProver.generateProof.toArray
+      val pf = newProver.generateProof
 
       digest = oldProver.rootHash
       oldProver.rootHash shouldBe newProver.rootHash
@@ -298,7 +330,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val currentMods = Modification.convert(Seq(Insert(aKey, aValue)))
 
       currentMods foreach (m => prover.performOneModification(m._1, m._2))
-      val pf = prover.generateProof.toArray
+      val pf = prover.generateProof
 
       val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
       currentMods foreach (m => verifier.performOneModification(m._1, m._2))

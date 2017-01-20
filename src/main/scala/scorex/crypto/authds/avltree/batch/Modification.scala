@@ -1,9 +1,10 @@
 package scorex.crypto.authds.avltree.batch
 
+import com.google.common.primitives.Longs
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 sealed trait Modification {
   val key: AVLKey
@@ -17,7 +18,9 @@ case class Remove(key: AVLKey) extends Modification
 
 case class RemoveIfExists(key: AVLKey) extends Modification
 
-object Modification extends UpdateF[AVLKey] {
+case class UpdateLongBy(key: AVLKey, value: Long) extends Modification
+
+object Modification extends UpdateF[AVLValue] {
 
   private def insertFunction(value: AVLValue) = {
     case None => Success(Some(value))
@@ -34,58 +37,37 @@ object Modification extends UpdateF[AVLKey] {
     case Some(_) => Success(None)
   }: UpdateFunction
 
+  /**
+    * Update existing value by delta, insert if old value is not exists and positive, remove is remaining is 0,
+    * fails on negative new value
+    */
+  private def updateDelta(delta: Long) = {
+    case m if delta == 0 => Success(m)
+    case None if delta > 0 => Success(Some(Longs.toByteArray(delta)))
+    case None if delta < 0 => Failure(new Exception("Trying to decrease non-existing value"))
+    case Some(oldV) => Try {
+      val newVal = Math.addExact(Longs.fromByteArray(oldV), delta)
+      if (newVal == 0) {
+        None
+      } else if (newVal > 0) {
+        Some(Longs.toByteArray(newVal))
+      } else {
+        throw new Exception("New value is negative")
+      }
+    }
+  }: UpdateFunction
+
   private def removeIfExistsFunction() = (_ => Success(None)): UpdateFunction
 
   def convert(modifications: Seq[Modification]): Seq[(AVLKey, UpdateFunction)] = modifications.map(convert)
 
-  // TODO: to demonstrate more rich examples, add "increase value" and "decrease value, failing if below 0 and deleting if 0"
   def convert(modification: Modification): (AVLKey, UpdateFunction) = {
     modification match {
       case Insert(key, value) => key -> insertFunction(value)
       case Update(key, value) => key -> updateFunction(value)
       case Remove(key) => key -> removeFunction()
       case RemoveIfExists(key) => key -> removeIfExistsFunction()
+      case UpdateLongBy(key, value) => key -> updateDelta(value)
     }
   }
 }
-
-//TODO: remove
-/*
-object BatchTest extends App {
-  val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
-  val initRoot = prover.rootHash
-  val initHeight = prover.rootHeight
-
-  print(initHeight)
-
-  val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
-  val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
-
-  prover.performOneModification(m1)
-  prover.performOneModification(m2)
-  val proof1 = prover.generateProof
-
-  val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
-  val m4 = Remove(Array(2:Byte))
-  prover.performOneModification(m3)
-  prover.performOneModification(m4)
-  val proof2 = prover.generateProof
-  val rootDeclared = prover.rootHash
-
-
-  val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
-  println(verifier1.performOneModification(m1))
-  verifier1.performOneModification(m2)
-  verifier1.digest match {
-    case Some(root1) =>
-      val verifier2 = new BatchAVLVerifier(root1, proof2, keyLength = 1, valueLength = 8)
-      verifier2.performOneModification(m3)
-      verifier2.performOneModification(m4)
-      verifier2.digest match {
-        case Some(root2) if root2.sameElements(rootDeclared) => println("declared root value and proofs are valid")
-        case _ => println("second proof or declared root value  NOT valid")
-      }
-    case None =>
-      println("first proof is invalid")
-  }
-}*/
