@@ -271,8 +271,6 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     keysAndVals foreach (pair => require(p.unauthenticatedLookup(pair._1).get sameElements pair._2, "Key has wrong value"))
   }
 
-
-  //TODO rollback and recover
   property("Persistence AVL batch prover") {
     val storage = new VersionedAVLStorageMock
     val prover = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
@@ -287,15 +285,15 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       prover.rootHash should not equal digest
       prover.rootHash shouldEqual verifier.digest.get
 
-      //      prover.rollback(digest).isSuccess shouldBe true
-      //      prover.rootHash shouldEqual digest
-      //      prover.performOneModification(m)
-      //      prover.generateProof
+      prover.rollback(digest).isSuccess shouldBe true
+      prover.rootHash shouldEqual digest
+      prover.performOneModification(m)
+      prover.generateProof
       digest = prover.rootHash
     }
 
-    //    val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
-    //    prover2.rootHash shouldEqual prover.rootHash
+    val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
+    prover2.rootHash shouldEqual prover.rootHash
   }
 
   property("Updates with and without batching should lead to the same tree") {

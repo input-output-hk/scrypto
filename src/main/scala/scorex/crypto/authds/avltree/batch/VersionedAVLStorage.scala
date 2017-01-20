@@ -6,7 +6,7 @@ trait VersionedAVLStorage {
 
   type Version = Array[Byte]
 
-  def update(topNode: ProverNodes): Try[Unit]
+  def update(topNode: BatchAVLProver[_]): Try[Unit]
 
   /**
     * Return root node and tree height at version

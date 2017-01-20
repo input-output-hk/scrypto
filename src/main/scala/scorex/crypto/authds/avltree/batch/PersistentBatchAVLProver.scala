@@ -12,7 +12,7 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
   if (storage.nonEmpty) {
     rollback(storage.version).get
   } else {
-    storage.update(prover.topNode).get
+    storage.update(prover).get
   }
 
   def rootHash: Label = prover.rootHash
@@ -23,8 +23,8 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
     prover.performOneModification(key, updateFunction)
 
   def generateProof: Array[Byte] = {
-    storage.update(prover.topNode).get
-    prover.generateProof.toArray
+    storage.update(prover).get
+    prover.generateProof
   }
 
   def rollback(version: VersionedAVLStorage.Version): Try[Unit] = Try {

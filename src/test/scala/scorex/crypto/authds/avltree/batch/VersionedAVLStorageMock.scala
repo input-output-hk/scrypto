@@ -11,17 +11,15 @@ class VersionedAVLStorageMock extends VersionedAVLStorage {
   override def isEmpty: Boolean = v sameElements InitialVersion
 
   // Map from version to topNode
-  private val savedNodes: mutable.Map[mutable.WrappedArray[Byte], ProverNodes] = mutable.Map()
+  private val savedNodes: mutable.Map[mutable.WrappedArray[Byte], (ProverNodes, Int)] = mutable.Map()
 
-  override def update(topNode: ProverNodes): Try[Unit] = Try {
-    v = topNode.label
-    savedNodes(topNode.label) = topNode
+  override def update(prover: BatchAVLProver[_]): Try[Unit] = Try {
+    v = prover.topNode.label
+    savedNodes(prover.topNode.label) = (prover.topNode, prover.topNodeHeight)
   }
 
   override def rollback(version: Version): Try[(ProverNodes, Int)] = {
     Try(savedNodes(version))
-    //TODO
-    ???
   }
 
   override def version: Version = v

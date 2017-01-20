@@ -33,7 +33,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     t
   })
 
-  protected var topNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
+  var topNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
 
   private var oldTopNode = topNode
 
