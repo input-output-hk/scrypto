@@ -45,16 +45,15 @@ object Modification extends UpdateF[AVLValue] {
     case m if delta == 0 => Success(m)
     case None if delta > 0 => Success(Some(Longs.toByteArray(delta)))
     case None if delta < 0 => Failure(new Exception("Trying to decrease non-existing value"))
-    case Some(oldV) => Try {
+    case Some(oldV) =>
       val newVal = Math.addExact(Longs.fromByteArray(oldV), delta)
       if (newVal == 0) {
-        None
+        Success(None)  //todo: is it intended to remove an element if its value is 0?
       } else if (newVal > 0) {
-        Some(Longs.toByteArray(newVal))
+        Success(Some(Longs.toByteArray(newVal)))
       } else {
-        throw new Exception("New value is negative")
+        Failure(new Exception("New value is negative"))
       }
-    }
   }: UpdateFunction
 
   private def removeIfExistsFunction() = (_ => Success(None)): UpdateFunction
