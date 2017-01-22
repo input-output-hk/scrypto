@@ -9,7 +9,7 @@ import scorex.utils.NatConstants.Nat32
 
 import scala.util.{Failure, Try}
 
-//todo: why Nat32, not [Nat32, Nat64]?
+//todo: why Nat32, not [Nat32, Nat64]? so pubkey size also included(and priv key?)
 object Curve25519 extends EllipticCurveSignatureScheme[Nat32] {
 
   import SigningFunctions._
@@ -20,9 +20,10 @@ object Curve25519 extends EllipticCurveSignatureScheme[Nat32] {
   override val SignatureLength = SignatureLength25519
   override val KeyLength = KeyLength25519
 
-  //todo: dirty hack, switch to logic as described in WhisperSystem's Curve25519 tutorial
-  //todo: when it'll be possible to pass a random seed from outside
-  //todo: https://github.com/WhisperSystems/curve25519-java/pull/7
+  /* todo: dirty hack, switch to logic as described in WhisperSystem's Curve25519 tutorial when
+              it would be possible to pass a random seed from outside, see
+              https://github.com/WhisperSystems/curve25519-java/pull/7
+  */
   private val provider: OpportunisticCurve25519Provider = {
     val constructor = classOf[OpportunisticCurve25519Provider]
       .getDeclaredConstructors

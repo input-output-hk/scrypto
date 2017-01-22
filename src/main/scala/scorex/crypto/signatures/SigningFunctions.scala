@@ -4,11 +4,11 @@ import java.security.SecureRandom
 
 import shapeless.Sized
 
-trait SigningFunctions[SizeT <: shapeless.Nat] {
+trait SigningFunctions[SigSize <: shapeless.Nat] {
 
   import SigningFunctions._
 
-  type SignedSignature = Sized[Array[Byte], SizeT]
+  type SignedSignature = Sized[Array[Byte], SigSize]
 
   val SignatureLength: Int
   val KeyLength: Int
