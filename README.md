@@ -18,7 +18,10 @@ resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositori
 
 You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
 ```scala
+// For Scala 2.12
 libraryDependencies += "org.consensusresearch" %% "scrypto" % "1.2.0"
+// For Scala 2.11
+libraryDependencies += "org.consensusresearch" %% "scrypto" % "1.2.0-RC3"
 ```
 
 ### Hash functions
