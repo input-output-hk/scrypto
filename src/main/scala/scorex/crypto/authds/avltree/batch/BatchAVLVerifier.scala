@@ -8,6 +8,7 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
+//todo: merge startingHeight byte with the digest
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
                                                proof: Array[Byte],
                                                override val keyLength: Int = 32,

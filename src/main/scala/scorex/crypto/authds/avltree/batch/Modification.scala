@@ -4,7 +4,7 @@ import com.google.common.primitives.Longs
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
 sealed trait Modification {
   val key: AVLKey
@@ -38,7 +38,7 @@ object Modification extends UpdateF[AVLValue] {
   }: UpdateFunction
 
   /**
-    * Update existing value by delta, insert if old value is not exists and positive, remove is remaining is 0,
+    * Update existing value by delta, insert if old value is not exists and positive, remove if remaining is 0,
     * fails on negative new value
     */
   private def updateDelta(delta: Long) = {
@@ -48,7 +48,7 @@ object Modification extends UpdateF[AVLValue] {
     case Some(oldV) =>
       val newVal = Math.addExact(Longs.fromByteArray(oldV), delta)
       if (newVal == 0) {
-        Success(None)  //todo: is it intended to remove an element if its value is 0?
+        Success(None)
       } else if (newVal > 0) {
         Success(Some(Longs.toByteArray(newVal)))
       } else {
