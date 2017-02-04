@@ -1,4 +1,4 @@
-package scorex.crypto.authds.avltree.legacy
+package scorex.crypto.authds.legacy.avltree
 
 import com.google.common.primitives.Bytes
 import scorex.crypto.authds.TwoPartyDictionary.Label
