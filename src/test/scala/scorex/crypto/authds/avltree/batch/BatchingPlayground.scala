@@ -1,7 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.legacy.{AVLModifyProof, AVLTree}
+import scorex.crypto.authds.legacy.avltree.AVLTree
+import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.utils.Random
 
 

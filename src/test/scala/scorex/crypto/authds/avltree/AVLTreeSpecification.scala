@@ -5,7 +5,8 @@ import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.TwoPartyTests
-import scorex.crypto.authds.avltree.legacy.{AVLModifyProof, AVLTree}
+import scorex.crypto.authds.legacy.avltree.AVLTree
+import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.hash.Sha256
 import scorex.utils.Random
 

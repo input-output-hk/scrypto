@@ -3,7 +3,7 @@ package scorex.crypto.authds.avltree.batch
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.legacy.{AVLModifyProof, AVLTree}
+import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
