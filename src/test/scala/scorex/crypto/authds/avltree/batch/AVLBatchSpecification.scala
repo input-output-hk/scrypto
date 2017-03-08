@@ -20,7 +20,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   property("Long updates") {
     val prover = new BatchAVLProver(KL, VL)
-    var digest = prover.rootHash
+    var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
       val oldValue: Long = prover.unauthenticatedLookup(aKey).map(Longs.fromByteArray).getOrElse(0L)
@@ -35,8 +35,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
         currentMods foreach (m => verifier.performOneModification(m._1, m._2))
         digest = verifier.digest.get
-
-        prover.rootHash shouldEqual digest
+        prover.digest shouldEqual digest
         prover.unauthenticatedLookup(aKey) match {
           case Some(v) => require(delta + oldValue == Longs.fromByteArray(v))
           case None => require(delta + oldValue == 0)
@@ -50,19 +49,34 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   property("zero-mods verification on empty tree") {
     val p = new BatchAVLProver()
     p.checkTree()
-    val digest = p.rootHash
-    val oldHeight = p.rootHeight
+    val digest = p.digest
     val pf = p.generateProof
     p.checkTree(true)
-    val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(0), Some(0))
+    val v = new BatchAVLVerifier(digest, pf, 32, 8, Some(0), Some(0))
     v.digest match {
       case Some(d) =>
         require(d sameElements digest, "wrong digest for zero-mods")
-        require(v.rootHeight == oldHeight, "wrong tree height for zero-mods")
       case None =>
         throw new Error("zero-mods verification failed to construct tree")
     }
   }
+  
+  property("conversion to byte and back") {
+    // There is no way to test this without building a tree with at least 2^88 leaves,
+    // so we resort to a very basic test
+    val p = new BatchAVLProver()
+    val digest = p.digest
+    var i:Int = 0
+    for (i<-0 to 255) {
+      digest(digest.length-1) = i.toByte
+      var rootNodeHeight:Int = digest.last.toInt
+      if (rootNodeHeight < 0) {
+        rootNodeHeight+=256;
+      }
+      rootNodeHeight shouldBe i
+    }
+  }
+  
 
   property("various verifier fails") {
     val p = new BatchAVLProver()
@@ -74,27 +88,25 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     }
     p.generateProof
 
-    var digest = p.rootHash
-    var oldHeight = p.rootHeight
+    var digest = p.digest
     for (i <- 0 until 50)
       require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
     var pf = p.generateProof
     // see if the proof for 50 mods will be allowed when we permit only 2
-    var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(2), Some(0))
+    var v = new BatchAVLVerifier(digest, pf, 32, 8, Some(2), Some(0))
     require(v.digest.isEmpty, "Failed to reject too long a proof")
 
     // see if wrong digest will be allowed
-    v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, Some(50), Some(0))
+    v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, Some(50), Some(0))
     require(v.digest.isEmpty, "Failed to reject wrong digest")
 
     for (i <- 0 until 10) {
-      digest = p.rootHash
-      oldHeight = p.rootHeight
+      digest = p.digest
       for (i <- 0 until 8)
         require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-      v = new BatchAVLVerifier(digest, p.generateProof, 32, 8, oldHeight, Some(8), Some(0))
+      v = new BatchAVLVerifier(digest, p.generateProof, 32, 8, Some(8), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
@@ -102,8 +114,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         v.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of a missing leaf")
 
-      digest = p.rootHash
-      oldHeight = p.rootHeight
+      digest = p.digest
       val key = Random.randomBytes()
       p.performOneModification(Insert(key, Random.randomBytes(8)))
       pf = p.generateProof
@@ -111,7 +122,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       // Change the direction of the proof and make sure verifier fails
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
-      v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
+      v = new BatchAVLVerifier(digest, pf, 32, 8, Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneModification(Insert(key, Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
@@ -122,7 +133,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
       val oldKey = key(0)
       key(0) = (key(0) ^ (1 << 7)).toByte
-      v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
+      v = new BatchAVLVerifier(digest, pf, 32, 8, Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneModification(Insert(key, Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
@@ -150,8 +161,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     val t0 = System.nanoTime()
     while (i < numMods) {
-      val digest = p.rootHash
-      val oldHeight = p.rootHeight
+      val digest = p.digest
       val n = randomInt(100)
       val j = i + n
       var numCurrentDeletes = 0
@@ -210,10 +220,10 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
               // with probability 1/10 remove a nonexisting one but without failure -- shouldn't change the tree
               val key = Random.randomBytes()
               val mod = RemoveIfExists(key)
-              val d = p.rootHash
+              val d = p.digest
               currentMods += mod
               require(p.performOneModification(mod).isSuccess, "prover failed when it should have done nothing")
-              require(d sameElements p.rootHash, "Tree changed when it shouldn't have")
+              require(d sameElements p.digest, "Tree changed when it shouldn't have")
               p.checkTree()
               numNonDeletes += 1
             }
@@ -240,13 +250,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val pf = p.generateProof
       p.checkTree(true)
 
-      val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(n), Some(numCurrentDeletes))
+      val v = new BatchAVLVerifier(digest, pf, 32, 8, Some(n), Some(numCurrentDeletes))
       v.digest match {
         case None =>
           require(false, "Verification failed to construct the tree")
         case Some(d) =>
           require(d sameElements digest, "Built tree with wrong digest") // Tree built successfully
-          require(v.rootHeight == oldHeight, "Built tree of wrong height")
       }
 
       Modification.convert(currentMods) foreach (m => v.performOneModification(m._1, m._2))
@@ -254,8 +263,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         case None =>
           require(false, "Verification failed")
         case Some(d) =>
-          require(d sameElements p.rootHash, "Tree has wrong digest after verification")
-          require(v.rootHeight == p.rootHeight, "Tree has wrong height after verification")
+          require(d sameElements p.digest, "Tree has wrong digest after verification")
       }
     }
 
@@ -267,26 +275,27 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   property("Persistence AVL batch prover") {
     val storage = new VersionedAVLStorageMock
     val prover = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
-    var digest = prover.rootHash
+    var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
       val m = Insert(aKey, aValue)
       prover.performOneModification(m)
       val pf = prover.generateProof
       val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
+      verifier.digest.get
       verifier.performOneModification(m)
-      prover.rootHash should not equal digest
-      prover.rootHash shouldEqual verifier.digest.get
+      prover.digest should not equal digest
+      prover.digest shouldEqual verifier.digest.get
 
       prover.rollback(digest).isSuccess shouldBe true
-      prover.rootHash shouldEqual digest
+      prover.digest shouldEqual digest
       prover.performOneModification(m)
       prover.generateProof
-      digest = prover.rootHash
-    }
+      digest = prover.digest
+    } 
 
     val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
-    prover2.rootHash shouldEqual prover.rootHash
+    prover2.digest shouldEqual prover.digest
   }
 
   property("Updates with and without batching should lead to the same tree") {
@@ -294,7 +303,8 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     var digest = tree.rootHash()
     val oldProver = new LegacyProver(tree)
     val newProver = new BatchAVLProver(KL, VL)
-    oldProver.rootHash shouldBe newProver.rootHash
+    require(newProver.digest startsWith oldProver.rootHash)
+    require(newProver.digest.length == oldProver.rootHash.length+1)
 
     forAll(kvGen) { case (aKey, aValue) =>
       val currentMods = Seq(Insert(aKey, aValue))
@@ -308,14 +318,15 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val pf = newProver.generateProof
 
       digest = oldProver.rootHash
-      oldProver.rootHash shouldBe newProver.rootHash
+      require(newProver.digest startsWith digest)
+      require(newProver.digest.length == oldProver.rootHash.length+1)
     }
     newProver.checkTree(true)
   }
 
   property("Verifier should calculate the same digest") {
     val prover = new BatchAVLProver(KL, VL)
-    var digest = prover.rootHash
+    var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
       val currentMods = Modification.convert(Seq(Insert(aKey, aValue)))
@@ -327,7 +338,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       currentMods foreach (m => verifier.performOneModification(m._1, m._2))
       digest = verifier.digest.get
 
-      prover.rootHash shouldEqual digest
+      prover.digest shouldEqual digest
     }
     prover.checkTree(true)
   }
@@ -336,7 +347,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   def kvGen: Gen[(Array[Byte], Array[Byte])] = for {
     key <- Gen.listOfN(KL, Arbitrary.arbitrary[Byte]).map(_.toArray) suchThat
       (k => !(k sameElements Array.fill(KL)(-1: Byte)) && !(k sameElements Array.fill(KL)(0: Byte)) && k.length == KL)
-    value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)
+    value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)    
   } yield (key, value)
 
 }

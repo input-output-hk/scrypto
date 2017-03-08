@@ -17,7 +17,6 @@ object BatchingPlayground extends App {
   //smallDeleteTest
   batchingSelfTest
 
-
   //deleteProofSizeTest
 
   //memoryTestWithBatching
@@ -231,7 +230,7 @@ object BatchingPlayground extends App {
       val c = Modification.convert(mod)
       newProver.performOneModification(c._1, c._2)
     }
-    newProver.rootHash
+    newProver.digest
     newProver.generateProof
     System.gc
     curMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
@@ -256,7 +255,7 @@ object BatchingPlayground extends App {
       newProver.performOneModification(c._1, c._2)
       if (i % 2000 == 0) {
         newProver.generateProof
-        newProver.rootHash
+        newProver.digest
       }
       if (i % 50000 == 0) {
         System.gc
@@ -275,7 +274,7 @@ object BatchingPlayground extends App {
         if (i%2000 == 0) {
           print(i)
           print(",")
-          newProver.rootHash
+          newProver.digest
 
           prevMemory = curMemory
           //curMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
@@ -358,7 +357,7 @@ object BatchingPlayground extends App {
       if (i % 100000 == 0)
         println(i)
     }
-    newProver.rootHash // NOTE: if you comment out this line, the first batch becomes about 2 seconds slower
+    newProver.digest // NOTE: if you comment out this line, the first batch becomes about 2 seconds slower
     newProver.generateProof
 
     val mods = new Array[Modification](75000)
@@ -377,7 +376,7 @@ object BatchingPlayground extends App {
             i += 1
             ctr += 1
           }
-          newProver.rootHash
+          newProver.digest
           newProver.generateProof.toArray
         }
       }
@@ -395,7 +394,7 @@ object BatchingPlayground extends App {
             i += 1
             ctr += 1
           }
-          newProver.rootHash
+          newProver.digest
           newProver.generateProof.toArray
           numBatches += 1
         }
@@ -554,17 +553,15 @@ object BatchingPlayground extends App {
     def testZeroModProofOnEmptyTree = {
       val p = new BatchAVLProver()
       p.checkTree()
-      val digest = p.rootHash
-      val oldHeight = p.rootHeight
+      val digest = p.digest
       val pf = p.generateProof.toArray
       p.checkTree(true)
-      val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(0), Some(0))
+      val v = new BatchAVLVerifier(digest, pf, 32, 8, Some(0), Some(0))
       v.digest match {
         case None =>
           require(false, "zero-mods verification failed to construct tree")
         case Some(d) =>
           require(d sameElements digest, "wrong digest for zero-mods")
-          require(v.rootHeight == oldHeight, "wrong tree height for zero-mods")
       }
     }
 
@@ -578,27 +575,25 @@ object BatchingPlayground extends App {
       }
       p.generateProof
 
-      var digest = p.rootHash
-      var oldHeight = p.rootHeight
+      var digest = p.digest
       for (i <- 0 until 50)
         require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
       var pf = p.generateProof.toArray
       // see if the proof for 50 mods will be allowed when we permit only 2
-      var v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(2), Some(0))
+      var v = new BatchAVLVerifier(digest, pf, 32, 8, Some(2), Some(0))
       require(v.digest.isEmpty, "Failed to reject too long a proof")
 
       // see if wrong digest will be allowed
-      v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, oldHeight, Some(50), Some(0))
+      v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, Some(50), Some(0))
       require(v.digest.isEmpty, "Failed to reject wrong digest")
 
       for (i <- 0 until 10) {
-        digest = p.rootHash
-        oldHeight = p.rootHeight
+        digest = p.digest
         for (i <- 0 until 8)
           require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-        v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, oldHeight, Some(8), Some(0))
+        v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, Some(8), Some(0))
         require(v.digest.nonEmpty, "verification failed to construct tree")
         // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
         // that is not in the conveyed tree, and verifier will complain
@@ -606,8 +601,7 @@ object BatchingPlayground extends App {
           v.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8)))
         require(v.digest.isEmpty, "verification succeeded when it should have failed, because of a missing leaf")
 
-        digest = p.rootHash
-        oldHeight = p.rootHeight
+        digest = p.digest
         val key = Random.randomBytes()
         p.performOneModification(Insert(key, Random.randomBytes(8)))
         pf = p.generateProof.toArray
@@ -615,7 +609,7 @@ object BatchingPlayground extends App {
 
         // Change the direction of the proof and make sure verifier fails
         pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
-        v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
+        v = new BatchAVLVerifier(digest, pf, 32, 8, Some(1), Some(0))
         require(v.digest.nonEmpty, "verification failed to construct tree")
         v.performOneModification(Insert(key, Random.randomBytes(8)))
         require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
@@ -626,7 +620,7 @@ object BatchingPlayground extends App {
         pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
         val oldKey = key(0)
         key(0) = (key(0) ^ (1 << 7)).toByte
-        v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(1), Some(0))
+        v = new BatchAVLVerifier(digest, pf, 32, 8, Some(1), Some(0))
         require(v.digest.nonEmpty, "verification failed to construct tree")
         v.performOneModification(Insert(key, Random.randomBytes(8)))
         require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
@@ -665,8 +659,7 @@ object BatchingPlayground extends App {
 
       val t0 = System.nanoTime()
       while (i < numMods) {
-        val digest = p.rootHash
-        val oldHeight = p.rootHeight
+        val digest = p.digest
         val n = randomInt(100)
         val j = i + n
         if (toPrint) {
@@ -732,10 +725,10 @@ object BatchingPlayground extends App {
                 // with probability 1/10 remove a nonexisting one but without failure -- shouldn't change the tree
                 val key = Random.randomBytes()
                 val mod = RemoveIfExists(key)
-                val d = p.rootHash
+                val d = p.digest
                 currentMods += mod
                 require(p.performOneModification(mod).isSuccess, "prover failed when it should have done nothing")
-                require(d sameElements p.rootHash, "Tree changed when it shouldn't have")
+                require(d sameElements p.digest, "Tree changed when it shouldn't have")
                 p.checkTree()
                 numNonDeletes += 1
               }
@@ -771,13 +764,12 @@ object BatchingPlayground extends App {
           }
         }
 
-        val v = new BatchAVLVerifier(digest, pf, 32, 8, oldHeight, Some(n), Some(numCurrentDeletes))
+        val v = new BatchAVLVerifier(digest, pf, 32, 8, Some(n), Some(numCurrentDeletes))
         v.digest match {
           case None =>
             require(false, "Verification failed to construct the tree")
           case Some(d) =>
             require(d sameElements digest, "Built tree with wrong digest") // Tree built successfully
-            require(v.rootHeight == oldHeight, "Built tree of wrong height")
         }
 
         Modification.convert(currentMods) foreach (m => v.performOneModification(m._1, m._2))
@@ -785,8 +777,7 @@ object BatchingPlayground extends App {
           case None =>
             require(false, "Verification failed")
           case Some(d) =>
-            require(d sameElements p.rootHash, "Tree has wrong digest after verification")
-            require(v.rootHeight == p.rootHeight, "Tree has wrong height after verification")
+            require(d sameElements p.digest, "Tree has wrong digest after verification")
         }
       }
 
@@ -810,7 +801,7 @@ object BatchingPlayground extends App {
 
     testZeroModProofOnEmptyTree
     testVariousVerifierFails
-    testSuccessfulChanges(false)
+    testSuccessfulChanges(true)
   }
 
 }

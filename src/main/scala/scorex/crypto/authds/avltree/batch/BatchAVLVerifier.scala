@@ -8,12 +8,10 @@ import scorex.utils.ByteArray
 import scala.collection.mutable
 import scala.util.Try
 
-//todo: merge startingHeight byte with the digest
-class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
+class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
                                                proof: Array[Byte],
                                                override val keyLength: Int = 32,
                                                override val valueLength: Int = 8,
-                                               startingHeight: Int = 100,
                                                maxNumOperations: Option[Int] = None,
                                                maxDeletes: Option[Int] = None
                                               )
@@ -23,7 +21,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
 
   protected val labelLength = hf.DigestSize
 
-  def digest: Option[Label] = topNode.map(_.label)
+  def digest: Option[Array[Byte]] = topNode.map(digest(_))
 
   private var directionsIndex = 0
   private var lastRightStep = 0
@@ -69,7 +67,25 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
     new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), 0: Byte)
   }
 
+  protected var rootNodeHeight = 0
+
   private def reconstructTree: Option[VerifierNodes] = Try {
+  
+    require(labelLength > 0)
+    require(keyLength > 0)
+    require(valueLength > 0) // TODO Can we handle values of length 0, i.e., key storage only?
+    require(startingDigest.length == labelLength+1)
+    rootNodeHeight = startingDigest.last.toInt
+
+    // If during the digest construction the int to Byte conversion resulted in a negative signed byte,
+    // we correct this problem here. Note that this problem can occur only of the tree
+    // height is >127, i.e., if the tree has more than 2^88 leaves, which seems
+    // very unlikely given that it's more than the estimated amount of storage in the world in year 2017
+    if (rootNodeHeight < 0) {
+      rootNodeHeight+=256;
+      require (rootNodeHeight>=0)
+    }
+    
 
     // compute log (number of operations), rounded up
     var logNumOps = 0
@@ -80,12 +96,12 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
       logNumOps += 1
     }
 
-    // compute maximum height that the tre can be before an operation
-    temp = 1 + math.max(topNodeHeight, logNumOps)
+    // compute maximum height that the tree can be before an operation
+    temp = 1 + math.max(rootNodeHeight, logNumOps)
     val hnew = temp + temp / 2 // this will replace 1.4405 with 1.5 and will round down, which is safe, because hnew is an integer
     val realMaxDeletes: Int = maxDeletes.getOrElse(realNumOperations)
     // Note: this is quite likely a lot more than there will really be nodes
-    val maxNodes = (realNumOperations + realMaxDeletes) * (2 * topNodeHeight + 1) + realMaxDeletes * hnew + 1 // +1 needed in case numOperations == 0
+    val maxNodes = (realNumOperations + realMaxDeletes) * (2 * rootNodeHeight + 1) + realMaxDeletes * hnew + 1 // +1 needed in case numOperations == 0
 
     var numNodes = 0
     val s = new mutable.Stack[VerifierNodes] // Nodes and depths
@@ -127,24 +143,23 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Label,
 
     require(s.size == 1)
     val root = s.pop
-    require(root.label sameElements startingDigest)
+    require(startingDigest startsWith root.label)
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.getOrElse(None)
 
-  protected var topNodeHeight = startingHeight
+  
   private var topNode: Option[VerifierNodes] = reconstructTree
 
-  def performOneModification(m: Modification): Option[Label] = {
+  def performOneModification(m: Modification): Unit = {
     val converted = Modification.convert(m)
     performOneModification(converted._1, converted._2)
   }
 
-  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Option[Label] = {
+  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Unit = {
     replayIndex = directionsIndex
     topNode = Try(Some(returnResultOfOneModification(key, updateFunction, topNode.get).asInstanceOf[VerifierNodes])).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
-    topNode.map(_.label)
   }
 
   override def toString: String = {

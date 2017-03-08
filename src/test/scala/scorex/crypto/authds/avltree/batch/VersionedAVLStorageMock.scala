@@ -14,8 +14,8 @@ class VersionedAVLStorageMock extends VersionedAVLStorage {
   private val savedNodes: mutable.Map[mutable.WrappedArray[Byte], (ProverNodes, Int)] = mutable.Map()
 
   override def update(prover: BatchAVLProver[_]): Try[Unit] = Try {
-    v = prover.topNode.label
-    savedNodes(prover.topNode.label) = (prover.topNode, prover.topNodeHeight)
+    v = prover.digest
+    savedNodes(v) = (prover.topNode, prover.rootNodeHeight)
   }
 
   override def rollback(version: Version): Try[(ProverNodes, Int)] = {

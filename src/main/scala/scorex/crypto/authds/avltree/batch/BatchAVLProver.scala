@@ -33,7 +33,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     t
   })
 
-  var topNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
+  var rootNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
 
   private var oldTopNode = topNode
 
@@ -102,7 +102,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
   }
 
 
-  def rootHash: Label = topNode.label
+  def digest: Array[Byte] = digest(topNode)
 
   def performOneModification(m: Modification): Try[Unit] = {
     val converted = Modification.convert(m)
@@ -276,7 +276,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     val (minTree, maxTree, treeHeight) = checkTreeHelper(topNode)
     require(minTree.key sameElements NegativeInfinityKey)
     require(maxTree.nextLeafKey sameElements PositiveInfinityKey)
-    require(treeHeight == topNodeHeight)
+    require(treeHeight == rootNodeHeight)
 
     require(!fail, "Tree failed: \n" + toString)
   }
