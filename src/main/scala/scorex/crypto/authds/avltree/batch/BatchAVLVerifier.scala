@@ -73,7 +73,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
     require(labelLength > 0)
     require(keyLength > 0)
-    require(valueLength > 0) // TODO Can we handle values of length 0, i.e., key storage only?
+    require(valueLength > 0)
     require(startingDigest.length == labelLength + 1)
     rootNodeHeight = startingDigest.last.toInt
 
