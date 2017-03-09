@@ -69,10 +69,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     var i: Int = 0
     for (i <- 0 to 255) {
       digest(digest.length - 1) = i.toByte
-      var rootNodeHeight: Int = digest.last.toInt
-      if (rootNodeHeight < 0) {
-        rootNodeHeight += 256;
-      }
+      var rootNodeHeight: Int = digest.last & 0xff
       rootNodeHeight shouldBe i
     }
   }

@@ -75,17 +75,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     require(keyLength > 0)
     require(valueLength > 0)
     require(startingDigest.length == labelLength + 1)
-    rootNodeHeight = startingDigest.last.toInt
-
-    // If during the digest construction the int to Byte conversion resulted in a negative signed byte,
-    // we correct this problem here. Note that this problem can occur only of the tree
-    // height is >127, i.e., if the tree has more than 2^88 leaves, which seems
-    // very unlikely given that it's more than the estimated amount of storage in the world in year 2017
-    if (rootNodeHeight < 0) {
-      rootNodeHeight += 256;
-      require(rootNodeHeight >= 0)
-    }
-
+    rootNodeHeight = startingDigest.last & 0xff
 
     // compute log (number of operations), rounded up
     var logNumOps = 0
