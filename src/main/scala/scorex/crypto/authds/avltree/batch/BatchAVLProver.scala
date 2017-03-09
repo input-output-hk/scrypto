@@ -1,6 +1,5 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
@@ -15,7 +14,7 @@ import scala.util.{Failure, Success, Try}
   * @param keyLength        - length of keys in tree
   * @param valueLength      - length of values in tree
   * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
-  *     WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
+  *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
 class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,

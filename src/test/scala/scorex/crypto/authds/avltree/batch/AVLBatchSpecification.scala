@@ -60,23 +60,23 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         throw new Error("zero-mods verification failed to construct tree")
     }
   }
-  
+
   property("conversion to byte and back") {
     // There is no way to test this without building a tree with at least 2^88 leaves,
     // so we resort to a very basic test
     val p = new BatchAVLProver()
     val digest = p.digest
-    var i:Int = 0
-    for (i<-0 to 255) {
-      digest(digest.length-1) = i.toByte
-      var rootNodeHeight:Int = digest.last.toInt
+    var i: Int = 0
+    for (i <- 0 to 255) {
+      digest(digest.length - 1) = i.toByte
+      var rootNodeHeight: Int = digest.last.toInt
       if (rootNodeHeight < 0) {
-        rootNodeHeight+=256;
+        rootNodeHeight += 256;
       }
       rootNodeHeight shouldBe i
     }
   }
-  
+
 
   property("various verifier fails") {
     val p = new BatchAVLProver()
@@ -292,7 +292,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       prover.performOneModification(m)
       prover.generateProof
       digest = prover.digest
-    } 
+    }
 
     val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(KL, VL), storage)
     prover2.digest shouldEqual prover.digest
@@ -304,7 +304,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val oldProver = new LegacyProver(tree)
     val newProver = new BatchAVLProver(KL, VL)
     require(newProver.digest startsWith oldProver.rootHash)
-    require(newProver.digest.length == oldProver.rootHash.length+1)
+    require(newProver.digest.length == oldProver.rootHash.length + 1)
 
     forAll(kvGen) { case (aKey, aValue) =>
       val currentMods = Seq(Insert(aKey, aValue))
@@ -319,7 +319,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       digest = oldProver.rootHash
       require(newProver.digest startsWith digest)
-      require(newProver.digest.length == oldProver.rootHash.length+1)
+      require(newProver.digest.length == oldProver.rootHash.length + 1)
     }
     newProver.checkTree(true)
   }
@@ -347,7 +347,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   def kvGen: Gen[(Array[Byte], Array[Byte])] = for {
     key <- Gen.listOfN(KL, Arbitrary.arbitrary[Byte]).map(_.toArray) suchThat
       (k => !(k sameElements Array.fill(KL)(-1: Byte)) && !(k sameElements Array.fill(KL)(0: Byte)) && k.length == KL)
-    value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)    
+    value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)
   } yield (key, value)
 
 }

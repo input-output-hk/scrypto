@@ -19,12 +19,12 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
 
   protected val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   protected val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
-  
+
   protected var rootNodeHeight: Int
-    
+
   // The digest consists of the label of the root node followed by its height, expressed as a single (unsigned) byte
-  protected def digest (rootNode : Node) : Array[Byte] = {
-    assert(rootNodeHeight>=0 && rootNodeHeight<256)
+  protected def digest(rootNode: Node): Array[Byte] = {
+    assert(rootNodeHeight >= 0 && rootNodeHeight < 256)
     // rootNodeHeight should never be more than 255, so the toByte conversion is safe (though it may cause an incorrect
     // sign on the signed byte if rootHeight>127, but we handle that case correctly on decoding the byte back to int in the
     // verifier, by adding 256 if it's negative).
@@ -32,7 +32,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
     // then the AVL tree has at least  2^{255/1.4405} = 2^177 leaves, which more than the number of atoms on planet Earth.
     rootNode.label :+ rootNodeHeight.toByte
   }
-   
+
   protected def replayComparison: Int
 
   protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean
@@ -41,7 +41,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
 
   protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalNode
 
-// TODO some functions should be logically inside other functions, or at least should be made private if not
+  // TODO some functions should be logically inside other functions, or at least should be made private if not
 
   /**
     * Assumes the conditions for the double left rotation have already been established

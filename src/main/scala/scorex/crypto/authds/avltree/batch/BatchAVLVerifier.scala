@@ -1,10 +1,10 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
+
 import scala.collection.mutable
 import scala.util.Try
 
@@ -70,11 +70,11 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   protected var rootNodeHeight = 0
 
   private def reconstructTree: Option[VerifierNodes] = Try {
-  
+
     require(labelLength > 0)
     require(keyLength > 0)
     require(valueLength > 0) // TODO Can we handle values of length 0, i.e., key storage only?
-    require(startingDigest.length == labelLength+1)
+    require(startingDigest.length == labelLength + 1)
     rootNodeHeight = startingDigest.last.toInt
 
     // If during the digest construction the int to Byte conversion resulted in a negative signed byte,
@@ -82,10 +82,10 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     // height is >127, i.e., if the tree has more than 2^88 leaves, which seems
     // very unlikely given that it's more than the estimated amount of storage in the world in year 2017
     if (rootNodeHeight < 0) {
-      rootNodeHeight+=256;
-      require (rootNodeHeight>=0)
+      rootNodeHeight += 256;
+      require(rootNodeHeight >= 0)
     }
-    
+
 
     // compute log (number of operations), rounded up
     var logNumOps = 0
@@ -148,7 +148,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     Some(root)
   }.getOrElse(None)
 
-  
+
   private var topNode: Option[VerifierNodes] = reconstructTree
 
   def performOneModification(m: Modification): Unit = {
