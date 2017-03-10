@@ -18,6 +18,29 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val VL = 8
   val HL = 32
 
+  property("Usage as authenticated set") {
+    val SetVL = 0
+    val prover = new BatchAVLProver(KL, SetVL)
+    var digest = prover.digest
+    //    val valueToInsert:Array[Byte] = Array.fill(SetVL)(0.toByte)
+    val valueToInsert: Array[Byte] = Array.empty
+
+    forAll(kvGen) { case (aKey, _) =>
+      whenever(prover.unauthenticatedLookup(aKey).isEmpty) {
+        val m = Modification.convert(Insert(aKey, valueToInsert))
+        prover.performOneModification(m._1, m._2)
+        val pf = prover.generateProof
+        prover.digest
+
+        val verifier = new BatchAVLVerifier(digest, pf, KL, SetVL)
+        verifier.performOneModification(m._1, m._2)
+        digest = verifier.digest.get
+        prover.digest shouldEqual digest
+      }
+    }
+
+  }
+
   property("Long updates") {
     val prover = new BatchAVLProver(KL, VL)
     var digest = prover.digest

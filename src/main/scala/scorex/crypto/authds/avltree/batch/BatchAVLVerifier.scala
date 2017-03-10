@@ -6,7 +6,7 @@ import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
                                                proof: Array[Byte],
@@ -73,7 +73,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
     require(labelLength > 0)
     require(keyLength > 0)
-    require(valueLength > 0)
+    require(valueLength >= 0)
     require(startingDigest.length == labelLength + 1)
     rootNodeHeight = startingDigest.last & 0xff
 
@@ -136,8 +136,10 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     require(startingDigest startsWith root.label)
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
+  }.recoverWith { case e =>
+    e.printStackTrace()
+    Failure(e)
   }.getOrElse(None)
-
 
   private var topNode: Option[VerifierNodes] = reconstructTree
 
