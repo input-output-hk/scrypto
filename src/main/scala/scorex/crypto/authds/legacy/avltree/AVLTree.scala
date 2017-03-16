@@ -23,9 +23,9 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
 
   def rootHash(): Label = topNode.label
 
-  override def modify[M <: Modification](m: M): Try[AVLModifyProof] = Try {
-    val key = m.key
-    val updateFunction = m.updateFn
+  override def modify[M <: Modification](modification: M): Try[AVLModifyProof] = Try {
+    val key = modification.key
+    val updateFunction = modification.updateFn
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
