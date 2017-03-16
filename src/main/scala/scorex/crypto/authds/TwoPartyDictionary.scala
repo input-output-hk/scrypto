@@ -5,7 +5,7 @@ import scorex.crypto.hash.CryptographicHash
 
 import scala.util.Try
 
-trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] extends UpdateF[Value] {
+trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] {
 
   /**
     * Update authenticated data structure

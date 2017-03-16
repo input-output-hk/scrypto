@@ -1,12 +1,10 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.UpdateF
 import scorex.crypto.hash.ThreadUnsafeHash
-
 import scala.util.Try
 
 class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: BatchAVLProver[HF],
-                                                       storage: VersionedAVLStorage) extends UpdateF[Array[Byte]] {
+                                                       storage: VersionedAVLStorage) {
   if (storage.nonEmpty) {
     rollback(storage.version).get
   } else {

@@ -1,6 +1,5 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.encode.Base58
 import scorex.utils.{ByteArray, ScryptoLogging}
@@ -8,7 +7,7 @@ import scorex.utils.{ByteArray, ScryptoLogging}
 import scala.util.{Failure, Success}
 
 
-trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants with ScryptoLogging {
+trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
 
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
@@ -81,7 +80,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneModification(key: AVLKey, updateFunction: UpdateFunction, rootNode: Node): Node = {
+  protected def returnResultOfOneModification(key: AVLKey, updateFunction: Modification#UpdateFunction, rootNode: Node): Node = {
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength)
@@ -105,7 +104,7 @@ trait AuthenticatedTreeOps extends UpdateF[Array[Byte]] with BatchProofConstants
       * an indicator whether the height has increased,
       * and an indicator whether we need to go delete the leaf that was just reached
       */
-    def modifyHelper(rNode: Node, key: AVLKey, updateFunction: UpdateFunction): (Node, ChangeHappened, HeightIncreased, ToDelete) = {
+    def modifyHelper(rNode: Node, key: AVLKey, updateFunction: Modification#UpdateFunction): (Node, ChangeHappened, HeightIncreased, ToDelete) = {
       rNode match {
         case r: Leaf =>
           if (keyMatchesLeaf(key, r)) {

@@ -6,10 +6,10 @@ import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.avltree.batch.{Modification, Update}
 import scorex.crypto.authds.legacy.treap.Constants.{TreapKey, TreapValue}
 
-import scala.util.{Failure, Success}
+import scala.util.Success
 
 
-trait TwoPartyTests extends TestingCommons with UpdateF[Array[Byte]] {
+trait TwoPartyTests extends TestingCommons {
 
   def genUpd(key:Array[Byte]):Update = Update(key, key.take(8))
 

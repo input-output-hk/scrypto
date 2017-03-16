@@ -1,6 +1,5 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -21,7 +20,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
                                              val valueLength: Int = 8,
                                              oldRootAndHeight: Option[(ProverNodes, Int)] = None)
                                             (implicit val hf: HF = new Blake2b256Unsafe)
-  extends UpdateF[Array[Byte]] with AuthenticatedTreeOps with ToStringHelper {
+  extends AuthenticatedTreeOps with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 

@@ -18,6 +18,13 @@ trait Modification {
 
   type UpdateFunction = OldValue => Try[Option[NewValue]]
 
+  /**
+    * Update functions takes Option[oldValue] and return Try[Option[newValue]]
+    * Insert: None => Success(Some(newValue))
+    * Update: Some(oldValue) => Success(Some(newValue))
+    * Delete: Some(oldValue) => Success(None)
+    * Return Failure() to ensure, if found value is not expected (e.g. no old value expected).
+    */
   def updateFn: UpdateFunction
 }
 
@@ -71,21 +78,3 @@ case class UpdateLongBy(key: AVLKey, delta: Long) extends Modification {
       }
   }: UpdateFunction
 }
-
-
-
-/*
-object Modification extends UpdateF[AVLValue] {
-
-  def convert(modifications: Seq[Modification]): Seq[(AVLKey, UpdateFunction)] = modifications.map(convert)
-
-  def convert(modification: Modification): (AVLKey, UpdateFunction) = {
-    modification match {
-      case Insert(key, value) => key -> insertFunction(value)
-      case Update(key, value) => key -> updateFunction(value)
-      case Remove(key) => key -> removeFunction()
-      case RemoveIfExists(key) => key -> removeIfExistsFunction()
-      case UpdateLongBy(key, value) => key -> updateDelta(value)
-    }
-  }
-}*/
