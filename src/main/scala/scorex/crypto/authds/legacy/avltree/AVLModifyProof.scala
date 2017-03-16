@@ -4,6 +4,7 @@ import com.google.common.primitives.Bytes
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
+import scorex.crypto.authds.avltree.batch.Modification
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -14,20 +15,22 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
 
+  /*
+  todo: remove
   def verifyLookup(digest: Label, existence: Boolean): Option[Label] = {
     if(existence) {
       verify(digest, TwoPartyDictionary.existenceLookupFunction[AVLValue])
     } else {
       verify(digest, TwoPartyDictionary.nonExistenceLookupFunction[AVLValue])
     }
-  }
+  }*/
 
   /**
    * Returns the new root and indicators whether tree has been modified at r or below
    * and whether the height has increased
    * Also returns the label of the old root
    */
-  private def verifyHelper(updateFunction: UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
+  private def verifyHelper(updateFunction: Modification#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
     dequeueDirection() match {
       case LeafFound =>
         val nextLeafKey: AVLKey = dequeueNextLeafKey()
@@ -196,7 +199,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
-  def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
+  def verify(digest: Label, updateFunction: Modification#UpdateFunction): Option[Label] = Try {
     initializeIterator()
 
     val (newTopNode, _, _, oldLabel) = verifyHelper(updateFunction)

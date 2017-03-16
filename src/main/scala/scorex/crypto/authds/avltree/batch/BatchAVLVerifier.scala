@@ -1,6 +1,5 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -16,8 +15,8 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
                                                maxDeletes: Option[Int] = None
                                               )
                                               // Note: -1 indicates that we don't want the proof length check done
-                                              (implicit hf: HF = new Blake2b256Unsafe) extends UpdateF[Array[Byte]]
-  with AuthenticatedTreeOps with ToStringHelper {
+                                              (implicit hf: HF = new Blake2b256Unsafe)
+  extends AuthenticatedTreeOps with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 
@@ -143,14 +142,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
   private var topNode: Option[VerifierNodes] = reconstructTree
 
-  def performOneModification(m: Modification): Unit = {
-    val converted = Modification.convert(m)
-    performOneModification(converted._1, converted._2)
-  }
-
-  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Unit = {
+  def performOneModification[M <: Modification](modification: M): Unit = {
     replayIndex = directionsIndex
-    topNode = Try(Some(returnResultOfOneModification(key, updateFunction, topNode.get).asInstanceOf[VerifierNodes])).getOrElse(None)
+    topNode = Try(Some(returnResultOfOneModification(modification.key, modification.updateFn, topNode.get).asInstanceOf[VerifierNodes])).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
   }
 

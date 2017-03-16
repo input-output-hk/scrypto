@@ -27,13 +27,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     forAll(kvGen) { case (aKey, _) =>
       whenever(prover.unauthenticatedLookup(aKey).isEmpty) {
-        val m = Modification.convert(Insert(aKey, valueToInsert))
-        prover.performOneModification(m._1, m._2)
+        val m = Insert(aKey, valueToInsert)
+        prover.performOneModification(m)
         val pf = prover.generateProof
         prover.digest
 
         val verifier = new BatchAVLVerifier(digest, pf, KL, SetVL)
-        verifier.performOneModification(m._1, m._2)
+        verifier.performOneModification(m)
         digest = verifier.digest.get
         prover.digest shouldEqual digest
       }
@@ -50,13 +50,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val delta = Math.abs(Longs.fromByteArray(aValue))
       whenever(Try(Math.addExact(oldValue, delta)).isSuccess) {
 
-        val currentMods = Modification.convert(Seq(UpdateLongBy(aKey, delta)))
+        val cm = Seq(UpdateLongBy(aKey, delta))
 
-        currentMods foreach (m => prover.performOneModification(m._1, m._2))
+        cm foreach (m => prover.performOneModification(m))
         val pf = prover.generateProof
 
         val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
-        currentMods foreach (m => verifier.performOneModification(m._1, m._2))
+        cm foreach (m => verifier.performOneModification(m))
         digest = verifier.digest.get
         prover.digest shouldEqual digest
         prover.unauthenticatedLookup(aKey) match {
@@ -113,6 +113,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
     var pf = p.generateProof
+
     // see if the proof for 50 mods will be allowed when we permit only 2
     var v = new BatchAVLVerifier(digest, pf, 32, 8, Some(2), Some(0))
     require(v.digest.isEmpty, "Failed to reject too long a proof")
@@ -254,8 +255,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
               val mod = Remove(key)
               val oldVal = keysAndVals(index)._2
               currentMods += mod
-              val m = Modification.convert(mod)
-              require(p.performOneModification(m._1, m._2).isSuccess, "failed ot delete")
+              require(p.performOneModification(mod).isSuccess, "failed ot delete")
               keysAndVals -= ((key, oldVal))
               deletedKeys += key
               require(p.unauthenticatedLookup(key).isEmpty, "deleted key still in tree") // check delete
@@ -278,7 +278,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           require(d sameElements digest, "Built tree with wrong digest") // Tree built successfully
       }
 
-      Modification.convert(currentMods) foreach (m => v.performOneModification(m._1, m._2))
+      currentMods foreach (m => v.performOneModification(m))
       v.digest match {
         case None =>
           require(false, "Verification failed")
@@ -334,7 +334,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         case bf: BatchFailure => throw bf.error
       }
 
-      Modification.convert(currentMods) foreach (m => newProver.performOneModification(m._1, m._2))
+      currentMods foreach (m => newProver.performOneModification(m))
       val pf = newProver.generateProof
 
       digest = oldProver.rootHash
@@ -349,13 +349,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
-      val currentMods = Modification.convert(Seq(Insert(aKey, aValue)))
+      val currentMods = Seq(Insert(aKey, aValue))
 
-      currentMods foreach (m => prover.performOneModification(m._1, m._2))
+      currentMods foreach (m => prover.performOneModification(m))
       val pf = prover.generateProof
 
       val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
-      currentMods foreach (m => verifier.performOneModification(m._1, m._2))
+      currentMods foreach (m => verifier.performOneModification(m))
       digest = verifier.digest.get
 
       prover.digest shouldEqual digest

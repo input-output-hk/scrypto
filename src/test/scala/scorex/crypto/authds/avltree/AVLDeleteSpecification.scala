@@ -35,15 +35,15 @@ class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks
     val aValue = Sha256("value 1").take(VL)
 
     //insert key
-    tree.modify(aKey, insertOnly(aValue)).isSuccess shouldBe true
+    tree.modify(Insert(aKey, aValue)).isSuccess shouldBe true
     val digest1 = tree.rootHash()
     //try to insert one more time
-    tree.modify(aKey, insertOnly(aValue)).isSuccess shouldBe false
+    tree.modify(Insert(aKey, aValue)).isSuccess shouldBe false
 
     //remove key
-    tree.remove(aKey).isSuccess shouldBe true
+    tree.modify(Remove(aKey)).isSuccess shouldBe true
     //should be able to insert key one more time
-    tree.modify(aKey, insertOnly(aValue)).isSuccess shouldBe true
+    tree.modify(Insert(aKey, aValue)).isSuccess shouldBe true
     //delete and insert should result to the same tree
     tree.rootHash() shouldEqual digest1
   }

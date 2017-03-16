@@ -29,8 +29,7 @@ class LegacyProver(tree: AVLTree[_]) extends UpdateF[AVLKey] {
 
   def applyUpdates(modifications: Seq[Modification]): BatchProvingResultSimple = Try {
     val aggregatedProofs = modifications.foldLeft(ArrayBuffer[AVLModifyProof]()) { (a, m) =>
-      val (k, uf) = Modification.convert(m)
-      tree.modify(k, uf) match {
+      tree.modify(m) match {
         case Success(proof) => proof +: a
         case Failure(e) => throw BatchFailure(e, m)
       }
@@ -48,9 +47,9 @@ class LegacyProver(tree: AVLTree[_]) extends UpdateF[AVLKey] {
 class LegacyVerifier(digest: Label) extends UpdateF[AVLKey] {
   def verifyBatchSimple(modifications: Seq[Modification], batch: BatchSuccessSimple): Boolean = {
     require(modifications.size == batch.proofs.size)
-    batch.proofs.zip(Modification.convert(modifications)).foldLeft(Some(digest): Option[Label]) {
+    batch.proofs.zip(modifications).foldLeft(Some(digest): Option[Label]) {
       case (digestOpt, (proof, mod)) =>
-        digestOpt.flatMap(digest => proof.verify(digest, mod._2))
+        digestOpt.flatMap(digest => proof.verify(digest, mod.updateFn))
     }.isDefined
   }
 

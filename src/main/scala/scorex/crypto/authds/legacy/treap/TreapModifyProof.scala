@@ -2,6 +2,7 @@ package scorex.crypto.authds.legacy.treap
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
+import scorex.crypto.authds.avltree.batch.Modification
 import scorex.crypto.authds.legacy.treap.Constants.{LevelFunction, TreapKey, TreapValue}
 import scorex.crypto.hash.ThreadUnsafeHash
 import scorex.utils.ByteArray
@@ -12,7 +13,7 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
                            (implicit hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends TwoPartyProof[TreapKey, TreapValue] {
 
-  def verify(digest: Label, updateFunction: UpdateFunction): Option[Label] = Try {
+  def verify(digest: Label, updateFunction: Modification#UpdateFunction): Option[Label] = Try {
     initializeIterator()
 
     // returns the new flat root

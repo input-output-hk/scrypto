@@ -1,7 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.UpdateF
-import scorex.crypto.authds.avltree.AVLKey
 import scorex.crypto.hash.ThreadUnsafeHash
 
 import scala.util.Try
@@ -17,9 +16,6 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
   def digest: Array[Byte] = prover.digest
 
   def performOneModification(modification: Modification): Unit = prover.performOneModification(modification)
-
-  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Unit =
-    prover.performOneModification(key, updateFunction)
 
   def generateProof: Array[Byte] = {
     storage.update(prover).get

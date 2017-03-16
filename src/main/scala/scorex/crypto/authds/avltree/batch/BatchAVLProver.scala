@@ -103,14 +103,9 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
 
   def digest: Array[Byte] = digest(topNode)
 
-  def performOneModification(m: Modification): Try[Unit] = {
-    val converted = Modification.convert(m)
-    performOneModification(converted._1, converted._2)
-  }
-
-  def performOneModification(key: AVLKey, updateFunction: UpdateFunction): Try[Unit] = Try {
+  def performOneModification[M <: Modification](modification: M): Try[Unit] = Try {
     replayIndex = directionsBitLength
-    Try(returnResultOfOneModification(key, updateFunction, topNode)) match {
+    Try(returnResultOfOneModification(modification.key, modification.updateFn, topNode)) match {
       case Success(n) =>
         topNode = n.asInstanceOf[ProverNodes]
       case Failure(e) =>

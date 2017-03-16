@@ -1,47 +1,62 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Longs
-import scorex.crypto.authds.UpdateF
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
-sealed trait Modification {
+sealed trait Operation
+
+trait Lookup extends Operation
+
+trait Modification {
   val key: AVLKey
+
+  type OldValue = Option[AVLValue]
+
+  type NewValue = AVLValue
+
+  type UpdateFunction = OldValue => Try[Option[NewValue]]
+
+  def updateFn: UpdateFunction
 }
 
-case class Insert(key: AVLKey, value: Array[Byte]) extends Modification
-
-case class Update(key: AVLKey, value: Array[Byte]) extends Modification
-
-case class Remove(key: AVLKey) extends Modification
-
-case class RemoveIfExists(key: AVLKey) extends Modification
-
-case class UpdateLongBy(key: AVLKey, value: Long) extends Modification
-
-object Modification extends UpdateF[AVLValue] {
-
-  private def insertFunction(value: AVLValue) = {
+case class Insert(key: AVLKey, value: Array[Byte]) extends Modification {
+  override def updateFn: UpdateFunction = {
     case None => Success(Some(value))
     case Some(_) => Failure(new Exception("already exists"))
   }: UpdateFunction
+}
 
-  private def updateFunction(value: AVLValue) = {
+case class Update(key: AVLKey, value: Array[Byte]) extends Modification {
+  override def updateFn: UpdateFunction = {
     case None => Failure(new Exception("does not exist"))
     case Some(_) => Success(Some(value))
   }: UpdateFunction
+}
 
-  private def removeFunction() = {
+case class InsertOrUpdate(key: AVLKey, value: Array[Byte]) extends Modification {
+  override def updateFn: UpdateFunction = (_ => Success(Some(value))): UpdateFunction
+}
+
+
+case class Remove(key: AVLKey) extends Modification {
+  override def updateFn: UpdateFunction = {
     case None => Failure(new Exception("does not exist"))
     case Some(_) => Success(None)
   }: UpdateFunction
+}
 
-  /**
-    * Update existing value by delta, insert if old value is not exists and positive, remove if remaining is 0,
-    * fails on negative new value
-    */
-  private def updateDelta(delta: Long) = {
+case class RemoveIfExists(key: AVLKey) extends Modification {
+  override def updateFn: UpdateFunction = (_ => Success(None)): UpdateFunction
+}
+
+/**
+  * Update existing value by delta, insert if old value is not exists and positive, remove if remaining is 0,
+  * fails on negative new value
+  */
+case class UpdateLongBy(key: AVLKey, delta: Long) extends Modification {
+  override def updateFn: UpdateFunction = {
     case m if delta == 0 => Success(m)
     case None if delta > 0 => Success(Some(Longs.toByteArray(delta)))
     case None if delta < 0 => Failure(new Exception("Trying to decrease non-existing value"))
@@ -55,8 +70,12 @@ object Modification extends UpdateF[AVLValue] {
         Failure(new Exception("New value is negative"))
       }
   }: UpdateFunction
+}
 
-  private def removeIfExistsFunction() = (_ => Success(None)): UpdateFunction
+
+
+/*
+object Modification extends UpdateF[AVLValue] {
 
   def convert(modifications: Seq[Modification]): Seq[(AVLKey, UpdateFunction)] = modifications.map(convert)
 
@@ -69,4 +88,4 @@ object Modification extends UpdateF[AVLValue] {
       case UpdateLongBy(key, value) => key -> updateDelta(value)
     }
   }
-}
+}*/
