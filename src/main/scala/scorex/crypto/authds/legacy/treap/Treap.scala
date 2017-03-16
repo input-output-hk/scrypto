@@ -4,7 +4,7 @@ import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.authds.avltree.batch.Modification
+import scorex.crypto.authds.avltree.batch.Operation
 import scorex.crypto.authds.legacy.treap.Constants._
 
 import scala.util.{Failure, Success, Try}
@@ -21,7 +21,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
 
   def rootHash(): Label = topNode.label
 
-  override def modify[M <: Modification](modification: M): Try[TreapModifyProof] = Try {
+  override def modify[M <: Operation](modification: M): Try[TreapModifyProof] = Try {
     val key = modification.key
     val updateFunction = modification.updateFn
 

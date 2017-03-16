@@ -347,7 +347,7 @@ object BatchingPlayground extends App {
     val newProver = new BatchAVLProver()
     val numMods = 1024 * 1024
 
-    val mod = new Array[Modification](1)
+    val mod = new Array[Operation](1)
     for (i <- 0 until numMods) {
       mod(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
       mod foreach (m => newProver.performOneModification(m))
@@ -357,7 +357,7 @@ object BatchingPlayground extends App {
     newProver.digest // NOTE: if you comment out this line, the first batch becomes about 2 seconds slower
     newProver.generateProof
 
-    val mods = new Array[Modification](75000)
+    val mods = new Array[Operation](75000)
     for (i <- 0 until 75000)
       mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
 
@@ -412,7 +412,7 @@ object BatchingPlayground extends App {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
 
-    val mod = new Array[Modification](1)
+    val mod = new Array[Operation](1)
     for (i <- 0 until numMods) {
       mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
       mod foreach (m => oldProver.modify(m))
@@ -421,7 +421,7 @@ object BatchingPlayground extends App {
     }
     oldProver.rootHash
 
-    val mods = new Array[Modification](75000)
+    val mods = new Array[Operation](75000)
     for (i <- 0 until 75000)
       mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
 
@@ -474,7 +474,7 @@ object BatchingPlayground extends App {
 
     val numMods = 1024 * 1024
 
-    val mod = new Array[Modification](1)
+    val mod = new Array[Operation](1)
     for (i <- 0 until numMods) {
       mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
       mod foreach (m => newProver.performOneModification(m))
@@ -665,7 +665,7 @@ object BatchingPlayground extends App {
           print(". ")
         }
         var numCurrentDeletes = 0
-        val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](n)
+        val currentMods = new scala.collection.mutable.ArrayBuffer[Operation](n)
         while (i < j) {
           if (keysAndVals.isEmpty || randomInt(2) == 0) {
             // with prob .5 insert a new one, with prob .5 update or delete an existing one

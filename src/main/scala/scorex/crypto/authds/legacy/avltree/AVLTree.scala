@@ -3,7 +3,7 @@ package scorex.crypto.authds.legacy.avltree
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.batch.Modification
+import scorex.crypto.authds.avltree.batch.Operation
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -23,7 +23,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
 
   def rootHash(): Label = topNode.label
 
-  override def modify[M <: Modification](modification: M): Try[AVLModifyProof] = Try {
+  override def modify[M <: Operation](modification: M): Try[AVLModifyProof] = Try {
     val key = modification.key
     val updateFunction = modification.updateFn
 

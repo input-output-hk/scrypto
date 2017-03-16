@@ -1,6 +1,6 @@
 package scorex.crypto.authds
 
-import scorex.crypto.authds.avltree.batch.Modification
+import scorex.crypto.authds.avltree.batch.Operation
 import scorex.crypto.hash.CryptographicHash
 
 import scala.util.Try
@@ -13,7 +13,7 @@ trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] {
     * @param modification - tree modification
     * @return modification proof
     */
-  def modify[M <: Modification](modification: M): Try[ProofType]
+  def modify[M <: Operation](modification: M): Try[ProofType]
 
   //todo: remove?
 

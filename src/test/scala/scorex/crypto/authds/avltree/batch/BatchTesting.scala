@@ -17,15 +17,15 @@ sealed trait BatchProvingResult
 
 case class BatchSuccess(proof: BatchProof) extends BatchProvingResult
 
-case class BatchFailure(error: Throwable, reason: Modification)
+case class BatchFailure(error: Throwable, reason: Operation)
   extends Exception with BatchProvingResultSimple with BatchProvingResult
 
 class LegacyProver(tree: AVLTree[_]) {
-  def applyBatchSimple(modifications: Seq[Modification]): BatchProvingResultSimple = {
+  def applyBatchSimple(modifications: Seq[Operation]): BatchProvingResultSimple = {
     applyUpdates(modifications)
   }
 
-  def applyUpdates(modifications: Seq[Modification]): BatchProvingResultSimple = Try {
+  def applyUpdates(modifications: Seq[Operation]): BatchProvingResultSimple = Try {
     val aggregatedProofs = modifications.foldLeft(ArrayBuffer[AVLModifyProof]()) { (a, m) =>
       tree.modify(m) match {
         case Success(proof) => proof +: a
@@ -43,7 +43,7 @@ class LegacyProver(tree: AVLTree[_]) {
 
 
 class LegacyVerifier(digest: Label) {
-  def verifyBatchSimple(modifications: Seq[Modification], batch: BatchSuccessSimple): Boolean = {
+  def verifyBatchSimple(modifications: Seq[Operation], batch: BatchSuccessSimple): Boolean = {
     require(modifications.size == batch.proofs.size)
     batch.proofs.zip(modifications).foldLeft(Some(digest): Option[Label]) {
       case (digestOpt, (proof, mod)) =>
@@ -51,5 +51,5 @@ class LegacyVerifier(digest: Label) {
     }.isDefined
   }
 
-  def verifyBatchComprehensive(modifications: Seq[Modification], batch: BatchSuccess): Boolean = ???
+  def verifyBatchComprehensive(modifications: Seq[Operation], batch: BatchSuccess): Boolean = ???
 }

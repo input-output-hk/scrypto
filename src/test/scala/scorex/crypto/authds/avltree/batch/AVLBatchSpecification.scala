@@ -186,7 +186,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val n = randomInt(100)
       val j = i + n
       var numCurrentDeletes = 0
-      val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](n)
+      val currentMods = new scala.collection.mutable.ArrayBuffer[Operation](n)
       while (i < j) {
         if (keysAndVals.isEmpty || randomInt(2) == 0) {
           // with prob .5 insert a new one, with prob .5 update or delete an existing one

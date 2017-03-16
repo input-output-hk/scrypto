@@ -102,7 +102,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
 
   def digest: Array[Byte] = digest(topNode)
 
-  def performOneModification[M <: Modification](modification: M): Try[Unit] = Try {
+  def performOneModification[M <: Operation](modification: M): Try[Unit] = Try {
     replayIndex = directionsBitLength
     Try(returnResultOfOneModification(modification, topNode)) match {
       case Success(n) =>

@@ -4,7 +4,7 @@ import com.google.common.primitives.Bytes
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.batch.Modification
+import scorex.crypto.authds.avltree.batch.Operation
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -30,7 +30,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
    * and whether the height has increased
    * Also returns the label of the old root
    */
-  private def verifyHelper(updateFunction: Modification#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
+  private def verifyHelper(updateFunction: Operation#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
     dequeueDirection() match {
       case LeafFound =>
         val nextLeafKey: AVLKey = dequeueNextLeafKey()
@@ -199,7 +199,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
-  def verify(digest: Label, updateFunction: Modification#UpdateFunction): Option[Label] = Try {
+  def verify(digest: Label, updateFunction: Operation#UpdateFunction): Option[Label] = Try {
     initializeIterator()
 
     val (newTopNode, _, _, oldLabel) = verifyHelper(updateFunction)
