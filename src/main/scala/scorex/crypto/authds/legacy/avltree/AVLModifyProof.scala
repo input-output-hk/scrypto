@@ -48,7 +48,9 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
               case Failure(e) => // found incorrect value
                 throw e
             }
-          case l: Lookup => ??? //todo: finish
+          case l: Lookup =>
+            val oldLeaf = Leaf(key, value, nextLeafKey)
+            (oldLeaf, false, false, oldLeaf.label) //todo: finish
         }
 
 

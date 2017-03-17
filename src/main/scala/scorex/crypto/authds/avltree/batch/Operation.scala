@@ -9,8 +9,11 @@ trait Operation {
   val key: AVLKey
 }
 
-trait Lookup extends Operation {
-}
+trait Lookup extends Operation
+
+case class LookupExisting(override val key: AVLKey) extends Lookup
+
+case class LookupNonExisting(override val key: AVLKey) extends Lookup
 
 trait Modification extends Operation {
   type OldValue = Option[AVLValue]
