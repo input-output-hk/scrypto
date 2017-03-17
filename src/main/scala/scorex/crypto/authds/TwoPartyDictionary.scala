@@ -8,18 +8,12 @@ import scala.util.Try
 trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] {
 
   /**
-    * Update authenticated data structure
+    * Run an operation, whether a lookup or a modification, against the tree
     *
     * @param operation - tree modification
     * @return modification proof
     */
-  def modify[O <: Operation](operation: O): Try[ProofType]
-
-  //todo: remove?
-
- // def lookup(key: Key): Try[ProofType] = modify(key, TwoPartyDictionary.lookupFunction[Value])
-
-  //def remove(key: Key): Try[ProofType] = modify(Remove(key))
+  def run[O <: Operation](operation: O): Try[ProofType]
 
   /**
     * @return current digest of structure

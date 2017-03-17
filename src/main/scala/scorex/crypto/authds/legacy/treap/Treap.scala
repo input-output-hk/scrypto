@@ -21,7 +21,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
 
   def rootHash(): Label = topNode.label
 
-  override def modify[O <: Operation](operation: O): Try[TreapModifyProof] = Try {
+  override def run[O <: Operation](operation: O): Try[TreapModifyProof] = Try {
     val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)

@@ -16,7 +16,7 @@ trait TwoPartyTests extends TestingCommons {
   def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte], _ <: TwoPartyProof[Array[Byte], Array[Byte]]],
                   elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
     var digest = inDigest
-    val (insertTime: Float, proofs) = time(elements.map(e => tree.modify(genUpd(e)).get))
+    val (insertTime: Float, proofs) = time(elements.map(e => tree.run(genUpd(e)).get))
     val (verifyTime: Float, _) = time {
       proofs.foreach { p =>
         digest = p.verify(digest, genUpd(p.key)).get

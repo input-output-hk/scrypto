@@ -26,7 +26,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
 
   def rootHash(): Label = topNode.label
 
-  override def modify[O <: Operation](operation: O): Try[AVLModifyProof] = Try {
+  override def run[O <: Operation](operation: O): Try[AVLModifyProof] = Try {
     val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
@@ -60,7 +60,8 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                   case Failure(e) => // found incorrect value
                     throw e
                 }
-              case l: Lookup => ??? //todo: finish
+              case l: Lookup =>
+                (r, false, false)
             }
           } else {
             // x > r.key

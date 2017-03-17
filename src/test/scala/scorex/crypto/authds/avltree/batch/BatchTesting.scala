@@ -27,7 +27,7 @@ class LegacyProver(tree: AVLTree[_]) {
 
   def applyUpdates(modifications: Seq[Operation]): BatchProvingResultSimple = Try {
     val aggregatedProofs = modifications.foldLeft(ArrayBuffer[AVLModifyProof]()) { (a, m) =>
-      tree.modify(m) match {
+      tree.run(m) match {
         case Success(proof) => proof +: a
         case Failure(e) => throw BatchFailure(e, m)
       }

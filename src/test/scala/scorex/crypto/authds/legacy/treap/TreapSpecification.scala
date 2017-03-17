@@ -20,7 +20,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       whenever(validKey(key) && value.nonEmpty) {
         digest shouldEqual wt.rootHash()
         val a = Append(key, value)
-        val proof: TreapModifyProof = wt.modify(a).get
+        val proof: TreapModifyProof = wt.run(a).get
         digest = proof.verify(digest, a).get
       }
     }
@@ -33,7 +33,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       whenever(validKey(key) && value.nonEmpty) {
         digest shouldEqual wt.rootHash()
         val a = Append(key, value)
-        val proof: TreapModifyProof = wt.modify(a).get
+        val proof: TreapModifyProof = wt.run(a).get
         digest = proof.verify(digest, a).get
       }
     }
@@ -45,7 +45,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
         val wt = new Treap()
         val digest = wt.rootHash()
         val rewrite = InsertOrUpdate(key, value)
-        val proof: TreapModifyProof = wt.modify(rewrite).get
+        val proof: TreapModifyProof = wt.run(rewrite).get
         proof.verify(digest, rewrite).get shouldEqual wt.rootHash()
       }
     }
@@ -57,7 +57,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       whenever(validKey(key) && value.nonEmpty) {
         val digest = wt.rootHash()
         val rewrite = InsertOrUpdate(key, value)
-        val proof: TreapModifyProof = wt.modify(rewrite).get
+        val proof: TreapModifyProof = wt.run(rewrite).get
         proof.verify(digest, rewrite).get shouldEqual wt.rootHash()
       }
     }
@@ -69,12 +69,12 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
       whenever(validKey(key) && !(value sameElements value2)) {
         val digest1 = wt.rootHash()
         val a = Append(key, value)
-        val proof: TreapModifyProof = wt.modify(a).get
+        val proof: TreapModifyProof = wt.run(a).get
         proof.verify(digest1, a).get shouldEqual wt.rootHash()
 
         val digest2 = wt.rootHash()
         val a2 = Append(key, value2)
-        val updateProof = wt.modify(a2).get
+        val updateProof = wt.run(a2).get
         updateProof.verify(digest2, a2).get shouldEqual wt.rootHash()
       }
     }

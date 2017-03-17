@@ -15,8 +15,8 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   val KL = 26
   val VL = 8
 
+
   /*
-  todo: uncomment & fix
   property("lookup") {
     val tree = new AVLTree(KL)
     var digest: Label = tree.rootHash()
@@ -44,18 +44,18 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll(kvGen) { case (aKey, aValue) =>
       digest shouldEqual tree.rootHash()
 
-      tree.modify(Update(aKey, aValue)).isFailure shouldBe true
+      tree.run(Update(aKey, aValue)).isFailure shouldBe true
       digest shouldEqual tree.rootHash()
 
       val i = Insert(aKey, aValue)
-      val proof2 = tree.modify(i)
+      val proof2 = tree.run(i)
       digest = proof2.get.verify(digest, i).get
 
-      tree.modify(Insert(aKey, aValue)).isFailure shouldBe true
+      tree.run(Insert(aKey, aValue)).isFailure shouldBe true
       digest shouldEqual tree.rootHash()
 
       val u = Update(aKey, aValue)
-      val proof4 = tree.modify(u)
+      val proof4 = tree.run(u)
       digest = proof4.get.verify(digest, u).get
     }
   }
@@ -67,7 +67,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       digest shouldEqual wt.rootHash()
 
       val rewrite = InsertOrUpdate(aKey, aValue.take(8))
-      val proof = wt.modify(rewrite)
+      val proof = wt.run(rewrite)
       digest = proof.get.verify(digest, rewrite).get
     }
   }
@@ -77,7 +77,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll(kvGen) { case (aKey, aValue) =>
       val digest = wt.rootHash()
       val rewrite = InsertOrUpdate(aKey, aValue)
-      val proof = wt.modify(rewrite).get
+      val proof = wt.run(rewrite).get
       proof.verify(digest, rewrite).get shouldEqual wt.rootHash()
     }
   }
@@ -90,12 +90,12 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
         whenever(!(value sameElements value2)) {
           val digest1 = wt.rootHash()
           val rewrite1 = InsertOrUpdate(key, value.take(VL))
-          val proof = wt.modify(rewrite1).get
+          val proof = wt.run(rewrite1).get
           proof.verify(digest1, rewrite1).get shouldEqual wt.rootHash()
 
           val digest2 = wt.rootHash()
           val rewrite2 = InsertOrUpdate(key, value.take(VL))
-          val updateProof = wt.modify(rewrite2).get
+          val updateProof = wt.run(rewrite2).get
           updateProof.verify(digest2, rewrite2).get shouldEqual wt.rootHash()
         }
     }
@@ -104,14 +104,14 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   property("AVLModifyProof serialization") {
     val wt = new AVLTree(KL)
 
-    genElements(100, 1, 26).foreach(e => wt.modify(genUpd(e)))
+    genElements(100, 1, 26).foreach(e => wt.run(genUpd(e)))
 
     var digest = wt.rootHash()
     forAll(kvGen) { case (aKey, aValue) =>
       whenever(aKey.length == KL && aValue.length == VL) {
         digest shouldEqual wt.rootHash()
         val rewrite = InsertOrUpdate(aKey, aValue.take(VL))
-        val proof = wt.modify(rewrite).get
+        val proof = wt.run(rewrite).get
         digest = proof.verify(digest, rewrite).get
         val parsed = AVLModifyProof.parseBytes(proof.bytes)(KL, 32).get
 
@@ -124,7 +124,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
         val value2 = Sha256(aValue)
         val rewrite2 = InsertOrUpdate(aKey, value2.take(VL))
         val digest2 = wt.rootHash()
-        val uProof = wt.modify(rewrite2).get
+        val uProof = wt.run(rewrite2).get
         digest = uProof.verify(digest2, rewrite2).get
 
         val uParsed = AVLModifyProof.parseBytes(uProof.bytes)(KL, 32).get

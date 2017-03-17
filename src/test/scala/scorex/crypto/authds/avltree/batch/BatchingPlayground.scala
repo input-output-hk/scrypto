@@ -314,7 +314,7 @@ object BatchingPlayground extends App {
     while (true) {
       i += 1
       val mod = (Insert(Random.randomBytes(), Random.randomBytes(8)))
-      p = Option(oldProver.modify(mod))
+      p = Option(oldProver.run(mod))
 
       if (i % 2000 == 0) {
         print(i)
@@ -415,7 +415,7 @@ object BatchingPlayground extends App {
     val mod = new Array[Operation](1)
     for (i <- 0 until numMods) {
       mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
-      mod foreach (m => oldProver.modify(m))
+      mod foreach (m => oldProver.run(m))
       if (i % 100000 == 0)
         println(i)
     }
@@ -431,7 +431,7 @@ object BatchingPlayground extends App {
         var ctr = 0
         while (ctr < 1000) {
           for (j <- 0 until 1) {
-            oldProver.modify(mods(i))
+            oldProver.run(mods(i))
             i += 1
             ctr += 1
           }
@@ -448,7 +448,7 @@ object BatchingPlayground extends App {
         var ctr = 0
         while (ctr < 4096) {
           for (j <- 0 until batchSize) {
-            oldProver.modify(mods(i))
+            oldProver.run(mods(i))
             i += 1
             ctr += 1
           }
