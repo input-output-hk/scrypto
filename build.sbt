@@ -11,11 +11,15 @@ crossScalaVersions := Seq("2.11.8", "2.12.1")
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.+",
   "com.google.guava" % "guava" % "19.+",
-  "org.scalatest" %% "scalatest" % "3.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
   "org.slf4j" % "slf4j-api" % "1.+",
   "org.whispersystems" % "curve25519-java" % "+"
 )
+
+libraryDependencies ++= Seq(
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
+)
+
 //scalacOptions ++= Seq("-Xdisable-assertions")
 
 licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
