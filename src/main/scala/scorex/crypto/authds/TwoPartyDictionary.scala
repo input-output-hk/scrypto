@@ -10,10 +10,10 @@ trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] {
   /**
     * Update authenticated data structure
     *
-    * @param modification - tree modification
+    * @param operation - tree modification
     * @return modification proof
     */
-  def modify[M <: Operation](modification: M): Try[ProofType]
+  def modify[O <: Operation](operation: O): Try[ProofType]
 
   //todo: remove?
 

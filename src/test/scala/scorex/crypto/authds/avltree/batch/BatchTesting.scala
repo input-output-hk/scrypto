@@ -43,11 +43,11 @@ class LegacyProver(tree: AVLTree[_]) {
 
 
 class LegacyVerifier(digest: Label) {
-  def verifyBatchSimple(modifications: Seq[Operation], batch: BatchSuccessSimple): Boolean = {
-    require(modifications.size == batch.proofs.size)
-    batch.proofs.zip(modifications).foldLeft(Some(digest): Option[Label]) {
-      case (digestOpt, (proof, mod)) =>
-        digestOpt.flatMap(digest => proof.verify(digest, mod.updateFn))
+  def verifyBatchSimple(operations: Seq[Operation], batch: BatchSuccessSimple): Boolean = {
+    require(operations.size == batch.proofs.size)
+    batch.proofs.zip(operations).foldLeft(Some(digest): Option[Label]) {
+      case (digestOpt, (proof, op)) =>
+        digestOpt.flatMap(digest => proof.verify(digest, op))
     }.isDefined
   }
 

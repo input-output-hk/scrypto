@@ -4,7 +4,7 @@ import com.google.common.primitives.Bytes
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.batch.Operation
+import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -30,21 +30,28 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
    * and whether the height has increased
    * Also returns the label of the old root
    */
-  private def verifyHelper(updateFunction: Operation#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
+  private def verifyHelper[O <: Operation](operation: O): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
     dequeueDirection() match {
       case LeafFound =>
         val nextLeafKey: AVLKey = dequeueNextLeafKey()
         val value: AVLValue = dequeueValue()
-        updateFunction(Some(value)) match {
-          case Success(None) => //delete value
-            ???
-          case Success(Some(v)) => //update value
-            val oldLeaf = Leaf(key, value, nextLeafKey)
-            val newLeaf = Leaf(key, v, nextLeafKey)
-            (newLeaf, true, false, oldLeaf.label)
-          case Failure(e) => // found incorrect value
-            throw e
+
+        operation match {
+          case m: Modification =>
+            m.updateFn(Some(value)) match {
+              case Success(None) => //delete value
+                ???
+              case Success(Some(v)) => //update value
+                val oldLeaf = Leaf(key, value, nextLeafKey)
+                val newLeaf = Leaf(key, v, nextLeafKey)
+                (newLeaf, true, false, oldLeaf.label)
+              case Failure(e) => // found incorrect value
+                throw e
+            }
+          case l: Lookup => ??? //todo: finish
         }
+
+
       case LeafNotFound =>
         val neighbourLeafKey = dequeueKey()
         val nextLeafKey: AVLKey = dequeueNextLeafKey()
@@ -54,23 +61,26 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
         val r = Leaf(neighbourLeafKey, value, nextLeafKey)
         val oldLabel = r.label
-        updateFunction(None) match {
-          case Success(None) => //don't change anything, just lookup
-            (r, false, false, oldLabel)
-          case Success(Some(v)) => //insert new value
-            val newLeaf = Leaf(key, v, r.nextLeafKey)
-            r.nextLeafKey = key
-            val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0: Byte)
-            (newR, true, true, oldLabel)
-          case Failure(e) => // found incorrect value
-            // (r, false, false, oldLabel)
-            throw e
+        operation match {
+          case m: Modification => m.updateFn(None) match {
+            case Success(None) => //don't change anything, just lookup
+              (r, false, false, oldLabel)
+            case Success(Some(v)) => //insert new value
+              val newLeaf = Leaf(key, v, r.nextLeafKey)
+              r.nextLeafKey = key
+              val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0: Byte)
+              (newR, true, true, oldLabel)
+            case Failure(e) => // found incorrect value
+              // (r, false, false, oldLabel)
+              throw e
+          }
+          case l: Lookup => ??? //todo: finish
         }
       case GoingLeft =>
         val rightLabel: Label = dequeueRightLabel()
         val balance: Balance = dequeueBalance()
 
-        val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper(updateFunction)
+        val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper(operation)
 
         val r = VerifierNode(LabelOnlyNode(oldLeftLabel), LabelOnlyNode(rightLabel), balance)
         val oldLabel = r.label
@@ -137,7 +147,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
         val leftLabel: Label = dequeueLeftLabel()
         val balance: Balance = dequeueBalance()
 
-        val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper(updateFunction)
+        val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper(operation)
 
         val r = VerifierNode(LabelOnlyNode(leftLabel), LabelOnlyNode(oldRightLabel), balance)
         val oldLabel = r.label
@@ -199,10 +209,10 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
-  def verify(digest: Label, updateFunction: Operation#UpdateFunction): Option[Label] = Try {
+  def verify[O <: Operation](digest: Label, operation: O): Option[Label] = Try {
     initializeIterator()
 
-    val (newTopNode, _, _, oldLabel) = verifyHelper(updateFunction)
+    val (newTopNode, _, _, oldLabel) = verifyHelper(operation)
     if (oldLabel sameElements digest) Some(newTopNode.label) else None
   }.getOrElse(None)
 

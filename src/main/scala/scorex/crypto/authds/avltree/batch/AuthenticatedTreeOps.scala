@@ -80,9 +80,8 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneModification[M <: Operation](modification: M, rootNode: Node): Node = {
-    val key = modification.key
-    val updateFunction = modification.updateFn
+  protected def returnResultOfOneModification[O <: Operation](operation: O, rootNode: Node): Node = {
+    val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
@@ -107,34 +106,44 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       * an indicator whether the height has increased,
       * and an indicator whether we need to go delete the leaf that was just reached
       */
-    def modifyHelper(rNode: Node, key: AVLKey, updateFunction: Operation#UpdateFunction): (Node, ChangeHappened, HeightIncreased, ToDelete) = {
+    def modifyHelper[O <: Operation](rNode: Node, key: AVLKey, updateFunction: O): (Node, ChangeHappened, HeightIncreased, ToDelete) = {
       rNode match {
         case r: Leaf =>
           if (keyMatchesLeaf(key, r)) {
-            updateFunction(Some(r.value)) match {
-              case Success(None) => // delete key
+            operation match {
+              case _:Lookup =>
                 r.visited = true
-                (r, false, false, true)
-              case Success(Some(v)) => // update value
-                r.visited = true
-                require(v.length == valueLength)
-                val rNew = r.getNew(newValue = v)
-                (rNew, true, false, false)
-              case Failure(e) => // updateFunction doesn't like the value we found
-                throw e
+                (r, false, false, false)
+              case m: Modification =>
+                m.updateFn(Some(r.value)) match {
+                  case Success(None) => // delete key
+                    r.visited = true
+                    (r, false, false, true)
+                  case Success(Some(v)) => // update value
+                    r.visited = true
+                    require(v.length == valueLength)
+                    val rNew = r.getNew(newValue = v)
+                    (rNew, true, false, false)
+                  case Failure(e) => // updateFunction doesn't like the value we found
+                    throw e
+                }
             }
           } else {
             // x > r.key
-            updateFunction(None) match {
-              case Success(None) => // don't change anything, just lookup
-                rNode.visited = true
-                (r, false, false, false)
-              case Success(Some(v)) => // insert new value
-                rNode.visited = true
-                require(v.length == valueLength)
-                (addNode(r, key, v), true, true, false)
-              case Failure(e) => // updateFunctions doesn't like that we found nothing
-                throw e
+            operation match {
+              case _: Lookup => ??? //todo: finish
+              case m: Modification =>
+                m.updateFn(None) match {
+                  case Success(None) => // don't change anything, just lookup
+                    rNode.visited = true
+                    (r, false, false, false)
+                  case Success(Some(v)) => // insert new value
+                    rNode.visited = true
+                    require(v.length == valueLength)
+                    (addNode(r, key, v), true, true, false)
+                  case Failure(e) => // updateFunctions doesn't like that we found nothing
+                    throw e
+                }
             }
           }
         case r: InternalNode =>
@@ -343,7 +352,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       }
     }
 
-    val (newRootNode, _, heightIncreased, toDelete) = modifyHelper(rootNode, key, updateFunction)
+    val (newRootNode, _, heightIncreased, toDelete) = modifyHelper(rootNode, key, operation)
     if (toDelete) {
       val (postDeleteRootNode, heightDecreased) = deleteHelper(newRootNode.asInstanceOf[InternalNode], deleteMax = false)
       if (heightDecreased) rootNodeHeight -= 1

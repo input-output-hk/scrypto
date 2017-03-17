@@ -3,7 +3,7 @@ package scorex.crypto.authds.legacy.avltree
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.batch.Operation
+import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -17,15 +17,14 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
   private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
 
-  val DefaultTopNode = Leaf(NegativeInfinityKey, Array.fill(valueLength)(0:Byte), PositiveInfinityKey)
+  val DefaultTopNode = Leaf(NegativeInfinityKey, Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
 
   private var topNode: ProverNodes = rootOpt.getOrElse(DefaultTopNode)
 
   def rootHash(): Label = topNode.label
 
-  override def modify[M <: Operation](modification: M): Try[AVLModifyProof] = Try {
-    val key = modification.key
-    val updateFunction = modification.updateFn
+  override def modify[O <: Operation](operation: O): Try[AVLModifyProof] = Try {
+    val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
@@ -46,15 +45,19 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
             proofStream.enqueue(ProofDirection(LeafFound))
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
-            updateFunction(Some(r.value)) match {
-              case Success(None) => //delete value
-                ???
-              case Success(Some(v)) => //update value
-                require(v.length == valueLength)
-                r.value = v
-                (r, true, false)
-              case Failure(e) => // found incorrect value
-                throw e
+            operation match {
+              case m: Modification =>
+                m.updateFn(Some(r.value)) match {
+                  case Success(None) => //delete value
+                    ???
+                  case Success(Some(v)) => //update value
+                    require(v.length == valueLength)
+                    r.value = v
+                    (r, true, false)
+                  case Failure(e) => // found incorrect value
+                    throw e
+                }
+              case l: Lookup => ??? //todo: finish
             }
           } else {
             // x > r.key
@@ -62,16 +65,20 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
             proofStream.enqueue(ProofKey(r.key))
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
-            updateFunction(None) match {
-              case Success(None) => //don't change anything, just lookup
-                (r, false, false)
-              case Success(Some(v)) => //insert new value
-                require(v.length == valueLength)
-                val newLeaf = new Leaf(key, v, r.nextLeafKey)
-                r.nextLeafKey = key
-                (ProverNode(key, r, newLeaf), true, true)
-              case Failure(e) => // found incorrect value
-                throw e
+            operation match {
+              case m: Modification =>
+                m.updateFn(None) match {
+                  case Success(None) => //don't change anything, just lookup
+                    (r, false, false)
+                  case Success(Some(v)) => //insert new value
+                    require(v.length == valueLength)
+                    val newLeaf = new Leaf(key, v, r.nextLeafKey)
+                    r.nextLeafKey = key
+                    (ProverNode(key, r, newLeaf), true, true)
+                  case Failure(e) => // found incorrect value
+                    throw e
+                }
+              case l: Lookup => ??? //todo: finish
             }
           }
         case r: ProverNode =>

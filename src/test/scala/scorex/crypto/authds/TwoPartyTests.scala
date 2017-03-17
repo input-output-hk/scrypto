@@ -3,7 +3,7 @@ package scorex.crypto.authds
 import com.google.common.primitives.Longs
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.authds.avltree.batch.{Operation, Update}
+import scorex.crypto.authds.avltree.batch.{Modification, Update}
 import scorex.crypto.authds.legacy.treap.Constants.{TreapKey, TreapValue}
 
 import scala.util.Success
@@ -19,7 +19,7 @@ trait TwoPartyTests extends TestingCommons {
     val (insertTime: Float, proofs) = time(elements.map(e => tree.modify(genUpd(e)).get))
     val (verifyTime: Float, _) = time {
       proofs.foreach { p =>
-        digest = p.verify(digest, genUpd(p.key).updateFn).get
+        digest = p.verify(digest, genUpd(p.key)).get
       }
     }
     val m: scala.collection.mutable.Map[Int, Float] =
@@ -46,13 +46,13 @@ trait TwoPartyTests extends TestingCommons {
     Seq(insertTime, verifyTime, proofSize, m(0) / pl, m(1) / pl, m(2) / pl, m(3) / pl, m(4) / pl, m(5) / pl)
   }
 
-  case class Append(key: TreapKey, value: TreapValue) extends Operation {
+  case class Append(key: TreapKey, value: TreapValue) extends Modification {
     override def updateFn: UpdateFunction = {
       oldOpt: Option[TreapValue] => Success(Some(oldOpt.map(_ ++ value).getOrElse(value)))
     }: UpdateFunction
   }
 
-  case class TransactionUpdate(key: TreapKey,amount: Long) extends Operation {
+  case class TransactionUpdate(key: TreapKey,amount: Long) extends Modification {
     override def updateFn: UpdateFunction = {
       oldOpt: Option[TreapValue] =>
         Success(Some(Longs.toByteArray(oldOpt.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
