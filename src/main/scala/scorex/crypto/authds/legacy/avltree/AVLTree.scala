@@ -14,6 +14,9 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                                      (implicit hf: HF = new Blake2b256Unsafe)
   extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] {
 
+  type ChangeHappened = Boolean
+  type ChildHeightIncreased = Boolean
+
   private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
 
@@ -37,7 +40,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
       * returns the new root and an indicator whether tree has been modified at r or below
       *
       */
-    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, Boolean, Boolean) = {
+    def modifyHelper(rNode: ProverNodes, foundAbove: Boolean): (ProverNodes, ChangeHappened, ChildHeightIncreased) = {
       rNode match {
         case r: Leaf =>
           if (foundAbove) {

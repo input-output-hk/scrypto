@@ -29,7 +29,7 @@ class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks
 
   }
 
-  ignore("delete") {
+  property("delete") {
     val tree = new AVLTree(KL)
     val aKey = Sha256("key 1").take(KL)
     val aValue = Sha256("value 1").take(VL)
@@ -47,5 +47,4 @@ class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks
     //delete and insert should result to the same tree
     tree.rootHash() shouldEqual digest1
   }
-
 }
