@@ -24,27 +24,28 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     val tree = new AVLTree(KL)
 
     forAll(kvGen) { case (ak, aValue) =>
-        val aKey = Sha256(ak).take(KL)
+      val aKey = Sha256(ak).take(KL)
 
-        val l = Lookup(aKey)
+      val l = Lookup(aKey)
 
-        tree.run(Insert(aKey, aValue))
+      tree.run(Insert(aKey, aValue))
 
-        val rootBefore = tree.rootHash()
+      val rootBefore = tree.rootHash()
 
-        val lookupProof = tree.run(l).get
+      val lookupProof = tree.run(l).get
 
-        // val lw = LookupExisting(Sha256(aKey).take(KL))
-        //val lwProof = tree.run(lw).get
-        //val lwProofDigest = lwProof.verify(rootBefore, lw).get
+      val lw = Lookup(Sha256(aKey).take(KL))
+      val lwProof = tree.run(lw).get
+      val lwProofDigest = lwProof.verifyLookup(rootBefore, existence = false).get
 
-        val proofDigest = lookupProof.verify(rootBefore, l).get
+      val proofDigest = lookupProof.verifyLookup(rootBefore, existence = true).get
 
-        val rootAfter = tree.rootHash()
+      val rootAfter = tree.rootHash()
 
-        proofDigest.sameElements(rootAfter) shouldBe true
-        rootBefore.sameElements(rootAfter) shouldBe true
-      }
+      lwProofDigest.sameElements(proofDigest) shouldBe true
+      proofDigest.sameElements(rootAfter) shouldBe true
+      rootBefore.sameElements(rootAfter) shouldBe true
+    }
   }
 
   property("Failure in update function") {

@@ -13,7 +13,7 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
                            (implicit hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends TwoPartyProof[TreapKey, TreapValue] {
 
-  def verify[O <: Operation](digest: Label, operation: O): Option[Label] = Try {
+  def verify(digest: Label, updateFn: Modification#UpdateFunction): Option[Label] = Try {
     initializeIterator()
 
     // returns the new flat root
@@ -24,19 +24,15 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
         case LeafFound =>
           val nextLeafKey: TreapKey = dequeueNextLeafKey()
           val value: TreapValue = dequeueValue()
-          operation match {
-            case m: Modification =>
-              m.updateFn(Some(value)) match {
-                case Success(None) => //delete value
-                  ???
-                case Success(Some(v)) => //update value
-                  val oldLeaf = Leaf(key, value, nextLeafKey)
-                  val newLeaf = Leaf(key, v, nextLeafKey)
-                  (newLeaf, true, oldLeaf.label)
-                case Failure(e) => // found incorrect value
-                  throw e
-              }
-            case l: Lookup => ??? //todo: finish
+          updateFn(Some(value)) match {
+            case Success(None) => //delete value
+              ???
+            case Success(Some(v)) => //update value
+              val oldLeaf = Leaf(key, value, nextLeafKey)
+              val newLeaf = Leaf(key, v, nextLeafKey)
+              (newLeaf, true, oldLeaf.label)
+            case Failure(e) => // found incorrect value
+              throw e
           }
         case LeafNotFound =>
           val neighbourLeafKey = dequeueKey()
@@ -47,22 +43,18 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
 
           val r = new Leaf(neighbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
-          operation match {
-            case m: Modification =>
-              m.updateFn(None) match {
-                case Success(None) => //don't change anything, just lookup
-                  ???
-                case Success(Some(v)) => //insert new value
-                  val newLeaf = new Leaf(key, v, r.nextLeafKey)
-                  r.nextLeafKey = key
-                  val level = levelFunc(key)
-                  val newR = VerifierNode(r.label, newLeaf.label, level)
-                  (newR, true, oldLabel)
-                case Failure(e) => // found incorrect value
-                  // (r, false, false, oldLabel)
-                  throw e
-              }
-            case l: Lookup => ??? //todo: finish
+          updateFn(None) match {
+            case Success(None) => //don't change anything, just lookup
+              ???
+            case Success(Some(v)) => //insert new value
+              val newLeaf = new Leaf(key, v, r.nextLeafKey)
+              r.nextLeafKey = key
+              val level = levelFunc(key)
+              val newR = VerifierNode(r.label, newLeaf.label, level)
+              (newR, true, oldLabel)
+            case Failure(e) => // found incorrect value
+              // (r, false, false, oldLabel)
+              throw e
           }
         case GoingLeft =>
           val rightLabel: Label = dequeueRightLabel()

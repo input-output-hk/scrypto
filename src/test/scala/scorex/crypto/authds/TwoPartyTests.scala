@@ -11,7 +11,7 @@ import scala.util.Success
 
 trait TwoPartyTests extends TestingCommons {
 
-  def genUpd(key:Array[Byte]):Update = Update(key, key.take(8))
+  def genUpd(key:Array[Byte]) = Update(key, key.take(8))
 
   def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte], _ <: TwoPartyProof[Array[Byte], Array[Byte]]],
                   elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
@@ -19,7 +19,7 @@ trait TwoPartyTests extends TestingCommons {
     val (insertTime: Float, proofs) = time(elements.map(e => tree.run(genUpd(e)).get))
     val (verifyTime: Float, _) = time {
       proofs.foreach { p =>
-        digest = p.verify(digest, genUpd(p.key)).get
+        digest = p.verify(digest, genUpd(p.key).updateFn).get
       }
     }
     val m: scala.collection.mutable.Map[Int, Float] =

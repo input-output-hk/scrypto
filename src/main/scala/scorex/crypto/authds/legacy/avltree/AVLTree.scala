@@ -35,6 +35,12 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
 
     val proofStream = new scala.collection.mutable.Queue[AVLProofElement]
 
+    val updateFn: Option[AVLValue] => Try[Option[AVLValue]] = operation match {
+      case _: Lookup => x: Option[AVLValue] => Success(x)
+
+      case m: Modification => m.updateFn
+    }
+
     /**
       * foundAbove tells us if x has been already found above r in the tree
       * returns the new root and an indicator whether tree has been modified at r or below
@@ -82,7 +88,8 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                   case Failure(e) => // found incorrect value
                     throw e
                 }
-              case l: Lookup => ??? //todo: finish
+              case l: Lookup =>
+                (r, false, false)
             }
           }
         case r: ProverNode =>

@@ -4,6 +4,7 @@ import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.authds.legacy.treap.Constants._
 
@@ -27,6 +28,12 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
     require(ByteArray.compare(key, NegativeInfinity._1) > 0)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
+    //todo: unify types AVLValue/TreapValue and then generalize 4 LoCs below which are the same for Treap & AVLTree
+    val updateFn: Option[TreapValue] => Try[Option[TreapValue]] = operation match {
+      case _: Lookup => x: Option[TreapValue] => Success(x)
+      case m: Modification => m.updateFn
+    }
+
     val proofStream = new scala.collection.mutable.Queue[WTProofElement]
 
     // found tells us if x has been already found above r in the tree
@@ -41,18 +48,14 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
 
-            operation match {
-              case m: Modification =>
-                m.updateFn(Some(r.value)) match {
-                  case Success(None) => //delete value
-                    ???
-                  case Success(Some(v)) => //update value
-                    r.value = v
-                    (r, true)
-                  case Failure(e) => // found incorrect value
-                    throw e
-                }
-              case l: Lookup => ??? //todo: finish
+            updateFn(Some(r.value)) match {
+              case Success(None) => //delete value
+                ???
+              case Success(Some(v)) => //update value
+                r.value = v
+                (r, true)
+              case Failure(e) => // found incorrect value
+                throw e
             }
           } else {
             // x > r.key
@@ -60,20 +63,17 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
             proofStream.enqueue(ProofKey(r.key))
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
-            operation match {
-              case m: Modification =>
-                m.updateFn(None) match {
-                  case Success(None) => //don't change anything, just lookup
-                    ???
-                  case Success(Some(v)) => //insert new value
-                    val newLeaf = new Leaf(key, v, r.nextLeafKey)
-                    r.nextLeafKey = key
-                    (ProverNode(key, r, newLeaf), true)
-                  case Failure(e) => // found incorrect value
-                    throw e
-                }
-              case l: Lookup => ??? //todo: finish
+            updateFn(None) match {
+              case Success(None) => //don't change anything, just lookup
+                ???
+              case Success(Some(v)) => //insert new value
+                val newLeaf = new Leaf(key, v, r.nextLeafKey)
+                r.nextLeafKey = key
+                (ProverNode(key, r, newLeaf), true)
+              case Failure(e) => // found incorrect value
+                throw e
             }
+
           }
         case r: ProverNode =>
           // First figure out the direction in which we need to go
