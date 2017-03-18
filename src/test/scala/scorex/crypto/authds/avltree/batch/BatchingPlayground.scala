@@ -16,7 +16,9 @@ object BatchingPlayground extends App with ToStringHelper {
   }
 
   //smallDeleteTest
-  batchingSelfTest
+
+  lookupTest()
+  //batchingSelfTest
 
   //deleteProofSizeTest
 
@@ -26,7 +28,7 @@ object BatchingPlayground extends App with ToStringHelper {
   //timeBenchmarksOld
   //spaceBenchmarks
 
-  lookupTest()
+
 
   def lookupTest() {
     val p = new BatchAVLProver()
@@ -37,7 +39,7 @@ object BatchingPlayground extends App with ToStringHelper {
     val key4 = Sha256("4")
     val key5 = Sha256("5")
     val key6 = Sha256("6")
-
+    val key7 = Sha256("7")
 
     println("k1: " + arrayToString(key1))
     println("k2: " + arrayToString(key2))
@@ -60,9 +62,9 @@ object BatchingPlayground extends App with ToStringHelper {
     val pr = p.performLookups(l1, l2, l3).get
 
     val vr = new BatchAVLVerifier(p.digest, pr)
-    assert(vr.performOneLookup(l1).isDefined)
-    assert(vr.performOneLookup(l2).isDefined)
-    assert(vr.performOneLookup(l3).isEmpty)
+    assert(vr.performOneLookup(l1).get.isDefined)
+    assert(vr.performOneLookup(l2).get.isDefined)
+    assert(vr.performOneLookup(l3).get.isEmpty)
 
     val i4 = Insert(key4, v1)
     val i5 = Insert(key5, v2)
@@ -74,11 +76,13 @@ object BatchingPlayground extends App with ToStringHelper {
     val l4 = Lookup(key4)
     val l5 = Lookup(key5)
     val l6 = Lookup(key6)
+    val l7 = Lookup(key7)
 
     val pr2 = p.performLookups(l1, l2, l3, l4, l5, l6).get
     val vr2 = new BatchAVLVerifier(p.digest, pr2)
 
-    println(vr2.performLookups(Seq(l1, l2, l3, l4, l5, l6)))
+    val pl2 = vr2.performLookups(Seq(l1, l2, l3, l4, l5, l6)).get
+    println(pl2)
   }
 
 

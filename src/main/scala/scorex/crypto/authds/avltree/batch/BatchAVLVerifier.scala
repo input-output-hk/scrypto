@@ -148,7 +148,11 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     // If TopNode was already None, then the line above should fail and return None
   }
 
-  def performOneLookup(lookup: Lookup): Option[AVLValue] = {
+  /**
+    * @param lookup - an operation class with a key to look for
+    * @return Success(Some(value) if key is in the tree, None if not), Failure if verifier's tree is problematic
+    */
+  def performOneLookup(lookup: Lookup): Try[Option[AVLValue]] = Try {
     replayIndex = directionsIndex
 
     @tailrec
@@ -171,8 +175,12 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     helper(topNode.get, lookup.key)
   }
 
-  def performLookups(lookups: Seq[Lookup]): Seq[(AVLKey, Option[AVLValue])] = {
-    lookups.map(lookup => lookup.key -> performOneLookup(lookup))
+  /**
+    * @param lookups - keys to look for
+    * @return Success(Seq(Some(value) if key is in the tree, None if not)), Failure if verifier's tree is problematic
+    */
+  def performLookups(lookups: Seq[Lookup]): Try[Seq[(AVLKey, Option[AVLValue])]] = Try {
+    lookups.map(lookup => lookup.key -> performOneLookup(lookup).get)
   }
 
   override def toString: String = {

@@ -37,8 +37,10 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       val lw = Lookup(Sha256(aKey).take(KL))
       val lwProof = tree.run(lw).get
       val lwProofDigest = lwProof.verifyLookup(rootBefore, existence = false).get
+      lwProof.verifyLookup(rootBefore, existence = true).isEmpty shouldBe true
 
       val proofDigest = lookupProof.verifyLookup(rootBefore, existence = true).get
+      lookupProof.verifyLookup(rootBefore, existence = false).isEmpty shouldBe true
 
       val rootAfter = tree.rootHash()
 
