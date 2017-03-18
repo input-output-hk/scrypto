@@ -127,7 +127,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       for (i <- 0 until 8)
         require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-      v = new BatchAVLVerifier(digest, p.generateProof, 32, 8, Some(8), Some(0))
+      v = new BatchAVLVerifier(digest, p.generateProof(), 32, 8, Some(8), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
@@ -138,7 +138,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       digest = p.digest
       val key = Random.randomBytes()
       p.performOneModification(Insert(key, Random.randomBytes(8)))
-      pf = p.generateProof
+      pf = p.generateProof()
       p.checkTree()
 
       // Change the direction of the proof and make sure verifier fails
@@ -186,7 +186,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val n = randomInt(100)
       val j = i + n
       var numCurrentDeletes = 0
-      val currentMods = new scala.collection.mutable.ArrayBuffer[Operation](n)
+      val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](n)
       while (i < j) {
         if (keysAndVals.isEmpty || randomInt(2) == 0) {
           // with prob .5 insert a new one, with prob .5 update or delete an existing one

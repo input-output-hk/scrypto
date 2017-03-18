@@ -4,6 +4,7 @@ import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Failure, Try}
 
@@ -68,8 +69,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
   protected var rootNodeHeight = 0
 
-  private def reconstructTree: Option[VerifierNodes] = Try {
-
+  private lazy val reconstructedTree: Option[VerifierNodes] = Try {
     require(labelLength > 0)
     require(keyLength > 0)
     require(valueLength >= 0)
@@ -140,12 +140,39 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     Failure(e)
   }.getOrElse(None)
 
-  private var topNode: Option[VerifierNodes] = reconstructTree
+  private var topNode: Option[VerifierNodes] = reconstructedTree
 
-  def performOneModification[M <: Operation](modification: M): Unit = {
+  def performOneModification[M <: Modification](modification: M): Unit = {
     replayIndex = directionsIndex
     topNode = Try(Some(returnResultOfOneModification(modification, topNode.get).asInstanceOf[VerifierNodes])).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
+  }
+
+  def performOneLookup[L <: Lookup](lookup: Lookup): Option[AVLValue] = {
+    replayIndex = directionsIndex
+
+    @tailrec
+    def helper(rNode: Node, key: AVLKey): Option[AVLValue] = {
+      rNode.visited = true
+      rNode match {
+        case r: Leaf =>
+          if (r.key.sameElements(lookup.key)) Some(r.value) else None
+        case r: InternalNode =>
+          if (nextDirectionIsLeft(key, r)) {
+            helper(r.left, key)
+          } else {
+            helper(r.right, key)
+          }
+        case r: LabelOnlyNode =>
+          throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
+      }
+    }
+
+    helper(topNode.get, lookup.key)
+  }
+
+  def performLookups[L <: Lookup](lookups: Seq[Lookup]): Seq[(AVLKey, Option[AVLValue])] = {
+    lookups.map(lookup => lookup.key -> performOneLookup(lookup))
   }
 
   override def toString: String = {

@@ -1,9 +1,11 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
@@ -99,10 +101,49 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
       new ProverLeaf(key, v, n), 0: Byte)
   }
 
-
   def digest: Array[Byte] = digest(topNode)
 
-  def performOneModification[M <: Operation](modification: M): Try[Unit] = Try {
+  /**
+    * The tree has been modified without
+    */
+  def modified = !oldTopNode.label.sameElements(topNode.label)
+
+
+  def performLookups[L <: Lookup](lookups: Lookup*): Try[Array[Byte]] = Try {
+    require(!modified, "Tree has been modified, please generate a proof for modifications first")
+
+    @tailrec
+    def helper(rNode: Node, key: AVLKey): Unit = {
+      rNode.visited = true
+      rNode match {
+        case r: Leaf =>
+          found = false
+        case r: InternalNode  =>
+          if (nextDirectionIsLeft(key, r)) {
+            helper(r.left, key)
+          } else {
+            helper(r.right, key)
+          }
+        case r: LabelOnlyNode =>
+          throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
+      }
+    }
+
+    def performOneLookup(key: AVLKey) = {
+      require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
+      require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
+      require(key.length == keyLength)
+
+      replayIndex = directionsBitLength
+      helper(topNode, key)
+    }
+
+    lookups.foreach(l => performOneLookup(l.key))
+
+    generateProof()
+  }
+
+  def performOneModification[M <: Modification](modification: M): Try[Unit] = Try {
     replayIndex = directionsBitLength
     Try(returnResultOfOneModification(modification, topNode)) match {
       case Success(n) =>
@@ -124,7 +165,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
   }
 
 
-  def generateProof: Array[Byte] = {
+  def generateProof(): Array[Byte] = {
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 

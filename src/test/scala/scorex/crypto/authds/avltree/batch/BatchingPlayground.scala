@@ -3,10 +3,11 @@ package scorex.crypto.authds.avltree.batch
 import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
+import scorex.crypto.hash.Sha256
 import scorex.utils.Random
 
 
-object BatchingPlayground extends App {
+object BatchingPlayground extends App with ToStringHelper {
   def time[R](block: => R): (Float, R) = {
     val t0 = System.nanoTime()
     val result = block // call-by-name
@@ -24,6 +25,61 @@ object BatchingPlayground extends App {
   //timeBenchmarksNew
   //timeBenchmarksOld
   //spaceBenchmarks
+
+  lookupTest()
+
+  def lookupTest() {
+    val p = new BatchAVLProver()
+
+    val key1 = Sha256("1")
+    val key2 = Sha256("2")
+    val key3 = Sha256("3")
+    val key4 = Sha256("4")
+    val key5 = Sha256("5")
+    val key6 = Sha256("6")
+
+
+    println("k1: " + arrayToString(key1))
+    println("k2: " + arrayToString(key2))
+    println("k3: " + arrayToString(key3))
+
+    val v1 = key1.take(8)
+    val v2 = key2.take(8)
+
+    val i1 = Insert(key1, v1)
+    val i2 = Insert(key2, v2)
+
+    p.performOneModification(i1)
+    p.performOneModification(i2)
+    p.generateProof()
+
+    val l1 = LookupExisting(key1)
+    val l2 = LookupExisting(key2)
+    val l3 = LookupExisting(key3)
+
+    val pr = p.performLookups(l1, l2, l3).get
+
+    val vr = new BatchAVLVerifier(p.digest, pr)
+    assert(vr.performOneLookup(l1).isDefined)
+    assert(vr.performOneLookup(l2).isDefined)
+    assert(vr.performOneLookup(l3).isEmpty)
+
+    val i4 = Insert(key4, v1)
+    val i5 = Insert(key5, v2)
+
+    p.performOneModification(i4)
+    p.performOneModification(i5)
+    p.generateProof()
+
+    val l4 = LookupExisting(key4)
+    val l5 = LookupExisting(key5)
+    val l6 = LookupExisting(key6)
+
+    val pr2 = p.performLookups(l1, l2, l3, l4, l5, l6).get
+    val vr2 = new BatchAVLVerifier(p.digest, pr2)
+
+    println(vr2.performLookups(Seq(l1, l2, l3, l4, l5, l6)))
+  }
 
 
   def smallDeleteTest = {
@@ -122,10 +178,7 @@ object BatchingPlayground extends App {
       del(40)
       del(56)
       del(48)
-
     }
-
-
 
 
     def deleteTest1 = {
@@ -230,7 +283,7 @@ object BatchingPlayground extends App {
       newProver.performOneModification(mod)
     }
     newProver.digest
-    newProver.generateProof
+    newProver.generateProof()
     System.gc
     curMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
     println(curMemory)
@@ -252,7 +305,7 @@ object BatchingPlayground extends App {
       val mod = Update(key2, Random.randomBytes(8))
       newProver.performOneModification(mod)
       if (i % 2000 == 0) {
-        newProver.generateProof
+        newProver.generateProof()
         newProver.digest
       }
       if (i % 50000 == 0) {
@@ -313,13 +366,13 @@ object BatchingPlayground extends App {
     var i = 0
     while (true) {
       i += 1
-      val mod = (Insert(Random.randomBytes(), Random.randomBytes(8)))
+      val mod = Insert(Random.randomBytes(), Random.randomBytes(8))
       p = Option(oldProver.run(mod))
 
       if (i % 2000 == 0) {
         print(i)
         print(",")
-        oldProver.rootHash
+        oldProver.rootHash()
 
         prevMemory = curMemory
         //curMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
@@ -335,7 +388,7 @@ object BatchingPlayground extends App {
         print(",")
 
         p = None
-        System.gc
+        System.gc()
         prevMemory = curMemory
         //curMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
         println(curMemory - prevMemory)
@@ -347,7 +400,7 @@ object BatchingPlayground extends App {
     val newProver = new BatchAVLProver()
     val numMods = 1024 * 1024
 
-    val mod = new Array[Operation](1)
+    val mod = new Array[Modification](1)
     for (i <- 0 until numMods) {
       mod(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
       mod foreach (m => newProver.performOneModification(m))
@@ -355,9 +408,9 @@ object BatchingPlayground extends App {
         println(i)
     }
     newProver.digest // NOTE: if you comment out this line, the first batch becomes about 2 seconds slower
-    newProver.generateProof
+    newProver.generateProof()
 
-    val mods = new Array[Operation](75000)
+    val mods = new Array[Modification](75000)
     for (i <- 0 until 75000)
       mods(i) = Insert(Random.randomBytes(), Random.randomBytes(8))
 
@@ -373,7 +426,7 @@ object BatchingPlayground extends App {
             ctr += 1
           }
           newProver.digest
-          newProver.generateProof.toArray
+          newProver.generateProof()
         }
       }
       println(newProverTime)
@@ -391,7 +444,7 @@ object BatchingPlayground extends App {
             ctr += 1
           }
           newProver.digest
-          newProver.generateProof.toArray
+          newProver.generateProof()
           numBatches += 1
         }
       }
@@ -414,12 +467,12 @@ object BatchingPlayground extends App {
 
     val mod = new Array[Operation](1)
     for (i <- 0 until numMods) {
-      mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
+      mod(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
       mod foreach (m => oldProver.run(m))
       if (i % 100000 == 0)
         println(i)
     }
-    oldProver.rootHash
+    oldProver.rootHash()
 
     val mods = new Array[Operation](75000)
     for (i <- 0 until 75000)
@@ -435,7 +488,7 @@ object BatchingPlayground extends App {
             i += 1
             ctr += 1
           }
-          oldProver.rootHash
+          oldProver.rootHash()
         }
       }
       println(oldProverTime)
@@ -452,7 +505,7 @@ object BatchingPlayground extends App {
             i += 1
             ctr += 1
           }
-          oldProver.rootHash
+          oldProver.rootHash()
           numBatches += 1
         }
       }
@@ -474,25 +527,25 @@ object BatchingPlayground extends App {
 
     val numMods = 1024 * 1024
 
-    val mod = new Array[Operation](1)
+    val mod = new Array[Modification](1)
     for (i <- 0 until numMods) {
-      mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
+      mod(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
       mod foreach (m => newProver.performOneModification(m))
       if (i % 10000 == 0)
         println(i)
     }
-    val pf = newProver.generateProof.toArray
+    val pf = newProver.generateProof()
     println(pf.length)
 
     var j = 1
     while (j < 2000000) {
       for (i <- 0 until j) {
-        mod(0) = (Insert(Random.randomBytes(), Random.randomBytes(8)))
+        mod(0) = Insert(Random.randomBytes(), Random.randomBytes(8))
         mod foreach (m => newProver.performOneModification(m))
       }
       print("j = ")
       println(j)
-      val pf = newProver.generateProof.toArray
+      val pf = newProver.generateProof()
       print("proof length ")
       println(pf.length)
       print("proof length per mod ")
@@ -517,7 +570,7 @@ object BatchingPlayground extends App {
       if (i % 50000 == 0) println(i)
     }
 
-    newProver.generateProof
+    newProver.generateProof()
 
     var len = 0
     for (i <- 0 until testAtTheEnd) {
@@ -525,7 +578,7 @@ object BatchingPlayground extends App {
       keys += key
       val m = Insert(key, Random.randomBytes(8))
       newProver.performOneModification(m)
-      len += newProver.generateProof.toArray.length
+      len += newProver.generateProof().length
     }
     //    len = newProver.generateProof.toArray.length
     println(len.toFloat / testAtTheEnd)
@@ -537,7 +590,7 @@ object BatchingPlayground extends App {
       keys -= key
       val m = Remove(key)
       newProver.performOneModification(m)
-      len += newProver.generateProof.toArray.length
+      len += newProver.generateProof().length
     }
     //    len = newProver.generateProof.toArray.length
     println(len.toFloat / testAtTheEnd)
@@ -549,7 +602,7 @@ object BatchingPlayground extends App {
       val p = new BatchAVLProver()
       p.checkTree()
       val digest = p.digest
-      val pf = p.generateProof.toArray
+      val pf = p.generateProof()
       p.checkTree(true)
       val v = new BatchAVLVerifier(digest, pf, 32, 8, Some(0), Some(0))
       v.digest match {
@@ -568,13 +621,13 @@ object BatchingPlayground extends App {
         require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
         p.checkTree()
       }
-      p.generateProof
+      p.generateProof()
 
       var digest = p.digest
       for (i <- 0 until 50)
         require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-      var pf = p.generateProof.toArray
+      var pf = p.generateProof()
       // see if the proof for 50 mods will be allowed when we permit only 2
       var v = new BatchAVLVerifier(digest, pf, 32, 8, Some(2), Some(0))
       require(v.digest.isEmpty, "Failed to reject too long a proof")
@@ -588,7 +641,7 @@ object BatchingPlayground extends App {
         for (i <- 0 until 8)
           require(p.performOneModification(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-        v = new BatchAVLVerifier(digest, p.generateProof.toArray, 32, 8, Some(8), Some(0))
+        v = new BatchAVLVerifier(digest, p.generateProof(), 32, 8, Some(8), Some(0))
         require(v.digest.nonEmpty, "verification failed to construct tree")
         // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
         // that is not in the conveyed tree, and verifier will complain
@@ -599,7 +652,7 @@ object BatchingPlayground extends App {
         digest = p.digest
         val key = Random.randomBytes()
         p.performOneModification(Insert(key, Random.randomBytes(8)))
-        pf = p.generateProof.toArray
+        pf = p.generateProof()
         p.checkTree()
 
         // Change the direction of the proof and make sure verifier fails
@@ -665,7 +718,7 @@ object BatchingPlayground extends App {
           print(". ")
         }
         var numCurrentDeletes = 0
-        val currentMods = new scala.collection.mutable.ArrayBuffer[Operation](n)
+        val currentMods = new scala.collection.mutable.ArrayBuffer[Modification](n)
         while (i < j) {
           if (keysAndVals.isEmpty || randomInt(2) == 0) {
             // with prob .5 insert a new one, with prob .5 update or delete an existing one
@@ -710,8 +763,8 @@ object BatchingPlayground extends App {
                 val mod = Update(key, newVal)
                 currentMods += mod
                 require(p.performOneModification(mod).isSuccess, "prover failed to update value")
-                keysAndVals(index) = ((key, newVal))
-                require(p.unauthenticatedLookup(key).get == newVal, "wrong value after update") // check update
+                keysAndVals(index) = key -> newVal
+                require(p.unauthenticatedLookup(key).get.sameElements(newVal), "wrong value after update") // check update
                 numModifies += 1
               }
             } else {
