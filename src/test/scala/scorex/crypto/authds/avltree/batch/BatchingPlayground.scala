@@ -262,7 +262,7 @@ object BatchingPlayground extends App with ToStringHelper {
   }
 
 
-  def memoryTestWithBatching {
+  def memoryTestWithBatching() {
     // Generate a key out of an int
     def generateKey(i: Int, key: Array[Byte]) {
       val r = i
@@ -580,7 +580,7 @@ object BatchingPlayground extends App with ToStringHelper {
       newProver.performOneModification(m)
       len += newProver.generateProof().length
     }
-    //    len = newProver.generateProof.toArray.length
+    //    len = newProver.generateProof().length
     println(len.toFloat / testAtTheEnd)
 
     len = 0
@@ -592,7 +592,7 @@ object BatchingPlayground extends App with ToStringHelper {
       newProver.performOneModification(m)
       len += newProver.generateProof().length
     }
-    //    len = newProver.generateProof.toArray.length
+    //    len = newProver.generateProof().length
     println(len.toFloat / testAtTheEnd)
 
   }
@@ -799,7 +799,7 @@ object BatchingPlayground extends App with ToStringHelper {
           i += 1
         }
 
-        val pf = p.generateProof.toArray
+        val pf = p.generateProof()
         p.checkTree(true)
 
         if (toPrint) {
