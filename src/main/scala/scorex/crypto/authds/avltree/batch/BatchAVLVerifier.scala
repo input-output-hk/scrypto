@@ -148,7 +148,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     // If TopNode was already None, then the line above should fail and return None
   }
 
-  def performOneLookup[L <: Lookup](lookup: Lookup): Option[AVLValue] = {
+  def performOneLookup(lookup: Lookup): Option[AVLValue] = {
     replayIndex = directionsIndex
 
     @tailrec
@@ -171,7 +171,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     helper(topNode.get, lookup.key)
   }
 
-  def performLookups[L <: Lookup](lookups: Seq[Lookup]): Seq[(AVLKey, Option[AVLValue])] = {
+  def performLookups(lookups: Seq[Lookup]): Seq[(AVLKey, Option[AVLValue])] = {
     lookups.map(lookup => lookup.key -> performOneLookup(lookup))
   }
 

@@ -109,7 +109,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
   def modified = !oldTopNode.label.sameElements(topNode.label)
 
 
-  def performLookups[L <: Lookup](lookups: Lookup*): Try[Array[Byte]] = Try {
+  def performLookups(lookups: Lookup*): Try[Array[Byte]] = Try {
     require(!modified, "Tree has been modified, please generate a proof for modifications first")
 
     @tailrec

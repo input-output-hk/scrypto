@@ -4,7 +4,7 @@ import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
-import scorex.crypto.authds.avltree.batch.{Insert, InsertOrUpdate, LookupExisting, Update}
+import scorex.crypto.authds.avltree.batch.{Insert, InsertOrUpdate, Lookup, Update}
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.hash.Sha256
 
@@ -26,7 +26,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
     forAll(kvGen) { case (ak, aValue) =>
         val aKey = Sha256(ak).take(KL)
 
-        val l = LookupExisting(aKey)
+        val l = Lookup(aKey)
 
         tree.run(Insert(aKey, aValue))
 

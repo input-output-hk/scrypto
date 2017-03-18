@@ -53,9 +53,9 @@ object BatchingPlayground extends App with ToStringHelper {
     p.performOneModification(i2)
     p.generateProof()
 
-    val l1 = LookupExisting(key1)
-    val l2 = LookupExisting(key2)
-    val l3 = LookupExisting(key3)
+    val l1 = Lookup(key1)
+    val l2 = Lookup(key2)
+    val l3 = Lookup(key3)
 
     val pr = p.performLookups(l1, l2, l3).get
 
@@ -71,9 +71,9 @@ object BatchingPlayground extends App with ToStringHelper {
     p.performOneModification(i5)
     p.generateProof()
 
-    val l4 = LookupExisting(key4)
-    val l5 = LookupExisting(key5)
-    val l6 = LookupExisting(key6)
+    val l4 = Lookup(key4)
+    val l5 = Lookup(key5)
+    val l6 = Lookup(key6)
 
     val pr2 = p.performLookups(l1, l2, l3, l4, l5, l6).get
     val vr2 = new BatchAVLVerifier(p.digest, pr2)
