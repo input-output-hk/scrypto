@@ -27,7 +27,39 @@ object BatchingPlayground extends App with ToStringHelper {
   //timeBenchmarksNew
   //timeBenchmarksOld
   //spaceBenchmarks
+  lookupBenchmark()
 
+  def lookupBenchmark(): Unit = {
+    val prover = new BatchAVLProver()
+    println(s"oldLookupProoflength,oldLookupTime,oldLookupVerificationTime,lookupProoflength,lookupTime,lookupVerificationTime")
+
+    val ElementsToInsert = 10000
+    val elements = (0 until ElementsToInsert).map(i => Sha256(i.toString)).map(k => (k, k.take(8)))
+
+    elements.foreach(e => prover.performOneModification(Insert(e._1, e._2)))
+    prover.generateProof()
+    val digest = prover.digest
+    val lookups = elements.map(e => Lookup(e._1))
+    val oldLookups = elements.map(e => Update(e._1, e._2))
+
+    val (lookupTime, lookupProof) = time(prover.performLookups(lookups:_*).get)
+    val vr = new BatchAVLVerifier(prover.digest, lookupProof)
+    val (lookupVerificationTime, _) = time(vr.performLookups(lookups).get)
+
+    val digest2 = prover.digest
+    val (oldLookupTime, oldLookupProof) = time{
+      oldLookups.foreach(ol => prover.performOneModification(ol))
+      prover.generateProof()
+    }
+    val verifier = new BatchAVLVerifier(digest2, oldLookupProof)
+    val (oldLookupVerificationTime, _) = time{
+      oldLookups.foreach(ol => verifier.performOneModification(ol))
+     }
+
+    println(s"${oldLookupProof.length},$oldLookupTime,$oldLookupVerificationTime," +
+      s"${lookupProof.length},$lookupTime,$lookupVerificationTime")
+
+  }
 
 
   def lookupTest() {

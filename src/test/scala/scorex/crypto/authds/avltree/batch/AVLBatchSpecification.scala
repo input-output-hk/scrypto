@@ -14,9 +14,62 @@ import scala.util.Try
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
-  val KL = 26
+  val KL = 32
   val VL = 8
   val HL = 32
+
+
+  property("Modifications for different key and value length") {
+    forAll { (aKey: Array[Byte], aValue: Array[Byte]) =>
+      val KL = aKey.length
+      val VL = aValue.length
+      whenever(KL > 0 && VL > 0) {
+        val prover = new BatchAVLProver(KL, VL)
+        val m = Insert(aKey, aValue)
+
+        val digest = prover.digest
+        prover.performOneModification(m)
+        val pf = prover.generateProof
+        prover.digest
+
+        val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
+        verifier.performOneModification(m)
+        prover.digest shouldEqual verifier.digest.get
+
+        //FAILS!!
+        val lookup = Lookup(aKey)
+        val pr: Array[Byte] = prover.performLookups(lookup).get
+        val vr = new BatchAVLVerifier(prover.digest, pr)
+        vr.performOneLookup(lookup).get.get shouldEqual aValue
+      }
+    }
+  }
+
+  property("Lookups") {
+    val prover = new BatchAVLProver(KL, VL)
+    forAll(kvSeqGen) { kvSeq =>
+      val insertNum = Math.min(3, kvSeq.length)
+      val toInsert = kvSeq.take(insertNum)
+      toInsert.foreach { ti =>
+        prover.performOneModification(Insert(ti._1, ti._2))
+      }
+      prover.generateProof()
+      val lookups = kvSeq.map(kv => Lookup(kv._1))
+
+      val pr: Array[Byte] = prover.performLookups(lookups: _*).get
+
+      val vr = new BatchAVLVerifier(prover.digest, pr)
+      kvSeq.foreach { kv =>
+        vr.performOneLookup(Lookup(kv._1)).get match {
+          case Some(v) =>
+            toInsert.find(_._1 sameElements kv._1).get._2 shouldEqual v
+          case None =>
+            toInsert.exists(_._1 sameElements kv._1) shouldBe false
+        }
+      }
+    }
+  }
+
 
   property("Usage as authenticated set") {
     val SetVL = 0
@@ -364,10 +417,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
 
-  def kvGen: Gen[(Array[Byte], Array[Byte])] = for {
+  lazy val kvGen: Gen[(Array[Byte], Array[Byte])] = for {
     key <- Gen.listOfN(KL, Arbitrary.arbitrary[Byte]).map(_.toArray) suchThat
       (k => !(k sameElements Array.fill(KL)(-1: Byte)) && !(k sameElements Array.fill(KL)(0: Byte)) && k.length == KL)
     value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)
   } yield (key, value)
+
+  lazy val kvSeqGen: Gen[Seq[(Array[Byte], Array[Byte])]] = Gen.nonEmptyListOf(kvGen)
 
 }
