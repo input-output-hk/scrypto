@@ -55,16 +55,14 @@ object BatchingPlayground extends App with ToStringHelper {
     p.performOneModification(i2)
     p.generateProof()
 
-    val l1 = Lookup(key1)
-    val l2 = Lookup(key2)
-    val l3 = Lookup(key3)
+    val lookups = Seq(Lookup(key1), Lookup(key2), Lookup(key3))
 
-    val pr = p.performLookups(l1, l2, l3).get
+    val pr = p.performLookups(lookups:_*).get
 
     val vr = new BatchAVLVerifier(p.digest, pr)
-    assert(vr.performOneLookup(l1).get.isDefined)
-    assert(vr.performOneLookup(l2).get.isDefined)
-    assert(vr.performOneLookup(l3).get.isEmpty)
+    assert(vr.performOneLookup(lookups.head).get.isDefined)
+    assert(vr.performOneLookup(lookups(1)).get.isDefined)
+    assert(vr.performOneLookup(lookups(2)).get.isEmpty)
 
     val i4 = Insert(key4, v1)
     val i5 = Insert(key5, v2)
@@ -73,15 +71,12 @@ object BatchingPlayground extends App with ToStringHelper {
     p.performOneModification(i5)
     p.generateProof()
 
-    val l4 = Lookup(key4)
-    val l5 = Lookup(key5)
-    val l6 = Lookup(key6)
-    val l7 = Lookup(key7)
+    val lookups2 = lookups ++ Seq(Lookup(key4), Lookup(key5), Lookup(key6), Lookup(key7))
 
-    val pr2 = p.performLookups(l1, l2, l3, l4, l5, l6).get
+    val pr2 = p.performLookups(lookups2:_*).get
     val vr2 = new BatchAVLVerifier(p.digest, pr2)
 
-    val pl2 = vr2.performLookups(Seq(l1, l2, l3, l4, l5, l6)).get
+    val pl2 = vr2.performLookups(lookups2).get
     println(pl2)
   }
 

@@ -108,7 +108,6 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     */
   def modified = !oldTopNode.label.sameElements(topNode.label)
 
-
   def performLookups(lookups: Lookup*): Try[Array[Byte]] = Try {
     require(!modified, "Tree has been modified, please generate a proof for modifications first")
 
@@ -118,7 +117,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
       rNode match {
         case r: Leaf =>
           found = false
-        case r: InternalNode  =>
+        case r: InternalNode =>
           if (nextDirectionIsLeft(key, r)) {
             helper(r.left, key)
           } else {
