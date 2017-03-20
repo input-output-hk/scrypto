@@ -19,11 +19,35 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val HL = 32
 
 
+  property("Modifications for different key and value length") {
+    forAll { (aKey: Array[Byte], aValue: Array[Byte]) =>
+      val KL = aKey.length
+      val VL = aValue.length
+      whenever(KL > 0 && VL > 0) {
+        val prover = new BatchAVLProver(KL, VL)
+        val m = Insert(aKey, aValue)
+
+        val digest = prover.digest
+        prover.performOneModification(m)
+        val pf = prover.generateProof
+        prover.digest
+
+        val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
+        verifier.performOneModification(m)
+        prover.digest shouldEqual verifier.digest.get
+
+        //FAILS!!
+        val lookup = Lookup(aKey)
+        val pr: Array[Byte] = prover.performLookups(lookup).get
+        val vr = new BatchAVLVerifier(prover.digest, pr)
+        vr.performOneLookup(lookup).get.get shouldEqual aValue
+      }
+    }
+  }
+
   property("Lookups") {
     val prover = new BatchAVLProver(KL, VL)
     forAll(kvSeqGen) { kvSeq =>
-      kvSeq.foreach(kv => assert(kv._1.length == KL))
-      kvSeq.foreach(kv => assert(kv._2.length == VL))
       val insertNum = Math.min(3, kvSeq.length)
       val toInsert = kvSeq.take(insertNum)
       toInsert.foreach { ti =>
