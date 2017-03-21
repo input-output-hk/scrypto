@@ -11,6 +11,10 @@ trait Operation {
 
 case class Lookup(override val key: AVLKey) extends Operation
 
+case object UnknownOperation extends Operation {
+  override val key: AVLKey = Array.empty
+}
+
 trait Modification extends Operation {
   type OldValue = Option[AVLValue]
 

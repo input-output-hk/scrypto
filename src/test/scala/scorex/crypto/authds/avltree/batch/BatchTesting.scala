@@ -36,6 +36,7 @@ class LegacyProver(tree: AVLTree[_]) {
   } match {
     case Success(p) => p
     case Failure(e: BatchFailure) => e
+    case Failure(e) => BatchFailure(e, UnknownOperation)
   }
 
   def rootHash: Label = tree.rootHash()
