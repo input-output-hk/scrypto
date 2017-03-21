@@ -5,7 +5,7 @@ import scorex.crypto.hash.CryptographicHash
 
 import scala.util.Try
 
-trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] {
+trait TwoPartyDictionary {
 
   /**
     * Run an operation, whether a lookup or a modification, against the tree
@@ -13,7 +13,7 @@ trait TwoPartyDictionary[Key, Value, ProofType <: TwoPartyProof[Key, Value]] {
     * @param operation - tree modification
     * @return modification proof
     */
-  def run[O <: Operation](operation: O): Try[ProofType]
+  def run[O <: Operation](operation: O): Try[TwoPartyProof]
 
   /**
     * @return current digest of structure

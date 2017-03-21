@@ -11,7 +11,7 @@ import scala.util.{Failure, Success, Try}
 
 case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
                            (implicit hf: ThreadUnsafeHash, levelFunc: LevelFunction)
-  extends TwoPartyProof[TreapKey, TreapValue] {
+  extends TwoPartyProof {
 
   def verify(digest: Label, updateFn: Modification#UpdateFunction): Option[Label] = Try {
     initializeIterator()

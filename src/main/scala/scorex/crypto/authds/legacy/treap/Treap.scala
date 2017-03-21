@@ -1,12 +1,11 @@
 package scorex.crypto.authds.legacy.treap
 
-import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
-import scorex.utils.ByteArray
 import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.authds.avltree._
+import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.authds.legacy.treap.Constants._
+import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
@@ -16,7 +15,7 @@ import scala.util.{Failure, Success, Try}
 //todo: make explicit skiplist interface
 class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
                                    (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.treapLevel)
-  extends TwoPartyDictionary[TreapKey, TreapValue, TreapModifyProof] {
+  extends TwoPartyDictionary {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 

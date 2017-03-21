@@ -3,8 +3,8 @@ package scorex.crypto.authds
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.avltree.batch.Modification
 
-trait TwoPartyProof[Key, Value] extends ProofIterator {
-  val key: Key
+trait TwoPartyProof extends ProofIterator {
+  val key: Array[Byte]
   val proofSeq: Seq[TwoPartyProofElement]
 
   /**

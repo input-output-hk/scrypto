@@ -11,10 +11,9 @@ import scala.util.Success
 
 trait TwoPartyTests extends TestingCommons {
 
-  def genUpd(key:Array[Byte]) = Update(key, key.take(8))
+  def genUpd(key: Array[Byte]) = Update(key, key.take(8))
 
-  def profileTree(tree: TwoPartyDictionary[Array[Byte], Array[Byte], _ <: TwoPartyProof[Array[Byte], Array[Byte]]],
-                  elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
+  def profileTree(tree: TwoPartyDictionary, elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
     var digest = inDigest
     val (insertTime: Float, proofs) = time(elements.map(e => tree.run(genUpd(e)).get))
     val (verifyTime: Float, _) = time {
@@ -52,10 +51,11 @@ trait TwoPartyTests extends TestingCommons {
     }: UpdateFunction
   }
 
-  case class TransactionUpdate(key: TreapKey,amount: Long) extends Modification {
+  case class TransactionUpdate(key: TreapKey, amount: Long) extends Modification {
     override def updateFn: UpdateFunction = {
       oldOpt: Option[TreapValue] =>
         Success(Some(Longs.toByteArray(oldOpt.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
     }: UpdateFunction
   }
+
 }

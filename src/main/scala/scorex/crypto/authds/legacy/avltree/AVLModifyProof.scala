@@ -11,7 +11,7 @@ import scorex.utils.ByteArray
 import scala.util.{Failure, Success, Try}
 
 case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
-                         (implicit hf: ThreadUnsafeHash) extends TwoPartyProof[AVLKey, AVLValue] {
+                         (implicit hf: ThreadUnsafeHash) extends TwoPartyProof {
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
 

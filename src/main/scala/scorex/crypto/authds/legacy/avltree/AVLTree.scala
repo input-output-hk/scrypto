@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
 
 class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, rootOpt: Option[ProverNodes] = None)
                                      (implicit hf: HF = new Blake2b256Unsafe)
-  extends TwoPartyDictionary[AVLKey, AVLValue, AVLModifyProof] {
+  extends TwoPartyDictionary {
 
   type ChangeHappened = Boolean
   type ChildHeightIncreased = Boolean
