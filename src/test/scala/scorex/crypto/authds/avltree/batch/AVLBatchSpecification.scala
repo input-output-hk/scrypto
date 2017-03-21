@@ -14,7 +14,7 @@ import scala.util.Try
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
-  val KL = 32
+  val KL = 26
   val VL = 8
   val HL = 32
 
@@ -36,10 +36,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         verifier.performOneModification(m)
         prover.digest shouldEqual verifier.digest.get
 
-        //FAILS!!
         val lookup = Lookup(aKey)
         val pr: Array[Byte] = prover.performLookups(lookup).get
-        val vr = new BatchAVLVerifier(prover.digest, pr)
+        val vr = new BatchAVLVerifier(prover.digest, pr, KL, VL)
         vr.performOneLookup(lookup).get.get shouldEqual aValue
       }
     }
@@ -58,7 +57,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       val pr: Array[Byte] = prover.performLookups(lookups: _*).get
 
-      val vr = new BatchAVLVerifier(prover.digest, pr)
+      val vr = new BatchAVLVerifier(prover.digest, pr, KL, VL)
       kvSeq.foreach { kv =>
         vr.performOneLookup(Lookup(kv._1)).get match {
           case Some(v) =>
