@@ -8,4 +8,4 @@ dependencyOverrides in ThisBuild ++= Set(
   "org.typelevel" % "macro-compat_2.12" % "1.1.1",
   "org.whispersystems" % "curve25519-java" % "0.3.0"
 )
-// LIBRARY_DEPENDENCIES_HASH c2d699ca9f0a09da8369f96f1414e83b4c7f9f0e
+// LIBRARY_DEPENDENCIES_HASH c3d7702010a1160956fbc8d60247b1b29e0da7fc
