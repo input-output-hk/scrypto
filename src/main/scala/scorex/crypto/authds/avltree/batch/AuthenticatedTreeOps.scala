@@ -4,7 +4,7 @@ import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.encode.Base58
 import scorex.utils.{ByteArray, ScryptoLogging}
 
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 
 trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
@@ -80,7 +80,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneModification[M <: Modification](modification: M, rootNode: Node): (Node, Option[AVLValue]) = {
+  protected def returnResultOfOneModification[M <: Operation](modification: M, rootNode: Node):  Try[(Node, Option[AVLValue])] = Try {
     val key = modification.key
     val updateFunction = modification.updateFn
 
@@ -108,7 +108,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       * an indicator whether we need to go delete the leaf that was just reached
       * and old values
       */
-    def modifyHelper(rNode: Node, key: AVLKey, updateFunction: Modification#UpdateFunction): (Node, ChangeHappened, HeightIncreased, ToDelete, Option[AVLValue]) = {
+    def modifyHelper(rNode: Node, key: AVLKey, updateFunction: Operation#UpdateFunction): (Node, ChangeHappened, HeightIncreased, ToDelete, Option[AVLValue]) = {
       rNode match {
         case r: Leaf =>
           if (keyMatchesLeaf(key, r)) {

@@ -1,7 +1,7 @@
 package scorex.crypto.authds
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.authds.avltree.batch.Modification
+import scorex.crypto.authds.avltree.batch.Operation
 
 trait TwoPartyProof extends ProofIterator {
   val key: Array[Byte]
@@ -14,7 +14,7 @@ trait TwoPartyProof extends ProofIterator {
     * @param updateFn - a modification to check correctness of
     * @return Some from new root hash if proof is valid or None if proof is not valid.
     */
-  def verify(digest: Label, updateFn: Modification#UpdateFunction): Option[Label]
+  def verify(digest: Label, updateFn: Operation#UpdateFunction): Option[Label]
 
-  def verify(digest: Label, modification: Modification): Option[Label] = verify(digest, modification.updateFn)
+  def verify(digest: Label, modification: Operation): Option[Label] = verify(digest, modification.updateFn)
 }

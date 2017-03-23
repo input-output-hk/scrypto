@@ -18,14 +18,14 @@ class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks
 
     val aKey = Sha256("key 1").take(KL)
     val aValue = Sha256("value 1").take(VL)
-    newProver.performOneModification(Insert(aKey, aValue)).isSuccess shouldBe true
+    newProver.performOneOperation(Insert(aKey, aValue)).isSuccess shouldBe true
     newProver.generateProof
 
-    newProver.performOneModification(Update(aKey, aValue)).isSuccess shouldBe true
+    newProver.performOneOperation(Update(aKey, aValue)).isSuccess shouldBe true
     newProver.generateProof
 
-    newProver.performOneModification(Remove(aKey)).isSuccess shouldBe true
-    newProver.performOneModification(Update(aKey, aValue)).isSuccess shouldBe false
+    newProver.performOneOperation(Remove(aKey)).isSuccess shouldBe true
+    newProver.performOneOperation(Update(aKey, aValue)).isSuccess shouldBe false
 
   }
 

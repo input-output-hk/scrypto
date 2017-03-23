@@ -108,43 +108,9 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     */
   def modified = !oldTopNode.label.sameElements(topNode.label)
 
-  def performLookups(lookups: Lookup*): Try[Array[Byte]] = Try {
-    require(!modified, "Tree has been modified, please generate a proof for modifications first")
-
-    @tailrec
-    def helper(rNode: Node, key: AVLKey): Unit = {
-      rNode.visited = true
-      rNode match {
-        case r: Leaf =>
-          found = false
-        case r: InternalNode =>
-          if (nextDirectionIsLeft(key, r)) {
-            helper(r.left, key)
-          } else {
-            helper(r.right, key)
-          }
-        case r: LabelOnlyNode =>
-          throw new Error("Should never reach this point -- this is a bug in the prover lookup.")
-      }
-    }
-
-    def performOneLookup(key: AVLKey): Unit = {
-      require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
-      require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
-      require(key.length == keyLength)
-
-      replayIndex = directionsBitLength
-      helper(topNode, key)
-    }
-
-    lookups.foreach(l => performOneLookup(l.key))
-
-    generateProof()
-  }
-
-  def performOneModification[M <: Modification](modification: M): Try[Option[AVLValue]] = Try {
+  def performOneOperation[M <: Operation](modification: M): Try[Option[AVLValue]] = Try {
     replayIndex = directionsBitLength
-    Try(returnResultOfOneModification(modification, topNode)) match {
+    returnResultOfOneModification(modification, topNode) match {
       case Success(n) =>
         topNode = n._1.asInstanceOf[ProverNodes]
         n._2

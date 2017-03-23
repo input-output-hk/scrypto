@@ -142,45 +142,12 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
   private var topNode: Option[VerifierNodes] = reconstructedTree
 
-  def performOneModification[M <: Modification](modification: M): Unit = {
+  def performOneOperation[M <: Operation](modification: M): Try[Option[AVLValue]] = Try {
     replayIndex = directionsIndex
-    topNode = Try(Some(returnResultOfOneModification(modification, topNode.get)._1.asInstanceOf[VerifierNodes])).getOrElse(None)
+    val operationResult = returnResultOfOneModification(modification, topNode.get)
+    topNode = operationResult.map(s => Some(s._1.asInstanceOf[VerifierNodes])).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
-  }
-
-  /**
-    * @param lookup - an operation class with a key to look for
-    * @return Success(Some(value) if key is in the tree, None if not), Failure if verifier's tree is problematic
-    */
-  def performOneLookup(lookup: Lookup): Try[Option[AVLValue]] = Try {
-    replayIndex = directionsIndex
-
-    @tailrec
-    def helper(rNode: Node, key: AVLKey): Option[AVLValue] = {
-      rNode.visited = true
-      rNode match {
-        case r: Leaf =>
-          if (r.key.sameElements(lookup.key)) Some(r.value) else None
-        case r: InternalNode =>
-          if (nextDirectionIsLeft(key, r)) {
-            helper(r.left, key)
-          } else {
-            helper(r.right, key)
-          }
-        case r: LabelOnlyNode =>
-          throw new Error("Should never reach this point. The proof for a lookup is wrong.")
-      }
-    }
-
-    helper(topNode.get, lookup.key)
-  }
-
-  /**
-    * @param lookups - keys to look for
-    * @return Success(Seq(Some(value) if key is in the tree, None if not)), Failure if verifier's tree is problematic
-    */
-  def performLookups(lookups: Seq[Lookup]): Try[Seq[(AVLKey, Option[AVLValue])]] = Try {
-    lookups.map(lookup => lookup.key -> performOneLookup(lookup).get)
+    operationResult.get._2
   }
 
   override def toString: String = {
