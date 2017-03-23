@@ -124,7 +124,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
             helper(r.right, key)
           }
         case r: LabelOnlyNode =>
-          throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
+          throw new Error("Should never reach this point -- this is a bug in the prover lookup.")
       }
     }
 

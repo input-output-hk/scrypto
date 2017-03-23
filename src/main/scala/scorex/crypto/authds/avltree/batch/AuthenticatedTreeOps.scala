@@ -28,7 +28,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     // sign on the signed byte if rootHeight>127, but we handle that case correctly on decoding the byte back to int in the
     // verifier, by adding 256 if it's negative).
     // The reason rootNodeHeight should never be more than 255 is that if height is more than 255,
-    // then the AVL tree has at least  2^{255/1.4405} = 2^177 leaves, which more than the number of atoms on planet Earth.
+    // then the AVL tree has at least  2^{255/1.4405} = 2^177 leaves, which is more than the number of atoms on planet Earth.
     rootNode.label :+ rootNodeHeight.toByte
   }
 
@@ -199,7 +199,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
             }
           }
         case r: LabelOnlyNode =>
-          throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
+          throw new Error("Should never reach this point. If in prover, this is a bug. If in verifier, this proof is wrong.")
       }
     }
 

@@ -24,10 +24,12 @@ trait Modification extends Operation {
 
   /**
     * Update functions takes Option[oldValue] and return Try[Option[newValue]]
-    * Insert: None => Success(Some(newValue))
+    * For example:
+    * Insert: None => Success(Some(newValue)), but Some(oldValue) => Failure()
     * Update: Some(oldValue) => Success(Some(newValue))
-    * Delete: Some(oldValue) => Success(None)
-    * Return Failure() to ensure, if found value is not expected (e.g. no old value expected).
+    * Delete: Some(oldValue) => Success(None), but None => Failure()
+    * ConditionalUpdate: Some(oldValue) => Success(Some(newValue)) or Failure(), depending
+    * on whether oldValue satisfied some desired conditions
     */
   def updateFn: UpdateFunction
 }
@@ -63,8 +65,11 @@ case class RemoveIfExists(key: AVLKey) extends Modification {
 }
 
 /**
-  * Update existing value by delta, insert if old value is not exists and positive, remove if remaining is 0,
-  * fails on negative new value
+  * If the key exists in the tree, add delta to its value, fail if 
+  * the result is negative, and remove the key if the result is equal to 0.
+  * If the key does not exist in the tree, treat it as if its value is 0:
+  * insert the key with value delta if delta is positive,
+  * fail if delta is negative, and do nothing if delta is 0.
   */
 case class UpdateLongBy(key: AVLKey, delta: Long) extends Modification {
   override def updateFn: UpdateFunction = {

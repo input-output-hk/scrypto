@@ -168,7 +168,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
             helper(r.right, key)
           }
         case r: LabelOnlyNode =>
-          throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
+          throw new Error("Should never reach this point. The proof for a lookup is wrong.")
       }
     }
 
