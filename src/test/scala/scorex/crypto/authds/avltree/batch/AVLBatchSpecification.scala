@@ -102,13 +102,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val delta = Math.abs(Longs.fromByteArray(aValue))
       whenever(Try(Math.addExact(oldValue, delta)).isSuccess) {
 
-        val cm = Seq(UpdateLongBy(aKey, delta))
+        val m = UpdateLongBy(aKey, delta)
 
-        cm foreach (m => prover.performOneModification(m))
+        prover.performOneModification(m).get.getOrElse(0L) shouldBe oldValue
         val pf = prover.generateProof
 
         val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
-        cm foreach (m => verifier.performOneModification(m))
+        verifier.performOneModification(m)
         digest = verifier.digest.get
         prover.digest shouldEqual digest
         prover.unauthenticatedLookup(aKey) match {

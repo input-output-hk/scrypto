@@ -128,7 +128,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
       }
     }
 
-    def performOneLookup(key: AVLKey) = {
+    def performOneLookup(key: AVLKey): Unit = {
       require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
       require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
       require(key.length == keyLength)
@@ -142,11 +142,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     generateProof()
   }
 
-  def performOneModification[M <: Modification](modification: M): Try[Unit] = Try {
+  def performOneModification[M <: Modification](modification: M): Try[Option[AVLValue]] = Try {
     replayIndex = directionsBitLength
     Try(returnResultOfOneModification(modification, topNode)) match {
       case Success(n) =>
         topNode = n._1.asInstanceOf[ProverNodes]
+        n._2
       case Failure(e) =>
         // take the bit length before fail and divide by 8 with rounding up
         val oldDirectionsByteLength = (replayIndex + 7) / 8
