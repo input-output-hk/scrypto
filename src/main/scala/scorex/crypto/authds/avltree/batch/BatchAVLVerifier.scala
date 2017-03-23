@@ -144,7 +144,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
   def performOneModification[M <: Modification](modification: M): Unit = {
     replayIndex = directionsIndex
-    topNode = Try(Some(returnResultOfOneModification(modification, topNode.get).asInstanceOf[VerifierNodes])).getOrElse(None)
+    topNode = Try(Some(returnResultOfOneModification(modification, topNode.get)._1.asInstanceOf[VerifierNodes])).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
   }
 

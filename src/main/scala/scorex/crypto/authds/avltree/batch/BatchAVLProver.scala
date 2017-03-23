@@ -146,7 +146,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
     replayIndex = directionsBitLength
     Try(returnResultOfOneModification(modification, topNode)) match {
       case Success(n) =>
-        topNode = n.asInstanceOf[ProverNodes]
+        topNode = n._1.asInstanceOf[ProverNodes]
       case Failure(e) =>
         // take the bit length before fail and divide by 8 with rounding up
         val oldDirectionsByteLength = (replayIndex + 7) / 8

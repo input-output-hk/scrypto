@@ -80,7 +80,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneModification[M <: Modification](modification: M, rootNode: Node): Node = {
+  protected def returnResultOfOneModification[M <: Modification](modification: M, rootNode: Node): (Node, Option[AVLValue]) = {
     val key = modification.key
     val updateFunction = modification.updateFn
 
@@ -349,10 +349,10 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     if (toDelete) {
       val (postDeleteRootNode, heightDecreased) = deleteHelper(newRootNode.asInstanceOf[InternalNode], deleteMax = false)
       if (heightDecreased) rootNodeHeight -= 1
-      postDeleteRootNode
+      (postDeleteRootNode, oldValue)
     } else {
       if (heightIncreased) rootNodeHeight += 1
-      newRootNode
+      (newRootNode, oldValue)
     }
   }
 }
