@@ -5,6 +5,8 @@ import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.hash.Sha256
 import scorex.utils.Random
 
+import scala.util.Success
+
 
 object BatchingPlayground extends App with ToStringHelper {
   def time[R](block: => R): (Float, R) = {
@@ -16,7 +18,7 @@ object BatchingPlayground extends App with ToStringHelper {
 
   //smallDeleteTest
 
-  lookupTest()
+  //  lookupTest()
   //batchingSelfTest
 
   //deleteProofSizeTest
@@ -30,16 +32,16 @@ object BatchingPlayground extends App with ToStringHelper {
 
   def lookupBenchmark(): Unit = {
     val prover = new BatchAVLProver()
-    println(s"oldLookupProoflength,oldLookupTime,oldLookupVerificationTime,lookupProoflength,lookupTime,lookupVerificationTime")
+    println(s"modifyingLookupProoflength,modifyingLookupTime,modifyingLookupVerificationTime,lookupProoflength,lookupTime,lookupVerificationTime")
 
-    val ElementsToInsert = 10000
+    val ElementsToInsert = 100000
     val elements = (0 until ElementsToInsert).map(i => Sha256(i.toString)).map(k => (k, k.take(8)))
 
     elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)))
     prover.generateProof()
     val digest = prover.digest
     val lookups = elements.map(e => Lookup(e._1))
-    val oldLookups = elements.map(e => Update(e._1, e._2))
+    val oldLookups = lookups.map(l => ModifyingLookup(l.key))
 
     val (lookupTime, lookupProof) = time {
       lookups.foreach(l => prover.performOneOperation(l))
@@ -47,6 +49,7 @@ object BatchingPlayground extends App with ToStringHelper {
     }
     val vr = new BatchAVLVerifier(prover.digest, lookupProof)
     val (lookupVerificationTime, _) = time(lookups.map(lookup => lookup.key -> vr.performOneOperation(lookup).get))
+    // modifying lookups
 
     val digest2 = prover.digest
     val (oldLookupTime, oldLookupProof) = time {
@@ -898,5 +901,10 @@ object BatchingPlayground extends App with ToStringHelper {
     testVariousVerifierFails
     testSuccessfulChanges(true)
   }
+
+  case class ModifyingLookup(override val key: AVLKey) extends Modification {
+    override def updateFn: UpdateFunction = old => Success(old)
+  }
+
 }
 
