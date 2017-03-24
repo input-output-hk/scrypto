@@ -2,7 +2,7 @@ package scorex.crypto.authds.legacy.treap
 
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
+import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.authds.legacy.treap.Constants._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -30,7 +30,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
     //todo: unify types AVLValue/TreapValue and then generalize 4 LoCs below which are the same for Treap & AVLTree
     val updateFn: Option[TreapValue] => Try[Option[TreapValue]] = operation match {
       case _: Lookup => x: Option[TreapValue] => Success(x)
-      case m: Operation => m.updateFn
+      case m: Modification => m.updateFn
     }
 
     val proofStream = new scala.collection.mutable.Queue[WTProofElement]

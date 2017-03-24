@@ -5,26 +5,19 @@ import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 
 import scala.util.{Failure, Success, Try}
 
-case class Lookup(override val key: AVLKey) extends Operation {
-  /**
-    * Update functions takes Option[oldValue] and return Try[Option[newValue]]
-    * For example:
-    * Insert: None => Success(Some(newValue)), but Some(oldValue) => Failure()
-    * Update: Some(oldValue) => Success(Some(newValue))
-    * Delete: Some(oldValue) => Success(None), but None => Failure()
-    * ConditionalUpdate: Some(oldValue) => Success(Some(newValue)) or Failure(), depending
-    * on whether oldValue satisfied some desired conditions
-    */
-  override def updateFn: UpdateFunction = old => Success(old)
+sealed trait Operation {
+  val key: AVLKey
 }
 
-case object UnknownOperation extends Operation {
+case class Lookup(override val key: AVLKey) extends Operation
+
+case object UnknownModification extends Modification {
   override val key: AVLKey = Array.empty
 
   override def updateFn: UpdateFunction = old => Success(old)
 }
 
-trait Operation {
+trait Modification extends Operation {
   val key: AVLKey
   type OldValue = Option[AVLValue]
 
@@ -44,33 +37,33 @@ trait Operation {
   def updateFn: UpdateFunction
 }
 
-case class Insert(key: AVLKey, value: Array[Byte]) extends Operation {
+case class Insert(key: AVLKey, value: Array[Byte]) extends Modification {
   override def updateFn: UpdateFunction = {
     case None => Success(Some(value))
     case Some(_) => Failure(new Exception("already exists"))
   }: UpdateFunction
 }
 
-case class Update(key: AVLKey, value: Array[Byte]) extends Operation {
+case class Update(key: AVLKey, value: Array[Byte]) extends Modification {
   override def updateFn: UpdateFunction = {
     case None => Failure(new Exception("does not exist"))
     case Some(_) => Success(Some(value))
   }: UpdateFunction
 }
 
-case class InsertOrUpdate(key: AVLKey, value: Array[Byte]) extends Operation {
+case class InsertOrUpdate(key: AVLKey, value: Array[Byte]) extends Modification {
   override def updateFn: UpdateFunction = (_ => Success(Some(value))): UpdateFunction
 }
 
 
-case class Remove(key: AVLKey) extends Operation {
+case class Remove(key: AVLKey) extends Modification {
   override def updateFn: UpdateFunction = {
     case None => Failure(new Exception("does not exist"))
     case Some(_) => Success(None)
   }: UpdateFunction
 }
 
-case class RemoveIfExists(key: AVLKey) extends Operation {
+case class RemoveIfExists(key: AVLKey) extends Modification {
   override def updateFn: UpdateFunction = (_ => Success(None)): UpdateFunction
 }
 
@@ -81,7 +74,7 @@ case class RemoveIfExists(key: AVLKey) extends Operation {
   * insert the key with value delta if delta is positive,
   * fail if delta is negative, and do nothing if delta is 0.
   */
-case class UpdateLongBy(key: AVLKey, delta: Long) extends Operation {
+case class UpdateLongBy(key: AVLKey, delta: Long) extends Modification {
   override def updateFn: UpdateFunction = {
     case m if delta == 0 => Success(m)
     case None if delta > 0 => Success(Some(Longs.toByteArray(delta)))

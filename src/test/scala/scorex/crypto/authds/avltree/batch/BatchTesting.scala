@@ -36,7 +36,7 @@ class LegacyProver(tree: AVLTree[_]) {
   } match {
     case Success(p) => p
     case Failure(e: BatchFailure) => e
-    case Failure(e) => BatchFailure(e, UnknownOperation)
+    case Failure(e) => BatchFailure(e, UnknownModification)
   }
 
   def rootHash: Label = tree.rootHash()
@@ -44,7 +44,7 @@ class LegacyProver(tree: AVLTree[_]) {
 
 
 class LegacyVerifier(digest: Label) {
-  def verifyBatchSimple(operations: Seq[Operation], batch: BatchSuccessSimple): Boolean = {
+  def verifyBatchSimple(operations: Seq[Modification], batch: BatchSuccessSimple): Boolean = {
     require(operations.size == batch.proofs.size)
     batch.proofs.zip(operations).foldLeft(Some(digest): Option[Label]) {
       case (digestOpt, (proof, op)) =>

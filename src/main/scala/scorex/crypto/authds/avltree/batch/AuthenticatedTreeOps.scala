@@ -80,7 +80,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneModification[M <: Operation](modification: M, rootNode: Node):  Try[(Node, Option[AVLValue])] = Try {
+  protected def returnResultOfOneModification[M <: Operation](modification: M, rootNode: Node): Try[(Node, Option[AVLValue])] = Try {
     val key = modification.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
@@ -111,30 +111,42 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       rNode match {
         case r: Leaf =>
           if (keyMatchesLeaf(key, r)) {
-            operation.updateFn(Some(r.value)) match {
-              case Success(None) => // delete key
+            operation match {
+              case m: Modification =>
+                m.updateFn(Some(r.value)) match {
+                  case Success(None) => // delete key
+                    r.visited = true
+                    (r, false, false, true, Some(r.value))
+                  case Success(Some(v)) => // update value
+                    r.visited = true
+                    require(v.length == valueLength)
+                    val rNew = r.getNew(newValue = v)
+                    (rNew, true, false, false, Some(r.value))
+                  case Failure(e) => // updateFunction doesn't like the value we found
+                    throw e
+                }
+              case _: Lookup =>
                 r.visited = true
-                (r, false, false, true, Some(r.value))
-              case Success(Some(v)) => // update value
-                r.visited = true
-                require(v.length == valueLength)
-                val rNew = r.getNew(newValue = v)
-                (rNew, true, false, false, Some(r.value))
-              case Failure(e) => // updateFunction doesn't like the value we found
-                throw e
+                (r, false, false, false, Some(r.value))
             }
           } else {
             // x > r.key
-            operation.updateFn(None) match {
-              case Success(None) => // don't change anything, just lookup
-                rNode.visited = true
+            operation match {
+              case m: Modification =>
+                m.updateFn(None) match {
+                  case Success(None) => // don't change anything, just lookup
+                    rNode.visited = true
+                    (r, false, false, false, None)
+                  case Success(Some(v)) => // insert new value
+                    rNode.visited = true
+                    require(v.length == valueLength)
+                    (addNode(r, key, v), true, true, false, None)
+                  case Failure(e) => // updateFunctions doesn't like that we found nothing
+                    throw e
+                }
+              case _: Lookup =>
+                r.visited = true
                 (r, false, false, false, None)
-              case Success(Some(v)) => // insert new value
-                rNode.visited = true
-                require(v.length == valueLength)
-                (addNode(r, key, v), true, true, false, None)
-              case Failure(e) => // updateFunctions doesn't like that we found nothing
-                throw e
             }
           }
         case r: InternalNode =>

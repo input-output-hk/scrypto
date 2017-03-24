@@ -3,7 +3,7 @@ package scorex.crypto.authds.legacy.avltree
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.batch.{Lookup, Operation}
+import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -38,7 +38,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
     val updateFn: Option[AVLValue] => Try[Option[AVLValue]] = operation match {
       case _: Lookup => x: Option[AVLValue] => Success(x)
 
-      case m: Operation => m.updateFn
+      case m: Modification => m.updateFn
     }
 
     /**
@@ -57,7 +57,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
             operation match {
               case l: Lookup =>
                 (r, false, false)
-              case m: Operation =>
+              case m: Modification =>
                 m.updateFn(Some(r.value)) match {
                   case Success(None) => //delete value
                     ???
@@ -78,7 +78,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
             operation match {
               case l: Lookup =>
                 (r, false, false)
-              case m: Operation =>
+              case m: Modification =>
                 m.updateFn(None) match {
                   case Success(None) => //don't change anything, just lookup
                     (r, false, false)
