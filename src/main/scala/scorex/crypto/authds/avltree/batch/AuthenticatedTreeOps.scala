@@ -145,7 +145,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
                     throw e
                 }
               case _: Lookup =>
-                r.visited = true
+                rNode.visited = true
                 (r, false, false, false, None)
             }
           }
