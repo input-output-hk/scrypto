@@ -55,6 +55,8 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
             operation match {
+              case l: Lookup =>
+                (r, false, false)
               case m: Operation =>
                 m.updateFn(Some(r.value)) match {
                   case Success(None) => //delete value
@@ -66,8 +68,6 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                   case Failure(e) => // found incorrect value
                     throw e
                 }
-              case l: Lookup =>
-                (r, false, false)
             }
           } else {
             // x > r.key
@@ -76,6 +76,8 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
             proofStream.enqueue(ProofNextLeafKey(r.nextLeafKey))
             proofStream.enqueue(ProofValue(r.value))
             operation match {
+              case l: Lookup =>
+                (r, false, false)
               case m: Operation =>
                 m.updateFn(None) match {
                   case Success(None) => //don't change anything, just lookup
@@ -88,8 +90,6 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                   case Failure(e) => // found incorrect value
                     throw e
                 }
-              case l: Lookup =>
-                (r, false, false)
             }
           }
         case r: ProverNode =>
