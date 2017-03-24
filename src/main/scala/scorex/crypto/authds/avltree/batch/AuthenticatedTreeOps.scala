@@ -80,8 +80,8 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneModification[M <: Operation](modification: M, rootNode: Node): Try[(Node, Option[AVLValue])] = Try {
-    val key = modification.key
+  protected def returnResultOfOneOperation[M <: Operation](operation: M, rootNode: Node): Try[(Node, Option[AVLValue])] = Try {
+    val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
@@ -108,6 +108,8 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       * and old values
       */
     def modifyHelper(rNode: Node, key: AVLKey, operation: Operation): (Node, ChangeHappened, HeightIncreased, ToDelete, Option[AVLValue]) = {
+      // Do not set the visited flag on the way down -- set it only after you know the operation did not fail,
+      // because if the operation failed, there is no need to put nodes in the proof.
       rNode match {
         case r: Leaf =>
           if (keyMatchesLeaf(key, r)) {
@@ -118,9 +120,9 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
                     r.visited = true
                     (r, false, false, true, Some(r.value))
                   case Success(Some(v)) => // update value
-                    r.visited = true
                     require(v.length == valueLength)
                     val rNew = r.getNew(newValue = v)
+                    r.visited = true
                     (rNew, true, false, false, Some(r.value))
                   case Failure(e) => // updateFunction doesn't like the value we found
                     throw e
@@ -138,8 +140,8 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
                     rNode.visited = true
                     (r, false, false, false, None)
                   case Success(Some(v)) => // insert new value
-                    rNode.visited = true
                     require(v.length == valueLength)
+                    rNode.visited = true
                     (addNode(r, key, v), true, true, false, None)
                   case Failure(e) => // updateFunctions doesn't like that we found nothing
                     throw e
@@ -356,7 +358,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       }
     }
 
-    val (newRootNode, _, heightIncreased, toDelete, oldValue) = modifyHelper(rootNode, key, modification)
+    val (newRootNode, _, heightIncreased, toDelete, oldValue) = modifyHelper(rootNode, key, operation)
     if (toDelete) {
       val (postDeleteRootNode, heightDecreased) = deleteHelper(newRootNode.asInstanceOf[InternalNode], deleteMax = false)
       if (heightDecreased) rootNodeHeight -= 1
