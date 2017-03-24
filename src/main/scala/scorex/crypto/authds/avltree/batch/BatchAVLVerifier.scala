@@ -41,7 +41,8 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   }
 
   protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
-    val c = ByteArray.compare(key, r.key).ensuring(_ >= 0)
+    val c = ByteArray.compare(key, r.key)
+    require(c>=0)
     if (c == 0) {
       true
     } else {
