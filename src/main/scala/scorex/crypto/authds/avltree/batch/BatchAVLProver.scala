@@ -1,11 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
-
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
@@ -104,7 +101,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
   def digest: Array[Byte] = digest(topNode)
 
 
-  def performOneOperation[M <: Operation](operation: M): Try[Option[AVLValue]] = Try {
+  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = Try {
     replayIndex = directionsBitLength
     returnResultOfOneOperation(operation, topNode) match {
       case Success(n) =>
@@ -267,7 +264,6 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
           (l, l, 0)
       }
     }
-
 
     val (minTree, maxTree, treeHeight) = checkTreeHelper(topNode)
     require(minTree.key sameElements NegativeInfinityKey)

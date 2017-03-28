@@ -13,11 +13,11 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
 
   def digest: Array[Byte] = prover.digest
 
-  def performOneModification[M <: Operation](modification: M): Unit = prover.performOneOperation(modification)
+  def performOneOperation(operation: Operation): Unit = prover.performOneOperation(operation)
 
   def generateProof: Array[Byte] = {
     storage.update(prover).get
-    prover.generateProof
+    prover.generateProof()
   }
 
   def rollback(version: VersionedAVLStorage.Version): Try[Unit] = Try {

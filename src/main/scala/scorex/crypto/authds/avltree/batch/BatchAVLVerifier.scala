@@ -143,7 +143,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
   private var topNode: Option[VerifierNodes] = reconstructedTree
 
-  def performOneOperation[M <: Operation](operation: M): Try[Option[AVLValue]] = Try {
+  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = Try {
     replayIndex = directionsIndex
     val operationResult = returnResultOfOneOperation(operation, topNode.get)
     topNode = operationResult.map(s => Some(s._1.asInstanceOf[VerifierNodes])).getOrElse(None)

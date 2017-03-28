@@ -80,7 +80,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneOperation[M <: Operation](operation: M, rootNode: Node): Try[(Node, Option[AVLValue])] = Try {
+  protected def returnResultOfOneOperation(operation: Operation, rootNode: Node): Try[(Node, Option[AVLValue])] = Try {
     val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")

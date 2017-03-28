@@ -353,7 +353,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     forAll(kvGen) { case (aKey, aValue) =>
       val m = Insert(aKey, aValue)
-      prover.performOneModification(m)
+      prover.performOneOperation(m)
       val pf = prover.generateProof
       val verifier = new BatchAVLVerifier(digest, pf, KL, VL)
       verifier.digest.get
@@ -363,7 +363,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       prover.rollback(digest).isSuccess shouldBe true
       prover.digest shouldEqual digest
-      prover.performOneModification(m)
+      prover.performOneOperation(m)
       prover.generateProof
       digest = prover.digest
     }
