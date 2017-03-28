@@ -126,15 +126,15 @@ constant because anyone, including verifiers, can compute it by using the same t
 * Second, we create the first batch of tree modifications, inserting keys 1 and 2 with values 0 for each 
 
 ```scala
-  val m1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
-  val m2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
+  val op1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
+  val op2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
 ```
     
 * Prover applies the two modifications to an empty tree, obtains the first batch proof, and announces the next root hash `root1`
     
 ```scala    
-  prover.performOneModification(m1)
-  prover.performOneModification(m2)
+  prover.performOneOperation(op1)
+  prover.performOneOperation(op2)
   val proof1 = prover.generateProof
   val root1 = prover.rootHash
 ```    
@@ -144,10 +144,10 @@ wire or save it to a disk. Next, the prover performs two more modifications, obt
 root hash `root2` 
 
 ```scala
-   val m3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
-   val m4 = Remove(Array(2:Byte))
-   prover.performOneModification(m3)
-   prover.performOneModification(m4)
+   val op3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
+   val op4 = Remove(Array(2:Byte))
+   prover.performOneOperation(op3)
+   prover.performOneOperation(op4)
    val proof2 = prover.generateProof
    val root2 = prover.rootHash
 ```
@@ -160,14 +160,14 @@ performed the same modifications as the prover, then the verifier and prover dig
 
 ```scala
   val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
-  verifier1.performOneModification(m1)           
-  verifier1.performOneModification(m2)
+  verifier1.performOneOperation(op1)           
+  verifier1.performOneOperation(op2)
   verifier1.digest match {
     case Some(rt1) if rt1.sameElements(root1) =>
       //If announced root1 is already trusted, then verification of the second batch can simply start here
       val verifier2 = new BatchAVLVerifier(rt1, proof2, keyLength = 1, valueLength = 8)
-      verifier2.performOneModification(m3)
-      verifier2.performOneModification(m4)
+      verifier2.performOneModification(op3)
+      verifier2.performOneModification(op4)
       verifier2.digest match {
         case Some(rt2) if rt2.sameElements(root2) => println("declared root2 value and proofs are valid")
         case _ => println("second proof or announced root value NOT valid")
