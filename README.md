@@ -11,17 +11,14 @@ Use the repository as code examples for the trees also, though one code example 
 
 ## Get Scrypto
 
-Scrypto is available on Sonatype for Scala 2.12!
+Scrypto is available on Sonatype for both Scala 2.11 and 2.12!
 ```scala
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 ```
 
 You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
 ```scala
-// For Scala 2.12
 libraryDependencies += "org.consensusresearch" %% "scrypto" % "1.2.0"
-// For Scala 2.11
-libraryDependencies += "org.consensusresearch" %% "scrypto" % "1.2.0-RC3"
 ```
 
 ### Hash functions
