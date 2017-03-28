@@ -103,14 +103,10 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
 
   def digest: Array[Byte] = digest(topNode)
 
-  /**
-    * The tree has been modified without
-    */
-  def modified = !oldTopNode.label.sameElements(topNode.label)
 
-  def performOneOperation[M <: Operation](modification: M): Try[Option[AVLValue]] = Try {
+  def performOneOperation[M <: Operation](operation: M): Try[Option[AVLValue]] = Try {
     replayIndex = directionsBitLength
-    returnResultOfOneModification(modification, topNode) match {
+    returnResultOfOneOperation(operation, topNode) match {
       case Success(n) =>
         topNode = n._1.asInstanceOf[ProverNodes]
         n._2

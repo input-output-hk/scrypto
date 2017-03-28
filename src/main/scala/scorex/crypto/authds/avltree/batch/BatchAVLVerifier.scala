@@ -41,7 +41,8 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   }
 
   protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
-    val c = ByteArray.compare(key, r.key).ensuring(_ >= 0)
+    val c = ByteArray.compare(key, r.key)
+    require(c>=0)
     if (c == 0) {
       true
     } else {
@@ -142,9 +143,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
 
   private var topNode: Option[VerifierNodes] = reconstructedTree
 
-  def performOneOperation[M <: Operation](modification: M): Try[Option[AVLValue]] = Try {
+  def performOneOperation[M <: Operation](operation: M): Try[Option[AVLValue]] = Try {
     replayIndex = directionsIndex
-    val operationResult = returnResultOfOneModification(modification, topNode.get)
+    val operationResult = returnResultOfOneOperation(operation, topNode.get)
     topNode = operationResult.map(s => Some(s._1.asInstanceOf[VerifierNodes])).getOrElse(None)
     // If TopNode was already None, then the line above should fail and return None
     operationResult.get._2
