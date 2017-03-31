@@ -107,66 +107,91 @@ Whisper Systems, so has the same security properties. JDK's SecureRandom used to
 ### Authenticated data structures
 
 Scrypto supports authenticated AVL+ trees with the batching compression support and guaranteed verifier efficiency, see http://eprint.iacr.org/2016/994 for details. 
-The implementation can be found in the `scorex.crypto.authds.avltree.batch` package. Here are code snippets on how to generate
-proofs and check them. In this example we demonstrate two batches of two modifications per batch, starting with the empty tree: in the first batch, a prover inserts two values 
-into the tree; in the second batch, the prover updates the first value and deletes the second one.
+The implementation can be found in the `scorex.crypto.authds.avltree.batch` package. 
+
+
+The overall approach is as follows. The prover has a data structure of (key, value) pairs
+and can perform operations on it using `performOneOperation method`. An operation (see scorex.crypto.authds.avltree.batch.Operation) is either a lookup or a modification.
+ We provide sample modifications (such as insertions, removals, and additions/subtractions from the value of a given key), but users of this code may define their own (such as subtractions that allow negative values, unlike our subtractions). A modification may be defined to fail under certain conditions (e.g., deletion of a key that is not there, or subtraction from the value that is too small), in which case the tree is not modified; if the operation succeeds, it returns the value associated with the key before the operation was performed. The prover can compute the digest of the current state of the data structure via the `digest` method. At any point the prover may use `generateProof`, which will produce a proof covering the batch of operations (except the ones that failed) since the last `generateProof`. 
+
+The verifier is constructed from the digest that preceeded the current batch of operation and the proof for the the batch. The verifier can also be given optional parameters for the maximum number of operations (and at most how many of those are deletions) in order to guarantee a bound on the verifier running time in case of a malicious proof, thus mitigating denial of service attacks. Once constructed, the verifier replay the same sequence of operations and be assured that they do not fail, their return value are correct, and compute the new digest. Note that the verifier is not assured that the sequence of operations is the same as the one the prover performed. However, if the verifier digest matches the prover digest after the sequence of operations, then the verifier is assured that the state of the data structure is the same.
+
+We also provide `unauthenticatedLookup` for the prover, in order to allow the prover to look up values in the data structure without affecting the proof. 
+
+Here are code examples for generating proofs and checking them. In this example we demonstrate two batches of operations, starting with the empty tree. In the first batch, a prover inserts three values into the tree; in the second batch, the prover changes the first value, attempts to subtract too much from the second one, which fails, looks up the third value, and attempts to delete a nonexisting value, which also fails. We use 1-byte keys for simplicity; in a real deployment, keys would be longer.
  
-* First, we create a prover and get an initial root hash from it (in a real application, this value is a public
+* First, we create a prover and get an initial digest from it (in a real application, this value is a public
 constant because anyone, including verifiers, can compute it by using the same two lines of code)
 
 ```scala
   val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
-  val initRoot = prover.rootHash
+  val initialDigest = prover.digest
 ```        
 
 
-* Second, we create the first batch of tree modifications, inserting keys 1 and 2 with values 0 for each 
+* Second, we create the first batch of tree modifications, inserting keys 1, 2, and 3 with values 10, 20, and 30. We use com.google.common.primitives.Longs.toByteArray to get 8-byte values out of longs 
 
 ```scala
-  val op1 = Insert(Array(1:Byte), Array.fill(8)(0:Byte))
-  val op2 = Insert(Array(2:Byte), Array.fill(8)(0:Byte))
+  val key1 = Array(1:Byte);
+  val key2 = Array(2:Byte);
+  val key3 = Array(3:Byte);
+  val op1 = Insert(key1, Longs.toByteArray(10))
+  val op2 = Insert(key2, Longs.toByteArray(20))
+  val op3 = Insert(key3, Longs.toByteArray(30))
 ```
     
-* Prover applies the two modifications to an empty tree, obtains the first batch proof, and announces the next root hash `root1`
+* Prover applies the three modifications to the empty tree, obtains the first batch proof, and announces the next digest `digest1`
     
 ```scala    
-  prover.performOneOperation(op1)
-  prover.performOneOperation(op2)
+  prover.performOneOperation(op1) // Returns Success(None)
+  prover.performOneOperation(op2) // Returns Success(None)
+  prover.performOneOperation(op3) // Returns Success(None)
   val proof1 = prover.generateProof
-  val root1 = prover.rootHash
+  val digest1 = prover.digest
 ```    
       
 * A proof is just an array of bytes, so you can immediately send it over a 
-wire or save it to a disk. Next, the prover performs two more modifications, obtains a second proof, and announces the second
-root hash `root2` 
+wire or save it to a disk. Next, the prover attempts to perform five more modifications: changing the first value to 50, subtracting 40 from the second value (which will fail, because our UpDateLongBy operation is designed to fail on negative values), looking up the third value, deleting the key 5 (which will also fail, because key 5 does not exist), and deleting the third value. After the four operations, the prover obtains a second proof, and announces it.
+digest `digest2` 
 
 ```scala
-   val op3 = Update(Array(1:Byte), Array.fill(8)(1:Byte))
-   val op4 = Remove(Array(2:Byte))
-   prover.performOneOperation(op3)
-   prover.performOneOperation(op4)
-   val proof2 = prover.generateProof
-   val root2 = prover.rootHash
+  val op4 = Update(key1, Longs.toByteArray(50))
+  val op5 = UpdateLongBy(key2, -40)
+  val op6 = Lookup(key3) 
+  val op7 = Remove(Array(5:Byte))
+  val op8 = Remove(key3)
+  prover.performOneOperation(op4) // Returns Try(Some(Longs.toByteArray(10)))
+  // Here we can, for example, perform prover.unauthenticatedLookup(key1) to get 50
+  // without affecting the proof or anything else
+  prover.performOneOperation(op5) // Returns Failure
+  prover.performOneOperation(op6) // Returns Try(Some(Longs.toByteArray(30)))
+  prover.performOneOperation(op7) // Returns Failure
+  prover.performOneOperation(op8) // Returns Try(Some(Longs.toByteArray(30)))
+  val proof2 = prover.generateProof // Proof onlyu for op4 and op6
+  val digest2 = prover.digest
 ```
 
 * We now verify the proofs. For each batch, we construct a verifier using the digest
-that preceded the batch and the proof of the batch, and apply modifications. 
+that preceded the batch and the proof of the batch, give the number of operations in the batch,
+and apply modifications. 
 If verification fails, the verifier digest will equal None.  Else, the verifier's new digest
 is the correct one for the tree as modified by the verifier. Furthermore, if the verifier
 performed the same modifications as the prover, then the verifier and prover digests will match.
 
 ```scala
-  val verifier1 = new BatchAVLVerifier(initRoot, proof1, keyLength = 1, valueLength = 8)
-  verifier1.performOneOperation(op1)           
-  verifier1.performOneOperation(op2)
+  val verifier1 = new BatchAVLVerifier(initialDigest, proof1, keyLength = 1, valueLength = 8, maxNumOperations = Some(2), maxDeletes = Some(0))
+  verifier1.performOneOperation(op1) // Returns Success(None)        
+  verifier1.performOneOperation(op2) // Returns Success(None)
+  verifier1.performOneOperation(op3) // Returns Success(None)
   verifier1.digest match {
-    case Some(rt1) if rt1.sameElements(root1) =>
-      //If announced root1 is already trusted, then verification of the second batch can simply start here
-      val verifier2 = new BatchAVLVerifier(rt1, proof2, keyLength = 1, valueLength = 8)
-      verifier2.performOneModification(op3)
-      verifier2.performOneModification(op4)
+    case Some(d1) if digest1.sameElements(digest1) =>
+      //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
+      val verifier2 = new BatchAVLVerifier(d1, proof2, keyLength = 1, valueLength = 8, maxNumOperations = Some(3), maxDeletes = Some(1))
+      verifier2.performOneOperation(op4) // Returns Try(Some(Longs.toByteArray(10)))
+      verifier2.performOneOperation(op6) // Returns Try(Some(Longs.toByteArray(30)))
+      verifier2.performOneOperation(op8) // Returns Try(Some(Longs.toByteArray(30)))
       verifier2.digest match {
-        case Some(rt2) if rt2.sameElements(root2) => println("declared root2 value and proofs are valid")
+        case Some(d2) if d2.sameElements(digest2) => println("declared root2 value and proofs are valid")
         case _ => println("second proof or announced root value NOT valid")
       }
     case _ =>
@@ -174,12 +199,10 @@ performed the same modifications as the prover, then the verifier and prover dig
   }
 ```
 
-Note that the verifier has additional optional parameters that can be used to limit its maximum running time, to prevent
-a malicious prover from forcing the verifier to waste cycles.
 
 # Tests
 
-Run `sbt test` from a folder contains the framework to launch tests.
+Run `sbt test` from a folder containing the framework to launch tests.
 
 # License
 

@@ -4,6 +4,7 @@ import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.hash.Sha256
 import scorex.utils.Random
+import com.google.common.primitives.Longs
 
 import scala.util.Success
 
@@ -28,8 +29,8 @@ object BatchingPlayground extends App with ToStringHelper {
   //timeBenchmarksNew
   //timeBenchmarksOld
   //spaceBenchmarks
-  lookupBenchmark()
-
+  //lookupBenchmark()
+  testReadme
   def lookupBenchmark(): Unit = {
     val prover = new BatchAVLProver()
     println(s"modifyingLookupProoflength,modifyingLookupTime,modifyingLookupVerificationTime,lookupProoflength,lookupTime,lookupVerificationTime")
@@ -906,5 +907,146 @@ object BatchingPlayground extends App with ToStringHelper {
     override def updateFn: UpdateFunction = old => Success(old)
   }
 
+  def testReadme3 () {
+    println("testReadme")
+    val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
+    val initialDigest = prover.digest
+    val key1 = Array(1:Byte);
+    val key2 = Array(2:Byte);
+    val key3 = Array(3:Byte);
+    val op1 = Insert(key1, Longs.toByteArray(10))
+    val op2 = Insert(key2, Longs.toByteArray(20))
+    val op3 = Insert(key3, Longs.toByteArray(30))
+    require(prover.performOneOperation(op1).get == None)
+    require(prover.performOneOperation(op2).get == None)
+    require(prover.performOneOperation(op3).get == None)
+    val proof1 = prover.generateProof
+    val digest1 = prover.digest
+    val op4 = Update(key1, Longs.toByteArray(50))
+    val op5 = UpdateLongBy(key2, -40)
+    val op6 = Lookup(key3)   
+    val op7 = Remove(Array(5:Byte))
+    val op8 = Remove(key3)
+    //require(prover.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
+//    print(Longs.fromByteArray(prover.performOneOperation(op4).get.get))
+    print(Longs.fromByteArray(prover.performOneOperation(Lookup(key1)).get.get))
+    require(!prover.performOneOperation(op5).isSuccess) // Fails
+    require(prover.performOneOperation(op6).get.get sameElements Longs.toByteArray(30))
+    require(!prover.performOneOperation(op7).isSuccess) // Fails
+    require(prover.performOneOperation(op8).get.get sameElements Longs.toByteArray(30)) 
+    val proof2 = prover.generateProof // Proof only for op4 and op6
+    val digest2 = prover.digest
+
+  val verifier1 = new BatchAVLVerifier(initialDigest, proof1, keyLength = 1, valueLength = 8, maxNumOperations = Some(2), maxDeletes = Some(0))
+    require(verifier1.performOneOperation(op1).get == None)
+    require(verifier1.performOneOperation(op2).get == None)
+    require(verifier1.performOneOperation(op3).get == None)
+    verifier1.digest match {
+      case Some(d1) if digest1.sameElements(digest1) =>
+        //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
+      val verifier2 = new BatchAVLVerifier(d1, proof2, keyLength = 1, valueLength = 8, maxNumOperations = Some(3), maxDeletes = Some(1))
+//    require(verifier2.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
+    println(Longs.fromByteArray(verifier2.performOneOperation(Lookup(key1)).get.get))// sameElements Longs.toByteArray(10))
+
+    //print(Longs.fromByteArray(verifier2.performOneOperation(op4).get.get))// sameElements Longs.toByteArray(10))
+    require(verifier2.performOneOperation(op6).get.get sameElements Longs.toByteArray(30))
+    require(verifier2.performOneOperation(op8).get.get sameElements Longs.toByteArray(30)) 
+        verifier2.digest match {
+          case Some(d2) if d2.sameElements(digest2) => println("declared root2 value and proofs are valid")
+          case _ => println("second proof or announced root value NOT valid")
+        }
+      case _ =>
+        println("first proof or announced root1 NOT valid")
+    }
+  
+  }
+  
+
+  def testReadme {
+    val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
+    val initialDigest = prover.digest
+    val key1 = Array(1:Byte);
+    val key2 = Array(2:Byte);
+    val key3 = Array(3:Byte);
+    val op1 = Insert(key1, Longs.toByteArray(10))
+    val op2 = Insert(key2, Longs.toByteArray(20))
+    val op3 = Insert(key3, Longs.toByteArray(30))
+    require(prover.performOneOperation(op1).get == None) // Should return None 
+    require(prover.performOneOperation(op2).get == None) // Should return None
+    require(prover.performOneOperation(op3).get == None) // Should return None
+    val proof1 = prover.generateProof
+    val digest1 = prover.digest
+
+    val op4 = Update(key1, Longs.toByteArray(50))
+    val op5 = UpdateLongBy(key2, -40)
+    val op6 = Lookup(key3) 
+    val op7 = Remove(Array(5:Byte))
+    val op8 = Remove(key3)
+    require(prover.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
+    require(prover.unauthenticatedLookup(key1).get sameElements Longs.toByteArray(50))
+    require(!prover.performOneOperation(op5).isSuccess) // Fails
+    require(prover.performOneOperation(op6).get.get sameElements Longs.toByteArray(30))
+    require(!prover.performOneOperation(op7).isSuccess) // Fails
+    require(prover.performOneOperation(op8).get.get sameElements Longs.toByteArray(30))
+    val proof2 = prover.generateProof // Proof onlyu for op4 and op6
+    val digest2 = prover.digest
+
+    val verifier1 = new BatchAVLVerifier(initialDigest, proof1, keyLength = 1, valueLength = 8, maxNumOperations = Some(2), maxDeletes = Some(0))
+    require(verifier1.performOneOperation(op1).get == None) // Should return None           
+    require(verifier1.performOneOperation(op2).get == None) // Should return None
+    require(verifier1.performOneOperation(op3).get == None) // Should return None
+    verifier1.digest match {
+      case Some(d1) if digest1.sameElements(digest1) =>
+        //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
+        val verifier2 = new BatchAVLVerifier(d1, proof2, keyLength = 1, valueLength = 8, maxNumOperations = Some(3), maxDeletes = Some(1))
+        require(verifier2.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
+        require(verifier2.performOneOperation(op6).get.get sameElements Longs.toByteArray(30))
+        require(verifier2.performOneOperation(op8).get.get sameElements Longs.toByteArray(30))
+        verifier2.digest match {
+          case Some(d2) if d2.sameElements(digest2) => println("declared root2 value and proofs are valid")
+          case _ => println("second proof or announced root value NOT valid")
+        }
+      case _ =>
+        println("first proof or announced root1 NOT valid")
+    }
+  }
+  
+  def testReadme2 () {
+    println("testReadme")
+    val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
+    val initialDigest = prover.digest
+    val key1 = Array(1:Byte);
+    val key2 = Array(2:Byte);
+    val key3 = Array(3:Byte);
+    val op1 = Insert(key1, Longs.toByteArray(10))
+//    val op2 = Insert(key2, Longs.toByteArray(20))
+//    val op3 = Insert(key3, Longs.toByteArray(30))
+    require(prover.performOneOperation(op1).get == None)
+//    require(prover.performOneOperation(op2).get == None)
+//    require(prover.performOneOperation(op3).get == None)
+    val proof1 = prover.generateProof
+    val digest1 = prover.digest
+    val op4 = Update(key1, Longs.toByteArray(50))
+    //require(prover.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
+    print(Longs.fromByteArray(prover.performOneOperation(op4).get.get))
+    //print(Longs.fromByteArray(prover.performOneOperation(Lookup(key1)).get.get))
+    val proof2 = prover.generateProof
+    val digest2 = prover.digest
+
+        //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
+      val verifier2 = new BatchAVLVerifier(digest1, proof2, keyLength = 1, valueLength = 8, maxNumOperations = Some(3), maxDeletes = Some(1))
+//    require(verifier2.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
+   //println(Longs.fromByteArray(verifier2.performOneOperation(Lookup(key1)).get.get))// sameElements Longs.toByteArray(10))
+
+   print(Longs.fromByteArray(verifier2.performOneOperation(op4).get.get))// sameElements Longs.toByteArray(10))
+        verifier2.digest match {
+          case Some(d2) if d2.sameElements(digest2) => println("declared root2 value and proofs are valid")
+          case _ => println("second proof or announced root value NOT valid")
+        }
+     // case _ =>
+      //  println("first proof or announced root1 NOT valid")
+    } 
+  
+  //}
 }
 

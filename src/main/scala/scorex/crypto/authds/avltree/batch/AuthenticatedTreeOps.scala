@@ -7,6 +7,10 @@ import scorex.utils.{ByteArray, ScryptoLogging}
 import scala.util.{Failure, Success, Try}
 
 
+/**
+ * Code common to the prover and verifier of https://eprint.iacr.org/2016/994 
+ * (see Appendix B, "Our Algorithms")
+ */
 trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
 
   type ChangeHappened = Boolean
@@ -21,7 +25,10 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
 
   protected var rootNodeHeight: Int
 
-  // The digest consists of the label of the root node followed by its height, expressed as a single (unsigned) byte
+  /**
+   * The digest consists of the label of the root node followed by its height,
+   * expressed as a single (unsigned) byte
+   */
   protected def digest(rootNode: Node): Array[Byte] = {
     assert(rootNodeHeight >= 0 && rootNodeHeight < 256)
     // rootNodeHeight should never be more than 255, so the toByte conversion is safe (though it may cause an incorrect
@@ -32,13 +39,30 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     rootNode.label :+ rootNodeHeight.toByte
   }
 
-  protected def replayComparison: Int
-
+  /* The following four methods differ for the prover and verifier, but are used in the code below */
+  /**
+   * @return - whether we found the correct leaf and the key contains it
+   */
   protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean
-
+  /**
+   * @return - whether to go left or right when searching for key and standing at r
+   */
   protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean
-
+  /**
+   * @return - a new node with two leaves: r on the left and a new leaf containing key and value on the right
+   */
   protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalNode
+  /** 
+   * Deletions go down the tree twice -- once to find the leaf and realize
+   * that it needs to be deleted, and the second time to actually perform the deletion.
+   * This method will re-create comparison results. Each time it's called, it will give
+   * the next comparison result of 
+   * key and node.key, where node starts at the root and progresses down the tree
+   * according to the comparison results.
+   *
+   * @return - result of previous comparison of key and relevant node's key
+   */
+  protected def replayComparison: Int
 
   /**
     * Assumes the conditions for the double left rotation have already been established
@@ -89,23 +113,18 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
 
     var savedNode: Option[Leaf] = None // The leaf to be saved in the hard deletion case, where we delete a leaf and copy its info over to another leaf
 
-    /** Deletes the node in the subtree rooted at r and its corresponding leaf
-      * as indicated by replayDirections or deleteMax. Performs AVL balancing.
-      *
-      * If deleteMax == false: deletes the first node for which replayDirections returns 0
-      * and the leaf that is the leftmost descendant of this node's child
-      *
-      * If deleteMax == true: deletes the right leaf and its parent, replacing the parent
-      * with the parent's left child
-      *
-      * Returns the new root and an indicator whether the tree height decreased
-      */
 
     /**
       * returns the new root, an indicator whether tree has been modified at r or below,
       * an indicator whether the height has increased,
-      * an indicator whether we need to go delete the leaf that was just reached
-      * and old values
+      * an indicator whether we need to go delete the leaf that was just reached,
+      * and the old value associated with key
+      *
+      * Handles binary tree search and AVL rebalancing
+      *
+      * Deletions are not handled here in order not to complicate the code even more -- in case of deletion, 
+      * we don't change the tree, but simply return toDelete = true.
+      * We then go in and delete using deleteHelper
       */
     def modifyHelper(rNode: Node, key: AVLKey, operation: Operation): (Node, ChangeHappened, HeightIncreased, ToDelete, Option[AVLValue]) = {
       // Do not set the visited flag on the way down -- set it only after you know the operation did not fail,
@@ -121,9 +140,10 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
                     (r, false, false, true, Some(r.value))
                   case Success(Some(v)) => // update value
                     require(v.length == valueLength)
+                    val oldValue = Some(r.value)
                     val rNew = r.getNew(newValue = v)
                     r.visited = true
-                    (rNew, true, false, false, Some(r.value))
+                    (rNew, true, false, false, oldValue)
                   case Failure(e) => // updateFunction doesn't like the value we found
                     throw e
                 }
@@ -217,6 +237,17 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       }
     }
 
+    /** Deletes the node in the subtree rooted at r and its corresponding leaf
+      * as indicated by replayComparison or deleteMax. Performs AVL balancing.
+      *
+      * If deleteMax == false: deletes the first node for which replayComparison returns 0
+      * and the leaf that is the leftmost descendant of this node's child
+      *
+      * If deleteMax == true: deletes the right leaf and its parent, replacing the parent
+      * with the parent's left child
+      *
+      * Returns the new root and an indicator whether the tree height decreased
+      */
     def deleteHelper(r: InternalNode, deleteMax: Boolean): (Node, Boolean) = {
       // Overall strategy: if key is found in the node that has only a leaf as either
       // of the two children, we can just delete the node. If it has a leaf as the right child,
