@@ -1,6 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.authds.legacy.avltree.LabelOnlyNode
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -14,11 +15,11 @@ import scala.util.{Failure, Try}
   * @param keyLength        - length of keys in tree
   * @param valueLength      - length of values in tree
   * @param maxNumOperations - option the maximum number of operations that this proof 
-                              can be for, to limit running time in case of malicious proofs.
-                              If None, running time limits will not be enforced.
+  *                         can be for, to limit running time in case of malicious proofs.
+  *                         If None, running time limits will not be enforced.
   * @param maxDeletes       - at most, how many of maxNumOperations can be deletions; 
-                              for a tighter running time bound and better attack protection.
-                              If None, defaults to maxNumOperations.
+  *                         for a tighter running time bound and better attack protection.
+  *                         If None, defaults to maxNumOperations.
   * @param hf               - hash function
   */
 
@@ -35,34 +36,36 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   protected val labelLength = hf.DigestSize
 
   /**
-   * Returns Some[the current digest of the authenticated data structure],
-   * where the digest contains the root hash and the root height
-   * Returns None if the proof verification failed at construction
-   * or during any of the operations.
-   *
-   * @return - Some[digest] or None
-   */
-  def digest: Option[Array[Byte]] = topNode.map(digest(_)) 
+    * Returns Some[the current digest of the authenticated data structure],
+    * where the digest contains the root hash and the root height
+    * Returns None if the proof verification failed at construction
+    * or during any of the operations.
+    *
+    * @return - Some[digest] or None
+    */
+  def digest: Option[Array[Byte]] = topNode.map(digest(_))
 
-  private var directionsIndex = 0  // Keeps track of where we are in the
-                                   //  "directions" part of the proof
-  private var lastRightStep = 0 // Keeps track of the last time we took a right step
-                                // when going down the tree; needed for deletions
-  private var replayIndex = 0   // Keeps track of where we are when replaying directions
-                                // a second time; needed for deletions
+  private var directionsIndex = 0
+  // Keeps track of where we are in the
+  //  "directions" part of the proof
+  private var lastRightStep = 0
+  // Keeps track of the last time we took a right step
+  // when going down the tree; needed for deletions
+  private var replayIndex = 0 // Keeps track of where we are when replaying directions
+  // a second time; needed for deletions
 
 
   /**
-   * Figures out whether to go left or right when from node r when searching for the key,
-   * using the appropriate bit in the directions bit string from the proof
-   *
-   * @param key
-   * @param r
-   * @return - true if to go left, false if to go right in the search 
-   */
+    * Figures out whether to go left or right when from node r when searching for the key,
+    * using the appropriate bit in the directions bit string from the proof
+    *
+    * @param key
+    * @param r
+    * @return - true if to go left, false if to go right in the search
+    */
   protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
     // Decode bits of the proof as Booleans
-  val ret = if ((proof(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0) {
+    val ret = if ((proof(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0) {
       true
     } else {
       lastRightStep = directionsIndex
@@ -73,13 +76,13 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   }
 
   /**
-   * Determines if the leaf r contains the key or if r.key < r < r.nextLeafKey
-   * If neither of those holds, causes an exception.
-   *
-   * @param key
-   * @param r
-   * @return 
-   */
+    * Determines if the leaf r contains the key or if r.key < r < r.nextLeafKey
+    * If neither of those holds, causes an exception.
+    *
+    * @param key
+    * @param r
+    * @return
+    */
   protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
     // keyMatchesLeaf for the verifier is different than for the prover:
     // since the verifier doesn't have keys in internal nodes, keyMatchesLeaf
@@ -87,7 +90,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     // or is between the leaf's key and its nextLeafKey
     // See https://eprint.iacr.org/2016/994 Appendix B paragraph "Our Algorithms" 
     val c = ByteArray.compare(key, r.key)
-    require(c>=0)
+    require(c >= 0)
     if (c == 0) {
       true
     } else {
@@ -96,16 +99,16 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     }
   }
 
-  /** 
-   * Deletions go down the tree twice -- once to find the leaf and realize
-   * that it needs to be deleted, and the second time to actually perform the deletion.
-   * This method will re-create comparison results using directions in the proof and lastRightStep
-   * variable. Each time it's called, it will give the next comparison result of 
-   * key and node.key, where node starts at the root and progresses down the tree
-   * according to the comparison results.
-   *
-   * @return - result of previous comparison of key and relevant node's key
-   */
+  /**
+    * Deletions go down the tree twice -- once to find the leaf and realize
+    * that it needs to be deleted, and the second time to actually perform the deletion.
+    * This method will re-create comparison results using directions in the proof and lastRightStep
+    * variable. Each time it's called, it will give the next comparison result of
+    * key and node.key, where node starts at the root and progresses down the tree
+    * according to the comparison results.
+    *
+    * @return - result of previous comparison of key and relevant node's key
+    */
   protected def replayComparison: Int = {
     val ret = if (replayIndex == lastRightStep) {
       0
@@ -119,11 +122,11 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   }
 
   /**
-   * @param r
-   * @param key
-   * @param v
-   * @return - A new verifier node with two leaves: r on the left and a new leaf containing key and value on the right
-   */
+    * @param r
+    * @param key
+    * @param v
+    * @return - A new verifier node with two leaves: r on the left and a new leaf containing key and value on the right
+    */
   protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalVerifierNode = {
     val n = r.nextLeafKey
     new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), 0: Byte)
@@ -142,7 +145,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     val maxNodes = if (!maxNumOperations.isEmpty) {
       // compute the maximum number of nodes the proof can contain according to 
       // https://eprint.iacr.org/2016/994 Appendix B last paragraph
-      
+
       // First compute log (number of operations), rounded up
       var logNumOps = 0
       var temp = 1
@@ -161,7 +164,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     } else {
       0;
     }
-      
+
 
     // Now reconstruct the tree from the proof, which has the post order traversal
     // of the tree
@@ -217,17 +220,17 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   private var topNode: Option[VerifierNodes] = reconstructedTree
 
   /**
-   * If operation.key exists in the tree and the operation succeeds,
-   * returns Success(Some(v)), where v is the value associated with operation.key
-   * before the operation.
-   * If operation.key exists in the tree and the operation fails, returns Success(None).
-   * Returns Failure if the operation fails or the proof does not verify.
-   * After one failure, all subsequent operations will fail and digest
-   * is None.
-   *
-   * @param operation
-   * @return - Success(Some(old value)), Success(None), or Failure
-   */
+    * If operation.key exists in the tree and the operation succeeds,
+    * returns Success(Some(v)), where v is the value associated with operation.key
+    * before the operation.
+    * If operation.key exists in the tree and the operation fails, returns Success(None).
+    * Returns Failure if the operation fails or the proof does not verify.
+    * After one failure, all subsequent operations will fail and digest
+    * is None.
+    *
+    * @param operation
+    * @return - Success(Some(old value)), Success(None), or Failure
+    */
   def performOneOperation(operation: Operation): Try[Option[AVLValue]] = Try {
     replayIndex = directionsIndex
     val operationResult = returnResultOfOneOperation(operation, topNode.get)
@@ -242,7 +245,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
       Seq.fill(depth + 2)(" ").mkString + (rNode match {
         case leaf: VerifierLeaf =>
           "At leaf label = " + arrayToString(leaf.label) + " key = " + arrayToString(leaf.key) +
-            " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
+            " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "value = " + leaf.value + "\n"
         case r: InternalVerifierNode =>
           "Internal node label = " + arrayToString(r.label) + " balance = " +
             r.balance + "\n" + stringTreeHelper(r.left.asInstanceOf[VerifierNodes], depth + 1) +
@@ -255,5 +258,33 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
       case None => "None"
       case Some(t) => stringTreeHelper(t, 0)
     }
+  }
+
+  //todo: test
+  def extractNodes(extractor: VerifierNodes => Boolean): Option[Seq[VerifierNodes]] = {
+    def treeTraverser(rNode: VerifierNodes, collected: Seq[VerifierNodes]): Seq[VerifierNodes] = rNode match {
+      case l: VerifierLeaf => if (extractor(l)) l +: collected else collected
+      case ln: LabelOnlyNode => if (extractor(ln)) ln +: collected else collected
+      case int: InternalVerifierNode =>
+        collected ++
+          treeTraverser(int.right.asInstanceOf[VerifierNodes], Seq()) ++
+          treeTraverser(int.left.asInstanceOf[VerifierNodes], Seq())
+    }
+
+    topNode.map(t => treeTraverser(t, Seq()))
+  }
+
+  //todo: test
+  def extractFirstNode(extractor: VerifierNodes => Boolean): Option[VerifierNodes] = {
+    def treeTraverser(rNode: VerifierNodes, collected: Option[VerifierNodes]): Option[VerifierNodes] = rNode match {
+      case l: VerifierLeaf => if (extractor(l)) Some(l) else None
+      case ln: LabelOnlyNode => if (extractor(ln)) Some(ln) else None
+      case int: InternalVerifierNode => if (collected.isEmpty) {
+        treeTraverser(int.left.asInstanceOf[VerifierNodes], None) orElse
+          treeTraverser(int.right.asInstanceOf[VerifierNodes], None)
+      } else { collected }
+    }
+
+    topNode.flatMap(t => treeTraverser(t, None))
   }
 }

@@ -1,4 +1,8 @@
+**1.2.1**
+---------
 
+Better interface for authenticated dynamic dictionaries, namely 
+Operation/Lookup/Modification families.
 
 **1.2.0**
 ---------
