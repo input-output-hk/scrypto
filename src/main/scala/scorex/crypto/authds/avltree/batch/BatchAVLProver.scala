@@ -1,8 +1,10 @@
 package scorex.crypto.authds.avltree.batch
 
+import com.google.common.primitives.Shorts
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
+
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
@@ -26,7 +28,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
   private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
-      Array.fill(valueLengthOpt.getOrElse(keyLength))(0: Byte), PositiveInfinityKey)
+      Array.fill(valueLengthOpt.map(_.toInt).getOrElse(0))(0: Byte), PositiveInfinityKey)
     t.isNew = false
     t
   })
@@ -217,6 +219,9 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
             packagedTree += LeafInPackagedProof
             if (!previousLeafAvailable) packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
+            if(valueLengthOpt.isEmpty) {
+              packagedTree ++= Shorts.toByteArray(r.value.length.toShort)
+            }
             packagedTree ++= r.value
             previousLeafAvailable = true
           case r: InternalProverNode =>

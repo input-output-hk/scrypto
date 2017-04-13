@@ -1,5 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
+import com.google.common.primitives.Shorts
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -136,7 +137,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   private lazy val reconstructedTree: Option[VerifierNodes] = Try {
     require(labelLength > 0)
     require(keyLength > 0)
-    require(valueLengthOpt.getOrElse(0) >= 0)
+    valueLengthOpt.foreach(vl => require(vl >= 0))
     require(startingDigest.length == labelLength + 1)
     rootNodeHeight = startingDigest.last & 0xff
 
@@ -192,7 +193,11 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
           }
           val nextLeafKey = proof.slice(i, i + keyLength)
           i += keyLength
-          val valueLength = valueLengthOpt.get //TODO read if not true
+          val valueLength: Int = valueLengthOpt.getOrElse{
+            val vl = Shorts.fromByteArray(proof.slice(i, i + 2))
+            i += 2
+            vl
+          }
           val value = proof.slice(i, i + valueLength)
           i += valueLength
           val leaf = new VerifierLeaf(key, value, nextLeafKey)

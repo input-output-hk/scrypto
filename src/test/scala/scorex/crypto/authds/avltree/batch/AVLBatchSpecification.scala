@@ -19,6 +19,29 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val HL = 32
 
 
+  property("Tree without fixed value length") {
+    val prover = new BatchAVLProver(KL, None)
+    var digest = prover.digest
+
+    forAll { valueLength: Short =>
+      whenever(valueLength >= 0) {
+        val aKey = Random.randomBytes(KL)
+        val aValue = Random.randomBytes(valueLength)
+        val currentMods = Seq(Insert(aKey, aValue))
+
+        currentMods foreach (m => prover.performOneOperation(m))
+        val pf = prover.generateProof
+
+        val verifier = new BatchAVLVerifier(digest, pf, KL, None)
+        currentMods foreach (m => verifier.performOneOperation(m))
+        digest = verifier.digest.get
+
+        prover.digest shouldEqual digest
+      }
+    }
+    prover.checkTree(true)
+  }
+
   property("Modifications for different key and value length") {
     forAll { (aKey: Array[Byte], aValue: Array[Byte]) =>
       val KL = aKey.length
