@@ -11,11 +11,11 @@ import scala.util.{Failure, Try}
   * Implements the batch AVL verifier from https://eprint.iacr.org/2016/994
   *
   * @param keyLength        - length of keys in tree
-  * @param valueLength      - length of values in tree
-  * @param maxNumOperations - option the maximum number of operations that this proof 
+  * @param valueLengthOpt      - length of values in tree. None if it is not fixed
+  * @param maxNumOperations - option the maximum number of operations that this proof
   *                         can be for, to limit running time in case of malicious proofs.
   *                         If None, running time limits will not be enforced.
-  * @param maxDeletes       - at most, how many of maxNumOperations can be deletions; 
+  * @param maxDeletes       - at most, how many of maxNumOperations can be deletions;
   *                         for a tighter running time bound and better attack protection.
   *                         If None, defaults to maxNumOperations.
   * @param hf               - hash function
@@ -24,7 +24,7 @@ import scala.util.{Failure, Try}
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
                                                proof: Array[Byte],
                                                override val keyLength: Int,
-                                               override val valueLength: Int,
+                                               override val valueLengthOpt: Option[Int],
                                                maxNumOperations: Option[Int] = None,
                                                maxDeletes: Option[Int] = None
                                               )
@@ -86,7 +86,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     // since the verifier doesn't have keys in internal nodes, keyMatchesLeaf
     // checks that the key is either equal to the leaf's key
     // or is between the leaf's key and its nextLeafKey
-    // See https://eprint.iacr.org/2016/994 Appendix B paragraph "Our Algorithms" 
+    // See https://eprint.iacr.org/2016/994 Appendix B paragraph "Our Algorithms"
     val c = ByteArray.compare(key, r.key)
     require(c >= 0)
     if (c == 0) {
@@ -136,12 +136,12 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
   private lazy val reconstructedTree: Option[VerifierNodes] = Try {
     require(labelLength > 0)
     require(keyLength > 0)
-    require(valueLength >= 0)
+    require(valueLengthOpt.getOrElse(0) >= 0)
     require(startingDigest.length == labelLength + 1)
     rootNodeHeight = startingDigest.last & 0xff
 
     val maxNodes = if (!maxNumOperations.isEmpty) {
-      // compute the maximum number of nodes the proof can contain according to 
+      // compute the maximum number of nodes the proof can contain according to
       // https://eprint.iacr.org/2016/994 Appendix B last paragraph
 
       // First compute log (number of operations), rounded up
@@ -192,6 +192,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
           }
           val nextLeafKey = proof.slice(i, i + keyLength)
           i += keyLength
+          val valueLength = valueLengthOpt.get //TODO read if not true
           val value = proof.slice(i, i + valueLength)
           i += valueLength
           val leaf = new VerifierLeaf(key, value, nextLeafKey)

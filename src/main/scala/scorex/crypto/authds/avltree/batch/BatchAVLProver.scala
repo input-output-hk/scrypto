@@ -11,13 +11,13 @@ import scala.util.{Failure, Success, Try}
   * Implements the batch AVL prover from https://eprint.iacr.org/2016/994
   *
   * @param keyLength        - length of keys in tree
-  * @param valueLength      - length of values in tree
+  * @param valueLengthOpt      - length of values in tree. None if it is not fixed
   * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
   *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
 class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
-                                             val valueLength: Int,
+                                             val valueLengthOpt: Option[Int],
                                              oldRootAndHeight: Option[(ProverNodes, Int)] = None)
                                             (implicit val hf: HF = new Blake2b256Unsafe)
   extends AuthenticatedTreeOps with ToStringHelper {
@@ -26,7 +26,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
   private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
-      Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
+      Array.fill(valueLengthOpt.getOrElse(keyLength))(0: Byte), PositiveInfinityKey)
     t.isNew = false
     t
   })
