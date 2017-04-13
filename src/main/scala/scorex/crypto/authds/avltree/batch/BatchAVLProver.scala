@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Shorts
+import com.google.common.primitives.Ints
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -220,7 +220,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
             if (!previousLeafAvailable) packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
             if(valueLengthOpt.isEmpty) {
-              packagedTree ++= Shorts.toByteArray(r.value.length.toShort)
+              packagedTree ++= Ints.toByteArray(r.value.length)
             }
             packagedTree ++= r.value
             previousLeafAvailable = true

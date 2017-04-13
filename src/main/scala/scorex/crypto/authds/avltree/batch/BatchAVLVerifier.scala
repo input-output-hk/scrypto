@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Shorts
+import com.google.common.primitives.Ints
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
@@ -12,7 +12,7 @@ import scala.util.{Failure, Try}
   * Implements the batch AVL verifier from https://eprint.iacr.org/2016/994
   *
   * @param keyLength        - length of keys in tree
-  * @param valueLengthOpt      - length of values in tree. None if it is not fixed
+  * @param valueLengthOpt   - length of values in tree. None if it is not fixed
   * @param maxNumOperations - option the maximum number of operations that this proof
   *                         can be for, to limit running time in case of malicious proofs.
   *                         If None, running time limits will not be enforced.
@@ -193,9 +193,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
           }
           val nextLeafKey = proof.slice(i, i + keyLength)
           i += keyLength
-          val valueLength: Int = valueLengthOpt.getOrElse{
-            val vl = Shorts.fromByteArray(proof.slice(i, i + 2))
-            i += 2
+          val valueLength: Int = valueLengthOpt.getOrElse {
+            val vl = Ints.fromByteArray(proof.slice(i, i + 4))
+            i += 4
             vl
           }
           val value = proof.slice(i, i + valueLength)
@@ -286,7 +286,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
       case int: InternalVerifierNode => if (collected.isEmpty) {
         treeTraverser(int.left.asInstanceOf[VerifierNodes], None) orElse
           treeTraverser(int.right.asInstanceOf[VerifierNodes], None)
-      } else { collected }
+      } else {
+        collected
+      }
     }
 
     topNode.flatMap(t => treeTraverser(t, None))
