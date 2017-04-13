@@ -16,8 +16,8 @@ import scala.util.{Failure, Success, Try}
   *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
-class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
-                                             val valueLength: Int = 8,
+class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
+                                             val valueLength: Int,
                                              oldRootAndHeight: Option[(ProverNodes, Int)] = None)
                                             (implicit val hf: HF = new Blake2b256Unsafe)
   extends AuthenticatedTreeOps with ToStringHelper {

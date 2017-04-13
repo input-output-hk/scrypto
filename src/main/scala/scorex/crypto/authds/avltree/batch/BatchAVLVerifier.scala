@@ -1,11 +1,9 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
-import scorex.crypto.authds.legacy.avltree.LabelOnlyNode
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Failure, Try}
 
@@ -25,8 +23,8 @@ import scala.util.{Failure, Try}
 
 class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
                                                proof: Array[Byte],
-                                               override val keyLength: Int = 32,
-                                               override val valueLength: Int = 8,
+                                               override val keyLength: Int,
+                                               override val valueLength: Int,
                                                maxNumOperations: Option[Int] = None,
                                                maxDeletes: Option[Int] = None
                                               )

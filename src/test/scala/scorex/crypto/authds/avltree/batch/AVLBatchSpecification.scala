@@ -124,12 +124,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
 
   property("zero-mods verification on empty tree") {
-    val p = new BatchAVLProver()
+    val p = new BatchAVLProver(KL, VL)
     p.checkTree()
     val digest = p.digest
     val pf = p.generateProof
     p.checkTree(true)
-    val v = new BatchAVLVerifier(digest, pf, 32, 8, Some(0), Some(0))
+    val v = new BatchAVLVerifier(digest, pf, KL, VL, Some(0), Some(0))
     v.digest match {
       case Some(d) =>
         require(d sameElements digest, "wrong digest for zero-mods")
@@ -141,7 +141,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   property("conversion to byte and back") {
     // There is no way to test this without building a tree with at least 2^88 leaves,
     // so we resort to a very basic test
-    val p = new BatchAVLProver()
+    val p = new BatchAVLProver(KL, VL)
     val digest = p.digest
     var i: Int = 0
     for (i <- 0 to 255) {
@@ -153,51 +153,51 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
 
   property("various verifier fails") {
-    val p = new BatchAVLProver()
+    val p = new BatchAVLProver(KL, VL)
 
     p.checkTree()
     for (i <- 0 until 1000) {
-      require(p.performOneOperation(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
+      require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(VL))).isSuccess, "failed to insert")
       p.checkTree()
     }
     p.generateProof
 
     var digest = p.digest
     for (i <- 0 until 50)
-      require(p.performOneOperation(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
+      require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(VL))).isSuccess, "failed to insert")
 
     var pf = p.generateProof
 
     // see if the proof for 50 mods will be allowed when we permit only 2
-    var v = new BatchAVLVerifier(digest, pf, 32, 8, Some(2), Some(0))
+    var v = new BatchAVLVerifier(digest, pf, KL, VL, Some(2), Some(0))
     require(v.digest.isEmpty, "Failed to reject too long a proof")
 
     // see if wrong digest will be allowed
-    v = new BatchAVLVerifier(Random.randomBytes(), pf, 32, 8, Some(50), Some(0))
+    v = new BatchAVLVerifier(Random.randomBytes(KL), pf, KL, VL, Some(50), Some(0))
     require(v.digest.isEmpty, "Failed to reject wrong digest")
 
     for (i <- 0 until 10) {
       digest = p.digest
       for (i <- 0 until 8)
-        require(p.performOneOperation(Insert(Random.randomBytes(), Random.randomBytes(8))).isSuccess, "failed to insert")
+        require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(8))).isSuccess, "failed to insert")
 
-      v = new BatchAVLVerifier(digest, p.generateProof(), 32, 8, Some(8), Some(0))
+      v = new BatchAVLVerifier(digest, p.generateProof(), KL, VL, Some(8), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
       for (i <- 0 until 5)
-        v.performOneOperation(Insert(Random.randomBytes(), Random.randomBytes(8)))
+        v.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of a missing leaf")
 
       digest = p.digest
-      val key = Random.randomBytes()
+      val key = Random.randomBytes(KL)
       p.performOneOperation(Insert(key, Random.randomBytes(8)))
       pf = p.generateProof()
       p.checkTree()
 
       // Change the direction of the proof and make sure verifier fails
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
-      v = new BatchAVLVerifier(digest, pf, 32, 8, Some(1), Some(0))
+      v = new BatchAVLVerifier(digest, pf, KL, VL, Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneOperation(Insert(key, Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
@@ -208,7 +208,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
       val oldKey = key(0)
       key(0) = (key(0) ^ (1 << 7)).toByte
-      v = new BatchAVLVerifier(digest, pf, 32, 8, Some(1), Some(0))
+      v = new BatchAVLVerifier(digest, pf, KL, VL, Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneOperation(Insert(key, Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
@@ -219,7 +219,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("succesful modifications") {
-    val p = new BatchAVLProver()
+    val p = new BatchAVLProver(KL, VL)
 
     val numMods = 5000
 
@@ -249,14 +249,14 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             val j = Random.randomBytes(3)
             val index = randomInt(keysAndVals.size)
             val key = keysAndVals(index)._1
-            require(p.performOneOperation(Insert(key, Random.randomBytes(8))).isFailure, "prover succeeded on inserting a value that's already in tree")
+            require(p.performOneOperation(Insert(key, Random.randomBytes(VL))).isFailure, "prover succeeded on inserting a value that's already in tree")
             p.checkTree()
             require(p.unauthenticatedLookup(key).get sameElements keysAndVals(index)._2, "value changed after duplicate insert") // check insert didn't do damage
             numFailures += 1
           }
           else {
-            val key = Random.randomBytes()
-            val newVal = Random.randomBytes(8)
+            val key = Random.randomBytes(KL)
+            val newVal = Random.randomBytes(VL)
             keysAndVals += ((key, newVal))
             val mod = Insert(key, newVal)
             currentMods += mod
@@ -272,7 +272,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             // update
             if (randomInt(10) == 0) {
               // with probability 1/10 cause a fail by modifying a nonexisting key
-              val key = Random.randomBytes()
+              val key = Random.randomBytes(KL)
               require(p.performOneOperation(Update(key, Random.randomBytes(8))).isFailure, "prover updated a nonexistent value")
               p.checkTree()
               require(p.unauthenticatedLookup(key).isEmpty, "a nonexistent value appeared after an update") // check update didn't do damage
@@ -293,7 +293,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             // delete
             if (randomInt(10) == 0) {
               // with probability 1/10 remove a nonexisting one but without failure -- shouldn't change the tree
-              val key = Random.randomBytes()
+              val key = Random.randomBytes(KL)
               val mod = RemoveIfExists(key)
               val d = p.digest
               currentMods += mod
@@ -324,7 +324,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val pf = p.generateProof
       p.checkTree(true)
 
-      val v = new BatchAVLVerifier(digest, pf, 32, 8, Some(n), Some(numCurrentDeletes))
+      val v = new BatchAVLVerifier(digest, pf, KL, VL, Some(n), Some(numCurrentDeletes))
       v.digest match {
         case None =>
           require(false, "Verification failed to construct the tree")

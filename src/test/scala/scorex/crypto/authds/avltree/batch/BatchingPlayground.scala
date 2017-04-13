@@ -10,6 +10,9 @@ import scala.util.Success
 
 
 object BatchingPlayground extends App with ToStringHelper {
+  val KL = 32
+  val VL = 8
+
   def time[R](block: => R): (Float, R) = {
     val t0 = System.nanoTime()
     val result = block // call-by-name
@@ -32,7 +35,7 @@ object BatchingPlayground extends App with ToStringHelper {
   //lookupBenchmark()
   testReadme
   def lookupBenchmark(): Unit = {
-    val prover = new BatchAVLProver()
+    val prover = new BatchAVLProver(KL, VL)
     println(s"modifyingLookupProoflength,modifyingLookupTime,modifyingLookupVerificationTime,lookupProoflength,lookupTime,lookupVerificationTime")
 
     val ElementsToInsert = 100000
@@ -48,7 +51,7 @@ object BatchingPlayground extends App with ToStringHelper {
       lookups.foreach(l => prover.performOneOperation(l))
       prover.generateProof()
     }
-    val vr = new BatchAVLVerifier(prover.digest, lookupProof)
+    val vr = new BatchAVLVerifier(prover.digest, lookupProof, KL, VL)
     val (lookupVerificationTime, _) = time(lookups.map(lookup => lookup.key -> vr.performOneOperation(lookup).get))
     // modifying lookups
 
@@ -57,7 +60,7 @@ object BatchingPlayground extends App with ToStringHelper {
       oldLookups.foreach(ol => prover.performOneOperation(ol))
       prover.generateProof()
     }
-    val verifier = new BatchAVLVerifier(digest2, oldLookupProof)
+    val verifier = new BatchAVLVerifier(digest2, oldLookupProof, KL, VL)
     val (oldLookupVerificationTime, _) = time {
       oldLookups.foreach(ol => verifier.performOneOperation(ol))
     }
@@ -142,7 +145,7 @@ object BatchingPlayground extends App with ToStringHelper {
     }
 
     val value = Random.randomBytes(8)
-    var newProver = new BatchAVLProver()
+    var newProver = new BatchAVLProver(KL, VL)
 
     def ins(k: Int) = {
       var m = Insert(intToKey(k), value)
@@ -167,7 +170,7 @@ object BatchingPlayground extends App with ToStringHelper {
 
     def deleteTest2 = {
       def makeUnBalanced24EltTree = {
-        newProver = new BatchAVLProver
+        newProver = new BatchAVLProver(KL, VL)
         ins(64)
 
         ins(32)
@@ -240,7 +243,7 @@ object BatchingPlayground extends App with ToStringHelper {
       val testCase = 3
 
       def clearTree = {
-        newProver = new BatchAVLProver()
+        newProver = new BatchAVLProver(KL, VL)
         if (testCase == 2) {
           ins(60)
           ins(70)
@@ -322,7 +325,7 @@ object BatchingPlayground extends App with ToStringHelper {
         key(j) = ((r >> ((j % 4) * 8)) % 256).toByte
     }
 
-    val newProver = new BatchAVLProver()
+    val newProver = new BatchAVLProver(KL, VL)
     val numKeys = 400000
     var p: Option[Seq[Byte]] = None
     var prevMemory: Long = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
@@ -449,7 +452,7 @@ object BatchingPlayground extends App with ToStringHelper {
   }
 
   def timeBenchmarksNew {
-    val newProver = new BatchAVLProver()
+    val newProver = new BatchAVLProver(KL, VL)
     val numMods = 1024 * 1024
 
     val mod = new Array[Operation](1)
@@ -575,7 +578,7 @@ object BatchingPlayground extends App with ToStringHelper {
 
 
   def spaceBenchmarks {
-    val newProver = new BatchAVLProver()
+    val newProver = new BatchAVLProver(KL, VL)
 
     val numMods = 1024 * 1024
 
@@ -607,7 +610,7 @@ object BatchingPlayground extends App with ToStringHelper {
   }
 
   def deleteProofSizeTest = {
-    val newProver = new BatchAVLProver()
+    val newProver = new BatchAVLProver(KL, VL)
     val numMods = 1000000
     val testAtTheEnd = 2000
 
@@ -651,7 +654,7 @@ object BatchingPlayground extends App with ToStringHelper {
 
   def batchingSelfTest = {
     def testZeroModProofOnEmptyTree = {
-      val p = new BatchAVLProver()
+      val p = new BatchAVLProver(KL, VL)
       p.checkTree()
       val digest = p.digest
       val pf = p.generateProof()
@@ -666,7 +669,7 @@ object BatchingPlayground extends App with ToStringHelper {
     }
 
     def testVariousVerifierFails = {
-      val p = new BatchAVLProver()
+      val p = new BatchAVLProver(KL, VL)
 
       p.checkTree()
       for (i <- 0 until 1000) {
@@ -735,7 +738,7 @@ object BatchingPlayground extends App with ToStringHelper {
     def testSuccessfulChanges(toPrint: Boolean) = {
       def randomInt(max: Int) = scala.util.Random.nextInt(max)
 
-      val p = new BatchAVLProver()
+      val p = new BatchAVLProver(KL, VL)
 
       val numMods = 5000
 
