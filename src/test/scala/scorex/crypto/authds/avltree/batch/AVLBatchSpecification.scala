@@ -10,7 +10,7 @@ import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.utils.Random
 
 import scala.util.Random.{nextInt => randomInt}
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -43,28 +43,34 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Modifications for different key and value length") {
-    forAll { (aKey: Array[Byte], aValue: Array[Byte]) =>
-      val KL = aKey.length
-      val VL = aValue.length
-      whenever(KL > 0 && VL > 0) {
-        val prover = new BatchAVLProver(KL, Some(VL))
-        val m = Insert(aKey, aValue)
+    Try {
+      forAll { (aKey: Array[Byte], aValue: Array[Byte]) =>
+        val KL = aKey.length
+        val VL = aValue.length
+        whenever(KL > 0 && VL > 0) {
+          val prover = new BatchAVLProver(KL, Some(VL))
+          val m = Insert(aKey, aValue)
 
-        val digest = prover.digest
-        prover.performOneOperation(m)
-        val pf = prover.generateProof
-        prover.digest
+          val digest = prover.digest
+          prover.performOneOperation(m)
+          val pf = prover.generateProof
+          prover.digest
 
-        val verifier = new BatchAVLVerifier(digest, pf, KL, Some(VL))
-        verifier.performOneOperation(m)
-        prover.digest shouldEqual verifier.digest.get
+          val verifier = new BatchAVLVerifier(digest, pf, KL, Some(VL))
+          verifier.performOneOperation(m)
+          prover.digest shouldEqual verifier.digest.get
 
-        val lookup = Lookup(aKey)
-        prover.performOneOperation(lookup)
-        val pr: Array[Byte] = prover.generateProof()
-        val vr = new BatchAVLVerifier(prover.digest, pr, KL, Some(VL))
-        vr.performOneOperation(lookup).get.get shouldEqual aValue
+          val lookup = Lookup(aKey)
+          prover.performOneOperation(lookup)
+          val pr: Array[Byte] = prover.generateProof()
+          val vr = new BatchAVLVerifier(prover.digest, pr, KL, Some(VL))
+          vr.performOneOperation(lookup).get.get shouldEqual aValue
+        }
       }
+    }.recoverWith {
+      case e =>
+        e.printStackTrace
+        Failure(e)
     }
   }
 
