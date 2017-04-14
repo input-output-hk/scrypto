@@ -71,7 +71,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       case e =>
         e.printStackTrace
         Failure(e)
-    }
+    }.get
   }
 
   property("Lookups") {
