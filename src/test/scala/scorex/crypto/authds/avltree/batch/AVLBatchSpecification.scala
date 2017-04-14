@@ -7,6 +7,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.authds.legacy.avltree.AVLTree
+import scorex.crypto.hash.Blake2b256
 import scorex.utils.Random
 
 import scala.util.Random.{nextInt => randomInt}
@@ -18,6 +19,29 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val VL = 8
   val HL = 32
 
+
+  property("Batch of lookups") {
+    //prepare tree
+    val prover = new BatchAVLProver(KL, None)
+    (0 until 1000) foreach { i =>
+      val aValue = Blake2b256(i.toString.getBytes)
+      prover.performOneOperation(Insert(aValue.take(KL), aValue))
+    }
+    prover.generateProof()
+    val  digest = prover.digest
+
+    forAll(smallInt) { numberOfLookups: Int =>
+      val currentMods = (0 until numberOfLookups).map(_ => Random.randomBytes(KL)).map(k => Lookup(k))
+
+      currentMods foreach (m => prover.performOneOperation(m))
+      val pf = prover.generateProof
+
+      val verifier = new BatchAVLVerifier(digest, pf, KL, None)
+      currentMods foreach (m => verifier.performOneOperation(m).get)
+      prover.digest shouldEqual verifier.digest.get
+    }
+    prover.checkTree(true)
+  }
 
   property("Tree without fixed value length") {
     val prover = new BatchAVLProver(KL, None)
