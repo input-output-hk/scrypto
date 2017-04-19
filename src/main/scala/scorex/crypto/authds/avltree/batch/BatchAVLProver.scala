@@ -1,8 +1,10 @@
 package scorex.crypto.authds.avltree.batch
 
+import com.google.common.primitives.Ints
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
+
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
@@ -11,13 +13,13 @@ import scala.util.{Failure, Success, Try}
   * Implements the batch AVL prover from https://eprint.iacr.org/2016/994
   *
   * @param keyLength        - length of keys in tree
-  * @param valueLength      - length of values in tree
+  * @param valueLengthOpt      - length of values in tree. None if it is not fixed
   * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
   *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
-class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
-                                             val valueLength: Int = 8,
+class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
+                                             val valueLengthOpt: Option[Int],
                                              oldRootAndHeight: Option[(ProverNodes, Int)] = None)
                                             (implicit val hf: HF = new Blake2b256Unsafe)
   extends AuthenticatedTreeOps with ToStringHelper {
@@ -26,7 +28,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
 
   private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
-      Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
+      Array.fill(valueLengthOpt.map(_.toInt).getOrElse(0))(0: Byte), PositiveInfinityKey)
     t.isNew = false
     t
   })
@@ -217,6 +219,9 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int = 32,
             packagedTree += LeafInPackagedProof
             if (!previousLeafAvailable) packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
+            if(valueLengthOpt.isEmpty) {
+              packagedTree ++= Ints.toByteArray(r.value.length)
+            }
             packagedTree ++= r.value
             previousLeafAvailable = true
           case r: InternalProverNode =>

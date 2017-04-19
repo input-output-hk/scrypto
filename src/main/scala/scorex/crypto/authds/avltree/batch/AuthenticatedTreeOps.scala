@@ -18,7 +18,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
   type ToDelete = Boolean
 
   protected val keyLength: Int
-  protected val valueLength: Int
+  protected val valueLengthOpt: Option[Int]
 
   protected val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
   protected val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
@@ -139,7 +139,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
                     r.visited = true
                     (r, false, false, true, Some(r.value))
                   case Success(Some(v)) => // update value
-                    require(v.length == valueLength)
+                    valueLengthOpt.foreach(vl => require(v.length == vl, s"Value length is fixed and should be $vl"))
                     val oldValue = Some(r.value)
                     val rNew = r.getNew(newValue = v)
                     r.visited = true
@@ -160,7 +160,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
                     rNode.visited = true
                     (r, false, false, false, None)
                   case Success(Some(v)) => // insert new value
-                    require(v.length == valueLength)
+                    valueLengthOpt.foreach(vl => require(v.length == vl, s"Value length is fixed and should be $vl"))
                     rNode.visited = true
                     (addNode(r, key, v), true, true, false, None)
                   case Failure(e) => // updateFunctions doesn't like that we found nothing

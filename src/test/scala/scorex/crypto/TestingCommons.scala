@@ -31,4 +31,6 @@ trait TestingCommons extends Matchers {
     Gen.choose(minSize, maxSize) flatMap { sz => Gen.listOfN(sz, Arbitrary.arbitrary[Byte]).map(_.toArray) }
   }
 
+  lazy val smallInt: Gen[Int] = Gen.choose(0, 20)
+
 }
