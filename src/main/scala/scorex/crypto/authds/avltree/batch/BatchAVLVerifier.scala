@@ -264,7 +264,6 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     }
   }
 
-  //todo: test
   def extractNodes(extractor: VerifierNodes => Boolean): Option[Seq[VerifierNodes]] = {
     def treeTraverser(rNode: VerifierNodes, collected: Seq[VerifierNodes]): Seq[VerifierNodes] = rNode match {
       case l: VerifierLeaf => if (extractor(l)) l +: collected else collected

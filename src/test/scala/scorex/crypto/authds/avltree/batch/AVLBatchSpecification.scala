@@ -8,7 +8,7 @@ import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.hash.Blake2b256
-import scorex.utils.Random
+import scorex.utils.{ByteArray, Random}
 
 import scala.util.Random.{nextInt => randomInt}
 import scala.util.{Failure, Try}
@@ -20,6 +20,47 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val HL = 32
 
 
+  property("BatchAVLVerifier: extractNodes and extractFirstNode") {
+    val TreeSize = 1000
+    val prover = new BatchAVLProver(KL, None)
+    val digest = prover.digest
+    val keyValues = (0 until TreeSize) map { i =>
+      val aValue = Blake2b256(i.toString.getBytes)
+      (aValue.take(KL), aValue)
+    }
+    keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
+
+    val pf = prover.generateProof()
+
+    val verifier = new BatchAVLVerifier(digest, pf, KL, None)
+    val infinityLeaf: VerifierNodes = verifier.extractFirstNode {
+      case l: VerifierLeaf => true
+      case _ => false
+    }.get
+    val nonInfiniteLeaf: VerifierNodes => Boolean = {
+      case l: VerifierLeaf => !(l.label sameElements infinityLeaf.label)
+      case _ => false
+    }
+
+    (0 until TreeSize) foreach { i =>
+      val aValue = Blake2b256(i.toString.getBytes)
+      verifier.performOneOperation(Insert(aValue.take(KL), aValue))
+    }
+    //extract all leafs
+    val allLeafs = verifier.extractNodes(nonInfiniteLeaf)
+    allLeafs.get.length shouldBe TreeSize
+    //First extracted leaf should be smallest
+    val ordering: (Array[Byte], Array[Byte]) => Boolean = (a, b) => ByteArray.compare(a, b) > 0
+    val smallestKey = keyValues.map(_._1).sortWith(ordering).last
+    val minLeaf = verifier.extractFirstNode(nonInfiniteLeaf).get.asInstanceOf[VerifierLeaf]
+    minLeaf.key shouldEqual smallestKey
+
+  }
+
+  property("BatchAVLVerifier: extractFirstNode") {
+
+  }
+
   property("Batch of lookups") {
     //prepare tree
     val prover = new BatchAVLProver(KL, None)
@@ -28,7 +69,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       prover.performOneOperation(Insert(aValue.take(KL), aValue))
     }
     prover.generateProof()
-    val  digest = prover.digest
+    val digest = prover.digest
 
     forAll(smallInt) { numberOfLookups: Int =>
       val currentMods = (0 until numberOfLookups).map(_ => Random.randomBytes(KL)).map(k => Lookup(k))
