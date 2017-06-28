@@ -10,6 +10,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Tree creation from 1 element") {
     forAll { d: Array[Byte] =>
       val tree = MerkleTree(Seq(d))(hf)
+      val leaf = Leaf(d)
       tree.rootHash shouldEqual hf.prefixedHash(0: Byte, d)
     }
   }
