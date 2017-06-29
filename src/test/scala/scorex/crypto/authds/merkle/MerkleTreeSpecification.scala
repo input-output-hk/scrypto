@@ -2,10 +2,28 @@ package scorex.crypto.authds.merkle
 
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
+import scorex.crypto.TestingCommons
 import scorex.crypto.hash.Blake2b256Unsafe
 
-class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers {
+class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
   implicit val hf = new Blake2b256Unsafe
+
+
+  property("Proof generation by index") {
+    forAll(smallInt) { N: Int =>
+      whenever(N > 0) {
+        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(32))
+        val tree = MerkleTree(d)
+        tree.rootHash
+        (0 until N).foreach { i =>
+          assert(tree.proofByIndex(i).get.leaf.data sameElements d(i))
+        }
+        (N until N + 100).foreach { i =>
+          assert(tree.proofByIndex(i).isEmpty)
+        }
+      }
+    }
+  }
 
   property("Tree creation from 1 element") {
     forAll { d: Array[Byte] =>
