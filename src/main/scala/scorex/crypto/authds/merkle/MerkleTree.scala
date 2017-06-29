@@ -16,7 +16,7 @@ case class MerkleTree(topNode: InternalNode, length: Int) {
         case n: InternalNode if i < curLength =>
           loop(n.right, i - curLength / 2, curLength / 2, acc :+ n.left)
         case n: Leaf =>
-          Some((n, acc.filter(n => n != EmptyNode)))
+          Some((n, acc.filter(n => n != EmptyNode).reverse))
         case _ =>
           None
       }
