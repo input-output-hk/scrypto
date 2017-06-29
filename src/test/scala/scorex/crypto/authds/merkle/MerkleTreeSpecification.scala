@@ -3,11 +3,10 @@ package scorex.crypto.authds.merkle
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
-import scorex.crypto.hash.Blake2b256Unsafe
+import scorex.crypto.hash.{Blake2b256, CommutativeHash}
 
 class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
-  implicit val hf = new Blake2b256Unsafe
-
+  implicit val hf = new CommutativeHash(Blake2b256)
 
   property("Proof generation by index") {
     forAll(smallInt) { N: Int =>

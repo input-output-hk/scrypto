@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.hash.{CommutativeHash, ThreadUnsafeHash}
 
 import scala.annotation.tailrec
 
@@ -34,7 +34,7 @@ case class MerkleTree(topNode: InternalNode, length: Int) {
 object MerkleTree {
 
   def apply(payload: Seq[Array[Byte]])
-           (implicit hf: ThreadUnsafeHash): MerkleTree = {
+           (implicit hf: CommutativeHash[_]): MerkleTree = {
     val leafs = payload.map(d => Leaf(d))
     val topNode = calcTopNode(leafs)
 
@@ -42,7 +42,7 @@ object MerkleTree {
   }
 
   @tailrec
-  def calcTopNode(nodes: Seq[Node])(implicit hf: ThreadUnsafeHash): InternalNode = {
+  def calcTopNode(nodes: Seq[Node])(implicit hf: CommutativeHash[_]): InternalNode = {
     val nextNodes = nodes.grouped(2).map(lr => InternalNode(lr.head, if (lr.length == 2) lr.last else EmptyNode)).toSeq
     if (nextNodes.length == 1) nextNodes.head
     else calcTopNode(nextNodes)
