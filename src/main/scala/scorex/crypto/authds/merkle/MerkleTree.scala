@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.hash.{CommutativeHash, ThreadUnsafeHash}
+import scorex.crypto.hash.CommutativeHash
 
 import scala.annotation.tailrec
 
@@ -16,7 +16,7 @@ case class MerkleTree(topNode: InternalNode, length: Int) {
         case n: InternalNode if i < curLength =>
           loop(n.right, i - curLength / 2, curLength / 2, acc :+ n.left)
         case n: Leaf =>
-          Some((n, acc))
+          Some((n, acc.filter(n => n != EmptyNode)))
         case _ =>
           None
       }
@@ -28,6 +28,23 @@ case class MerkleTree(topNode: InternalNode, length: Int) {
   lazy val lengthWithEmptyLeafs = {
     def log2(x: Double): Double = math.log(x) / math.log(2)
     Math.max(math.pow(2, math.ceil(log2(length))).toInt, 2)
+  }
+
+  //Debug only
+  override lazy val toString: String = {
+    def loop(nodes: Seq[Node], acc: String): String = {
+      if (nodes.nonEmpty) {
+        val thisLevStr = nodes.map(_.toString).mkString(",") + "\n"
+        val nextLevNodes = nodes.flatMap {
+          case i: InternalNode => Seq(i.left, i.right)
+          case _ => Seq()
+        }
+        loop(nextLevNodes, acc + thisLevStr)
+      } else {
+        acc
+      }
+    }
+    loop(Seq(topNode), "")
   }
 }
 

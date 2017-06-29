@@ -13,12 +13,12 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
       whenever(N > 0) {
         val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(32))
         val tree = MerkleTree(d)
-        tree.rootHash
         (0 until N).foreach { i =>
-          assert(tree.proofByIndex(i).get.leaf.data sameElements d(i))
+          tree.proofByIndex(i).get.leaf.data shouldEqual d(i)
+          tree.proofByIndex(i).get.rootHash shouldEqual tree.rootHash
         }
         (N until N + 100).foreach { i =>
-          assert(tree.proofByIndex(i).isEmpty)
+          tree.proofByIndex(i).isEmpty shouldBe true
         }
       }
     }
