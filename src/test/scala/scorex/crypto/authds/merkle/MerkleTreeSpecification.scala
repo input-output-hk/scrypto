@@ -8,6 +8,22 @@ import scorex.crypto.hash.{Blake2b256, CommutativeHash}
 class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
   implicit val hf = new CommutativeHash(Blake2b256)
 
+  property("Proof generation by element") {
+    forAll(smallInt) { N: Int =>
+      whenever(N > 0) {
+        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(32))
+        val leafs = d.map(data => Leaf(data))
+        val tree = MerkleTree(d)
+        leafs.foreach { l =>
+          val proof = tree.proofByElement(l).get
+          proof.leaf shouldBe l
+          proof.rootHash shouldEqual tree.rootHash
+        }
+      }
+    }
+
+  }
+
   property("Proof generation by index") {
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {

@@ -3,10 +3,20 @@ package scorex.crypto.authds.merkle
 import scorex.crypto.hash.CommutativeHash
 
 import scala.annotation.tailrec
+import scala.collection.mutable
 
-case class MerkleTree(topNode: InternalNode, length: Int) {
+case class MerkleTree(topNode: InternalNode,
+                      elementsHashIndexes: Map[mutable.WrappedArray.ofByte, Int]) {
 
   lazy val rootHash: Array[Byte] = topNode.hash
+  lazy val length: Int = elementsHashIndexes.size
+
+
+  def proofByElement(element: Leaf): Option[MerkleProof] = proofByElementHash(element.hash)
+
+  def proofByElementHash(hash: Array[Byte]): Option[MerkleProof] = {
+    elementsHashIndexes.get(new mutable.WrappedArray.ofByte(hash)).flatMap(i => proofByIndex(i))
+  }
 
   def proofByIndex(index: Int): Option[MerkleProof] = {
     def loop(node: Node, i: Int, curLength: Int, acc: Seq[Node]): Option[(Leaf, Seq[Node])] = {
@@ -53,9 +63,12 @@ object MerkleTree {
   def apply(payload: Seq[Array[Byte]])
            (implicit hf: CommutativeHash[_]): MerkleTree = {
     val leafs = payload.map(d => Leaf(d))
+    val elementsIndex: Map[mutable.WrappedArray.ofByte, Int] = leafs.indices.map { i =>
+      (new mutable.WrappedArray.ofByte(leafs(i).hash), i)
+    }.toMap
     val topNode = calcTopNode(leafs)
 
-    MerkleTree(topNode, leafs.length)
+    MerkleTree(topNode, elementsIndex)
   }
 
   @tailrec
