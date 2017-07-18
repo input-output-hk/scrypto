@@ -30,5 +30,9 @@ trait CryptographicHash {
   def hash(input: Message): Digest
 
   def hash(input: String): Digest = hash(input.getBytes)
+
+  def prefixedHash(prefix: Byte, x: Message): Array[Byte] = hash(prefix +: x)
+
+  def prefixedHash(prefix: Byte, x: Message, y: Message): Array[Byte] = hash(prefix +: (x ++ y))
 }
 

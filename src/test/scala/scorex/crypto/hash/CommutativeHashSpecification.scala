@@ -16,7 +16,6 @@ class CommutativeHashSpecification extends HashTest {
     }
   }
 
-
   property(s"CommutativeHash(Sha256) no collisions") {
     forAll { (x: Array[Byte], y: Array[Byte], z: Array[Byte]) =>
       whenever(!x.sameElements(y) && !x.sameElements(z) && !z.sameElements(y)) {
@@ -24,15 +23,11 @@ class CommutativeHashSpecification extends HashTest {
         hash.hash(x, y) should not equal hash.hash(z, y)
       }
     }
-
   }
 
   property(s"CommutativeHash(Sha256) is commutative") {
     forAll { (x: Array[Byte], y: Array[Byte]) =>
         hash.hash(x, y) shouldEqual hash.hash(y, x)
     }
-
   }
-
-
 }

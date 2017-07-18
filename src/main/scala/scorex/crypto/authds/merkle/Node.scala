@@ -1,28 +1,25 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.CommutativeHash
+import scorex.crypto.hash.CryptographicHash
 
 trait Node {
   def hash: Array[Byte]
 }
 
-case class InternalNode(left: Node, right: Node)
-                       (implicit val hf: CommutativeHash[_]) extends Node {
-  override lazy val hash: Array[Byte] = right match {
-    case EmptyNode => left.hash
-    case n: Node => hf.prefixedHash(1: Byte, left.hash, right.hash)
-  }
+case class InternalNode(left: Node, right: Node)(implicit val hf: CryptographicHash) extends Node {
+  override lazy val hash: Array[Byte] = hf.prefixedHash(1: Byte, left.hash, right.hash)
 
-  override def toString: String = s"InternalNode(${Base58.encode(left.hash)}, ${Base58.encode(right.hash)})"
+  override def toString: String = s"InternalNode(" +
+    s"left: ${Base58.encode(left.hash)}, " +
+    s"right: ${Base58.encode(right.hash)}," +
+    s"hash: ${Base58.encode(hash)})"
 }
 
-case class Leaf(data: Array[Byte])
-               (implicit val hf: CommutativeHash[_]) extends Node {
-  override lazy val hash = hf.prefixedHash(0: Byte, data)
+case class Leaf(data: Array[Byte])(implicit val hf: CryptographicHash) extends Node {
+  override lazy val hash: Array[Byte] = hf.prefixedHash(0: Byte, data)
 
   override def toString: String = s"Leaf(${Base58.encode(hash)})"
-
 }
 
 case object EmptyNode extends Node {
