@@ -35,7 +35,7 @@ case class MerkleTree(topNode: InternalNode,
     leafWithProofs.map(lp => MerkleProof(lp._1, lp._2.map(_.hash)))
   }
 
-  lazy val lengthWithEmptyLeafs = {
+  lazy val lengthWithEmptyLeafs: Int = {
     def log2(x: Double): Double = math.log(x) / math.log(2)
     Math.max(math.pow(2, math.ceil(log2(length))).toInt, 2)
   }
@@ -74,8 +74,6 @@ object MerkleTree {
   @tailrec
   def calcTopNode(nodes: Seq[Node])(implicit hf: CommutativeHash[_]): InternalNode = {
     val nextNodes = nodes.grouped(2).map(lr => InternalNode(lr.head, if (lr.length == 2) lr.last else EmptyNode)).toSeq
-    if (nextNodes.length == 1) nextNodes.head
-    else calcTopNode(nextNodes)
+    if (nextNodes.length == 1) nextNodes.head else calcTopNode(nextNodes)
   }
-
 }
