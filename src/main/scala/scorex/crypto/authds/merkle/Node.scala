@@ -8,7 +8,7 @@ trait Node {
 }
 
 case class InternalNode(left: Node, right: Node)(implicit val hf: CryptographicHash) extends Node {
-  override lazy val hash: Array[Byte] = hf.prefixedHash(1: Byte, left.hash, right.hash)
+  override lazy val hash: Array[Byte] = hf.prefixedHash(MerkleTree.InternalNodePrefix, left.hash, right.hash)
 
   override def toString: String = s"InternalNode(" +
     s"left: ${Base58.encode(left.hash)}, " +
@@ -17,7 +17,7 @@ case class InternalNode(left: Node, right: Node)(implicit val hf: CryptographicH
 }
 
 case class Leaf(data: Array[Byte])(implicit val hf: CryptographicHash) extends Node {
-  override lazy val hash: Array[Byte] = hf.prefixedHash(0: Byte, data)
+  override lazy val hash: Array[Byte] = hf.prefixedHash(MerkleTree.LeafPrefix, data)
 
   override def toString: String = s"Leaf(${Base58.encode(hash)})"
 }

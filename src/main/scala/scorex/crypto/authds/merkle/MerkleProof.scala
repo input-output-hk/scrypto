@@ -25,11 +25,11 @@ case class MerkleProof(leafData: Array[Byte], levels: Seq[(Array[Byte], MerklePr
                       (implicit val hf: CryptographicHash) {
 
   def valid(expectedRootHash: Array[Byte]): Boolean = {
-    val leafHash = hf.prefixedHash(0: Byte, leafData)
+    val leafHash = hf.prefixedHash(MerkleTree.LeafPrefix, leafData)
 
     levels.foldLeft(leafHash) { case (prevHash, (hash, side)) =>
-      if (side == MerkleProof.LeftSide) hf.prefixedHash(1: Byte, prevHash ++ hash)
-      else hf.prefixedHash(1: Byte, hash ++ prevHash)
+      if (side == MerkleProof.LeftSide) hf.prefixedHash(MerkleTree.InternalNodePrefix, prevHash ++ hash)
+      else hf.prefixedHash(MerkleTree.InternalNodePrefix, hash ++ prevHash)
     }.sameElements(expectedRootHash)
   }
 

@@ -51,7 +51,7 @@ case class MerkleTree(topNode: InternalNode,
           case i: InternalNode => Seq(i.left, i.right)
           case _ => Seq()
         }
-        loop(nextLevNodes, level+1, acc + thisLevStr)
+        loop(nextLevNodes, level + 1, acc + thisLevStr)
       } else {
         acc
       }
@@ -62,6 +62,8 @@ case class MerkleTree(topNode: InternalNode,
 }
 
 object MerkleTree {
+  val LeafPrefix: Byte = 0: Byte
+  val InternalNodePrefix: Byte = 1: Byte
 
   def apply(payload: Seq[Array[Byte]])
            (implicit hf: CryptographicHash): MerkleTree = {
