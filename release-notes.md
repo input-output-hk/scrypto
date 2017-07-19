@@ -1,3 +1,9 @@
+**1.2.2**
+---------
+
+* MerkleTree and MerkleProof implementation
+
+
 **1.2.1**
 ---------
 

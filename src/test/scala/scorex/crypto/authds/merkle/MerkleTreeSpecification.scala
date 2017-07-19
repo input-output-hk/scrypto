@@ -43,7 +43,8 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
     forAll { d: Array[Byte] =>
       whenever(d.length > 0) {
         val tree = MerkleTree(Seq(d))(hf)
-        tree.rootHash shouldEqual hf.prefixedHash(1: Byte, hf.prefixedHash(0: Byte, d), Array())
+        tree.rootHash shouldEqual
+          hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d), Array())
       }
     }
   }
@@ -51,7 +52,10 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Tree creation from 2 element") {
     forAll { (d1: Array[Byte], d2: Array[Byte]) =>
       val tree = MerkleTree(Seq(d1, d2))(hf)
-      tree.rootHash shouldEqual hf.prefixedHash(1: Byte, hf.prefixedHash(0: Byte, d1), hf.prefixedHash(0: Byte, d2))
+      tree.rootHash shouldEqual
+        hf.prefixedHash(MerkleTree.InternalNodePrefix,
+          hf.prefixedHash(MerkleTree.LeafPrefix, d1),
+          hf.prefixedHash(MerkleTree.LeafPrefix, d2))
     }
   }
 
