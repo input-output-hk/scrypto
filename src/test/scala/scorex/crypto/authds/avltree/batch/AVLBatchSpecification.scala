@@ -7,6 +7,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.authds.legacy.avltree.AVLTree
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.Blake2b256
 import scorex.utils.{ByteArray, Random}
 
@@ -58,7 +59,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("BatchAVLVerifier: extractFirstNode") {
-
+    //todo: implement
   }
 
   property("Batch of lookups") {
@@ -112,17 +113,22 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       forAll { (aKey: Array[Byte], aValue: Array[Byte]) =>
         val KL = aKey.length
         val VL = aValue.length
-        whenever(KL > 0 && VL > 0) {
+        whenever(KL > 0 && VL > 0 && !aKey.forall(_ equals (-1: Byte)) && !aKey.forall(_ equals (0: Byte))) {
           val prover = new BatchAVLProver(KL, Some(VL))
           val m = Insert(aKey, aValue)
 
           val digest = prover.digest
           prover.performOneOperation(m)
-          val pf = prover.generateProof
+          val pf = prover.generateProof()
           prover.digest
 
           val verifier = new BatchAVLVerifier(digest, pf, KL, Some(VL))
           verifier.performOneOperation(m)
+          if (verifier.digest.isEmpty) {
+            println("problematic key: " + aKey.mkString("-"))
+            println("problematic value: " + Base58.encode(aValue))
+          }
+          verifier.digest.isDefined shouldBe true
           prover.digest shouldEqual verifier.digest.get
 
           val lookup = Lookup(aKey)

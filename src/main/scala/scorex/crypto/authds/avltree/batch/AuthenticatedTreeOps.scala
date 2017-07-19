@@ -8,7 +8,7 @@ import scala.util.{Failure, Success, Try}
 
 
 /**
- * Code common to the prover and verifier of https://eprint.iacr.org/2016/994 
+ * Code common to the prover and verifier of https://eprint.iacr.org/2016/994
  * (see Appendix B, "Our Algorithms")
  */
 trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
