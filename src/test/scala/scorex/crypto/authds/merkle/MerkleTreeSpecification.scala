@@ -35,6 +35,9 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
         (N until N + 100).foreach { i =>
           tree.proofByIndex(i).isEmpty shouldBe true
         }
+        (-(N+100) until 0).foreach { i =>
+          tree.proofByIndex(i).isEmpty shouldBe true
+        }
       }
     }
   }

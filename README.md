@@ -195,6 +195,9 @@ Here are code examples for generating proofs and checking them. In this example 
   }
 ```
 
+# Merkle Tree
+
+[TODO: describe MerkleTree & MerkleProof classes]
 
 # Tests
 

@@ -17,7 +17,7 @@ case class MerkleTree(topNode: InternalNode,
     elementsHashIndexes.get(new mutable.WrappedArray.ofByte(hash)).flatMap(i => proofByIndex(i))
   }
 
-  def proofByIndex(index: Int): Option[MerkleProof] = {
+  def proofByIndex(index: Int): Option[MerkleProof] = if (index >= 0 && index < length) {
     def loop(node: Node, i: Int, curLength: Int, acc: Seq[(Array[Byte], MerkleProof.Side)])
     : Option[(Leaf, Seq[(Array[Byte], MerkleProof.Side)])] = {
       node match {
@@ -34,6 +34,8 @@ case class MerkleTree(topNode: InternalNode,
 
     val leafWithProofs = loop(topNode, index, lengthWithEmptyLeafs, Seq())
     leafWithProofs.map(lp => MerkleProof(lp._1.data, lp._2)(lp._1.hf))
+  } else {
+    None
   }
 
   lazy val lengthWithEmptyLeafs: Int = {
