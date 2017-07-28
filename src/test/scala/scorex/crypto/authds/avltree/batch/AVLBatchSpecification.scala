@@ -136,6 +136,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           val pr: Array[Byte] = prover.generateProof()
           val vr = new BatchAVLVerifier(prover.digest, pr, KL, Some(VL))
           vr.performOneOperation(lookup).get.get shouldEqual aValue
+
+          val nonExistinglookup = Lookup(Random.randomBytes(KL))
+          prover.performOneOperation(nonExistinglookup)
+          val pr2: Array[Byte] = prover.generateProof()
+          val vr2 = new BatchAVLVerifier(prover.digest, pr2, KL, Some(VL))
+          vr2.performOneOperation(nonExistinglookup).get shouldBe None
         }
       }
     }.recoverWith {
