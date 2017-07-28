@@ -2,7 +2,7 @@ organization := "org.scorexfoundation"
 
 name := "scrypto"
 
-version := "1.2.2"
+version := "1.2.3-SNAPSHOT"
 
 scalaVersion := "2.12.2"
 
@@ -20,11 +20,9 @@ libraryDependencies ++= Seq(
   "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
 )
 
-//scalacOptions ++= Seq("-Xdisable-assertions")
-
 licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
 
-homepage := Some(url("https://github.com/ScorexProject/scrypto"))
+homepage := Some(url("https://github.com/input-output-hk/scrypto"))
 
 publishMavenStyle := true
 

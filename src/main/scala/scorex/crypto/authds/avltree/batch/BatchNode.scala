@@ -58,9 +58,9 @@ class InternalProverNode(protected var k: AVLKey, protected var l: ProverNodes, 
   extends ProverNodes with InternalNode {
 
 
-  override def left: ProverNodes = l.asInstanceOf[ProverNodes]
+  override def left: ProverNodes = l
 
-  override def right: ProverNodes = r.asInstanceOf[ProverNodes]
+  override def right: ProverNodes = r
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNewKey(newKey: AVLKey): InternalProverNode = {
@@ -68,14 +68,14 @@ class InternalProverNode(protected var k: AVLKey, protected var l: ProverNodes, 
       k = newKey // label doesn't change when key of an internal node changes
       this
     } else {
-      val ret = new InternalProverNode(newKey, l, r, b)
+      val ret = new InternalProverNode(newKey, left, right, b)
       ret.labelOpt = labelOpt // label doesn't change when key of an internal node changes
       ret
     }
   }
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
-  def getNew(newLeft: Node = l, newRight: Node = r, newBalance: Balance = b): InternalProverNode = {
+  def getNew(newLeft: Node = left, newRight: Node = right, newBalance: Balance = b): InternalProverNode = {
     if (isNew) {
       l = newLeft.asInstanceOf[ProverNodes]
       r = newRight.asInstanceOf[ProverNodes]
