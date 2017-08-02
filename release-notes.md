@@ -1,7 +1,12 @@
+**1.2.3**
+---------
+
+
+
 **1.2.2**
 ---------
 
-* MerkleTree and MerkleProof implementation
+* MerkleTree and MerkleProof implementation - static Merkle trees
 
 
 **1.2.1**
