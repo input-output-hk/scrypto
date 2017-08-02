@@ -1,7 +1,8 @@
 **1.2.3**
 ---------
 
-
+* Index checking in Merkle proof generation
+* PersistentBatchAVLProver interface improvements
 
 **1.2.2**
 ---------
