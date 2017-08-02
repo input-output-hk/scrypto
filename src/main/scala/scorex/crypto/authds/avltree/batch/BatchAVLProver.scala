@@ -28,7 +28,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
   private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
-      Array.fill(valueLengthOpt.map(_.toInt).getOrElse(0))(0: Byte), PositiveInfinityKey)
+      Array.fill(valueLengthOpt.getOrElse(0))(0: Byte), PositiveInfinityKey)
     t.isNew = false
     t
   })
@@ -56,7 +56,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
    *
    * @param key
    * @param r
-   * @return - true if to go left, false if to go right in the search 
+   * @return - true if to go left, false if to go right in the search
    */
   protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
     val ret = if (found) {

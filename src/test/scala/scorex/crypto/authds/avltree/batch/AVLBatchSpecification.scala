@@ -489,7 +489,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       }
 
       currentMods foreach (m => newProver.performOneOperation(m))
-      val pf = newProver.generateProof
+      val pf = newProver.generateProof()
 
       digest = oldProver.rootHash
       require(newProver.digest startsWith digest)
@@ -506,7 +506,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val currentMods = Seq(Insert(aKey, aValue))
 
       currentMods foreach (m => prover.performOneOperation(m))
-      val pf = prover.generateProof
+      val pf = prover.generateProof()
 
       val verifier = new BatchAVLVerifier(digest, pf, KL, Some(VL))
       currentMods foreach (m => verifier.performOneOperation(m))
