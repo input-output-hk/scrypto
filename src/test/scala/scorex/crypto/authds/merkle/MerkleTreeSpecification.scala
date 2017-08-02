@@ -8,10 +8,12 @@ import scorex.crypto.hash.Blake2b256
 class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
   implicit val hf = Blake2b256
 
+  private val LeafSize = 32
+
   property("Proof generation by element") {
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
-        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(32))
+        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(LeafSize))
         val leafs = d.map(data => Leaf(data))
         val tree = MerkleTree(d)
         leafs.foreach { l =>
@@ -26,7 +28,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Proof generation by index") {
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
-        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(32))
+        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(LeafSize))
         val tree = MerkleTree(d)
         (0 until N).foreach { i =>
           tree.proofByIndex(i).get.leafData shouldEqual d(i)
@@ -35,7 +37,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
         (N until N + 100).foreach { i =>
           tree.proofByIndex(i).isEmpty shouldBe true
         }
-        (-(N+100) until 0).foreach { i =>
+        (-(N + 100) until 0).foreach { i =>
           tree.proofByIndex(i).isEmpty shouldBe true
         }
       }
