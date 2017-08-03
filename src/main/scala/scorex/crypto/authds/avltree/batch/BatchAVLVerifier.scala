@@ -227,7 +227,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     * If operation.key exists in the tree and the operation succeeds,
     * returns Success(Some(v)), where v is the value associated with operation.key
     * before the operation.
-    * If operation.key exists in the tree and the operation fails, returns Success(None).
+    * If operation.key does not exists in the tree and the operation succeeds, returns Success(None).
     * Returns Failure if the operation fails or the proof does not verify.
     * After one failure, all subsequent operations will fail and digest
     * is None.

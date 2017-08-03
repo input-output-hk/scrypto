@@ -13,7 +13,7 @@ import scala.util.{Failure, Success, Try}
   * Implements the batch AVL prover from https://eprint.iacr.org/2016/994
   *
   * @param keyLength        - length of keys in tree
-  * @param valueLengthOpt      - length of values in tree. None if it is not fixed
+  * @param valueLengthOpt   - length of values in tree. None if it is not fixed
   * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
   *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
@@ -28,7 +28,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
   private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
-      Array.fill(valueLengthOpt.getOrElse(0))(0: Byte), PositiveInfinityKey)
+      Array.fill(valueLengthOpt.map(_.toInt).getOrElse(0))(0: Byte), PositiveInfinityKey)
     t.isNew = false
     t
   })
@@ -41,23 +41,25 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
   private var directions = new mutable.ArrayBuffer[Byte]
   private var directionsBitLength: Int = 0
 
-  private var replayIndex = 0 // Keeps track of where we are when replaying directions
-                              // a second time; needed for deletions
-  private var lastRightStep = 0 // Keeps track of the last time we took a right step
-                                // when going down the tree; needed for deletions
+  private var replayIndex = 0
+  // Keeps track of where we are when replaying directions
+  // a second time; needed for deletions
+  private var lastRightStep = 0
+  // Keeps track of the last time we took a right step
+  // when going down the tree; needed for deletions
   private var found: Boolean = false // keeps track of whether the key for the current
-                                     // operation has already been found in the tree
-                                     // (if so, we know how to get to the leaf without
-                                     //  any further comparisons)
+  // operation has already been found in the tree
+  // (if so, we know how to get to the leaf without
+  //  any further comparisons)
 
   /**
-   * Figures out whether to go left or right when from node r when searching for the key;
-   * records the appropriate bit in the directions bit string to be used in the proof
-   *
-   * @param key
-   * @param r
-   * @return - true if to go left, false if to go right in the search
-   */
+    * Figures out whether to go left or right when from node r when searching for the key;
+    * records the appropriate bit in the directions bit string to be used in the proof
+    *
+    * @param key
+    * @param r
+    * @return - true if to go left, false if to go right in the search
+    */
   protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
     val ret = if (found) {
       true
@@ -91,12 +93,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
   }
 
   /**
-   * Determines if the leaf r contains the key
-   *
-   * @param key
-   * @param r
-   * @return 
-   */
+    * Determines if the leaf r contains the key
+    *
+    * @param key
+    * @param r
+    * @return
+    */
   protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
     // The prover doesn't actually need to look at the leaf key,
     // because the prover would have already seen this key on the way
@@ -106,16 +108,16 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     ret
   }
 
-  /** 
-   * Deletions go down the tree twice -- once to find the leaf and realize
-   * that it needs to be deleted, and the second time to actually perform the deletion.
-   * This method will re-create comparison results using directions array and lastRightStep
-   * variable. Each time it's called, it will give the next comparison result of 
-   * key and node.key, where node starts at the root and progresses down the tree
-   * according to the comparison results.
-   *
-   * @return - result of previous comparison of key and relevant node's key
-   */
+  /**
+    * Deletions go down the tree twice -- once to find the leaf and realize
+    * that it needs to be deleted, and the second time to actually perform the deletion.
+    * This method will re-create comparison results using directions array and lastRightStep
+    * variable. Each time it's called, it will give the next comparison result of
+    * key and node.key, where node starts at the root and progresses down the tree
+    * according to the comparison results.
+    *
+    * @return - result of previous comparison of key and relevant node's key
+    */
   protected def replayComparison: Int = {
     val ret = if (replayIndex == lastRightStep) {
       0
@@ -129,11 +131,11 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
   }
 
   /**
-   * @param r
-   * @param key
-   * @param v
-   * @return - A new prover node with two leaves: r on the left and a new leaf containing key and value on the right
-   */
+    * @param r
+    * @param key
+    * @param v
+    * @return - A new prover node with two leaves: r on the left and a new leaf containing key and value on the right
+    */
   protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalProverNode = {
     val n = r.nextLeafKey
     new InternalProverNode(key, r.getNew(newNextLeafKey = key).asInstanceOf[ProverLeaf],
@@ -141,25 +143,25 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
   }
 
   /**
-   * Returns the current digest of the authenticated data structure,
-   * which contains the root hash and the root height
-   *
-   * @return - the digest
-   */
+    * Returns the current digest of the authenticated data structure,
+    * which contains the root hash and the root height
+    *
+    * @return - the digest
+    */
   def digest: Array[Byte] = digest(topNode)
 
 
   /**
-   * If operation.key exists in the tree and the operation succeeds,
-   * returns Success(Some(v)), where v is the value associated with operation.key
-   * before the operation.
-   * If operation.key exists in the tree and the operation fails, returns Success(None).
-   * Returns Failure if the operation fails.
-   * Does not modify the tree or the proof in case return is Failure.
-   *
-   * @param operation
-   * @return - Success(Some(old value)), Success(None), or Failure
-   */
+    * If operation.key exists in the tree and the operation succeeds,
+    * returns Success(Some(v)), where v is the value associated with operation.key
+    * before the operation.
+    * If operation.key does not exists in the tree and the operation succeeds, returns Success(None).
+    * Returns Failure if the operation fails.
+    * Does not modify the tree or the proof in case return is Failure.
+    *
+    * @param operation
+    * @return - Success(Some(old value)), Success(None), or Failure
+    */
   def performOneOperation(operation: Operation): Try[Option[AVLValue]] = Try {
     replayIndex = directionsBitLength
     returnResultOfOneOperation(operation, topNode) match {
@@ -184,11 +186,11 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
 
   /**
-   * Generates the proof for all the operations performed (except the ones that failed)
-   * since the last generateProof call
-   *
-   * @return - the proof
-   */
+    * Generates the proof for all the operations performed (except the ones that failed)
+    * since the last generateProof call
+    *
+    * @return - the proof
+    */
   def generateProof(): Array[Byte] = {
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
@@ -219,7 +221,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
             packagedTree += LeafInPackagedProof
             if (!previousLeafAvailable) packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
-            if(valueLengthOpt.isEmpty) {
+            if (valueLengthOpt.isEmpty) {
               packagedTree ++= Ints.toByteArray(r.value.length)
             }
             packagedTree ++= r.value
