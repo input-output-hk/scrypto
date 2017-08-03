@@ -53,7 +53,7 @@ It's possible to apply hash functions sequentially to create more secure hash fu
 
 You can easily create your own hash chain function:
 ```scala
-import scorex.crypto.applyHashes
+import scorex.utils.HashHelpers.applyHashes
 object MyCustomHash extends CryptographicHash {
   override val DigestSize: Int = 64
   override def hash(input: Message): Digest = applyHashes(input, Blake512, Sha512, Groestl512, Skein512)
