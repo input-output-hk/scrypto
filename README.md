@@ -61,7 +61,7 @@ object MyCustomHash extends CryptographicHash {
 ```
 or just
 ```scala
-val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Keccak512, Luffa512, Wirlpool)
+val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Keccak512, Luffa512, Whirlpool)
 ```
 Note, that hash chain will be as good as the [strongest](https://en.wikipedia.org/wiki/Cryptographic_hash_function#Concatenation_of_cryptographic_hash_functions) of the algorithms included in the chain.
 
