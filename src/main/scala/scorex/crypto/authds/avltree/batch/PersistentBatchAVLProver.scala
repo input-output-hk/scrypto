@@ -19,7 +19,7 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: Batch
 
   def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = prover.unauthenticatedLookup(key)
 
-  def performOneOperation(operation: Operation): Unit = prover.performOneOperation(operation)
+  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = prover.performOneOperation(operation)
 
   def generateProof: Array[Byte] = {
     storage.update(prover).get

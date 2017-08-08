@@ -1,3 +1,8 @@
+**1.2.4**
+---------
+
+performOneOperation() return value type fix in PersistentBatchAVLProver 
+
 **1.2.3**
 ---------
 
