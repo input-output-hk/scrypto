@@ -4,9 +4,9 @@ name := "scrypto"
 
 version := "1.2.4-SNAPSHOT"
 
-scalaVersion := "2.12.2"
+scalaVersion := "2.12.3"
 
-crossScalaVersions := Seq("2.11.11", "2.12.2")
+crossScalaVersions := Seq("2.11.11", "2.12.3")
 
 libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.+",
