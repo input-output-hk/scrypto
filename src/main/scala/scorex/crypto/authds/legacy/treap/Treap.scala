@@ -66,7 +66,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
               case Success(None) => //don't change anything, just lookup
                 ???
               case Success(Some(v)) => //insert new value
-                val newLeaf = new Leaf(key, v, r.nextLeafKey)
+                val newLeaf = Leaf(key, v, r.nextLeafKey)
                 r.nextLeafKey = key
                 (ProverNode(key, r, newLeaf), true)
               case Failure(e) => // found incorrect value

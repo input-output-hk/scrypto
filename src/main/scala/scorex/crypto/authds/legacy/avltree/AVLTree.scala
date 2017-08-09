@@ -84,7 +84,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                     (r, false, false)
                   case Success(Some(v)) => //insert new value
                     require(v.length == valueLength)
-                    val newLeaf = new Leaf(key, v, r.nextLeafKey)
+                    val newLeaf = Leaf(key, v, r.nextLeafKey)
                     r.nextLeafKey = key
                     (ProverNode(key, r, newLeaf), true, true)
                   case Failure(e) => // found incorrect value

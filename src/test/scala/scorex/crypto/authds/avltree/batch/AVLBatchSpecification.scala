@@ -461,9 +461,11 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val m = Insert(aKey, aValue)
       prover.performOneOperation(m)
       val pf = prover.generateProof
+
       val verifier = new BatchAVLVerifier(digest, pf, KL, Some(VL))
       verifier.digest.get
       verifier.performOneOperation(m)
+
       prover.digest should not equal digest
       prover.digest shouldEqual verifier.digest.get
 

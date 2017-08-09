@@ -300,7 +300,7 @@ public interface Blake2b {
         private         byte[] oneByte;
 
         /** read only */
-        private static byte[] zeropad = new byte [ Spec.block_bytes ];
+        private final static byte[] zeropad = new byte [ Spec.block_bytes ];
 
         /** a little bit of semantics */
         interface flag {

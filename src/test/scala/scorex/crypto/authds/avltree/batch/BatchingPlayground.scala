@@ -915,16 +915,16 @@ object BatchingPlayground extends App with ToStringHelper {
   def testReadme {
     val prover = new BatchAVLProver(keyLength = 1, valueLengthOpt = Some(VL))
     val initialDigest = prover.digest
-    val key1 = Array(1:Byte);
-    val key2 = Array(2:Byte);
-    val key3 = Array(3:Byte);
+    val key1 = Array(1:Byte)
+    val key2 = Array(2:Byte)
+    val key3 = Array(3:Byte)
     val op1 = Insert(key1, Longs.toByteArray(10))
     val op2 = Insert(key2, Longs.toByteArray(20))
     val op3 = Insert(key3, Longs.toByteArray(30))
-    require(prover.performOneOperation(op1).get == None) // Should return None 
-    require(prover.performOneOperation(op2).get == None) // Should return None
-    require(prover.performOneOperation(op3).get == None) // Should return None
-    val proof1 = prover.generateProof
+    require(prover.performOneOperation(op1).get.isEmpty) // Should return None
+    require(prover.performOneOperation(op2).get.isEmpty) // Should return None
+    require(prover.performOneOperation(op3).get.isEmpty) // Should return None
+    val proof1 = prover.generateProof()
     val digest1 = prover.digest
 
     val op4 = Update(key1, Longs.toByteArray(50))

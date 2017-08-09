@@ -41,13 +41,13 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
           require(ByteArray.compare(neighbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 
-          val r = new Leaf(neighbourLeafKey, value, nextLeafKey)
+          val r = Leaf(neighbourLeafKey, value, nextLeafKey)
           val oldLabel = r.label
           updateFn(None) match {
             case Success(None) => //don't change anything, just lookup
               ???
             case Success(Some(v)) => //insert new value
-              val newLeaf = new Leaf(key, v, r.nextLeafKey)
+              val newLeaf = Leaf(key, v, r.nextLeafKey)
               r.nextLeafKey = key
               val level = levelFunc(key)
               val newR = VerifierNode(r.label, newLeaf.label, level)
