@@ -141,7 +141,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     require(startingDigest.length == labelLength + 1)
     rootNodeHeight = startingDigest.last & 0xff
 
-    val maxNodes = if (!maxNumOperations.isEmpty) {
+    val maxNodes = if (maxNumOperations.isDefined) {
       // compute the maximum number of nodes the proof can contain according to
       // https://eprint.iacr.org/2016/994 Appendix B last paragraph
 
@@ -161,7 +161,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
       // Note: this is quite likely a lot more than there will really be nodes
       (realNumOperations + realMaxDeletes) * (2 * rootNodeHeight + 1) + realMaxDeletes * hnew + 1 // +1 needed in case numOperations == 0
     } else {
-      0;
+      0
     }
 
 
