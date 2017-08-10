@@ -1,7 +1,10 @@
-**1.2.4**
+**1.3.0**
 ---------
 
-performOneOperation() return value type fix in PersistentBatchAVLProver 
+* performOneOperation() return value type fix in PersistentBatchAVLProver 
+* Instead of imported Java implementations for hash functions, BouncyCastle to be used for hash functions
+* Because of previous item, most of hash functions were removed. Scrypto has SHA-256, Blake2b-(256/512) 
+  and Keccak-(256/512) wrappers only in this version.
 
 **1.2.3**
 ---------

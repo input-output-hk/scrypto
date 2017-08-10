@@ -3,10 +3,10 @@ package scorex.crypto.authds.merkle
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.hash.Keccak256
 
 class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
-  implicit val hf = Blake2b256
+  implicit val hf = Keccak256
 
   private val LeafSize = 32
 

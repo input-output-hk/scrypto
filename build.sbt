@@ -12,7 +12,8 @@ libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.+",
   "com.google.guava" % "guava" % "19.+",
   "org.slf4j" % "slf4j-api" % "1.7.+",
-  "org.whispersystems" % "curve25519-java" % "+"
+  "org.whispersystems" % "curve25519-java" % "+",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.57"
 )
 
 libraryDependencies ++= Seq(

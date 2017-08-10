@@ -8,7 +8,7 @@ import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.Blake2b256
+import scorex.crypto.hash.Keccak256
 import scorex.utils.{ByteArray, Random}
 
 import scala.util.Random.{nextInt => randomInt}
@@ -26,7 +26,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val prover = new BatchAVLProver(KL, None)
     val digest = prover.digest
     val keyValues = (0 until TreeSize) map { i =>
-      val aValue = Blake2b256(i.toString.getBytes)
+      val aValue = Keccak256(i.toString.getBytes)
       (aValue.take(KL), aValue)
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
@@ -44,7 +44,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     }
 
     (0 until TreeSize) foreach { i =>
-      val aValue = Blake2b256(i.toString.getBytes)
+      val aValue = Keccak256(i.toString.getBytes)
       verifier.performOneOperation(Insert(aValue.take(KL), aValue))
     }
     //extract all leafs
@@ -66,7 +66,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     //prepare tree
     val prover = new BatchAVLProver(KL, None)
     (0 until 1000) foreach { i =>
-      val aValue = Blake2b256(i.toString.getBytes)
+      val aValue = Keccak256(i.toString.getBytes)
       prover.performOneOperation(Insert(aValue.take(KL), aValue))
     }
     prover.generateProof()
