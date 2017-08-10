@@ -6,7 +6,7 @@ import org.bouncycastle.crypto.digests.Blake2bDigest
   * Thread-unsafe Blake2b alternative. Use with caution! Not for a multi-thread use!!!
   */
 class Blake2b256Unsafe extends CryptographicHash32 with ThreadUnsafeHash {
-  private lazy val digestFn = new Blake2bDigest(DigestSize * 8)
+  private val digestFn = new Blake2bDigest(DigestSize * 8)
 
   override def hash(input: Message): Digest = {
     digestFn.update(input, 0, input.length)
