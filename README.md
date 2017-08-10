@@ -18,28 +18,15 @@ resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositori
 
 You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
 ```scala
-libraryDependencies += "org.consensusresearch" %% "scrypto" % "1.2.1"
+libraryDependencies += "org.scorexfoundation" %% "scrypto" % "1.3.0"
 ```
 
 ### Hash functions
 
 Supported hash algorithms are:
-- Blake
 - Blake2b
-- BMW
-- CubeHash
-- Echo
-- Fugue
-- Groestl
-- Hamsi
-- JH
 - Keccak
-- Luffa
 - Sha
-- SHAvite
-- SIMD
-- Skein
-- Whirlpool
        
 Take a look at CryptographicHash interface and use supported hash algorithms like
 ```scala
@@ -56,12 +43,12 @@ You can easily create your own hash chain function:
 import scorex.crypto.applyHashes
 object MyCustomHash extends CryptographicHash {
   override val DigestSize: Int = 64
-  override def hash(input: Message): Digest = applyHashes(input, Blake512, Sha512, Groestl512, Skein512)
+  override def hash(input: Message): Digest = applyHashes(input, Blake2b512, Keccak512)
 }
 ```
 or just
 ```scala
-val myHashChain = hashChain(Blake512, BMW512, Groestl512, Skein512, JH512, Keccak512, Luffa512, Wirlpool)
+val myHashChain = hashChain(Blake2b512, Keccak512)
 ```
 Note, that hash chain will be as good as the [strongest](https://en.wikipedia.org/wiki/Cryptographic_hash_function#Concatenation_of_cryptographic_hash_functions) of the algorithms included in the chain.
 
@@ -131,9 +118,9 @@ Here are code examples for generating proofs and checking them. In this example 
 * Second, we create the first batch of tree modifications, inserting keys 1, 2, and 3 with values 10, 20, and 30. We use `com.google.common.primitives.Longs.toByteArray` to get 8-byte values out of longs.
 
 ```scala
-  val key1 = Array(1:Byte);
-  val key2 = Array(2:Byte);
-  val key3 = Array(3:Byte);
+  val key1 = Array(1:Byte)
+  val key2 = Array(2:Byte)
+  val key3 = Array(3:Byte)
   val op1 = Insert(key1, Longs.toByteArray(10))
   val op2 = Insert(key2, Longs.toByteArray(20))
   val op3 = Insert(key3, Longs.toByteArray(30))
