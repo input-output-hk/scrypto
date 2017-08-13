@@ -3,16 +3,10 @@ package scorex.crypto.hash
 import org.bouncycastle.crypto.digests.KeccakDigest
 
 
-trait Keccak extends CryptographicHash {
+trait Keccak extends BouncycastleHash {
 
-  private lazy val digestFn = new KeccakDigest(DigestSize*8)
+  override protected lazy val digestFn = new KeccakDigest(DigestSize * 8)
 
-  override def hash(input: Message): Digest = synchronized {
-    digestFn.update(input, 0, input.length)
-    val res = new Array[Byte](DigestSize)
-    digestFn.doFinal(res, 0)
-    res
-  }
 }
 
 

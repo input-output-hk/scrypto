@@ -15,15 +15,15 @@ class Blake2b256Unsafe extends CryptographicHash32 with ThreadUnsafeHash {
     res
   }
 
+  override def prefixedHash(prefix: Byte, inputs: Message*): Digest = {
+    digestFn.update(prefix)
+    hash(inputs: _*)
+  }
+
   override def hash(inputs: Message*): Digest = {
     inputs.foreach(i => digestFn.update(i, 0, i.length))
     val res = new Array[Byte](DigestSize)
     digestFn.doFinal(res, 0)
     res
-  }
-
-  override def prefixedHash(prefix: Byte, inputs: Message*): Digest = {
-    digestFn.update(prefix)
-    hash(inputs:_*)
   }
 }

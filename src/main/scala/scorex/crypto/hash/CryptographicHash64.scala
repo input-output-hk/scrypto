@@ -9,7 +9,7 @@ trait CryptographicHash64 extends CryptographicHash {
 
   override val DigestSize: Int = 64
 
-  def hashSized(in: Message): SizedDigest = Sized.wrap(hash(in))
-
   def hashSized(in: String): SizedDigest = hashSized(in.getBytes)
+
+  def hashSized(in: Message): SizedDigest = Sized.wrap(hash(in))
 }
