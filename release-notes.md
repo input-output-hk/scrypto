@@ -1,3 +1,8 @@
+**1.3.1**
+---------
+
+* Added hash functions Whirlpool, Skein and Stribog from BouncyCastle
+
 **1.3.0**
 ---------
 
