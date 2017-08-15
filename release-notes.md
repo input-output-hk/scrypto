@@ -1,3 +1,8 @@
+**1.3.2**
+---------
+
+prover() in PersistentBatchAVLProver (don't store the ref, it is mutable!)
+
 **1.3.1**
 ---------
 

@@ -5,31 +5,34 @@ import scorex.crypto.hash.ThreadUnsafeHash
 
 import scala.util.Try
 
-class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var prover: BatchAVLProver[HF],
+class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var avlProver: BatchAVLProver[HF],
                                                        storage: VersionedAVLStorage) {
   if (storage.nonEmpty) {
     rollback(storage.version).get
   } else {
-    storage.update(prover).get
+    storage.update(avlProver).get
   }
 
-  def digest: Array[Byte] = prover.digest
+  def digest: Array[Byte] = avlProver.digest
 
-  def height: Int = prover.rootNodeHeight
+  def height: Int = avlProver.rootNodeHeight
 
-  def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = prover.unauthenticatedLookup(key)
+  def prover(): BatchAVLProver[HF] = avlProver
 
-  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = prover.performOneOperation(operation)
+  def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = avlProver.unauthenticatedLookup(key)
 
-  def generateProof: Array[Byte] = {
-    storage.update(prover).get
-    prover.generateProof()
+  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = avlProver.performOneOperation(operation)
+
+  //side effect: avlProver modifies itself
+  def generateProof(): Array[Byte] = {
+    storage.update(avlProver).get
+    avlProver.generateProof()
   }
 
   def rollback(version: VersionedAVLStorage.Version): Try[Unit] = Try {
     val recoveredTop: (ProverNodes, Int) = storage.rollback(version).get
-    prover = new BatchAVLProver(prover.keyLength, prover.valueLengthOpt, Some(recoveredTop))(prover.hf)
+    avlProver = new BatchAVLProver(avlProver.keyLength, avlProver.valueLengthOpt, Some(recoveredTop))(avlProver.hf)
   }
 
-  def checkTree(postProof: Boolean = false): Unit = prover.checkTree(postProof)
+  def checkTree(postProof: Boolean = false): Unit = avlProver.checkTree(postProof)
 }
