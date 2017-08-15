@@ -13,33 +13,34 @@ import scala.util.{Random, Try}
 
 class AVLBatchStatefulSpecification extends PropSpec {
 
-  val params = Parameters.default
+  private val params = Parameters.default
     .withMinSize(0)
     .withMaxSize(20)
     .withMinSuccessfulTests(100)
     .withWorkers(8)
 
   property("BatchAVLProver: prove and verify") {
-    new AVLCommands().property().check(params)
+    AVLCommands.property().check(params)
   }
 }
 
 
-class AVLCommands extends Commands {
+object AVLCommands extends Commands {
 
-  val KL = 2
+  val KL = 32
   val VL = 2
 
   private val initialDigest = new BatchAVLProver(keyLength = KL, valueLengthOpt = Some(VL)).digest
 
-  val MINIMUM_OPERATIONS_LENGTH  = 10
-  val MAXIMUM_GENERATED_OPERTIONS = 10
+  val MINIMUM_OPERATIONS_LENGTH = 10
+  val MAXIMUM_GENERATED_OPERATIONS = 10
   val UPDATE_FRACTION = 2
   val REMOVE_FRACTION = 4
 
   type Hash = Blake2b256Unsafe
 
   case class Operations(operations: Vector[Operation])
+
   case class Stateful(prover: BatchAVLProver[Hash], verifier: BatchAVLVerifier[Hash])
 
   override type State = Operations
@@ -70,7 +71,7 @@ class AVLCommands extends Commands {
   override def genCommand(state: State): Gen[Command] = Gen.frequency(2 -> generateOperations(state), 1 -> Check)
 
   private def generateOperations(state: State): Batch = {
-    val appendsCommandsLength = Random.nextInt(MAXIMUM_GENERATED_OPERTIONS) + MINIMUM_OPERATIONS_LENGTH
+    val appendsCommandsLength = Random.nextInt(MAXIMUM_GENERATED_OPERATIONS) + MINIMUM_OPERATIONS_LENGTH
 
     val keys: Vector[AVLKey] = (0 until appendsCommandsLength).map { _ => RandomBytes.randomBytes(KL) }.toVector
     val prevKeys = state.operations.map(_.key)

@@ -8,5 +8,4 @@ object Random {
     new SecureRandom().nextBytes(r) //overrides r
     r
   }
-
 }
