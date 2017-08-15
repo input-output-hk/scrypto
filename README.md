@@ -27,6 +27,9 @@ Supported hash algorithms are:
 - Blake2b
 - Keccak
 - Sha
+- Whirlpool
+- Skein
+- Stribog
        
 Take a look at CryptographicHash interface and use supported hash algorithms like
 ```scala
@@ -42,7 +45,7 @@ You can easily create your own hash chain function:
 ```scala
 import scorex.crypto.applyHashes
 object MyCustomHash extends CryptographicHash {
-  override val DigestSize: Int = 64
+  override val DigestSize: Int = 64 //in bytes
   override def hash(input: Message): Digest = applyHashes(input, Blake2b512, Keccak512)
 }
 ```
@@ -88,8 +91,8 @@ Example:
   assert(curveImpl.verify(sig, message, keyPair._2))
 ```
 
-**Note on security:** Scrypto provides Scala wrapper for [Curve25519-Java](https://github.com/WhisperSystems/curve25519-java) by
-Whisper Systems, so has the same security properties. JDK's SecureRandom used to obtain seed bytes.
+**Note on security:** Scrypto provides a simple Scala wrapper for [Curve25519-Java](https://github.com/WhisperSystems/curve25519-java) by
+Whisper Systems, so has the same security properties. JDK's SecureRandom is used to obtain seed bytes.
 
 ### Authenticated data structures
 
