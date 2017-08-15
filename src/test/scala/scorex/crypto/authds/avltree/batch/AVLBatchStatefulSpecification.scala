@@ -11,9 +11,6 @@ import scorex.utils.{Random => RandomBytes}
 
 import scala.util.{Random, Try}
 
-/**
-  * Created by Aleksei Terekhin on 14/08/2017.
-  */
 class AVLBatchStatefulSpecification extends PropSpec {
 
   val params = Parameters.default
