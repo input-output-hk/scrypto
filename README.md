@@ -113,7 +113,7 @@ Here are code examples for generating proofs and checking them. In this example 
 * First, we create a prover and get an initial digest from it (in a real application, this value is a public constant because anyone, including verifiers, can compute it by using the same two lines of code)
 
 ```scala
-  val prover = new BatchAVLProver(keyLength = 1, valueLength = 8)
+  val prover = new BatchAVLProver(keyLength = 1, valueLengthOpt = Some(8))
   val initialDigest = prover.digest
 ```        
 
@@ -165,14 +165,14 @@ Here are code examples for generating proofs and checking them. In this example 
 * Once the verifier for a particular batch is constructed, we perform the same operations as the prover, one by one (but not the ones that failed for the prover). If verification fails at any point (at construction time or during an operation), the verifier digest will equal None from that point forward, and no further verifier operations will change the digest.  Else, the verifier's new digest is the correct one for the tree as modified by the verifier. Furthermore, if the verifier performed the same modifications as the prover, then the verifier and prover digests will match.
 
 ```scala
-  val verifier1 = new BatchAVLVerifier(initialDigest, proof1, keyLength = 1, valueLength = 8, maxNumOperations = Some(2), maxDeletes = Some(0))
+  val verifier1 = new BatchAVLVerifier(initialDigest, proof1, keyLength = 1, valueLengthOpt = Some(8), maxNumOperations = Some(2), maxDeletes = Some(0))
   verifier1.performOneOperation(op1) // Returns Success(None)        
   verifier1.performOneOperation(op2) // Returns Success(None)
   verifier1.performOneOperation(op3) // Returns Success(None)
   verifier1.digest match {
     case Some(d1) if digest1.sameElements(digest1) =>
       //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
-      val verifier2 = new BatchAVLVerifier(d1, proof2, keyLength = 1, valueLength = 8, maxNumOperations = Some(3), maxDeletes = Some(1))
+      val verifier2 = new BatchAVLVerifier(d1, proof2, keyLength = 1, valueLengthOpt = Some(8), maxNumOperations = Some(3), maxDeletes = Some(1))
       verifier2.performOneOperation(op4) // Returns Try(Some(Longs.toByteArray(10)))
       verifier2.performOneOperation(op6) // Returns Try(Some(Longs.toByteArray(30)))
       verifier2.performOneOperation(op8) // Returns Try(Some(Longs.toByteArray(30)))
