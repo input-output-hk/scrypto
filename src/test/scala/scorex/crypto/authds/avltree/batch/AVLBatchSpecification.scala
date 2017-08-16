@@ -54,7 +54,6 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val smallestKey = keyValues.map(_._1).sortWith(ordering).last
     val minLeaf = verifier.extractFirstNode(nonInfiniteLeaf).get.asInstanceOf[VerifierLeaf]
     minLeaf.key shouldEqual smallestKey
-
   }
 
   property("BatchAVLVerifier: extractFirstNode") {
@@ -232,7 +231,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val p = new BatchAVLProver(KL, Some(VL))
     p.checkTree()
     val digest = p.digest
-    val pf = p.generateProof
+    val pf = p.generateProof()
     p.checkTree(true)
     val v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(0), Some(0))
     v.digest match {
@@ -248,10 +247,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     // so we resort to a very basic test
     val p = new BatchAVLProver(KL, Some(VL))
     val digest = p.digest
-    var i: Int = 0
     for (i <- 0 to 255) {
       digest(digest.length - 1) = i.toByte
-      var rootNodeHeight: Int = digest.last & 0xff
+      val rootNodeHeight: Int = digest.last & 0xff
       rootNodeHeight shouldBe i
     }
   }
@@ -324,10 +322,10 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   property("remove single random element from a large set") {
 
-    val minSetSize = 50000
-    val maxSetSize = 500000
+    val minSetSize = 10000
+    val maxSetSize = 100000
 
-    forAll(Gen.choose(minSetSize, maxSetSize), Arbitrary.arbBool.arbitrary){case (cnt, generateProof) =>
+    forAll(Gen.choose(minSetSize, maxSetSize), Arbitrary.arbBool.arbitrary) { case (cnt, generateProof) =>
       whenever(cnt > minSetSize) {
         var keys = IndexedSeq[Array[Byte]]()
         val prover = new BatchAVLProver(KL, Some(VL))
@@ -351,21 +349,21 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val removalResult = prover.performOneOperation(Remove(rndKey))
         removalResult.isSuccess shouldBe true
 
-        if(keyPosition > 0) {
+        if (keyPosition > 0) {
           prover.performOneOperation(Remove(keys.head)).isSuccess shouldBe true
         }
 
         keys = keys.tail.filterNot(_.sameElements(rndKey))
 
         val shuffledKeys = scala.util.Random.shuffle(keys)
-        shuffledKeys.foreach{k =>
+        shuffledKeys.foreach { k =>
           prover.performOneOperation(Remove(k)).isSuccess shouldBe true
         }
       }
     }
   }
 
-  property("succesful modifications") {
+  property("successful modifications") {
     val p = new BatchAVLProver(KL, Some(VL))
 
     val numMods = 5000
@@ -417,7 +415,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           if (randomInt(2) == 0) {
             // update
             if (randomInt(10) == 0) {
-              // with probability 1/10 cause a fail by modifying a nonexisting key
+              // with probability 1/10 cause a fail by modifying a non-existing key
               val key = Random.randomBytes(KL)
               require(p.performOneOperation(Update(key, Random.randomBytes(8))).isFailure, "prover updated a nonexistent value")
               p.checkTree()
@@ -438,7 +436,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           } else {
             // delete
             if (randomInt(10) == 0) {
-              // with probability 1/10 remove a nonexisting one but without failure -- shouldn't change the tree
+              // with probability 1/10 remove a non-existing one but without failure -- shouldn't change the tree
               val key = Random.randomBytes(KL)
               val mod = RemoveIfExists(key)
               val d = p.digest
