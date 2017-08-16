@@ -10,7 +10,6 @@ import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.Keccak256
 import scorex.utils.{ByteArray, Random}
-
 import scala.util.Random.{nextInt => randomInt}
 import scala.util.{Failure, Try}
 
@@ -320,7 +319,30 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
       // put the key back the way it should be, because otherwise it's messed up in the prover tree
       key(0) = (key(0) ^ (1 << 7)).toByte
+    }
+  }
 
+  property("remove single random element from a large set") {
+    val p = new BatchAVLProver(KL, Some(VL))
+
+    val minSetSize = 50000
+    val maxSetSize = 500000
+
+    var keys = IndexedSeq[Array[Byte]]()
+
+    forAll(Gen.choose(minSetSize, maxSetSize), Arbitrary.arbBool.arbitrary){case (cnt, generateProof) =>
+      whenever(cnt > minSetSize) {
+        val key = Random.randomBytes(KL)
+        val value = Random.randomBytes(VL)
+
+        keys = key +: keys
+
+        p.performOneOperation(Insert(key, value))
+      }
+      if(generateProof) p.generateProof()
+
+      val rndKey = keys(scala.util.Random.nextInt(keys.length))
+      p.performOneOperation(Remove(rndKey)).isSuccess shouldBe true
     }
   }
 
