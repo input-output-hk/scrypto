@@ -1,36 +1,25 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Longs
-import org.scalacheck.Test.Parameters
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.PropSpec
-import scorex.crypto.authds.avltree.AVLKey
 import scorex.crypto.hash.Blake2b256Unsafe
 import scorex.utils.{Random => RandomBytes}
 
-import scala.util.{Random, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 class AVLBatchStatefulSpecification extends PropSpec {
 
-  private val params = Parameters.default
-    .withMinSize(0)
-    .withMaxSize(20)
-    .withMinSuccessfulTests(100)
-    .withWorkers(8)
-
   property("BatchAVLProver: prove and verify") {
-    AVLCommands.property().check(params)
+    AVLCommands.property().check
   }
 }
-
 
 object AVLCommands extends Commands {
 
   val KL = 32
-  val VL = 2
-
-  private val initialDigest = new BatchAVLProver(keyLength = KL, valueLengthOpt = Some(VL)).digest
+  val VL = 8
 
   val MINIMUM_OPERATIONS_LENGTH = 10
   val MAXIMUM_GENERATED_OPERATIONS = 10
@@ -39,28 +28,22 @@ object AVLCommands extends Commands {
 
   type Hash = Blake2b256Unsafe
 
-  case class Operations(operations: Vector[Operation])
+  case class Operations(operations: List[Operation]) {
+    def withOps(ops: List[Operation]): Operations = Operations(operations ++ ops)
+  }
 
-  case class Stateful(prover: BatchAVLProver[Hash], verifier: BatchAVLVerifier[Hash])
+  case class BatchResult(digest: Array[Byte], proof: Array[Byte], postDigest: Array[Byte])
 
   override type State = Operations
-  override type Sut = Stateful
+  override type Sut = BatchAVLProver[Hash]
 
-  val initialState = Operations(operations = Vector.empty[Operation])
+  val initialState = Operations(operations = List.empty[Operation])
 
   override def canCreateNewSut(newState: State,
                                initSuts: Traversable[State],
-                               runningSuts: Traversable[Stateful]): Boolean = true
+                               runningSuts: Traversable[Sut]): Boolean = true
 
-  override def newSut(state: State): Sut = {
-    val initOp = Insert(RandomBytes.randomBytes(KL), Longs.toByteArray(Random.nextInt(Int.MaxValue).toLong))
-    val prover = new BatchAVLProver[Hash](keyLength = KL, valueLengthOpt = Some(VL))
-    prover.performOneOperation(initOp)
-    val proof = prover.generateProof()
-    val verifier = new BatchAVLVerifier[Hash](initialDigest, proof, KL, Some(VL))
-    verifier.performOneOperation(initOp)
-    Stateful(prover, verifier)
-  }
+  override def newSut(state: State): Sut = new BatchAVLProver[Hash](keyLength = KL, valueLengthOpt = Some(VL))
 
   override def destroySut(sut: Sut): Unit = ()
 
@@ -68,57 +51,57 @@ object AVLCommands extends Commands {
 
   override def genInitialState: Gen[State] = Gen.const(initialState)
 
-  override def genCommand(state: State): Gen[Command] = Gen.frequency(2 -> generateOperations(state), 1 -> Check)
+  override def genCommand(state: State): Gen[Command] = PerformAndVerify(generateOperations(state))
 
-  private def generateOperations(state: State): Batch = {
+  private def nextPositiveLong: Long = Random.nextInt(Int.MaxValue).toLong
+
+  private def generateOperations(state: State): List[Operation] = {
     val appendsCommandsLength = Random.nextInt(MAXIMUM_GENERATED_OPERATIONS) + MINIMUM_OPERATIONS_LENGTH
 
-    val keys: Vector[AVLKey] = (0 until appendsCommandsLength).map { _ => RandomBytes.randomBytes(KL) }.toVector
-    val prevKeys = state.operations.map(_.key)
-    //It seems too paranoid, just in case.
-    val uniqueKeys = keys.filterNot(prevKeys.contains)
+    val keys = (0 until appendsCommandsLength).map { _ => RandomBytes.randomBytes(KL) }.toList
+    val removedKeys = state.operations.filter(_.isInstanceOf[Remove]).map(_.key).distinct
+    val prevKeys = state.operations.map(_.key).distinct.filterNot(k1 => removedKeys.exists{k2 => k1.sameElements(k2)})
+    val uniqueKeys = keys.filterNot(prevKeys.contains).distinct
     val updateKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, UPDATE_FRACTION))
     val removeKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, REMOVE_FRACTION))
 
-    val appendCommands: Vector[Operation] = uniqueKeys.map { k => Insert(k, Longs.toByteArray(Random.nextLong)) }
-    val updateCommands: Vector[Operation] = updateKeys.map { k => UpdateLongBy(k, Random.nextInt(Int.MaxValue).toLong) }
-    val removeCommands: Vector[Operation] = removeKeys.map { k => Remove(k) }
-    val allCommands = Random.shuffle(appendCommands ++ updateCommands ++ removeCommands)
+    val appendCommands: List[Operation] = uniqueKeys.map { k => Insert(k, Longs.toByteArray(nextPositiveLong)) }
+    val updateCommands: List[Operation] = updateKeys.map { k => UpdateLongBy(k, nextPositiveLong) }
+    val removeCommands: List[Operation] = removeKeys.map { k => Remove(k) }
 
-    Batch(allCommands)
+    appendCommands ++ updateCommands ++ removeCommands
   }
 
   private def safeDivide(base: Int, fraction: Int): Int = if (base > fraction) base / fraction else 0
 
-  case class Batch(ops: Vector[Operation]) extends UnitCommand {
+  case class PerformAndVerify(ops: List[Operation]) extends Command {
+    override type Result = BatchResult
 
-    override def run(sut: Stateful): Unit = {
-      val opsToVerify = ops.filter { o => sut.prover.performOneOperation(o).isSuccess }
-      sut.prover.generateProof()
-      opsToVerify.foreach(sut.verifier.performOneOperation)
+    override def run(sut: Sut): Result = {
+      val digest = sut.digest
+      ops.foreach(sut.performOneOperation)
+      sut.checkTree(false)
+      val proof = sut.generateProof()
+      sut.checkTree(true)
+      val postDigest = sut.digest
+      BatchResult(digest, proof, postDigest)
     }
 
-    override def nextState(state: Operations): Operations = state.copy(state.operations ++ ops)
+    override def nextState(state: Operations): Operations = state.withOps(ops)
 
     override def preCondition(state: Operations): Boolean = true
 
-    override def postCondition(state: Operations, success: Boolean): Prop = success
-  }
-
-  case object Check extends Command {
-    override type Result = Boolean
-
-    override def run(sut: Stateful): Boolean = {
-      val proverDigest = sut.prover.digest
-      val verifierDigest = sut.verifier.digest
-      !proverDigest.sameElements(verifierDigest)
+    override def postCondition(state: Operations, result: Try[Result]): Prop = {
+      val check = result match {
+        case Success(res) =>
+          val verifier = new BatchAVLVerifier(res.digest, res.proof, KL, Some(VL))
+          ops.foreach(verifier.performOneOperation)
+          verifier.digest.exists(_.sameElements(res.postDigest))
+        case Failure(_) =>
+          false
+      }
+      Prop.propBoolean(check)
     }
-
-    override def nextState(state: Operations): Operations = state
-
-    override def preCondition(state: Operations): Boolean = true
-
-    override def postCondition(state: Operations, result: Try[Boolean]): Prop =
-      Prop.propBoolean(result.getOrElse(false))
   }
+
 }
