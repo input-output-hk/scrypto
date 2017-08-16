@@ -23,13 +23,14 @@ object AVLCommands extends Commands {
 
   val MINIMUM_OPERATIONS_LENGTH = 10
   val MAXIMUM_GENERATED_OPERATIONS = 10
+
   val UPDATE_FRACTION = 2
   val REMOVE_FRACTION = 4
 
   type Hash = Blake2b256Unsafe
 
   case class Operations(operations: List[Operation]) {
-    def withOps(ops: List[Operation]): Operations = Operations(operations ++ ops)
+    def include(ops: List[Operation]): Operations = Operations(operations ++ ops)
   }
 
   case class BatchResult(digest: Array[Byte], proof: Array[Byte], postDigest: Array[Byte])
@@ -80,14 +81,14 @@ object AVLCommands extends Commands {
     override def run(sut: Sut): Result = {
       val digest = sut.digest
       ops.foreach(sut.performOneOperation)
-      sut.checkTree(false)
+      sut.checkTree(postProof = false)
       val proof = sut.generateProof()
-      sut.checkTree(true)
+      sut.checkTree(postProof = true)
       val postDigest = sut.digest
       BatchResult(digest, proof, postDigest)
     }
 
-    override def nextState(state: Operations): Operations = state.withOps(ops)
+    override def nextState(state: Operations): Operations = state.include(ops)
 
     override def preCondition(state: Operations): Boolean = true
 
@@ -103,5 +104,4 @@ object AVLCommands extends Commands {
       Prop.propBoolean(check)
     }
   }
-
 }
