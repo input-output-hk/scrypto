@@ -35,7 +35,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     val verifier = new BatchAVLVerifier(digest, pf, KL, None)
     val infinityLeaf: VerifierNodes = verifier.extractFirstNode {
-      case l: VerifierLeaf => true
+      case _: VerifierLeaf => true
       case _ => false
     }.get
     val nonInfiniteLeaf: VerifierNodes => Boolean = {
@@ -76,7 +76,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val currentMods = (0 until numberOfLookups).map(_ => Random.randomBytes(KL)).map(k => Lookup(k))
 
       currentMods foreach (m => prover.performOneOperation(m))
-      val pf = prover.generateProof
+      val pf = prover.generateProof()
 
       val verifier = new BatchAVLVerifier(digest, pf, KL, None)
       currentMods foreach (m => verifier.performOneOperation(m).get)
@@ -96,7 +96,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val currentMods = Seq(Insert(aKey, aValue))
 
         currentMods foreach (m => prover.performOneOperation(m))
-        val pf = prover.generateProof
+        val pf = prover.generateProof()
 
         val verifier = new BatchAVLVerifier(digest, pf, KL, None)
         currentMods foreach (m => verifier.performOneOperation(m))
@@ -146,7 +146,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       }
     }.recoverWith {
       case e =>
-        e.printStackTrace
+        e.printStackTrace()
         Failure(e)
     }.get
   }
@@ -189,7 +189,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       whenever(prover.unauthenticatedLookup(aKey).isEmpty) {
         val m = Insert(aKey, valueToInsert)
         prover.performOneOperation(m)
-        val pf = prover.generateProof
+        val pf = prover.generateProof()
         prover.digest
 
         val verifier = new BatchAVLVerifier(digest, pf, KL, SetVL)
@@ -213,7 +213,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val m = UpdateLongBy(aKey, delta)
 
         prover.performOneOperation(m).get.getOrElse(0L) shouldBe oldValue
-        val pf = prover.generateProof
+        val pf = prover.generateProof()
 
         val verifier = new BatchAVLVerifier(digest, pf, KL, Some(VL))
         verifier.performOneOperation(m)
@@ -266,13 +266,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(VL))).isSuccess, "failed to insert")
       p.checkTree()
     }
-    p.generateProof
+    p.generateProof()
 
     var digest = p.digest
     for (i <- 0 until 50)
       require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(VL))).isSuccess, "failed to insert")
 
-    var pf = p.generateProof
+    var pf = p.generateProof()
 
     // see if the proof for 50 mods will be allowed when we permit only 2
     var v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(2), Some(0))
@@ -340,7 +340,6 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     var numNonDeletes = 0
     var numFailures = 0
 
-    val t0 = System.nanoTime()
     while (i < numMods) {
       val digest = p.digest
       val n = randomInt(100)
@@ -427,7 +426,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         i += 1
       }
 
-      val pf = p.generateProof
+      val pf = p.generateProof()
       p.checkTree(true)
 
       val v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(n), Some(numCurrentDeletes))
@@ -460,7 +459,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     forAll(kvGen) { case (aKey, aValue) =>
       val m = Insert(aKey, aValue)
       prover.performOneOperation(m)
-      val pf = prover.generateProof
+      val pf = prover.generateProof()
 
       val verifier = new BatchAVLVerifier(digest, pf, KL, Some(VL))
       verifier.digest.get
@@ -472,7 +471,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       prover.rollback(digest).isSuccess shouldBe true
       prover.digest shouldEqual digest
       prover.performOneOperation(m)
-      prover.generateProof
+      prover.generateProof()
       digest = prover.digest
     }
 
