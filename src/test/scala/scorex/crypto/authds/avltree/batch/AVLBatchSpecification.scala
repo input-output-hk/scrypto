@@ -323,26 +323,36 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("remove single random element from a large set") {
-    val p = new BatchAVLProver(KL, Some(VL))
 
     val minSetSize = 50000
     val maxSetSize = 500000
 
-    var keys = IndexedSeq[Array[Byte]]()
-
     forAll(Gen.choose(minSetSize, maxSetSize), Arbitrary.arbBool.arbitrary){case (cnt, generateProof) =>
       whenever(cnt > minSetSize) {
-        val key = Random.randomBytes(KL)
-        val value = Random.randomBytes(VL)
+        var keys = IndexedSeq[Array[Byte]]()
+        val prover = new BatchAVLProver(KL, Some(VL))
 
-        keys = key +: keys
+        (1 to cnt) foreach { _ =>
+          val key = Random.randomBytes(KL)
+          val value = Random.randomBytes(VL)
 
-        p.performOneOperation(Insert(key, value))
+          keys = key +: keys
+
+          prover.performOneOperation(Insert(key, value)).isSuccess shouldBe true
+          prover.unauthenticatedLookup(key).isDefined shouldBe true
+        }
+
+       // if (generateProof) prover.generateProof()
+
+        val keyPosition = scala.util.Random.nextInt(keys.length)
+        println(keyPosition + " : " + keys.size)
+        val rndKey = keys(keyPosition)
+
+        prover.unauthenticatedLookup(rndKey).isDefined shouldBe true
+        val removalResult = prover.performOneOperation(Remove(rndKey))
+        println(removalResult)
+        removalResult.isSuccess shouldBe true
       }
-      if(generateProof) p.generateProof()
-
-      val rndKey = keys(scala.util.Random.nextInt(keys.length))
-      p.performOneOperation(Remove(rndKey)).isSuccess shouldBe true
     }
   }
 
