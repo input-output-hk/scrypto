@@ -342,16 +342,25 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           prover.unauthenticatedLookup(key).isDefined shouldBe true
         }
 
-       // if (generateProof) prover.generateProof()
+        if (generateProof) prover.generateProof()
 
         val keyPosition = scala.util.Random.nextInt(keys.length)
-        println(keyPosition + " : " + keys.size)
         val rndKey = keys(keyPosition)
 
         prover.unauthenticatedLookup(rndKey).isDefined shouldBe true
         val removalResult = prover.performOneOperation(Remove(rndKey))
-        println(removalResult)
         removalResult.isSuccess shouldBe true
+
+        if(keyPosition > 0) {
+          prover.performOneOperation(Remove(keys.head)).isSuccess shouldBe true
+        }
+
+        keys = keys.tail.filterNot(_.sameElements(rndKey))
+
+        val shuffledKeys = scala.util.Random.shuffle(keys)
+        shuffledKeys.foreach{k =>
+          prover.performOneOperation(Remove(k)).isSuccess shouldBe true
+        }
       }
     }
   }
