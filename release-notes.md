@@ -1,7 +1,8 @@
 **1.3.2**
 ---------
 
-prover() in PersistentBatchAVLProver (don't store the ref, it is mutable!)
+* prover() in PersistentBatchAVLProver (don't store the ref, it is mutable!)
+* No constructor for PersistentBatchAVLProver anymore, use PersistentBatchAVLProver.create
 
 **1.3.1**
 ---------

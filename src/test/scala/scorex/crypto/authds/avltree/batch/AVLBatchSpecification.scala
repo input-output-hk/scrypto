@@ -492,7 +492,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   property("Persistence AVL batch prover") {
     val storage = new VersionedAVLStorageMock
-    val prover = new PersistentBatchAVLProver(new BatchAVLProver(KL, Some(VL)), storage)
+    val prover = PersistentBatchAVLProver.create(new BatchAVLProver(KL, Some(VL)), storage, paranoidChecks = true).get
     var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -514,7 +514,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       digest = prover.digest
     }
 
-    val prover2 = new PersistentBatchAVLProver(new BatchAVLProver(KL, Some(VL)), storage)
+    val prover2 = PersistentBatchAVLProver.create(new BatchAVLProver(KL, Some(VL)), storage, paranoidChecks = true).get
     prover2.digest shouldEqual prover.digest
   }
 

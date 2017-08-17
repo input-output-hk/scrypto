@@ -5,13 +5,10 @@ import scorex.crypto.hash.ThreadUnsafeHash
 
 import scala.util.Try
 
-class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var avlProver: BatchAVLProver[HF],
-                                                       storage: VersionedAVLStorage) {
-  if (storage.nonEmpty) {
-    rollback(storage.version).get
-  } else {
-    storage.update(avlProver).get
-  }
+abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
+
+  var avlProver: BatchAVLProver[HF]
+  val storage: VersionedAVLStorage
 
   def digest: Array[Byte] = avlProver.digest
 
@@ -35,4 +32,26 @@ class PersistentBatchAVLProver[HF <: ThreadUnsafeHash](private var avlProver: Ba
   }
 
   def checkTree(postProof: Boolean = false): Unit = avlProver.checkTree(postProof)
+}
+
+object PersistentBatchAVLProver {
+  def create[HF <: ThreadUnsafeHash](avlBatchProver: BatchAVLProver[HF],
+                                     versionedStorage: VersionedAVLStorage,
+                                     paranoidChecks: Boolean = false
+                                    ): Try[PersistentBatchAVLProver[HF]] = Try {
+
+    new PersistentBatchAVLProver[HF] {
+      override var avlProver: BatchAVLProver[HF] = avlBatchProver
+      override val storage: VersionedAVLStorage = versionedStorage
+
+      (if (storage.nonEmpty) {
+        rollback(storage.version).get
+      } else {
+        generateProof() //to save prover's tree into database and clear its state
+      }).ensuring{_ =>
+        storage.version.sameElements(avlProver.digest) &&
+          (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
+      }
+    }
+  }
 }
