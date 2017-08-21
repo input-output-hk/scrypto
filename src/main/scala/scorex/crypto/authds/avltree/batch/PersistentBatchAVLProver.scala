@@ -44,14 +44,24 @@ object PersistentBatchAVLProver {
       override var avlProver: BatchAVLProver[HF] = avlBatchProver
       override val storage: VersionedAVLStorage = versionedStorage
 
-      (if (storage.nonEmpty) {
-        rollback(storage.version).get
-      } else {
-        generateProof() //to save prover's tree into database and clear its state
+      (storage.version match {
+        case Some(ver) => rollback(ver).get
+        case None => generateProof() //to initialize storage and clear prover's state
       }).ensuring{_ =>
-        storage.version.sameElements(avlProver.digest) &&
+        storage.version.get.sameElements(avlProver.digest) &&
           (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
       }
     }
   }
 }
+
+
+/*
+(storage.version match {
+        case Some(ver) => rollback(ver)
+        case None => generateProof() //to initialize storage and clear prover's state
+      }).ensuring{_ =>
+        storage.version.sameElements(avlProver.digest) &&
+          (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
+      }
+ */
