@@ -53,7 +53,9 @@ sealed trait InternalNode extends Node {
   def getNewKey(newKey: AVLKey): InternalNode
 }
 
-class InternalProverNode(protected var k: AVLKey, protected var l: ProverNodes, protected var r: ProverNodes,
+class InternalProverNode(protected var k: AVLKey,
+                         protected var l: ProverNodes,
+                         protected var r: ProverNodes,
                          protected var b: Balance = 0.toByte)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
@@ -174,4 +176,3 @@ trait KeyInVar {
 
   def key: AVLKey = k
 }
-

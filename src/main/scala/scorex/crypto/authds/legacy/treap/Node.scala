@@ -46,7 +46,7 @@ case class ProverNode(key: TreapKey, private var _left: ProverNodes, private var
                      (implicit val hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
-  lazy val level = levelFunc(key)
+  lazy val level: Level = levelFunc(key)
 
   def left: ProverNodes = _left
 

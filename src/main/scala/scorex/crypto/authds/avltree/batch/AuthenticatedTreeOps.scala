@@ -52,11 +52,11 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
    * @return - a new node with two leaves: r on the left and a new leaf containing key and value on the right
    */
   protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalNode
-  /** 
+  /**
    * Deletions go down the tree twice -- once to find the leaf and realize
    * that it needs to be deleted, and the second time to actually perform the deletion.
    * This method will re-create comparison results. Each time it's called, it will give
-   * the next comparison result of 
+   * the next comparison result of
    * key and node.key, where node starts at the root and progresses down the tree
    * according to the comparison results.
    *
@@ -122,7 +122,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       *
       * Handles binary tree search and AVL rebalancing
       *
-      * Deletions are not handled here in order not to complicate the code even more -- in case of deletion, 
+      * Deletions are not handled here in order not to complicate the code even more -- in case of deletion,
       * we don't change the tree, but simply return toDelete = true.
       * We then go in and delete using deleteHelper
       */

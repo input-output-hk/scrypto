@@ -4,7 +4,7 @@ import com.google.common.primitives.Bytes
 import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.batch.{Modification, Operation}
+import scorex.crypto.authds.avltree.batch.Modification
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
