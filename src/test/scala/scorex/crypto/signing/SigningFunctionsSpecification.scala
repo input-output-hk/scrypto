@@ -19,15 +19,10 @@ with Matchers {
         val keyPair2 = Curve25519.createKeyPair(seed2)
 
         val sig = Curve25519.sign(keyPair._1, message1)
-        val sigSized = Curve25519.signSized(keyPair._1, message1)
 
         Curve25519.verify(sig, message1, keyPair._2) shouldBe true
         Curve25519.verify(sig, message1, keyPair2._2) should not be true
         Curve25519.verify(sig, message2, keyPair._2) should not be true
-
-        Curve25519.verify(sigSized, message1, keyPair._2) shouldBe true
-        Curve25519.verify(sigSized, message1, keyPair2._2) should not be true
-        Curve25519.verify(sigSized, message2, keyPair._2) should not be true
 
       }
     }
