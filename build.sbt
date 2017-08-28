@@ -9,6 +9,7 @@ scalaVersion := "2.12.3"
 crossScalaVersions := Seq("2.11.11", "2.12.3")
 
 libraryDependencies ++= Seq(
+  "org.rudogma" %% "supertagged" % "1.+",
   "com.google.guava" % "guava" % "19.+",
   "org.slf4j" % "slf4j-api" % "1.7.+",
   "org.whispersystems" % "curve25519-java" % "+",

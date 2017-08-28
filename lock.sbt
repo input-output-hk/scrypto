@@ -4,7 +4,8 @@
 dependencyOverrides in ThisBuild ++= Set(
   "com.google.guava" % "guava" % "19.0",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.57",
+  "org.rudogma" % "supertagged_2.12" % "1.3",
   "org.slf4j" % "slf4j-api" % "1.7.25",
   "org.whispersystems" % "curve25519-java" % "0.4.1"
 )
-// LIBRARY_DEPENDENCIES_HASH 187809aa6d6649ce17fe756821bae5d6d28a84dc
+// LIBRARY_DEPENDENCIES_HASH d3af26bba4f2a778ff4b0baa36a1130a2f7aed1c
