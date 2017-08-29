@@ -2,13 +2,13 @@ package scorex.crypto.authds.legacy.treap
 
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.Modification
-import scorex.crypto.authds.legacy.treap.Constants.{LevelFunction, TreapKey, TreapValue}
+import scorex.crypto.authds.legacy.treap.Constants.LevelFunction
 import scorex.crypto.hash.ThreadUnsafeHash
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
-case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
+case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
                            (implicit hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends TwoPartyProof {
 
@@ -21,8 +21,8 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
     def verifyHelper(): (VerifierNodes, Boolean, Label) = {
       dequeueDirection() match {
         case LeafFound =>
-          val nextLeafKey: TreapKey = dequeueNextLeafKey()
-          val value: TreapValue = dequeueValue()
+          val nextLeafKey: ADKey = dequeueNextLeafKey()
+          val value: ADValue = dequeueValue()
           updateFn(Some(value)) match {
             case Success(None) => //delete value
               ???
@@ -35,8 +35,8 @@ case class TreapModifyProof(key: TreapKey, proofSeq: Seq[WTProofElement])
           }
         case LeafNotFound =>
           val neighbourLeafKey = dequeueKey()
-          val nextLeafKey: TreapKey = dequeueNextLeafKey()
-          val value: TreapValue = dequeueValue()
+          val nextLeafKey: ADKey = dequeueNextLeafKey()
+          val value: ADValue = dequeueValue()
           require(ByteArray.compare(neighbourLeafKey, key) < 0)
           require(ByteArray.compare(key, nextLeafKey) < 0)
 

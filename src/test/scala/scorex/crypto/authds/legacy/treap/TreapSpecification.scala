@@ -12,7 +12,7 @@ import scorex.crypto.hash.Blake2b256Unsafe
 class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TwoPartyTests {
 
 
-  def validKey(key: TreapKey): Boolean = key.length > 1 && key.length < MaxKeySize
+  def validKey(key: ADKey): Boolean = key.length > 1 && key.length < MaxKeySize
   def keyValue2Gen: Gen[(ADKey, ADValue, ADValue)] = for {
     key <- genBoundedBytes(1, MaxKeySize)
     value <-  genBoundedBytes(1, MaxKeySize)

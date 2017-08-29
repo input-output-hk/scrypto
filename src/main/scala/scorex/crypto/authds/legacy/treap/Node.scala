@@ -1,7 +1,7 @@
 package scorex.crypto.authds.legacy.treap
 
-import scorex.crypto.authds.Label
-import scorex.crypto.authds.legacy.treap.Constants.{LevelFunction, TreapKey, TreapValue}
+import scorex.crypto.authds.legacy.treap.Constants.LevelFunction
+import scorex.crypto.authds.{ADKey, ADValue, Label}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
 
@@ -37,12 +37,12 @@ trait InternalNode {
 }
 
 sealed trait ProverNodes extends Node {
-  val key: TreapKey
+  val key: ADKey
 }
 
 sealed trait VerifierNodes extends Node
 
-case class ProverNode(key: TreapKey, private var _left: ProverNodes, private var _right: ProverNodes)
+case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes)
                      (implicit val hf: ThreadUnsafeHash, levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
@@ -95,19 +95,19 @@ case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: 
 
 }
 
-case class Leaf(key: TreapKey, private var _value: TreapValue, private var _nextLeafKey: TreapKey)
+case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKey: ADKey)
                (implicit hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
 
-  def value: TreapValue = _value
+  def value: ADValue = _value
 
-  def value_=(newValue: TreapValue) = {
+  def value_=(newValue: ADValue) = {
     _value = newValue
     labelOpt = None
   }
 
-  def nextLeafKey: TreapKey = _nextLeafKey
+  def nextLeafKey: ADKey = _nextLeafKey
 
-  def nextLeafKey_=(newNextLeafKey: TreapKey) = {
+  def nextLeafKey_=(newNextLeafKey: ADKey) = {
     _nextLeafKey = newNextLeafKey
     labelOpt = None
   }
