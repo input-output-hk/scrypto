@@ -12,7 +12,7 @@ case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
                            (implicit hf: ThreadUnsafeHash[_ <: Digest], levelFunc: LevelFunction)
   extends TwoPartyProof {
 
-  def verify(digest: Digest, updateFn: Modification#UpdateFunction): Option[Digest] = Try {
+  def verify(digest: ADDigest, updateFn: Modification#UpdateFunction): Option[ADDigest] = Try {
     initializeIterator()
 
     // returns the new flat root
@@ -111,7 +111,7 @@ case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
 
     val (newTopNode, changeHappened, oldLabel) = verifyHelper()
     if (oldLabel sameElements digest) {
-      Some(newTopNode.label)
+      Some(ADDigest @@ newTopNode.label)
     } else {
       None
     }
