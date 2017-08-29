@@ -22,7 +22,7 @@ import scala.util.{Failure, Try}
   * @param hf               - hash function
   */
 
-class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
+class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: ADDigest,
                                                proof: ADProof,
                                                override val keyLength: Int,
                                                override val valueLengthOpt: Option[Int],
