@@ -37,24 +37,6 @@ Keccak512("some string or bytes")
 ```
 All provided hash functions are secure, and their implementations are thread safe.
 
-### Hash chain
-
-It's possible to apply hash functions sequentially to create more secure hash function. The most well-known [X11](http://en.wiki.dashninja.pl/wiki/X11) hash chain is available from this library.
-
-You can easily create your own hash chain function:
-```scala
-import scorex.crypto.applyHashes
-object MyCustomHash extends CryptographicHash {
-  override val DigestSize: Int = 64 //in bytes
-  override def hash(input: Message): Digest = applyHashes(input, Blake2b512, Keccak512)
-}
-```
-or just
-```scala
-val myHashChain = hashChain(Blake2b512, Keccak512)
-```
-Note, that hash chain will be as good as the [strongest](https://en.wikipedia.org/wiki/Cryptographic_hash_function#Concatenation_of_cryptographic_hash_functions) of the algorithms included in the chain.
-
 ### Commutative hash
 
 You can create commutative hash from any hash function with `CommutativeHash` case class like `CommutativeHash(Sha256)`.
