@@ -22,5 +22,6 @@ trait TwoPartyDictionary {
 }
 
 object TwoPartyDictionary {
-  type Label = CryptographicHash#Digest
+  //TODO use supertagged
+  type Label = Array[Byte]
 }
