@@ -3,18 +3,18 @@ package scorex.crypto.authds.legacy.avltree
 import com.google.common.primitives.Bytes
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.Modification
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
 case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
-                         (implicit hf: ThreadUnsafeHash) extends TwoPartyProof {
+                         (implicit hf: ThreadUnsafeHash[_ <: Digest]) extends TwoPartyProof {
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
 
 
-  def verifyLookup(digest: Label, existence: Boolean): Option[Label] = {
+  def verifyLookup(digest: ADDigest, existence: Boolean): Option[ADDigest] = {
     def existenceLookupFunction: Option[ADValue] => Try[Option[ADValue]] = {
       case Some(v) => Success(Some(v))
       case None => Failure(new Error("Key not found"))
@@ -37,7 +37,7 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
     * and whether the height has increased
     * Also returns the label of the old root
     */
-  private def verifyHelper(updateFn: Modification#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
+  private def verifyHelper(updateFn: Modification#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Digest) = {
     dequeueDirection() match {
       case LeafFound =>
         val nextLeafKey: ADKey = dequeueNextLeafKey()
@@ -77,7 +77,7 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
             throw e
         }
       case GoingLeft =>
-        val rightLabel: Label = dequeueRightLabel()
+        val rightLabel: Digest = dequeueRightLabel()
         val balance: Balance = dequeueBalance()
 
         val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper(updateFn)
@@ -144,7 +144,7 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
         }
 
       case GoingRight =>
-        val leftLabel: Label = dequeueLeftLabel()
+        val leftLabel: Digest = dequeueLeftLabel()
         val balance: Balance = dequeueBalance()
 
         val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper(updateFn)
@@ -209,11 +209,11 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
-  def verify(digest: Label, updateFn: Modification#UpdateFunction): Option[Label] = Try {
+  def verify(digest: ADDigest, updateFn: Modification#UpdateFunction): Option[ADDigest] = Try {
     initializeIterator()
 
     val (newTopNode, _, _, oldLabel) = verifyHelper(updateFn)
-    if (oldLabel sameElements digest) Some(newTopNode.label) else None
+    if (oldLabel sameElements digest) Some(ADDigest @@ newTopNode.label) else None
   }.getOrElse(None)
 
   /**
@@ -248,7 +248,7 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
 object AVLModifyProof {
 
   def parseBytes(bytes: Array[Byte])(implicit keyLength: Int = 32, digestSize: Int = 32,
-                                     hf: ThreadUnsafeHash = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
+                                     hf: ThreadUnsafeHash[_ <: Digest] = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
     val pathLength: Int = bytes.head.ensuring(_ % 3 == 0)
 
     val key = ADKey @@ bytes.slice(1, 1 + keyLength)

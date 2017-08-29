@@ -1,8 +1,7 @@
 package scorex.crypto.authds
 
-import scorex.crypto.authds._
-import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.legacy.treap.Level
+import scorex.crypto.hash._
 
 trait ProofIterator {
   private var i = -1
@@ -26,14 +25,14 @@ trait ProofIterator {
     ADKey @@ proofSeq(i).asInstanceOf[ProofNextLeafKey].e
   }
 
-  protected def dequeueRightLabel(): Label = {
+  protected def dequeueRightLabel(): Digest = {
     i = i + 1
-    Label @@ proofSeq(i).asInstanceOf[ProofRightLabel].e
+    Digest32 @@ proofSeq(i).asInstanceOf[ProofRightLabel].e
   }
 
-  protected def dequeueLeftLabel(): Label = {
+  protected def dequeueLeftLabel(): Digest = {
     i = i + 1
-    Label @@ proofSeq(i).asInstanceOf[ProofLeftLabel].e
+    Digest32 @@ proofSeq(i).asInstanceOf[ProofLeftLabel].e
   }
 
   protected def dequeueDirection(): Direction = {

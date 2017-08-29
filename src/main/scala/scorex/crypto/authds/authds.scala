@@ -28,10 +28,6 @@ package object authds {
 
   type ADProof = ADProof.Type
 
-  object Label extends TaggedType[Array[Byte]]
-
-  type Label = Label.Type
-
   object Balance extends TaggedType[Byte]
 
   type Balance = Balance.Type

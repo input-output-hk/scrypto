@@ -3,7 +3,7 @@ package scorex.crypto.authds.legacy.treap
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.authds.legacy.treap.Constants._
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
   * Authenticated data structure, representing both treap and binary tree, depending on level selection function
   */
 //todo: make explicit skiplist interface
-class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
+class Treap[HF <: ThreadUnsafeHash[_ <: Digest]](rootOpt: Option[Leaf] = None)
                                    (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.treapLevel)
   extends TwoPartyDictionary {
 

@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.hash.{Blake2b256Unsafe, Digest, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -18,7 +18,7 @@ import scala.util.{Failure, Success, Try}
   *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
-class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
+class BatchAVLProver[HF <: ThreadUnsafeHash[_ <: Digest]](val keyLength: Int,
                                              val valueLengthOpt: Option[Int],
                                              oldRootAndHeight: Option[(ProverNodes, Int)] = None)
                                             (implicit val hf: HF = new Blake2b256Unsafe)

@@ -3,22 +3,22 @@ package scorex.crypto.authds.legacy.treap
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.Modification
 import scorex.crypto.authds.legacy.treap.Constants.LevelFunction
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
 case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
-                           (implicit hf: ThreadUnsafeHash, levelFunc: LevelFunction)
+                           (implicit hf: ThreadUnsafeHash[_ <: Digest], levelFunc: LevelFunction)
   extends TwoPartyProof {
 
-  def verify(digest: Label, updateFn: Modification#UpdateFunction): Option[Label] = Try {
+  def verify(digest: Digest, updateFn: Modification#UpdateFunction): Option[Digest] = Try {
     initializeIterator()
 
     // returns the new flat root
     // and an indicator whether tree has been modified at r or below
     // Also returns the label of the old root
-    def verifyHelper(): (VerifierNodes, Boolean, Label) = {
+    def verifyHelper(): (VerifierNodes, Boolean, Digest) = {
       dequeueDirection() match {
         case LeafFound =>
           val nextLeafKey: ADKey = dequeueNextLeafKey()
@@ -56,7 +56,7 @@ case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
               throw e
           }
         case GoingLeft =>
-          val rightLabel: Label = dequeueRightLabel()
+          val rightLabel: Digest = dequeueRightLabel()
           val level: Level = dequeueLevel()
 
           val (newLeftM, changeHappened, oldLeftLabel) = verifyHelper()
@@ -80,7 +80,7 @@ case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
             (r, false, oldLabel)
           }
         case GoingRight =>
-          val leftLabel: Label = dequeueLeftLabel()
+          val leftLabel: Digest = dequeueLeftLabel()
           val level: Level = dequeueLevel()
 
           val (newRightM, changeHappened, oldRightLabel) = verifyHelper()

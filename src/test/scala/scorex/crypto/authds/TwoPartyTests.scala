@@ -3,6 +3,7 @@ package scorex.crypto.authds
 import com.google.common.primitives.Longs
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.avltree.batch.{Modification, Update}
+import scorex.crypto.hash.Digest
 
 import scala.util.Success
 
@@ -11,7 +12,7 @@ trait TwoPartyTests extends TestingCommons {
 
   def genUpd(key: ADKey) = Update(key, ADValue @@ key.take(8))
 
-  def profileTree(tree: TwoPartyDictionary, elements: Seq[ADKey], inDigest: Label): Seq[Float] = {
+  def profileTree(tree: TwoPartyDictionary, elements: Seq[ADKey], inDigest: ADDigest): Seq[Float] = {
     var digest = inDigest
     val (insertTime: Float, proofs) = time(elements.map(e => tree.run(genUpd(e)).get))
     val (verifyTime: Float, _) = time {

@@ -4,7 +4,7 @@ import com.google.common.primitives.Longs
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.PropSpec
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds._
 import scorex.crypto.hash.Blake2b256Unsafe
 import scorex.utils.{Random => RandomBytes}
 
@@ -34,7 +34,7 @@ object AVLCommands extends Commands {
     def include(ops: List[Operation]): Operations = Operations(operations ++ ops)
   }
 
-  case class BatchResult(digest: Array[Byte], proof: Array[Byte], postDigest: Array[Byte])
+  case class BatchResult(digest: ADDigest, proof: ADProof, postDigest: Array[Byte])
 
   override type State = Operations
   override type Sut = BatchAVLProver[Hash]

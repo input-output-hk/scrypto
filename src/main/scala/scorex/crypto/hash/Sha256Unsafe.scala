@@ -5,7 +5,7 @@ import java.security.MessageDigest
 /**
   * Thread-unsafe Sha256 alternative. Use with caution! Not for a multi-thread use!!!
   */
-class Sha256Unsafe extends CryptographicHash32 with ThreadUnsafeHash {
+class Sha256Unsafe extends CryptographicHash32 with ThreadUnsafeHash[Digest32] {
   private val instance = MessageDigest.getInstance("SHA-256")
 
   override def hash(input: Message): Digest32 = Digest32 @@ instance.digest(input)

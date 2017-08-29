@@ -4,14 +4,15 @@ import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
-class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, rootOpt: Option[ProverNodes] = None)
-                                     (implicit hf: HF = new Blake2b256Unsafe)
-  extends TwoPartyDictionary {
+class AVLTree[HF <: ThreadUnsafeHash[_ <: Digest]](keyLength: Int,
+                                                   valueLength: Int = 8,
+                                                   rootOpt: Option[ProverNodes] = None)
+                                                  (implicit hf: HF = new Blake2b256Unsafe) extends TwoPartyDictionary {
 
   type ChangeHappened = Boolean
   type ChildHeightIncreased = Boolean

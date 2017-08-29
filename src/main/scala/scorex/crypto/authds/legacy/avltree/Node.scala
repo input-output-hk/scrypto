@@ -1,18 +1,18 @@
 package scorex.crypto.authds.legacy.avltree
 
-import scorex.crypto.authds.{ADKey, ADValue, Balance, Label}
+import scorex.crypto.authds.{ADKey, ADValue, Balance}
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.hash._
 
 sealed trait Node {
 
-  def computeLabel: Label
+  def computeLabel: Digest
 
   protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
 
-  protected var labelOpt: Option[Label] = None
+  protected var labelOpt: Option[Digest] = None
 
-  def label: Label = labelOpt match {
+  def label: Digest = labelOpt match {
     case None =>
       val l = computeLabel
       labelOpt = Some(l)
@@ -24,7 +24,7 @@ sealed trait Node {
 }
 
 trait InternalNode extends Node {
-  val hf: ThreadUnsafeHash
+  val hf: ThreadUnsafeHash[_ <: Digest]
 
   protected var _balance: Balance
 
@@ -35,11 +35,11 @@ trait InternalNode extends Node {
     labelOpt = None
   }
 
-  def leftLabel: Label
+  def leftLabel: Digest
 
-  def rightLabel: Label
+  def rightLabel: Digest
 
-  def computeLabel: Label = Label @@ hf.prefixedHash(1: Byte, Array(balance), leftLabel, rightLabel)
+  def computeLabel: Digest = hf.prefixedHash(1: Byte, Array(balance), leftLabel, rightLabel)
 
 }
 
@@ -52,14 +52,14 @@ sealed trait ProverNodes extends Node {
 
 sealed trait VerifierNodes extends Node
 
-case class LabelOnlyNode(l: Label) extends Node {
-  override val computeLabel: Label = l
-  override val label: Label = l
+case class LabelOnlyNode(l: Digest) extends Node {
+  override val computeLabel: Digest = l
+  override val label: Digest = l
 }
 
 case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes,
-                      protected var _balance: Balance = Balance @@ 0.toByte)(implicit val hf: ThreadUnsafeHash)
-  extends ProverNodes with InternalNode {
+                      protected var _balance: Balance = Balance @@ 0.toByte)
+                     (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
 
@@ -75,9 +75,9 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
     labelOpt = None
   }
 
-  def rightLabel: Label = right.label
+  def rightLabel: Digest = right.label
 
-  def leftLabel: Label = left.label
+  def leftLabel: Digest = left.label
 
   var height = 1
 
@@ -95,7 +95,7 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
 }
 
 case class VerifierNode(private var _left: Node, private var _right: Node, protected var _balance: Balance)
-                       (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
+                       (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends VerifierNodes with InternalNode {
 
   def left: Node = _left
 
@@ -112,9 +112,9 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
   }
 
 
-  def rightLabel: Label = right.label
+  def rightLabel: Digest = right.label
 
-  def leftLabel: Label = left.label
+  def leftLabel: Digest = left.label
 
 
   override def toString: String = {
@@ -124,7 +124,7 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
 }
 
 case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKey: ADKey)
-               (implicit val hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
+               (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with VerifierNodes {
 
 
   protected[avltree] var height = 0 //needed for debug only
@@ -143,7 +143,7 @@ case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKe
     labelOpt = None
   }
 
-  def computeLabel: Label = Label @@ hf.prefixedHash(0: Byte, key, value, nextLeafKey)
+  def computeLabel: Digest = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"

@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.Sha256
 import scorex.utils.Random
 
@@ -694,7 +694,7 @@ object BatchingPlayground extends App with ToStringHelper {
       require(v.digest.isEmpty, "Failed to reject too long a proof")
 
       // see if wrong digest will be allowed
-      v = new BatchAVLVerifier(Random.randomBytes(), pf, KL, Some(VL), Some(50), Some(0))
+      v = new BatchAVLVerifier(ADDigest @@ Random.randomBytes(), pf, KL, Some(VL), Some(50), Some(0))
       require(v.digest.isEmpty, "Failed to reject wrong digest")
 
       for (i <- 0 until 10) {

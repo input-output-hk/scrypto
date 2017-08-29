@@ -1,19 +1,19 @@
 package scorex.crypto.authds.legacy.treap
 
 import scorex.crypto.authds.legacy.treap.Constants.LevelFunction
-import scorex.crypto.authds.{ADKey, ADValue, Label}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.hash._
 
 sealed trait Node {
 
-  def computeLabel: Label
+  def computeLabel: Digest
 
   protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
 
-  protected var labelOpt: Option[Label] = None
+  protected var labelOpt: Option[Digest] = None
 
-  def label: Label = labelOpt match {
+  def label: Digest = labelOpt match {
     case None =>
       val l = computeLabel
       labelOpt = Some(l)
@@ -25,14 +25,14 @@ sealed trait Node {
 }
 
 trait InternalNode {
-  val hf: ThreadUnsafeHash
+  val hf: ThreadUnsafeHash[_ <: Digest]
   val level: Level
 
-  def leftLabel: Label
+  def leftLabel: Digest
 
-  def rightLabel: Label
+  def rightLabel: Digest
 
-  def computeLabel: Label = Label @@ hf.prefixedHash(1: Byte, level.bytes, leftLabel, rightLabel)
+  def computeLabel: Digest = hf.prefixedHash(1: Byte, level.bytes, leftLabel, rightLabel)
 
 }
 
@@ -43,7 +43,7 @@ sealed trait ProverNodes extends Node {
 sealed trait VerifierNodes extends Node
 
 case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes)
-                     (implicit val hf: ThreadUnsafeHash, levelFunc: LevelFunction)
+                     (implicit val hf: ThreadUnsafeHash[_ <: Digest], levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
   lazy val level = levelFunc(key)
@@ -62,9 +62,9 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
     labelOpt = None
   }
 
-  def rightLabel: Label = right.label
+  def rightLabel: Digest = right.label
 
-  def leftLabel: Label = left.label
+  def leftLabel: Digest = left.label
 
   override def toString: String = {
     s"${arrayToString(label)}: ProverNode(${arrayToString(key)}, ${arrayToString(leftLabel)}, ${arrayToString(rightLabel)}, $level)"
@@ -72,19 +72,19 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
 
 }
 
-case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: Label, level: Level)
-                       (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
+case class VerifierNode(private var _leftLabel: Digest, private var _rightLabel: Digest, level: Level)
+                       (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends VerifierNodes with InternalNode {
 
-  def leftLabel: Label = _leftLabel
+  def leftLabel: Digest = _leftLabel
 
-  def rightLabel: Label = _rightLabel
+  def rightLabel: Digest = _rightLabel
 
-  def leftLabel_=(newLeft: Label) = {
+  def leftLabel_=(newLeft: Digest) = {
     _leftLabel = newLeft
     labelOpt = None
   }
 
-  def rightLabel_=(newRight: Label) = {
+  def rightLabel_=(newRight: Digest) = {
     _rightLabel = newRight
     labelOpt = None
   }
@@ -96,7 +96,7 @@ case class VerifierNode(private var _leftLabel: Label, private var _rightLabel: 
 }
 
 case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKey: ADKey)
-               (implicit hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
+               (implicit hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with VerifierNodes {
 
   def value: ADValue = _value
 
@@ -112,7 +112,7 @@ case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKe
     labelOpt = None
   }
 
-  def computeLabel: Label = Label @@ hf.prefixedHash(0: Byte, key, value, nextLeafKey)
+  def computeLabel: Digest = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"

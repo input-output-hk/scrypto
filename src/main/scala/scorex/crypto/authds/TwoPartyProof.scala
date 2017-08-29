@@ -13,7 +13,7 @@ trait TwoPartyProof extends ProofIterator {
     * @param updateFn - a modification to check correctness of
     * @return Some from new root hash if proof is valid or None if proof is not valid.
     */
-  def verify(digest: Label, updateFn: Modification#UpdateFunction): Option[Label]
+  def verify(digest: ADDigest, updateFn: Modification#UpdateFunction): Option[ADDigest]
 
-  def verify(digest: Label, modification: Modification): Option[Label] = verify(digest, modification.updateFn)
+  def verify(digest: ADDigest, modification: Modification): Option[ADDigest] = verify(digest, modification.updateFn)
 }

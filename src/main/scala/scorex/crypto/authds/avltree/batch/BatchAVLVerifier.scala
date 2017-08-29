@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -22,7 +22,7 @@ import scala.util.{Failure, Try}
   * @param hf               - hash function
   */
 
-class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: ADDigest,
+class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDigest,
                                                proof: ADProof,
                                                override val keyLength: Int,
                                                override val valueLengthOpt: Option[Int],
@@ -178,7 +178,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: ADDigest,
       require(maxNumOperations.isEmpty || numNodes <= maxNodes, "Proof too long")
       n match {
         case LabelInPackagedProof =>
-          val label = Label @@ proof.slice(i, i + labelLength)
+          val label = Digest32 @@ proof.slice(i, i + labelLength)
           i += labelLength
           s.push(new LabelOnlyNode(label))
           previousLeaf = None

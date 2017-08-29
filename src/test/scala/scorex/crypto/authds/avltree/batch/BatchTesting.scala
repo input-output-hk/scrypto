@@ -43,10 +43,10 @@ class LegacyProver(tree: AVLTree[_]) {
 }
 
 
-class LegacyVerifier(digest: Label) {
+class LegacyVerifier(digest: ADDigest) {
   def verifyBatchSimple(operations: Seq[Modification], batch: BatchSuccessSimple): Boolean = {
     require(operations.size == batch.proofs.size)
-    batch.proofs.zip(operations).foldLeft(Some(digest): Option[Label]) {
+    batch.proofs.zip(operations).foldLeft(Some(digest): Option[ADDigest]) {
       case (digestOpt, (proof, op)) =>
         digestOpt.flatMap(digest => proof.verify(digest, op))
     }.isDefined

@@ -4,7 +4,7 @@ import com.google.common.primitives.Longs
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.Keccak256
@@ -279,7 +279,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     require(v.digest.isEmpty, "Failed to reject too long a proof")
 
     // see if wrong digest will be allowed
-    v = new BatchAVLVerifier(Random.randomBytes(KL), pf, KL, Some(VL), Some(50), Some(0))
+    v = new BatchAVLVerifier(ADDigest @@ Random.randomBytes(KL), pf, KL, Some(VL), Some(50), Some(0))
     require(v.digest.isEmpty, "Failed to reject wrong digest")
 
     for (i <- 0 until 10) {

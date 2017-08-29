@@ -1,11 +1,11 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds._
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.hash._
 
 import scala.util.Try
 
-abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
+abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash[_ <: Digest]]{
 
   var avlProver: BatchAVLProver[HF]
   val storage: VersionedAVLStorage
@@ -35,7 +35,7 @@ abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
 }
 
 object PersistentBatchAVLProver {
-  def create[HF <: ThreadUnsafeHash](avlBatchProver: BatchAVLProver[HF],
+  def create[HF <: ThreadUnsafeHash[_ <: Digest]](avlBatchProver: BatchAVLProver[HF],
                                      versionedStorage: VersionedAVLStorage,
                                      paranoidChecks: Boolean = false
                                     ): Try[PersistentBatchAVLProver[HF]] = Try {
