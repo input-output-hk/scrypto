@@ -1,5 +1,6 @@
 package scorex.crypto.authds.merkle
 
+import scorex.crypto.authds.{LeafData, Side}
 import scorex.crypto.hash._
 
 import scala.annotation.tailrec
@@ -8,18 +9,18 @@ import scala.collection.mutable
 case class MerkleTree(topNode: InternalNode,
                       elementsHashIndexes: Map[mutable.WrappedArray.ofByte, Int]) {
 
-  lazy val rootHash: Array[Byte] = topNode.hash
+  lazy val rootHash: Digest = topNode.hash
   lazy val length: Int = elementsHashIndexes.size
 
   def proofByElement(element: Leaf): Option[MerkleProof] = proofByElementHash(element.hash)
 
-  def proofByElementHash(hash: Array[Byte]): Option[MerkleProof] = {
+  def proofByElementHash(hash: Digest): Option[MerkleProof] = {
     elementsHashIndexes.get(new mutable.WrappedArray.ofByte(hash)).flatMap(i => proofByIndex(i))
   }
 
   def proofByIndex(index: Int): Option[MerkleProof] = if (index >= 0 && index < length) {
-    def loop(node: Node, i: Int, curLength: Int, acc: Seq[(Array[Byte], MerkleProof.Side)])
-    : Option[(Leaf, Seq[(Array[Byte], MerkleProof.Side)])] = {
+    def loop(node: Node, i: Int, curLength: Int, acc: Seq[(Digest, Side)])
+    : Option[(Leaf, Seq[(Digest, Side)])] = {
       node match {
         case n: InternalNode if i < curLength / 2 =>
           loop(n.left, i, curLength / 2, acc :+ (n.right.hash, MerkleProof.LeftSide))
@@ -67,7 +68,7 @@ object MerkleTree {
   val LeafPrefix: Byte = 0: Byte
   val InternalNodePrefix: Byte = 1: Byte
 
-  def apply(payload: Seq[Array[Byte]])
+  def apply(payload: Seq[LeafData])
            (implicit hf: CryptographicHash[_ <: Digest]): MerkleTree = {
     val leafs = payload.map(d => Leaf(d))
     val elementsIndex: Map[mutable.WrappedArray.ofByte, Int] = leafs.indices.map { i =>

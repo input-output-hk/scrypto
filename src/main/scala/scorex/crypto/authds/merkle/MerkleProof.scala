@@ -1,5 +1,6 @@
 package scorex.crypto.authds.merkle
 
+import scorex.crypto.authds.{LeafData, Side}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CryptographicHash, Digest}
 
@@ -21,10 +22,10 @@ import scorex.crypto.hash.{CryptographicHash, Digest}
   * @param levels - levels in proof, bottom up, each level is about stored value and position of computed element
   *               (whether it is left or right to stored value)
   */
-case class MerkleProof(leafData: Array[Byte], levels: Seq[(Array[Byte], MerkleProof.Side)])
+case class MerkleProof(leafData: LeafData, levels: Seq[(Digest, Side)])
                       (implicit val hf: CryptographicHash[_ <: Digest]) {
 
-  def valid(expectedRootHash: Array[Byte]): Boolean = {
+  def valid(expectedRootHash: Digest): Boolean = {
     val leafHash = hf.prefixedHash(MerkleTree.LeafPrefix, leafData)
 
     levels.foldLeft(leafHash) { case (prevHash, (hash, side)) =>
@@ -39,9 +40,8 @@ case class MerkleProof(leafData: Array[Byte], levels: Seq[(Array[Byte], MerklePr
 }
 
 object MerkleProof {
-  type Side = Byte
 
-  val LeftSide: Side = 0: Byte
-  val RightSide: Side = 1: Byte
+  val LeftSide: Side = Side @@ 0.toByte
+  val RightSide: Side = Side @@ 1.toByte
 }
 
