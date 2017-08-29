@@ -10,7 +10,7 @@ abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
   var avlProver: BatchAVLProver[HF]
   val storage: VersionedAVLStorage
 
-  def digest: Array[Byte] = avlProver.digest
+  def digest: ADDigest = avlProver.digest
 
   def height: Int = avlProver.rootNodeHeight
 
