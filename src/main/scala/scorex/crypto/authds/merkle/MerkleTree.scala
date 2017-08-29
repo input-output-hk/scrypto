@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash._
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -68,7 +68,7 @@ object MerkleTree {
   val InternalNodePrefix: Byte = 1: Byte
 
   def apply(payload: Seq[Array[Byte]])
-           (implicit hf: CryptographicHash): MerkleTree = {
+           (implicit hf: CryptographicHash[_ <: Digest]): MerkleTree = {
     val leafs = payload.map(d => Leaf(d))
     val elementsIndex: Map[mutable.WrappedArray.ofByte, Int] = leafs.indices.map { i =>
       (new mutable.WrappedArray.ofByte(leafs(i).hash), i)
@@ -79,7 +79,7 @@ object MerkleTree {
   }
 
   @tailrec
-  def calcTopNode(nodes: Seq[Node])(implicit hf: CryptographicHash): InternalNode = {
+  def calcTopNode(nodes: Seq[Node])(implicit hf: CryptographicHash[_ <: Digest]): InternalNode = {
     val nextNodes = nodes.grouped(2).map(lr => InternalNode(lr.head, if (lr.length == 2) lr.last else EmptyNode)).toSeq
     if (nextNodes.length == 1) nextNodes.head else calcTopNode(nextNodes)
   }

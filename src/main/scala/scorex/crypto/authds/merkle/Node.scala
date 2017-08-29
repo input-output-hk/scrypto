@@ -1,13 +1,13 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash._
 
 trait Node {
   def hash: Array[Byte]
 }
 
-case class InternalNode(left: Node, right: Node)(implicit val hf: CryptographicHash) extends Node {
+case class InternalNode(left: Node, right: Node)(implicit val hf: CryptographicHash[_ <: Digest]) extends Node {
   override lazy val hash: Array[Byte] = hf.prefixedHash(MerkleTree.InternalNodePrefix, left.hash, right.hash)
 
   override def toString: String = s"InternalNode(" +
@@ -16,7 +16,7 @@ case class InternalNode(left: Node, right: Node)(implicit val hf: CryptographicH
     s"hash: ${Base58.encode(hash)})"
 }
 
-case class Leaf(data: Array[Byte])(implicit val hf: CryptographicHash) extends Node {
+case class Leaf(data: Array[Byte])(implicit val hf: CryptographicHash[_ <: Digest]) extends Node {
   override lazy val hash: Array[Byte] = hf.prefixedHash(MerkleTree.LeafPrefix, data)
 
   override def toString: String = s"Leaf(${Base58.encode(hash)})"

@@ -8,20 +8,20 @@ import java.security.MessageDigest
 class Sha256Unsafe extends CryptographicHash32 with ThreadUnsafeHash {
   private val instance = MessageDigest.getInstance("SHA-256")
 
-  override def hash(input: Message): Digest = instance.digest(input)
+  override def hash(input: Message): Digest32 = Digest32 @@ instance.digest(input)
 
-  override def hash(inputs: Message*): Digest = {
+  override def hash(inputs: Message*): Digest32 = {
     inputs.foreach(i => instance.update(i))
     val digest = instance.digest()
     instance.reset()
-    digest
+    Digest32 @@ digest
   }
 
-  override def prefixedHash(prefix: Byte, inputs: Message*): Digest = {
+  override def prefixedHash(prefix: Byte, inputs: Message*): Digest32 = {
     instance.update(prefix)
     inputs.foreach(i => instance.update(i))
     val digest = instance.digest()
     instance.reset()
-    digest
+    Digest32 @@ digest
   }
 }
