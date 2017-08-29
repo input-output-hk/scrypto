@@ -2,7 +2,7 @@ organization := "org.scorexfoundation"
 
 name := "scrypto"
 
-version := "1.3.3-SNAPSHOT"
+version := "2.0.0-SNAPSHOT"
 
 scalaVersion := "2.12.3"
 
