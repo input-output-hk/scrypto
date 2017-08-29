@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds.Label
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 
 import scala.collection.mutable.ArrayBuffer

@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -28,7 +28,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
   private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
-      Array.fill(valueLengthOpt.map(_.toInt).getOrElse(0))(0: Byte), PositiveInfinityKey)
+      ADValue @@ Array.fill(valueLengthOpt.getOrElse(0))(0: Byte), PositiveInfinityKey)
     t.isNew = false
     t
   })
@@ -60,7 +60,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param r
     * @return - true if to go left, false if to go right in the search
     */
-  protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
+  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode): Boolean = {
     val ret = if (found) {
       true
     } else {
@@ -99,7 +99,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param r
     * @return
     */
-  protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
+  protected def keyMatchesLeaf(key: ADKey, r: Leaf): Boolean = {
     // The prover doesn't actually need to look at the leaf key,
     // because the prover would have already seen this key on the way
     // down the to leaf if and only if the leaf matches the key that is being sought
@@ -136,7 +136,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param v
     * @return - A new prover node with two leaves: r on the left and a new leaf containing key and value on the right
     */
-  protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalProverNode = {
+  protected def addNode(r: Leaf, key: ADKey, v: ADValue): InternalProverNode = {
     val n = r.nextLeafKey
     new InternalProverNode(key, r.getNew(newNextLeafKey = key).asInstanceOf[ProverLeaf],
       new ProverLeaf(key, v, n), 0: Byte)
@@ -148,7 +148,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     *
     * @return - the digest
     */
-  def digest: Array[Byte] = digest(topNode)
+  def digest: ADDigest = digest(topNode)
 
 
   /**
@@ -162,7 +162,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param operation
     * @return - Success(Some(old value)), Success(None), or Failure
     */
-  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = Try {
+  def performOneOperation(operation: Operation): Try[Option[ADValue]] = Try {
     replayIndex = directionsBitLength
     returnResultOfOneOperation(operation, topNode) match {
       case Success(n) =>
@@ -191,7 +191,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     *
     * @return - the proof
     */
-  def generateProof(): Array[Byte] = {
+  def generateProof(): ADProof = {
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 
@@ -258,7 +258,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     directionsBitLength = 0
     oldTopNode = topNode
 
-    packagedTree.toArray
+    ADProof @@ packagedTree.toArray
   }
 
   /**
@@ -267,8 +267,8 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     *
     * @return Some(value) for value associated with the given key if key is in the tree, and None otherwise
     */
-  def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = {
-    def unauthenticatedLookupHelper(rNode: ProverNodes, found: Boolean): Option[AVLValue] = {
+  def unauthenticatedLookup(key: ADKey): Option[ADValue] = {
+    def unauthenticatedLookupHelper(rNode: ProverNodes, found: Boolean): Option[ADValue] = {
       rNode match {
         case leaf: ProverLeaf =>
           if (found)

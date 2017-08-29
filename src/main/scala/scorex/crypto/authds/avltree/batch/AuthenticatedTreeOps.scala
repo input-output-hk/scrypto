@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.authds._
 import scorex.crypto.encode.Base58
 import scorex.utils.{ByteArray, ScryptoLogging}
 
@@ -8,9 +8,9 @@ import scala.util.{Failure, Success, Try}
 
 
 /**
- * Code common to the prover and verifier of https://eprint.iacr.org/2016/994
- * (see Appendix B, "Our Algorithms")
- */
+  * Code common to the prover and verifier of https://eprint.iacr.org/2016/994
+  * (see Appendix B, "Our Algorithms")
+  */
 trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
 
   type ChangeHappened = Boolean
@@ -20,48 +20,51 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
   protected val keyLength: Int
   protected val valueLengthOpt: Option[Int]
 
-  protected val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
-  protected val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
+  protected val PositiveInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(-1: Byte)
+  protected val NegativeInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(0: Byte)
 
   protected var rootNodeHeight: Int
 
   /**
-   * The digest consists of the label of the root node followed by its height,
-   * expressed as a single (unsigned) byte
-   */
-  protected def digest(rootNode: Node): Array[Byte] = {
+    * The digest consists of the label of the root node followed by its height,
+    * expressed as a single (unsigned) byte
+    */
+  protected def digest(rootNode: Node): ADDigest = {
     assert(rootNodeHeight >= 0 && rootNodeHeight < 256)
     // rootNodeHeight should never be more than 255, so the toByte conversion is safe (though it may cause an incorrect
     // sign on the signed byte if rootHeight>127, but we handle that case correctly on decoding the byte back to int in the
     // verifier, by adding 256 if it's negative).
     // The reason rootNodeHeight should never be more than 255 is that if height is more than 255,
     // then the AVL tree has at least  2^{255/1.4405} = 2^177 leaves, which is more than the number of atoms on planet Earth.
-    rootNode.label :+ rootNodeHeight.toByte
+    ADDigest @@ (rootNode.label :+ rootNodeHeight.toByte)
   }
 
   /* The following four methods differ for the prover and verifier, but are used in the code below */
   /**
-   * @return - whether we found the correct leaf and the key contains it
-   */
-  protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean
+    * @return - whether we found the correct leaf and the key contains it
+    */
+  protected def keyMatchesLeaf(key: ADKey, r: Leaf): Boolean
+
   /**
-   * @return - whether to go left or right when searching for key and standing at r
-   */
-  protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean
+    * @return - whether to go left or right when searching for key and standing at r
+    */
+  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode): Boolean
+
   /**
-   * @return - a new node with two leaves: r on the left and a new leaf containing key and value on the right
-   */
-  protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalNode
-  /** 
-   * Deletions go down the tree twice -- once to find the leaf and realize
-   * that it needs to be deleted, and the second time to actually perform the deletion.
-   * This method will re-create comparison results. Each time it's called, it will give
-   * the next comparison result of 
-   * key and node.key, where node starts at the root and progresses down the tree
-   * according to the comparison results.
-   *
-   * @return - result of previous comparison of key and relevant node's key
-   */
+    * @return - a new node with two leaves: r on the left and a new leaf containing key and value on the right
+    */
+  protected def addNode(r: Leaf, key: ADKey, v: ADValue): InternalNode
+
+  /**
+    * Deletions go down the tree twice -- once to find the leaf and realize
+    * that it needs to be deleted, and the second time to actually perform the deletion.
+    * This method will re-create comparison results. Each time it's called, it will give
+    * the next comparison result of
+    * key and node.key, where node starts at the root and progresses down the tree
+    * according to the comparison results.
+    *
+    * @return - result of previous comparison of key and relevant node's key
+    */
   protected def replayComparison: Int
 
   /**
@@ -104,7 +107,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
   }
 
-  protected def returnResultOfOneOperation(operation: Operation, rootNode: Node): Try[(Node, Option[AVLValue])] = Try {
+  protected def returnResultOfOneOperation(operation: Operation, rootNode: Node): Try[(Node, Option[ADValue])] = Try {
     val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
@@ -126,7 +129,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       * we don't change the tree, but simply return toDelete = true.
       * We then go in and delete using deleteHelper
       */
-    def modifyHelper(rNode: Node, key: AVLKey, operation: Operation): (Node, ChangeHappened, HeightIncreased, ToDelete, Option[AVLValue]) = {
+    def modifyHelper(rNode: Node, key: ADKey, operation: Operation): (Node, ChangeHappened, HeightIncreased, ToDelete, Option[ADValue]) = {
       // Do not set the visited flag on the way down -- set it only after you know the operation did not fail,
       // because if the operation failed, there is no need to put nodes in the proof.
       rNode match {
@@ -262,7 +265,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
       // with deleteMax = true), and copy the information from that deleted leaf into the node where the
       // key was found and into the leftmost leaf of its right subtree
 
-      def changeNextLeafKeyOfMaxNode(rNode: Node, nextLeafKey: AVLKey): Node = {
+      def changeNextLeafKeyOfMaxNode(rNode: Node, nextLeafKey: ADKey): Node = {
         rNode.visited = true
         rNode match {
           case leaf: Leaf =>
@@ -274,7 +277,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
         }
       }
 
-      def changeKeyAndValueOfMinNode(rNode: Node, newKey: AVLKey, newValue: AVLValue): Node = {
+      def changeKeyAndValueOfMinNode(rNode: Node, newKey: ADKey, newValue: ADValue): Node = {
         rNode.visited = true
         rNode match {
           case leaf: Leaf =>

@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.ThreadUnsafeHash
 
 import scala.util.Try
@@ -16,9 +16,9 @@ abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
 
   def prover(): BatchAVLProver[HF] = avlProver
 
-  def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = avlProver.unauthenticatedLookup(key)
+  def unauthenticatedLookup(key: ADKey): Option[ADValue] = avlProver.unauthenticatedLookup(key)
 
-  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = avlProver.performOneOperation(operation)
+  def performOneOperation(operation: Operation): Try[Option[ADValue]] = avlProver.performOneOperation(operation)
 
   //side effect: avlProver modifies itself
   def generateProof(): Array[Byte] = {

@@ -20,8 +20,3 @@ trait TwoPartyDictionary {
     */
   def rootHash(): Array[Byte]
 }
-
-object TwoPartyDictionary {
-  //TODO use supertagged
-  type Label = Array[Byte]
-}

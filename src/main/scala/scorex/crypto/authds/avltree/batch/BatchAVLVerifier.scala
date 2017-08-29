@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, Label}
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -42,7 +42,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     *
     * @return - Some[digest] or None
     */
-  def digest: Option[Array[Byte]] = topNode.map(digest(_))
+  def digest: Option[ADDigest] = topNode.map(digest(_))
 
   private var directionsIndex = 0
   // Keeps track of where we are in the
@@ -62,7 +62,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     * @param r
     * @return - true if to go left, false if to go right in the search
     */
-  protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
+  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode): Boolean = {
     // Decode bits of the proof as Booleans
     val ret = if ((proof(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0) {
       true
@@ -82,7 +82,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     * @param r
     * @return
     */
-  protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
+  protected def keyMatchesLeaf(key: ADKey, r: Leaf): Boolean = {
     // keyMatchesLeaf for the verifier is different than for the prover:
     // since the verifier doesn't have keys in internal nodes, keyMatchesLeaf
     // checks that the key is either equal to the leaf's key
@@ -126,7 +126,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     * @param v
     * @return - A new verifier node with two leaves: r on the left and a new leaf containing key and value on the right
     */
-  protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalVerifierNode = {
+  protected def addNode(r: Leaf, key: ADKey, v: ADValue): InternalVerifierNode = {
     val n = r.nextLeafKey
     new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), 0: Byte)
   }
@@ -178,27 +178,27 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
       require(maxNumOperations.isEmpty || numNodes <= maxNodes, "Proof too long")
       n match {
         case LabelInPackagedProof =>
-          val label = proof.slice(i, i + labelLength)
+          val label = Label @@ proof.slice(i, i + labelLength)
           i += labelLength
           s.push(new LabelOnlyNode(label))
           previousLeaf = None
         case LeafInPackagedProof =>
           val key = if (previousLeaf.nonEmpty) {
-            previousLeaf.get.nextLeafKey
+            ADKey @@ previousLeaf.get.nextLeafKey
           }
           else {
             val start = i
             i += keyLength
-            proof.slice(start, i)
+            ADKey @@ proof.slice(start, i)
           }
-          val nextLeafKey = proof.slice(i, i + keyLength)
+          val nextLeafKey = ADKey @@ proof.slice(i, i + keyLength)
           i += keyLength
           val valueLength: Int = valueLengthOpt.getOrElse {
             val vl = Ints.fromByteArray(proof.slice(i, i + 4))
             i += 4
             vl
           }
-          val value = proof.slice(i, i + valueLength)
+          val value = ADValue @@ proof.slice(i, i + valueLength)
           i += valueLength
           val leaf = new VerifierLeaf(key, value, nextLeafKey)
           s.push(leaf)
@@ -235,7 +235,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     * @param operation
     * @return - Success(Some(old value)), Success(None), or Failure
     */
-  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = Try {
+  def performOneOperation(operation: Operation): Try[Option[ADValue]] = Try {
     replayIndex = directionsIndex
     val operationResult = returnResultOfOneOperation(operation, topNode.get)
     // if topNode is None, the line above will fail and nothing will change

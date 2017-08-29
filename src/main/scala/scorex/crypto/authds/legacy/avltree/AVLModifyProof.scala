@@ -1,28 +1,27 @@
 package scorex.crypto.authds.legacy.avltree
 
 import com.google.common.primitives.Bytes
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.avltree.batch.{Modification, Operation}
+import scorex.crypto.authds.avltree.batch.Modification
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
-case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
+case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: ThreadUnsafeHash) extends TwoPartyProof {
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
 
 
   def verifyLookup(digest: Label, existence: Boolean): Option[Label] = {
-    def existenceLookupFunction: Option[AVLValue] => Try[Option[AVLValue]] = {
+    def existenceLookupFunction: Option[ADValue] => Try[Option[ADValue]] = {
       case Some(v) => Success(Some(v))
       case None => Failure(new Error("Key not found"))
     }
 
-    def nonExistenceLookupFunction: Option[AVLValue] => Try[Option[AVLValue]] = {
+    def nonExistenceLookupFunction: Option[ADValue] => Try[Option[ADValue]] = {
       case Some(v) => Failure(new Error("Key found"))
       case None => Success(None)
     }
@@ -42,8 +41,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
   private def verifyHelper(updateFn: Modification#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
     dequeueDirection() match {
       case LeafFound =>
-        val nextLeafKey: AVLKey = dequeueNextLeafKey()
-        val value: AVLValue = dequeueValue()
+        val nextLeafKey: ADKey = dequeueNextLeafKey()
+        val value: ADValue = dequeueValue()
 
         updateFn(Some(value)) match {
           case Success(None) => //delete value
@@ -59,8 +58,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
       case LeafNotFound =>
         val neighbourLeafKey = dequeueKey()
-        val nextLeafKey: AVLKey = dequeueNextLeafKey()
-        val value: AVLValue = dequeueValue()
+        val nextLeafKey: ADKey = dequeueNextLeafKey()
+        val value: ADValue = dequeueValue()
         require(ByteArray.compare(neighbourLeafKey, key) < 0)
         require(ByteArray.compare(key, nextLeafKey) < 0)
 
@@ -253,7 +252,7 @@ object AVLModifyProof {
                                      hf: ThreadUnsafeHash = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
     val pathLength: Int = bytes.head.ensuring(_ % 3 == 0)
 
-    val key = bytes.slice(1, 1 + keyLength)
+    val key = ADKey @@ bytes.slice(1, 1 + keyLength)
     val pathProofs: Seq[AVLProofElement] = (0 until pathLength / 3) flatMap { i: Int =>
       val start = 1 + keyLength + i * (1 + 32)
       val (direction, balance) = parseDirectionBalance(bytes.slice(start, start + 1).head)

@@ -1,7 +1,7 @@
 package scorex.crypto.authds.legacy.avltree
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds.avltree._
+import scorex.crypto.authds.{ADKey, ADValue, Label}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
 
@@ -40,12 +40,12 @@ trait InternalNode extends Node {
 
   def rightLabel: Label
 
-  def computeLabel: Label = hf.prefixedHash(1: Byte, Array(balance), leftLabel, rightLabel)
+  def computeLabel: Label = Label @@ hf.prefixedHash(1: Byte, Array(balance), leftLabel, rightLabel)
 
 }
 
 sealed trait ProverNodes extends Node {
-  val key: AVLKey
+  val key: ADKey
   protected[avltree] var height: Int
   var isNew: Boolean = true
   var visited: Boolean = false
@@ -58,7 +58,7 @@ case class LabelOnlyNode(l: Label) extends Node {
   override val label: Label = l
 }
 
-case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes,
+case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes,
                       protected var _balance: Balance = 0.toByte)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
@@ -124,27 +124,27 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
 
 }
 
-case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
+case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKey: ADKey)
                (implicit val hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
 
 
   protected[avltree] var height = 0 //needed for debug only
 
-  def value: AVLValue = _value
+  def value: ADValue = _value
 
-  def value_=(newValue: AVLValue) = {
+  def value_=(newValue: ADValue) = {
     _value = newValue
     labelOpt = None
   }
 
-  def nextLeafKey: AVLKey = _nextLeafKey
+  def nextLeafKey: ADKey = _nextLeafKey
 
-  def nextLeafKey_=(newNextLeafKey: AVLValue) = {
+  def nextLeafKey_=(newNextLeafKey: ADKey) = {
     _nextLeafKey = newNextLeafKey
     labelOpt = None
   }
 
-  def computeLabel: Label = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
+  def computeLabel: Label = Label @@ hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"

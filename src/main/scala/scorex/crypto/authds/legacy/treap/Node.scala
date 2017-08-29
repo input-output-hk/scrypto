@@ -1,6 +1,6 @@
 package scorex.crypto.authds.legacy.treap
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds.Label
 import scorex.crypto.authds.legacy.treap.Constants.{LevelFunction, TreapKey, TreapValue}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
@@ -32,7 +32,7 @@ trait InternalNode {
 
   def rightLabel: Label
 
-  def computeLabel: Label = hf.prefixedHash(1: Byte, level.bytes, leftLabel, rightLabel)
+  def computeLabel: Label = Label @@ hf.prefixedHash(1: Byte, level.bytes, leftLabel, rightLabel)
 
 }
 
@@ -107,12 +107,12 @@ case class Leaf(key: TreapKey, private var _value: TreapValue, private var _next
 
   def nextLeafKey: TreapKey = _nextLeafKey
 
-  def nextLeafKey_=(newNextLeafKey: TreapValue) = {
+  def nextLeafKey_=(newNextLeafKey: TreapKey) = {
     _nextLeafKey = newNextLeafKey
     labelOpt = None
   }
 
-  def computeLabel: Label = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
+  def computeLabel: Label = Label @@ hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"

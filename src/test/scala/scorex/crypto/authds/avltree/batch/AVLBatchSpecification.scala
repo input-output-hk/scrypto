@@ -4,12 +4,12 @@ import com.google.common.primitives.Longs
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scorex.crypto.authds.TwoPartyTests
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.Keccak256
 import scorex.utils.{ByteArray, Random}
+
 import scala.util.Random.{nextInt => randomInt}
 import scala.util.{Failure, Try}
 
@@ -26,7 +26,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val digest = prover.digest
     val keyValues = (0 until TreeSize) map { i =>
       val aValue = Keccak256(i.toString.getBytes)
-      (aValue.take(KL), aValue)
+      (ADKey @@ aValue.take(KL), ADValue @@ aValue)
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
 
@@ -44,7 +44,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     (0 until TreeSize) foreach { i =>
       val aValue = Keccak256(i.toString.getBytes)
-      verifier.performOneOperation(Insert(aValue.take(KL), aValue))
+      verifier.performOneOperation(Insert(ADKey @@ aValue.take(KL), ADValue @@aValue))
     }
     //extract all leafs
     val allLeafs = verifier.extractNodes(nonInfiniteLeaf)
@@ -65,13 +65,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val prover = new BatchAVLProver(KL, None)
     (0 until 1000) foreach { i =>
       val aValue = Keccak256(i.toString.getBytes)
-      prover.performOneOperation(Insert(aValue.take(KL), aValue))
+      prover.performOneOperation(Insert(ADKey @@aValue.take(KL),ADValue @@ aValue))
     }
     prover.generateProof()
     val digest = prover.digest
 
     forAll(smallInt) { numberOfLookups: Int =>
-      val currentMods = (0 until numberOfLookups).map(_ => Random.randomBytes(KL)).map(k => Lookup(k))
+      val currentMods = (0 until numberOfLookups).map(_ => ADKey @@ Random.randomBytes(KL)).map(k => Lookup(k))
 
       currentMods foreach (m => prover.performOneOperation(m))
       val pf = prover.generateProof()
@@ -91,7 +91,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       whenever(valueLength >= 0) {
         val aKey = Random.randomBytes(KL)
         val aValue = Random.randomBytes(valueLength)
-        val currentMods = Seq(Insert(aKey, aValue))
+        val currentMods = Seq(Insert(ADKey @@ aKey, ADValue @@ aValue))
 
         currentMods foreach (m => prover.performOneOperation(m))
         val pf = prover.generateProof()
@@ -113,7 +113,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val VL = aValue.length
         whenever(KL > 0 && VL > 0 && !aKey.forall(_ equals (-1: Byte)) && !aKey.forall(_ equals (0: Byte))) {
           val prover = new BatchAVLProver(KL, Some(VL))
-          val m = Insert(aKey, aValue)
+          val m = Insert(ADKey @@ aKey, ADValue @@ aValue)
 
           val digest = prover.digest
           prover.performOneOperation(m)
@@ -129,13 +129,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           verifier.digest.isDefined shouldBe true
           prover.digest shouldEqual verifier.digest.get
 
-          val lookup = Lookup(aKey)
+          val lookup = Lookup(ADKey @@ aKey)
           prover.performOneOperation(lookup)
           val pr: Array[Byte] = prover.generateProof()
           val vr = new BatchAVLVerifier(prover.digest, pr, KL, Some(VL))
           vr.performOneOperation(lookup).get.get shouldEqual aValue
 
-          val nonExistinglookup = Lookup(Random.randomBytes(KL))
+          val nonExistinglookup = Lookup(ADKey @@ Random.randomBytes(KL))
           prover.performOneOperation(nonExistinglookup)
           val pr2: Array[Byte] = prover.generateProof()
           val vr2 = new BatchAVLVerifier(prover.digest, pr2, KL, Some(VL))
@@ -185,7 +185,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     forAll(kvGen) { case (aKey, _) =>
       whenever(prover.unauthenticatedLookup(aKey).isEmpty) {
-        val m = Insert(aKey, valueToInsert)
+        val m = Insert(aKey, ADValue @@ valueToInsert)
         prover.performOneOperation(m)
         val pf = prover.generateProof()
         prover.digest
@@ -260,14 +260,14 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     p.checkTree()
     for (i <- 0 until 1000) {
-      require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(VL))).isSuccess, "failed to insert")
+      require(p.performOneOperation(Insert(ADKey @@ Random.randomBytes(KL), ADValue @@ Random.randomBytes(VL))).isSuccess, "failed to insert")
       p.checkTree()
     }
     p.generateProof()
 
     var digest = p.digest
     for (i <- 0 until 50)
-      require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(VL))).isSuccess, "failed to insert")
+      require(p.performOneOperation(Insert(ADKey @@ Random.randomBytes(KL), ADValue @@ Random.randomBytes(VL))).isSuccess, "failed to insert")
 
     var pf = p.generateProof()
 
@@ -282,19 +282,19 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     for (i <- 0 until 10) {
       digest = p.digest
       for (i <- 0 until 8)
-        require(p.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(8))).isSuccess, "failed to insert")
+        require(p.performOneOperation(Insert(ADKey @@ Random.randomBytes(KL), ADValue @@ Random.randomBytes(8))).isSuccess, "failed to insert")
 
       v = new BatchAVLVerifier(digest, p.generateProof(), KL, Some(VL), Some(8), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
       for (i <- 0 until 5)
-        v.performOneOperation(Insert(Random.randomBytes(KL), Random.randomBytes(8)))
+        v.performOneOperation(Insert(ADKey @@ Random.randomBytes(KL), ADValue @@ Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of a missing leaf")
 
       digest = p.digest
-      val key = Random.randomBytes(KL)
-      p.performOneOperation(Insert(key, Random.randomBytes(8)))
+      val key = ADKey @@ Random.randomBytes(KL)
+      p.performOneOperation(Insert(ADKey @@ key, ADValue @@ Random.randomBytes(8)))
       pf = p.generateProof()
       p.checkTree()
 
@@ -302,7 +302,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
       v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
-      v.performOneOperation(Insert(key, Random.randomBytes(8)))
+      v.performOneOperation(Insert(key, ADValue @@ Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
 
       // Change the key by a large amount -- verification should fail with overwhelming probability
@@ -313,7 +313,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       key(0) = (key(0) ^ (1 << 7)).toByte
       v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
-      v.performOneOperation(Insert(key, Random.randomBytes(8)))
+      v.performOneOperation(Insert(key, ADValue @@ Random.randomBytes(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
       // put the key back the way it should be, because otherwise it's messed up in the prover tree
       key(0) = (key(0) ^ (1 << 7)).toByte
@@ -327,12 +327,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     forAll(Gen.choose(minSetSize, maxSetSize), Arbitrary.arbBool.arbitrary) { case (cnt, generateProof) =>
       whenever(cnt > minSetSize) {
-        var keys = IndexedSeq[Array[Byte]]()
+        var keys = IndexedSeq[ADKey]()
         val prover = new BatchAVLProver(KL, Some(VL))
 
         (1 to cnt) foreach { _ =>
-          val key = Random.randomBytes(KL)
-          val value = Random.randomBytes(VL)
+          val key:ADKey = ADKey @@ Random.randomBytes(KL)
+          val value = ADValue @@ Random.randomBytes(VL)
 
           keys = key +: keys
 
@@ -368,9 +368,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     val numMods = 5000
 
-    val deletedKeys = new scala.collection.mutable.ArrayBuffer[AVLKey]
+    val deletedKeys = new scala.collection.mutable.ArrayBuffer[ADKey]
 
-    val keysAndVals = new scala.collection.mutable.ArrayBuffer[(AVLKey, AVLValue)]
+    val keysAndVals = new scala.collection.mutable.ArrayBuffer[(ADKey, ADValue)]
 
     var i = 0
     var numInserts = 0
@@ -393,14 +393,14 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             val j = Random.randomBytes(3)
             val index = randomInt(keysAndVals.size)
             val key = keysAndVals(index)._1
-            require(p.performOneOperation(Insert(key, Random.randomBytes(VL))).isFailure, "prover succeeded on inserting a value that's already in tree")
+            require(p.performOneOperation(Insert(key, ADValue @@ Random.randomBytes(VL))).isFailure, "prover succeeded on inserting a value that's already in tree")
             p.checkTree()
             require(p.unauthenticatedLookup(key).get sameElements keysAndVals(index)._2, "value changed after duplicate insert") // check insert didn't do damage
             numFailures += 1
           }
           else {
-            val key = Random.randomBytes(KL)
-            val newVal = Random.randomBytes(VL)
+            val key = ADKey @@ Random.randomBytes(KL)
+            val newVal = ADValue @@ Random.randomBytes(VL)
             keysAndVals += ((key, newVal))
             val mod = Insert(key, newVal)
             currentMods += mod
@@ -416,8 +416,8 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             // update
             if (randomInt(10) == 0) {
               // with probability 1/10 cause a fail by modifying a non-existing key
-              val key = Random.randomBytes(KL)
-              require(p.performOneOperation(Update(key, Random.randomBytes(8))).isFailure, "prover updated a nonexistent value")
+              val key = ADKey @@ Random.randomBytes(KL)
+              require(p.performOneOperation(Update(key, ADValue @@ Random.randomBytes(8))).isFailure, "prover updated a nonexistent value")
               p.checkTree()
               require(p.unauthenticatedLookup(key).isEmpty, "a nonexistent value appeared after an update") // check update didn't do damage
               numFailures += 1
@@ -425,7 +425,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             else {
               val index = randomInt(keysAndVals.size)
               val key = keysAndVals(index)._1
-              val newVal = Random.randomBytes(8)
+              val newVal = ADValue @@ Random.randomBytes(8)
               val mod = Update(key, newVal)
               currentMods += mod
               p.performOneOperation(mod).get
@@ -437,7 +437,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
             // delete
             if (randomInt(10) == 0) {
               // with probability 1/10 remove a non-existing one but without failure -- shouldn't change the tree
-              val key = Random.randomBytes(KL)
+              val key = ADKey @@ Random.randomBytes(KL)
               val mod = RemoveIfExists(key)
               val d = p.digest
               currentMods += mod
@@ -564,12 +564,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
 
-  lazy val kvGen: Gen[(Array[Byte], Array[Byte])] = for {
+  lazy val kvGen: Gen[(ADKey, ADValue)] = for {
     key <- Gen.listOfN(KL, Arbitrary.arbitrary[Byte]).map(_.toArray) suchThat
       (k => !(k sameElements Array.fill(KL)(-1: Byte)) && !(k sameElements Array.fill(KL)(0: Byte)) && k.length == KL)
     value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)
-  } yield (key, value)
+  } yield (ADKey @@ key, ADValue @@ value)
 
-  lazy val kvSeqGen: Gen[Seq[(Array[Byte], Array[Byte])]] = Gen.nonEmptyListOf(kvGen)
+  lazy val kvSeqGen: Gen[Seq[(ADKey, ADValue)]] = Gen.nonEmptyListOf(kvGen)
 
 }

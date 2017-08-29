@@ -1,6 +1,5 @@
 package scorex.crypto.authds
 
-import scorex.crypto.authds.TwoPartyDictionary._
 import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.legacy.treap.Level
 
@@ -11,29 +10,29 @@ trait ProofIterator {
 
   val proofSeq: Seq[TwoPartyProofElement]
 
-  protected def dequeueValue(): Array[Byte] = {
+  protected def dequeueValue(): ADValue = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofValue].e
+    ADValue @@ proofSeq(i).asInstanceOf[ProofValue].e
   }
 
-  protected def dequeueKey(): Array[Byte] = {
+  protected def dequeueKey(): ADKey = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofKey].e
+    ADKey @@ proofSeq(i).asInstanceOf[ProofKey].e
   }
 
-  protected def dequeueNextLeafKey(): Array[Byte] = {
+  protected def dequeueNextLeafKey(): ADKey = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofNextLeafKey].e
+    ADKey @@ proofSeq(i).asInstanceOf[ProofNextLeafKey].e
   }
 
   protected def dequeueRightLabel(): Label = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofRightLabel].e
+    Label @@ proofSeq(i).asInstanceOf[ProofRightLabel].e
   }
 
   protected def dequeueLeftLabel(): Label = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofLeftLabel].e
+    Label @@ proofSeq(i).asInstanceOf[ProofLeftLabel].e
   }
 
   protected def dequeueDirection(): Direction = {

@@ -4,6 +4,7 @@ import com.google.common.primitives.Longs
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.PropSpec
+import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.Blake2b256Unsafe
 import scorex.utils.{Random => RandomBytes}
 
@@ -59,14 +60,14 @@ object AVLCommands extends Commands {
   private def generateOperations(state: State): List[Operation] = {
     val appendsCommandsLength = Random.nextInt(MAXIMUM_GENERATED_OPERATIONS) + MINIMUM_OPERATIONS_LENGTH
 
-    val keys = (0 until appendsCommandsLength).map { _ => RandomBytes.randomBytes(KL) }.toList
+    val keys = (0 until appendsCommandsLength).map { _ => ADKey @@ RandomBytes.randomBytes(KL) }.toList
     val removedKeys = state.operations.filter(_.isInstanceOf[Remove]).map(_.key).distinct
     val prevKeys = state.operations.map(_.key).distinct.filterNot(k1 => removedKeys.exists{k2 => k1.sameElements(k2)})
     val uniqueKeys = keys.filterNot(prevKeys.contains).distinct
     val updateKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, UPDATE_FRACTION))
     val removeKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, REMOVE_FRACTION))
 
-    val appendCommands: List[Operation] = uniqueKeys.map { k => Insert(k, Longs.toByteArray(nextPositiveLong)) }
+    val appendCommands: List[Operation] = uniqueKeys.map { k => Insert(k, ADValue @@ Longs.toByteArray(nextPositiveLong)) }
     val updateCommands: List[Operation] = updateKeys.map { k => UpdateLongBy(k, nextPositiveLong) }
     val removeCommands: List[Operation] = removeKeys.map { k => Remove(k) }
 

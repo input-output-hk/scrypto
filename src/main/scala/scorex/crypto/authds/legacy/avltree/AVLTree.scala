@@ -1,6 +1,5 @@
 package scorex.crypto.authds.legacy.avltree
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
@@ -17,10 +16,10 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
   type ChangeHappened = Boolean
   type ChildHeightIncreased = Boolean
 
-  private val PositiveInfinityKey: Array[Byte] = Array.fill(keyLength)(-1: Byte)
-  private val NegativeInfinityKey: Array[Byte] = Array.fill(keyLength)(0: Byte)
+  private val PositiveInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(-1: Byte)
+  private val NegativeInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(0: Byte)
 
-  val DefaultTopNode = Leaf(NegativeInfinityKey, Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
+  val DefaultTopNode = Leaf(NegativeInfinityKey, ADValue @@ Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
 
   private var topNode: ProverNodes = rootOpt.getOrElse(DefaultTopNode)
 
@@ -35,8 +34,8 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
 
     val proofStream = new scala.collection.mutable.Queue[AVLProofElement]
 
-    val updateFn: Option[AVLValue] => Try[Option[AVLValue]] = operation match {
-      case _: Lookup => x: Option[AVLValue] => Success(x)
+    val updateFn: Option[ADValue] => Try[Option[ADValue]] = operation match {
+      case _: Lookup => x: Option[ADValue] => Success(x)
 
       case m: Modification => m.updateFn
     }

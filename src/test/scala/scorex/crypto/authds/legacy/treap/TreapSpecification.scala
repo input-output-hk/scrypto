@@ -1,8 +1,9 @@
 package scorex.crypto.authds.legacy.treap
 
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.authds.TwoPartyTests
+import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.InsertOrUpdate
 import scorex.crypto.authds.legacy.treap.Constants._
 import scorex.crypto.hash.Blake2b256Unsafe
@@ -12,11 +13,18 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
 
 
   def validKey(key: TreapKey): Boolean = key.length > 1 && key.length < MaxKeySize
+  def keyValue2Gen: Gen[(ADKey, ADValue, ADValue)] = for {
+    key <- genBoundedBytes(1, MaxKeySize)
+    value <-  genBoundedBytes(1, MaxKeySize)
+    value2 <-  genBoundedBytes(1, MaxKeySize)
+  } yield (ADKey @@ key, ADValue @@ value, ADValue @@ value2)
+
+  def keyValueGen: Gen[(ADKey, ADValue)] = keyValue2Gen.map(a => (a._1, a._2))
 
   property("skiplist stream") {
     val wt = new Treap()(new Blake2b256Unsafe, Level.skiplistLevel)
     var digest = wt.rootHash()
-    forAll { (key: Array[Byte], value: Array[Byte]) =>
+    forAll(keyValueGen) { case (key: ADKey, value: ADValue) =>
       whenever(validKey(key) && value.nonEmpty) {
         digest shouldEqual wt.rootHash()
         val a = Append(key, value)
@@ -29,7 +37,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
   property("Treap stream") {
     val wt = new Treap()
     var digest = wt.rootHash()
-    forAll { (key: Array[Byte], value: Array[Byte]) =>
+    forAll(keyValueGen) { case (key: ADKey, value: ADValue) =>
       whenever(validKey(key) && value.nonEmpty) {
         digest shouldEqual wt.rootHash()
         val a = Append(key, value)
@@ -40,7 +48,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
   }
 
   property("Treap insert one") {
-    forAll { (key: Array[Byte], value: Array[Byte], wrongValue: Array[Byte]) =>
+    forAll(keyValueGen) { case (key: ADKey, value: ADValue) =>
       whenever(validKey(key) && value.nonEmpty) {
         val wt = new Treap()
         val digest = wt.rootHash()
@@ -53,7 +61,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
 
   property("Treap insert") {
     val wt = new Treap()
-    forAll { (key: Array[Byte], value: Array[Byte], wrongValue: Array[Byte]) =>
+    forAll(keyValueGen) { case (key: ADKey, value: ADValue) =>
       whenever(validKey(key) && value.nonEmpty) {
         val digest = wt.rootHash()
         val rewrite = InsertOrUpdate(key, value)
@@ -65,7 +73,7 @@ class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks wit
 
   property("Treap update") {
     val wt = new Treap()
-    forAll { (key: Array[Byte], value: Array[Byte], value2: Array[Byte]) =>
+    forAll(keyValue2Gen) { case (key: ADKey, value: ADValue, value2: ADValue) =>
       whenever(validKey(key) && !(value sameElements value2)) {
         val digest1 = wt.rootHash()
         val a = Append(key, value)
