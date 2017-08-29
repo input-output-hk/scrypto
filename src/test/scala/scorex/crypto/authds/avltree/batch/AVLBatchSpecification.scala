@@ -134,13 +134,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
           val lookup = Lookup(ADKey @@ aKey)
           prover.performOneOperation(lookup)
-          val pr: Array[Byte] = prover.generateProof()
+          val pr = prover.generateProof()
           val vr = new BatchAVLVerifier(prover.digest, pr, KL, Some(VL))
           vr.performOneOperation(lookup).get.get shouldEqual aValue
 
           val nonExistinglookup = Lookup(randomKey(KL))
           prover.performOneOperation(nonExistinglookup)
-          val pr2: Array[Byte] = prover.generateProof()
+          val pr2 = prover.generateProof()
           val vr2 = new BatchAVLVerifier(prover.digest, pr2, KL, Some(VL))
           vr2.performOneOperation(nonExistinglookup).get shouldBe None
         }
@@ -164,7 +164,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val lookups = kvSeq.map(kv => Lookup(kv._1))
 
       lookups.foreach(l => prover.performOneOperation(l))
-      val pr: Array[Byte] = prover.generateProof()
+      val pr = prover.generateProof()
 
       val vr = new BatchAVLVerifier(prover.digest, pr, KL, Some(VL))
       kvSeq.foreach { kv =>
