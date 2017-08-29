@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds._
+import scorex.crypto.authds.{Balance, _}
 import scorex.crypto.encode.Base58
 import scorex.utils.{ByteArray, ScryptoLogging}
 
@@ -74,17 +74,17 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     */
   private def doubleLeftRotate(currentRoot: InternalNode, leftChild: Node, rightChild: InternalNode): InternalNode = {
     val newRoot = rightChild.left.asInstanceOf[InternalNode]
-    val (newLeftBalance, newRightBalance) = newRoot.balance match {
-      case 0 =>
-        (0: Byte, 0: Byte)
-      case -1 =>
-        (0: Byte, 1: Byte)
-      case 1 =>
-        (-1: Byte, 0: Byte)
+    val (newLeftBalance: Balance, newRightBalance: Balance) = newRoot.balance match {
+      case a if a == 0 =>
+        (Balance @@ 0.toByte, Balance @@ 0.toByte)
+      case a if a == -1 =>
+        (Balance @@ 0.toByte, Balance @@ 1.toByte)
+      case a if a == 1 =>
+        (Balance @@ -1.toByte, Balance @@ 0.toByte)
     }
     val newLeftChild = currentRoot.getNew(newLeft = leftChild, newRight = newRoot.left, newBalance = newLeftBalance)
     val newRightChild = rightChild.getNew(newLeft = newRoot.right, newBalance = newRightBalance)
-    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
+    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = Balance @@ 0.toByte)
   }
 
   /**
@@ -94,17 +94,17 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
     */
   private def doubleRightRotate(currentRoot: InternalNode, leftChild: InternalNode, rightChild: Node): InternalNode = {
     val newRoot = leftChild.right.asInstanceOf[InternalNode]
-    val (newLeftBalance, newRightBalance) = newRoot.balance match {
-      case 0 =>
-        (0: Byte, 0: Byte)
-      case -1 =>
-        (0: Byte, 1: Byte)
-      case 1 =>
-        (-1: Byte, 0: Byte)
+    val (newLeftBalance: Balance, newRightBalance: Balance) = newRoot.balance match {
+      case a if a == 0 =>
+        (Balance @@ 0.toByte, Balance @@ 0.toByte)
+      case a if a == -1 =>
+        (Balance @@ 0.toByte, Balance @@ 1.toByte)
+      case a if a == 1 =>
+        (Balance @@ -1.toByte, Balance @@ 0.toByte)
     }
     val newRightChild = currentRoot.getNew(newRight = rightChild, newLeft = newRoot.right, newBalance = newRightBalance)
     val newLeftChild = leftChild.getNew(newRight = newRoot.left, newBalance = newLeftBalance)
-    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = 0.toByte)
+    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = Balance @@ 0.toByte)
   }
 
   protected def returnResultOfOneOperation(operation: Operation, rootNode: Node): Try[(Node, Option[ADValue])] = Try {
@@ -190,15 +190,15 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
                 val newLeft = newLeftM.asInstanceOf[InternalNode]
                 if (newLeft.balance < 0) {
                   // single right rotate
-                  val newR = r.getNew(newLeft = newLeft.right, newBalance = 0: Byte)
-                  (newLeft.getNew(newRight = newR, newBalance = 0: Byte), true, false, false, oldValue)
+                  val newR = r.getNew(newLeft = newLeft.right, newBalance = Balance @@ 0.toByte)
+                  (newLeft.getNew(newRight = newR, newBalance = Balance @@ 0.toByte), true, false, false, oldValue)
                 } else {
                   (doubleRightRotate(r, newLeft, r.right), true, false, false, oldValue)
                 }
               } else {
                 // no need to rotate
                 val myHeightIncreased = childHeightIncreased && r.balance == (0: Byte)
-                val rBalance = if (childHeightIncreased) (r.balance - 1).toByte else r.balance
+                val rBalance = if (childHeightIncreased) Balance @@ (r.balance - 1).toByte else r.balance
                 (r.getNew(newLeft = newLeftM, newBalance = rBalance), true, myHeightIncreased, false, oldValue)
               }
 
@@ -219,15 +219,15 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
 
                 if (newRight.balance > 0) {
                   // single left rotate
-                  val newR = r.getNew(newRight = newRight.left, newBalance = 0: Byte)
-                  (newRight.getNew(newLeft = newR, newBalance = 0: Byte), true, false, false, oldValue)
+                  val newR = r.getNew(newRight = newRight.left, newBalance = Balance @@ 0.toByte)
+                  (newRight.getNew(newLeft = newR, newBalance = Balance @@ 0.toByte), true, false, false, oldValue)
                 } else {
                   (doubleLeftRotate(r, r.left, newRight), true, false, false, oldValue)
                 }
               } else {
                 // no need to rotate
                 val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-                val rBalance = if (childHeightIncreased) (r.balance + 1).toByte else r.balance
+                val rBalance = if (childHeightIncreased) Balance @@ (r.balance + 1).toByte else r.balance
                 (r.getNew(newRight = newRightM, newBalance = rBalance), true, myHeightIncreased, false, oldValue)
               }
             } else {
@@ -355,13 +355,15 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
               (doubleLeftRotate(newRoot, newLeft, rightChild), true)
             } else {
               // single left rotate
-              val newLeftChild = newRoot.getNew(newLeft = newLeft, newRight = rightChild.left, newBalance = (1 - rightChild.balance).toByte)
-              val newR = rightChild.getNew(newLeft = newLeftChild, newBalance = (rightChild.balance - 1).toByte)
+              val newLeftChild = newRoot.getNew(newLeft = newLeft, newRight = rightChild.left,
+                newBalance = Balance @@ (1 - rightChild.balance).toByte)
+              val newR = rightChild.getNew(newLeft = newLeftChild,
+                newBalance = Balance @@ (rightChild.balance - 1).toByte)
               (newR, newR.balance == 0)
             }
           } else {
             // no rotation, just recalculate newRoot.balance and childHeightDecreased
-            val newBalance = if (childHeightDecreased) (newRoot.balance + 1).toByte else newRoot.balance
+            val newBalance = if (childHeightDecreased) Balance @@ (newRoot.balance + 1).toByte else newRoot.balance
             (newRoot.getNew(newLeft = newLeft, newBalance = newBalance), childHeightDecreased && newBalance == 0)
           }
         } else {
@@ -379,13 +381,15 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
               (doubleRightRotate(r, leftChild, newRight), true)
             } else {
               // single right rotate
-              val newRightChild = r.getNew(newLeft = leftChild.right, newRight = newRight, newBalance = (-leftChild.balance - 1).toByte)
-              val newR = leftChild.getNew(newRight = newRightChild, newBalance = (1 + leftChild.balance).toByte)
+              val newRightChild = r.getNew(newLeft = leftChild.right, newRight = newRight,
+                newBalance = Balance @@ (-leftChild.balance - 1).toByte)
+              val newR = leftChild.getNew(newRight = newRightChild,
+                newBalance = Balance @@ (1 + leftChild.balance).toByte)
               (newR, newR.balance == 0)
             }
           } else {
             // no rotation, just recalculate r.balance and childHeightDecreased
-            val newBalance = if (childHeightDecreased) (r.balance - 1).toByte else r.balance
+            val newBalance = if (childHeightDecreased) Balance @@ (r.balance - 1).toByte else r.balance
             (r.getNew(newRight = newRight, newBalance = newBalance), childHeightDecreased && newBalance == 0)
           }
         }

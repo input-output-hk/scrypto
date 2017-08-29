@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, Label}
+import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
@@ -128,7 +128,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
     */
   protected def addNode(r: Leaf, key: ADKey, v: ADValue): InternalVerifierNode = {
     val n = r.nextLeafKey
-    new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), 0: Byte)
+    new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), Balance @@ 0.toByte)
   }
 
   protected var rootNodeHeight = 0
@@ -206,7 +206,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash](startingDigest: Array[Byte],
         case _ =>
           val right = s.pop
           val left = s.pop
-          s.push(new InternalVerifierNode(left, right, n))
+          s.push(new InternalVerifierNode(left, right, Balance @@ n))
       }
     }
 

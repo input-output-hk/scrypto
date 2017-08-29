@@ -32,4 +32,9 @@ package object authds {
 
   type Label = Label.Type
 
+  object Balance extends TaggedType[Byte]
+
+  type Balance = Balance.Type
+
+
 }

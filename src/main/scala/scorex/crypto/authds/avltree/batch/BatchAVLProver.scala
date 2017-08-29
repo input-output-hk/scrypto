@@ -139,7 +139,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
   protected def addNode(r: Leaf, key: ADKey, v: ADValue): InternalProverNode = {
     val n = r.nextLeafKey
     new InternalProverNode(key, r.getNew(newNextLeafKey = key).asInstanceOf[ProverLeaf],
-      new ProverLeaf(key, v, n), 0: Byte)
+      new ProverLeaf(key, v, n), Balance @@ 0.toByte)
   }
 
   /**

@@ -1,6 +1,6 @@
 package scorex.crypto.authds.legacy.avltree
 
-import scorex.crypto.authds._
+import scorex.crypto.authds.{Balance, _}
 import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.encode.Base58
@@ -126,9 +126,9 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                     if (newLeft.balance < 0) {
                       // single rotate
                       r.left = newLeft.right
-                      r.balance = 0: Byte
+                      r.balance = Balance @@ 0.toByte
                       newLeft.right = r
-                      newLeft.balance = 0: Byte
+                      newLeft.balance = Balance @@ 0.toByte
                       assert(r.checkHeight)
                       assert(newLeft.checkHeight)
                       (newLeft, true, false)
@@ -146,20 +146,20 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                       newRoot.left = newLeft
 
                       newRoot.balance match {
-                        case 0 =>
+                        case a if a == 0 =>
                           // newRoot is a newly created node
                           assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
                           assert(newLeft.left.isInstanceOf[Leaf] && newLeft.right.isInstanceOf[Leaf])
-                          newLeft.balance = 0: Byte
-                          r.balance = 0: Byte
-                        case -1 =>
-                          newLeft.balance = 0: Byte
-                          r.balance = 1: Byte
-                        case 1 =>
-                          newLeft.balance = -1: Byte
-                          r.balance = 0: Byte
+                          newLeft.balance = Balance @@ 0.toByte
+                          r.balance = Balance @@ 0.toByte
+                        case a if a == -1 =>
+                          newLeft.balance = Balance @@ 0.toByte
+                          r.balance = Balance @@ 1.toByte
+                        case a if a == 1 =>
+                          newLeft.balance = Balance @@ -1.toByte
+                          r.balance = Balance @@ 0.toByte
                       }
-                      newRoot.balance = 0: Byte
+                      newRoot.balance = Balance @@ 0.toByte
 
                       assert(r.checkHeight)
                       assert(newLeft.checkHeight)
@@ -174,7 +174,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                 // no need to rotate
                 r.left = newLeftM
                 val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-                if (childHeightIncreased) r.balance = (r.balance - 1).toByte
+                if (childHeightIncreased) r.balance = Balance @@ (r.balance - 1).toByte
                 assert(r.checkHeight)
 
                 (r, true, myHeightIncreased)
@@ -201,9 +201,9 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                     if (newRight.balance > 0) {
                       // single rotate
                       r.right = newRight.left
-                      r.balance = 0: Byte
+                      r.balance = Balance @@ 0.toByte
                       newRight.left = r
-                      newRight.balance = 0: Byte
+                      newRight.balance = Balance @@ 0.toByte
                       assert(r.checkHeight)
                       assert(newRight.checkHeight)
                       (newRight, true, false)
@@ -221,20 +221,20 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                       newRoot.right = newRight
 
                       newRoot.balance match {
-                        case 0 =>
+                        case a if a == 0 =>
                           // newRoot is an newly created node
                           assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
                           assert(newRight.left.isInstanceOf[Leaf] && newRight.right.isInstanceOf[Leaf])
-                          newRight.balance = 0: Byte
-                          r.balance = 0: Byte
-                        case -1 =>
-                          newRight.balance = 1: Byte
-                          r.balance = 0: Byte
-                        case 1 =>
-                          newRight.balance = 0: Byte
-                          r.balance = -1: Byte
+                          newRight.balance = Balance @@ 0.toByte
+                          r.balance = Balance @@ 0.toByte
+                        case a if a == -1 =>
+                          newRight.balance = Balance @@ 1.toByte
+                          r.balance = Balance @@ 0.toByte
+                        case a if a == 1 =>
+                          newRight.balance = Balance @@ 0.toByte
+                          r.balance = Balance @@ -1.toByte
                       }
-                      newRoot.balance = 0: Byte
+                      newRoot.balance = Balance @@ 0.toByte
 
                       assert(r.checkHeight)
                       assert(newRight.checkHeight)
@@ -249,7 +249,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
                 // no need to rotate
                 r.right = newRightM
                 val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-                if (childHeightIncreased) r.balance = (r.balance + 1).toByte
+                if (childHeightIncreased) r.balance = Balance @@ (r.balance + 1).toByte
                 assert(r.checkHeight)
                 (r, true, myHeightIncreased)
               }

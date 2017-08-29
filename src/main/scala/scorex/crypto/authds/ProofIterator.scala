@@ -1,5 +1,6 @@
 package scorex.crypto.authds
 
+import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.legacy.treap.Level
 
@@ -48,9 +49,9 @@ trait ProofIterator {
   protected def dequeueBalance(): Balance = {
     i = i + 1
     proofSeq(i).bytes(0) match {
-      case -1 => -1: Byte
-      case 0 => 0: Byte
-      case 1 => 1: Byte
+      case -1 => Balance @@ -1.toByte
+      case 0 => Balance @@ 0.toByte
+      case 1 => Balance @@ 1.toByte
     }
   }
 }

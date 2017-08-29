@@ -1,7 +1,6 @@
 package scorex.crypto.authds.legacy.avltree
 
-import scorex.crypto.authds.avltree._
-import scorex.crypto.authds.{ADKey, ADValue, Label}
+import scorex.crypto.authds.{ADKey, ADValue, Balance, Label}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.ThreadUnsafeHash
 
@@ -59,7 +58,7 @@ case class LabelOnlyNode(l: Label) extends Node {
 }
 
 case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes,
-                      protected var _balance: Balance = 0.toByte)(implicit val hf: ThreadUnsafeHash)
+                      protected var _balance: Balance = Balance @@ 0.toByte)(implicit val hf: ThreadUnsafeHash)
   extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
