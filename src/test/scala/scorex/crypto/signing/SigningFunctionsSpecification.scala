@@ -3,13 +3,13 @@ package scrypto.signing
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.encode.Base16
-import scorex.crypto.signatures.Curve25519
+import scorex.crypto.signatures.{Curve25519, PrivateKey}
 
 
 class SigningFunctionsSpecification extends PropSpec
-with PropertyChecks
-with GeneratorDrivenPropertyChecks
-with Matchers {
+  with PropertyChecks
+  with GeneratorDrivenPropertyChecks
+  with Matchers {
 
   property("signed message should be verifiable with appropriate public key") {
     forAll { (seed1: Array[Byte], seed2: Array[Byte],
@@ -38,8 +38,8 @@ with Matchers {
         val shared = Curve25519.createSharedSecret(keyPair1._1, keyPair2._2)
         val sharedWithKeysReversed = Curve25519.createSharedSecret(keyPair2._1, keyPair1._2)
 
-        val badSharedSecret1 = Curve25519.createSharedSecret(keyPair2._2, keyPair1._2)
-        val badSharedSecret2 = Curve25519.createSharedSecret(keyPair2._2, keyPair1._2)
+        val badSharedSecret1 = Curve25519.createSharedSecret(PrivateKey @@ keyPair2._2, keyPair1._2)
+        val badSharedSecret2 = Curve25519.createSharedSecret(PrivateKey @@ keyPair2._2, keyPair1._2)
 
         shared.sameElements(sharedWithKeysReversed) should be(true)
 
@@ -51,7 +51,7 @@ with Matchers {
   }
 
   property("test vectors from https://tools.ietf.org/html/rfc8032#page-24 - test 1") {
-    val privKey = Base16.decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+    val privKey = PrivateKey @@ Base16.decode("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
     val message = Array[Byte]()
     val sig = Curve25519.sign(privKey, message)
     val specSig = Base16.decode("e5564300c360ac729086e2cc806e828a84877f1eb8e5d974d873e065224901555fb8821590a33bacc61e" +
@@ -60,7 +60,7 @@ with Matchers {
   }
 
   property("test vectors from https://tools.ietf.org/html/rfc8032#page-24 - test 2") {
-    val privKey = Base16.decode("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb")
+    val privKey = PrivateKey @@ Base16.decode("4ccd089b28ff96da9db6c346ec114e0f5b8a319f35aba624da8cf6ed4fb8a6fb")
     val message = Base16.decode("72")
     val sig = Curve25519.sign(privKey, message)
     val specSig = Base16.decode("92a009a9f0d4cab8720e820b5f642540" +
@@ -71,7 +71,7 @@ with Matchers {
   }
 
   property("test vectors from https://tools.ietf.org/html/rfc8032#page-24 - test 3") {
-    val privKey = Base16.decode("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7")
+    val privKey = PrivateKey @@ Base16.decode("c5aa8df43f9f837bedb7442f31dcb7b166d38535076f094b85ce3a2e0b4458f7")
     val message = Base16.decode("af82")
     val sig = Curve25519.sign(privKey, message)
     val specSig = Base16.decode("6291d657deec24024827e69c3abe01a3" +
@@ -82,7 +82,7 @@ with Matchers {
   }
 
   property("test vectors from https://tools.ietf.org/html/rfc8032#page-24 - test 1024") {
-    val privKey = Base16.decode("f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5")
+    val privKey = PrivateKey @@ Base16.decode("f5e5767cf153319517630f226876b86c8160cc583bc013744c6bf255f5cc0ee5")
     val message = Base16.decode("08b8b2b733424243760fe426a4b54908632110a66c2f6591eabd3345e3e4eb98fa6e264bf09efe12ee50" +
       "f8f54e9f77b1e355f6c50544e23fb1433ddf73be84d879de7c0046dc4996d9e773f4bc9efe5738829adb26c81b37c93a1b270b20329d65" +
       "8675fc6ea534e0810a4432826bf58c941efb65d57a338bbd2e26640f89ffbc1a858efcb8550ee3a5e1998bd177e93a7363c344fe6b199e" +
@@ -109,7 +109,7 @@ with Matchers {
   }
 
   property("test vectors from https://tools.ietf.org/html/rfc8032#page-24 - test SHA") {
-    val privKey = Base16.decode("833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42")
+    val privKey = PrivateKey @@ Base16.decode("833fe62409237b9d62ec77587520911e9a759cec1d19755b7da901b96dca3d42")
     val message = Base16.decode(" ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a2192992a274fc1a836" +
       "ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f")
     val sig = Curve25519.sign(privKey, message)

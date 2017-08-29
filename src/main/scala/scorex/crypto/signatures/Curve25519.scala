@@ -9,8 +9,6 @@ import scala.util.{Failure, Try}
 
 object Curve25519 extends EllipticCurveSignatureScheme {
 
-  import SigningFunctions._
-
   val SignatureLength25519 = 64
   val KeyLength25519 = 32
 
@@ -32,13 +30,13 @@ object Curve25519 extends EllipticCurveSignatureScheme {
 
   override def createKeyPair(seed: Array[Byte]): (PrivateKey, PublicKey) = {
     val hashedSeed = Sha256.hash(seed)
-    val privateKey = provider.generatePrivateKey(hashedSeed)
-    privateKey -> provider.generatePublicKey(privateKey)
+    val privateKey = PrivateKey @@ provider.generatePrivateKey(hashedSeed)
+    privateKey -> PublicKey @@ provider.generatePublicKey(privateKey)
   }
 
   override def sign(privateKey: PrivateKey, message: MessageToSign): Signature = {
     require(privateKey.length == KeyLength)
-    provider.calculateSignature(provider.getRandom(SignatureLength), privateKey, message)
+    Signature @@ provider.calculateSignature(provider.getRandom(SignatureLength), privateKey, message)
   }
 
   override def verify(signature: Signature, message: MessageToSign, publicKey: PublicKey): Boolean = Try {
@@ -51,7 +49,7 @@ object Curve25519 extends EllipticCurveSignatureScheme {
   }.getOrElse(false)
 
   override def createSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): SharedSecret = {
-    provider.calculateAgreement(privateKey, publicKey)
+    SharedSecret @@ provider.calculateAgreement(privateKey, publicKey)
   }
 
   protected lazy val log = LoggerFactory.getLogger(this.getClass)

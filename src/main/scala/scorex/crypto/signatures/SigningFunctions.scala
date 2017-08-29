@@ -4,9 +4,6 @@ import java.security.SecureRandom
 
 trait SigningFunctions {
 
-  import SigningFunctions._
-
-
   val SignatureLength: Int
   val KeyLength: Int
 
@@ -23,12 +20,4 @@ trait SigningFunctions {
   def verify(signature: Signature, message: MessageToSign, publicKey: PublicKey): Boolean
 
   def createSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): SharedSecret
-}
-
-object SigningFunctions {
-  type PrivateKey = Array[Byte]
-  type PublicKey = Array[Byte]
-  type Signature = Array[Byte]
-  type MessageToSign = Array[Byte]
-  type SharedSecret = Array[Byte]
 }
