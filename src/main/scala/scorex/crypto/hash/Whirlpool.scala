@@ -3,7 +3,7 @@ package scorex.crypto.hash
 import org.bouncycastle.crypto.digests.WhirlpoolDigest
 
 
-object Whirlpool extends BouncycastleHash[Digest64] with CryptographicHash64 {
+object Whirlpool extends BouncyCastleHash[Digest64] with CryptographicHash64 {
 
   override protected lazy val digestFn = new WhirlpoolDigest
 

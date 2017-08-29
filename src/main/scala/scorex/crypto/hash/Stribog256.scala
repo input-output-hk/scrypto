@@ -2,7 +2,7 @@ package scorex.crypto.hash
 
 import org.bouncycastle.crypto.digests.GOST3411_2012_256Digest
 
-object Stribog256 extends BouncycastleHash[Digest32] with CryptographicHash32 {
+object Stribog256 extends BouncyCastleHash[Digest32] with CryptographicHash32 {
 
   override protected lazy val digestFn = new GOST3411_2012_256Digest
 
