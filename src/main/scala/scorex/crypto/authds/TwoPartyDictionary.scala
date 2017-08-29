@@ -18,5 +18,5 @@ trait TwoPartyDictionary {
   /**
     * @return current digest of structure
     */
-  def rootHash(): Array[Byte]
+  def rootHash(): ADDigest
 }

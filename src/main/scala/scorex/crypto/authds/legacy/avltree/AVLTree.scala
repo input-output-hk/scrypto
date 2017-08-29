@@ -1,6 +1,6 @@
 package scorex.crypto.authds.legacy.avltree
 
-import scorex.crypto.authds.{Balance, _}
+import scorex.crypto.authds._
 import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.encode.Base58
@@ -23,7 +23,7 @@ class AVLTree[HF <: ThreadUnsafeHash](keyLength: Int, valueLength: Int = 8, root
 
   private var topNode: ProverNodes = rootOpt.getOrElse(DefaultTopNode)
 
-  def rootHash(): Label = topNode.label
+  def rootHash(): ADDigest = ADDigest @@ topNode.label
 
   override def run[O <: Operation](operation: O): Try[AVLModifyProof] = Try {
     val key = operation.key

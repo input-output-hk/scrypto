@@ -18,7 +18,7 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
-  def rootHash(): Label = topNode.label
+  def rootHash(): ADDigest = ADDigest @@ topNode.label
 
   override def run[O <: Operation](operation: O): Try[TreapModifyProof] = Try {
     val key = operation.key

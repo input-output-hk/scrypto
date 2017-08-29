@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.Label
+import scorex.crypto.authds._
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 
 import scala.collection.mutable.ArrayBuffer
@@ -39,7 +39,7 @@ class LegacyProver(tree: AVLTree[_]) {
     case Failure(e) => BatchFailure(e, UnknownModification)
   }
 
-  def rootHash: Label = tree.rootHash()
+  def rootHash: ADDigest = tree.rootHash()
 }
 
 
