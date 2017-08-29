@@ -1,12 +1,14 @@
 package scorex.crypto.authds.avltree.batch
 
+import scorex.crypto.authds.ADDigest
+
 import scala.collection.mutable
 import scala.util.Try
 
 class VersionedAVLStorageMock extends VersionedAVLStorage {
-  private val InitialVersion = Array.fill(32)(11: Byte)
+  private val InitialVersion = ADDigest @@ Array.fill(33)(11: Byte)
 
-  private var v: Version = InitialVersion
+  private var v: ADDigest = InitialVersion
 
   override def isEmpty: Boolean = v sameElements InitialVersion
 
@@ -14,13 +16,15 @@ class VersionedAVLStorageMock extends VersionedAVLStorage {
   private val savedNodes: mutable.Map[mutable.WrappedArray[Byte], (ProverNodes, Int)] = mutable.Map()
 
   override def update(prover: BatchAVLProver[_]): Try[Unit] = Try {
-    v = prover.digest
+    val newDigest = prover.digest
+    assert(v.length == newDigest.length, s"Incorrect digest length: ${v.length} != ${newDigest.length}")
+    v = newDigest
     savedNodes(v) = (prover.topNode, prover.rootNodeHeight)
   }
 
-  override def rollback(version: Version): Try[(ProverNodes, Int)] = {
+  override def rollback(version: ADDigest): Try[(ProverNodes, Int)] = {
     Try(savedNodes(version))
   }
 
-  override def version: Version = v
+  override def version: ADDigest = v
 }

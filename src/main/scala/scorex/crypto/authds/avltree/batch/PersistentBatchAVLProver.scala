@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
 import scorex.crypto.hash.ThreadUnsafeHash
 
 import scala.util.Try
@@ -26,7 +26,7 @@ abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
     avlProver.generateProof()
   }
 
-  def rollback(version: VersionedAVLStorage.Version): Try[Unit] = Try {
+  def rollback(version: ADDigest): Try[Unit] = Try {
     val recoveredTop: (ProverNodes, Int) = storage.rollback(version).get
     avlProver = new BatchAVLProver(avlProver.keyLength, avlProver.valueLengthOpt, Some(recoveredTop))(avlProver.hf)
   }
