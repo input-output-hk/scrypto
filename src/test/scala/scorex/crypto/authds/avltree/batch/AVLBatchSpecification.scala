@@ -474,7 +474,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(n), Some(numCurrentDeletes))
       v.digest match {
         case None =>
-          require(false, "Verification failed to construct the tree")
+          throw new Error("Verification failed to construct the tree")
         case Some(d) =>
           require(d sameElements digest, "Built tree with wrong digest") // Tree built successfully
       }
@@ -482,7 +482,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       currentMods foreach (m => v.performOneOperation(m))
       v.digest match {
         case None =>
-          require(false, "Verification failed")
+          throw new Error("Verification failed")
         case Some(d) =>
           require(d sameElements p.digest, "Tree has wrong digest after verification")
       }

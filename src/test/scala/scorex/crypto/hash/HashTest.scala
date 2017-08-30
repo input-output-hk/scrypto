@@ -2,7 +2,7 @@ package scorex.crypto.hash
 
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
-import scorex.utils.BytesHex.bytes2hex
+import scorex.crypto.encode.Base16
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -15,7 +15,7 @@ trait HashTest extends PropSpec
   val emptyBytes: Array[Byte] = Array.empty
 
   def hashCheckString(hash: CryptographicHash[_ <: Digest], external: Map[String, String]): Unit =
-    hashCheck(hash, external.map(x => (x._1.getBytes -> x._2)))
+    hashCheck(hash, external.map(x => x._1.getBytes -> x._2))
 
   def hashCheck[T <: Digest](hash: CryptographicHash[T], external: Map[Array[Byte], String]): Unit = {
 
@@ -35,14 +35,14 @@ trait HashTest extends PropSpec
 
     property(s"${hash.getClass.getSimpleName} comparing with externally computed value") {
       external.foreach { m =>
-        bytes2hex(hash.hash(m._1)) shouldBe m._2.toLowerCase
+        Base16.encode(hash.hash(m._1)) shouldBe m._2.toLowerCase
       }
     }
 
     property(s"${hash.getClass.getSimpleName} is thread safe") {
       val singleThreadHashes = (0 until 100).map(i => hash.hash(i.toString))
       val multiThreadHashes = Future.sequence((0 until 100).map(i => Future(hash.hash(i.toString))))
-      singleThreadHashes.map(bytes2hex(_)) shouldBe Await.result(multiThreadHashes, 1.minute).map(bytes2hex(_))
+      singleThreadHashes.map(Base16.encode(_)) shouldBe Await.result(multiThreadHashes, 1.minute).map(Base16.encode(_))
     }
 
     property(s"${hash.getClass.getSimpleName} apply method") {

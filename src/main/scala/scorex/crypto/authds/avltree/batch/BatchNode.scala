@@ -100,9 +100,8 @@ class InternalVerifierNode(protected var l: Node, protected var r: Node, protect
 
   override def right: Node = r
 
-  def getNewKey(newKey: ADKey): InternalNode = {
-    this
-  } // Itnernal Verifier Keys have no keys -- so no-op
+  // Internal Verifier Keys have no keys -- so no-op
+  def getNewKey(newKey: ADKey): InternalNode = this
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNew(newLeft: Node = l, newRight: Node = r, newBalance: Balance = b): InternalVerifierNode = {

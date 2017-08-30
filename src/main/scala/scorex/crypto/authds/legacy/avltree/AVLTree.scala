@@ -122,7 +122,7 @@ class AVLTree[HF <: ThreadUnsafeHash[_ <: Digest]](keyLength: Int,
               if (childHeightIncreased && r.balance < 0) {
                 // need to rotate
                 newLeftM match {
-                  // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;
+                  // at this point we know newLeftM must be an internal node an not a leaf -- b/c height increased;
                   case newLeft: ProverNode =>
                     if (newLeft.balance < 0) {
                       // single rotate

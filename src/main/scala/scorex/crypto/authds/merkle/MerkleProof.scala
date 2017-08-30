@@ -29,8 +29,11 @@ case class MerkleProof(leafData: LeafData, levels: Seq[(Digest, Side)])
     val leafHash = hf.prefixedHash(MerkleTree.LeafPrefix, leafData)
 
     levels.foldLeft(leafHash) { case (prevHash, (hash, side)) =>
-      if (side == MerkleProof.LeftSide) hf.prefixedHash(MerkleTree.InternalNodePrefix, prevHash ++ hash)
-      else hf.prefixedHash(MerkleTree.InternalNodePrefix, hash ++ prevHash)
+      if (side == MerkleProof.LeftSide) {
+        hf.prefixedHash(MerkleTree.InternalNodePrefix, prevHash ++ hash)
+      } else {
+        hf.prefixedHash(MerkleTree.InternalNodePrefix, hash ++ prevHash)
+      }
     }.sameElements(expectedRootHash)
   }
 

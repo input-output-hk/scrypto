@@ -668,7 +668,7 @@ object BatchingPlayground extends App with ToStringHelper {
       val v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(0), Some(0))
       v.digest match {
         case None =>
-          require(false, "zero-mods verification failed to construct tree")
+          throw new Error("zero-mods verification failed to construct tree")
         case Some(d) =>
           require(d sameElements digest, "wrong digest for zero-mods")
       }
@@ -875,7 +875,7 @@ object BatchingPlayground extends App with ToStringHelper {
         val v = new BatchAVLVerifier(digest, pf, KL, Some(VL), Some(n), Some(numCurrentDeletes))
         v.digest match {
           case None =>
-            require(false, "Verification failed to construct the tree")
+            throw new Error("Verification failed to construct the tree")
           case Some(d) =>
             require(d sameElements digest, "Built tree with wrong digest") // Tree built successfully
         }
@@ -883,7 +883,7 @@ object BatchingPlayground extends App with ToStringHelper {
         currentMods foreach (m => v.performOneOperation(m))
         v.digest match {
           case None =>
-            require(false, "Verification failed")
+            throw new Error("Verification failed")
           case Some(d) =>
             require(d sameElements p.digest, "Tree has wrong digest after verification")
         }
@@ -943,13 +943,13 @@ object BatchingPlayground extends App with ToStringHelper {
     require(prover.performOneOperation(op6).get.get sameElements Longs.toByteArray(30))
     require(!prover.performOneOperation(op7).isSuccess) // Fails
     require(prover.performOneOperation(op8).get.get sameElements Longs.toByteArray(30))
-    val proof2 = prover.generateProof // Proof onlyu for op4 and op6
+    val proof2 = prover.generateProof() // Proof onlyu for op4 and op6
     val digest2 = prover.digest
 
     val verifier1 = new BatchAVLVerifier(initialDigest, proof1, keyLength = 1, valueLengthOpt = Some(VL), maxNumOperations = Some(2), maxDeletes = Some(0))
-    require(verifier1.performOneOperation(op1).get == None) // Should return None           
-    require(verifier1.performOneOperation(op2).get == None) // Should return None
-    require(verifier1.performOneOperation(op3).get == None) // Should return None
+    require(verifier1.performOneOperation(op1).get.isEmpty) // Should return None
+    require(verifier1.performOneOperation(op2).get.isEmpty) // Should return None
+    require(verifier1.performOneOperation(op3).get.isEmpty) // Should return None
     verifier1.digest match {
       case Some(d1) if digest1.sameElements(digest1) =>
         //If digest1 from the prover is already trusted, then verification of the second batch can simply start here

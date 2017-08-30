@@ -6,7 +6,10 @@ import scala.collection.mutable
 import scala.util.Try
 
 class VersionedAVLStorageMock extends VersionedAVLStorage {
-  private val InitialVersion = ADDigest @@ Array.fill(33)(11: Byte)
+
+  private val DigestLength = 33
+
+  private val InitialVersion = ADDigest @@ Array.fill(DigestLength)(11: Byte)
 
   private var v: ADDigest = InitialVersion
 

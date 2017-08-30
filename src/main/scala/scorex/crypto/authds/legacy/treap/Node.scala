@@ -1,15 +1,14 @@
 package scorex.crypto.authds.legacy.treap
 
+import scorex.crypto.authds.avltree.batch.ToStringHelper
 import scorex.crypto.authds.legacy.treap.Constants.LevelFunction
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash._
 
-sealed trait Node {
+sealed trait Node extends ToStringHelper {
 
   def computeLabel: Digest
-
-  protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
 
   protected var labelOpt: Option[Digest] = None
 

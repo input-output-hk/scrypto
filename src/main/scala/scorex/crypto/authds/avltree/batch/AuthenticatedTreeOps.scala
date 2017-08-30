@@ -186,7 +186,7 @@ trait AuthenticatedTreeOps extends BatchProofConstants with ScryptoLogging {
             if (changeHappened) {
               if (childHeightIncreased && r.balance < 0) {
                 // need to rotate
-                // at this point we know newleftM must be an internal node and not a leaf -- because height increased
+                // at this point we know newLeftM must be an internal node and not a leaf -- because height increased
                 val newLeft = newLeftM.asInstanceOf[InternalNode]
                 if (newLeft.balance < 0) {
                   // single right rotate

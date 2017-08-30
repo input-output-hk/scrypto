@@ -1,4 +1,4 @@
-package scrypto.signing
+package scorex.crypto.signing
 
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}

@@ -52,5 +52,4 @@ class LegacyVerifier(digest: ADDigest) {
     }.isDefined
   }
 
-  def verifyBatchComprehensive(modifications: Seq[Operation], batch: BatchSuccess): Boolean = ???
 }
