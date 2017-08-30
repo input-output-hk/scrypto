@@ -25,6 +25,4 @@ package object authds {
   object ADProof extends TaggedType[Array[Byte]]
 
   object Balance extends TaggedType[Byte]
-
-
 }

@@ -5,16 +5,16 @@ import scorex.crypto.hash._
 
 import scala.util.Try
 
-abstract class PersistentBatchAVLProver[T<: Digest, HF <: ThreadUnsafeHash[T]]{
+abstract class PersistentBatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]] {
 
-  var avlProver: BatchAVLProver[T, HF]
-  val storage: VersionedAVLStorage[T]
+  var avlProver: BatchAVLProver[D, HF]
+  val storage: VersionedAVLStorage[D]
 
   def digest: ADDigest = avlProver.digest
 
   def height: Int = avlProver.rootNodeHeight
 
-  def prover(): BatchAVLProver[T, HF] = avlProver
+  def prover(): BatchAVLProver[D, HF] = avlProver
 
   def unauthenticatedLookup(key: ADKey): Option[ADValue] = avlProver.unauthenticatedLookup(key)
 
@@ -27,7 +27,7 @@ abstract class PersistentBatchAVLProver[T<: Digest, HF <: ThreadUnsafeHash[T]]{
   }
 
   def rollback(version: ADDigest): Try[Unit] = Try {
-    val recoveredTop: (ProverNodes[T], Int) = storage.rollback(version).get
+    val recoveredTop: (ProverNodes[D], Int) = storage.rollback(version).get
     avlProver = new BatchAVLProver(avlProver.keyLength, avlProver.valueLengthOpt, Some(recoveredTop))(avlProver.hf)
   }
 
@@ -36,9 +36,9 @@ abstract class PersistentBatchAVLProver[T<: Digest, HF <: ThreadUnsafeHash[T]]{
 
 object PersistentBatchAVLProver {
   def create[D <: Digest, HF <: ThreadUnsafeHash[D]](avlBatchProver: BatchAVLProver[D, HF],
-                                     versionedStorage: VersionedAVLStorage[D],
-                                     paranoidChecks: Boolean = false
-                                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
+                                                     versionedStorage: VersionedAVLStorage[D],
+                                                     paranoidChecks: Boolean = false
+                                                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
 
     new PersistentBatchAVLProver[D, HF] {
       override var avlProver: BatchAVLProver[D, HF] = avlBatchProver
@@ -48,7 +48,7 @@ object PersistentBatchAVLProver {
         rollback(storage.version).get
       } else {
         generateProof() //to save prover's tree into database and clear its state
-      }).ensuring{_ =>
+      }).ensuring { _ =>
         storage.version.sameElements(avlProver.digest) &&
           (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
       }

@@ -11,5 +11,4 @@ trait BouncyCastleHash[D <: Digest] extends CryptographicHash[D] {
   }
 
   protected def digestFn: ExtendedDigest
-
 }
