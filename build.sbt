@@ -2,7 +2,7 @@ organization := "org.scorexfoundation"
 
 name := "scrypto"
 
-version := "2.0.0-SNAPSHOT"
+version := "2.0.0"
 
 scalaVersion := "2.12.3"
 
@@ -17,8 +17,8 @@ libraryDependencies ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "3.0.1" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.4" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.+" % "test",
+  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test"
 )
 
 licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
