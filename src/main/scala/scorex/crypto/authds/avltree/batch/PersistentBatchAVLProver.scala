@@ -5,16 +5,16 @@ import scorex.crypto.hash._
 
 import scala.util.Try
 
-abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash[_ <: Digest]]{
+abstract class PersistentBatchAVLProver[T<: Digest, HF <: ThreadUnsafeHash[T]]{
 
-  var avlProver: BatchAVLProver[HF]
-  val storage: VersionedAVLStorage
+  var avlProver: BatchAVLProver[T, HF]
+  val storage: VersionedAVLStorage[T]
 
   def digest: ADDigest = avlProver.digest
 
   def height: Int = avlProver.rootNodeHeight
 
-  def prover(): BatchAVLProver[HF] = avlProver
+  def prover(): BatchAVLProver[T, HF] = avlProver
 
   def unauthenticatedLookup(key: ADKey): Option[ADValue] = avlProver.unauthenticatedLookup(key)
 
@@ -27,7 +27,7 @@ abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash[_ <: Digest]]{
   }
 
   def rollback(version: ADDigest): Try[Unit] = Try {
-    val recoveredTop: (ProverNodes, Int) = storage.rollback(version).get
+    val recoveredTop: (ProverNodes[T], Int) = storage.rollback(version).get
     avlProver = new BatchAVLProver(avlProver.keyLength, avlProver.valueLengthOpt, Some(recoveredTop))(avlProver.hf)
   }
 
@@ -35,14 +35,14 @@ abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash[_ <: Digest]]{
 }
 
 object PersistentBatchAVLProver {
-  def create[HF <: ThreadUnsafeHash[_ <: Digest]](avlBatchProver: BatchAVLProver[HF],
-                                     versionedStorage: VersionedAVLStorage,
+  def create[T <: Digest, HF <: ThreadUnsafeHash[T]](avlBatchProver: BatchAVLProver[T, HF],
+                                     versionedStorage: VersionedAVLStorage[T],
                                      paranoidChecks: Boolean = false
-                                    ): Try[PersistentBatchAVLProver[HF]] = Try {
+                                    ): Try[PersistentBatchAVLProver[T, HF]] = Try {
 
-    new PersistentBatchAVLProver[HF] {
-      override var avlProver: BatchAVLProver[HF] = avlBatchProver
-      override val storage: VersionedAVLStorage = versionedStorage
+    new PersistentBatchAVLProver[T, HF] {
+      override var avlProver: BatchAVLProver[T, HF] = avlBatchProver
+      override val storage: VersionedAVLStorage[T] = versionedStorage
 
       (if (storage.nonEmpty) {
         rollback(storage.version).get

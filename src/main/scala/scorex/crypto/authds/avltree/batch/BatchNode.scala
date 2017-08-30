@@ -3,13 +3,13 @@ package scorex.crypto.authds.avltree.batch
 import scorex.crypto.authds.{ADKey, ADValue, Balance}
 import scorex.crypto.hash._
 
-sealed trait Node extends ToStringHelper {
+sealed trait Node[T <: Digest] extends ToStringHelper {
 
   var visited: Boolean = false
 
-  protected def computeLabel: Digest
+  protected def computeLabel: T
 
-  protected var labelOpt: Option[Digest] = None
+  protected var labelOpt: Option[T] = None
 
   def label: Digest = labelOpt match {
     case None =>
@@ -21,48 +21,50 @@ sealed trait Node extends ToStringHelper {
   }
 }
 
-sealed trait ProverNodes extends Node with KeyInVar {
+sealed trait ProverNodes[T <: Digest] extends Node[T] with KeyInVar {
   var isNew: Boolean = true
 }
 
-sealed trait VerifierNodes extends Node
+sealed trait VerifierNodes[T <: Digest] extends Node[T]
 
-class LabelOnlyNode(l: Digest) extends VerifierNodes {
+class LabelOnlyNode[T <: Digest](l: T) extends VerifierNodes[T] {
   labelOpt = Some(l)
 
-  protected def computeLabel: Digest = l
+  protected def computeLabel: T = l
 }
 
-sealed trait InternalNode extends Node {
+sealed trait InternalNode[T <: Digest] extends Node[T] {
   protected var b: Balance
 
-  protected val hf: ThreadUnsafeHash[_ <: Digest]
+  protected val hf: ThreadUnsafeHash[T]
 
-  protected def computeLabel: Digest = hf.prefixedHash(1: Byte, Array(b), left.label, right.label)
+  protected def computeLabel: T = hf.prefixedHash(1: Byte, Array(b), left.label, right.label)
 
   def balance: Balance = b
 
-  def left: Node
+  def left: Node[T]
 
-  def right: Node
+  def right: Node[T]
 
   /* These two method may either mutate the existing node or create a new one */
-  def getNew(newLeft: Node = left, newRight: Node = right, newBalance: Balance = b): InternalNode
+  def getNew(newLeft: Node[T] = left, newRight: Node[T] = right, newBalance: Balance = b): InternalNode[T]
 
-  def getNewKey(newKey: ADKey): InternalNode
+  def getNewKey(newKey: ADKey): InternalNode[T]
 }
 
-class InternalProverNode(protected var k: ADKey, protected var l: ProverNodes, protected var r: ProverNodes,
-                         protected var b: Balance = Balance @@ 0.toByte)(implicit val hf: ThreadUnsafeHash[_ <: Digest])
-  extends ProverNodes with InternalNode {
+class InternalProverNode[T <: Digest](protected var k: ADKey,
+                                      protected var l: ProverNodes[T],
+                                      protected var r: ProverNodes[T],
+                         protected var b: Balance = Balance @@ 0.toByte)(implicit val hf: ThreadUnsafeHash[T])
+  extends ProverNodes[T] with InternalNode[T] {
 
 
-  override def left: ProverNodes = l
+  override def left: ProverNodes[T] = l
 
-  override def right: ProverNodes = r
+  override def right: ProverNodes[T] = r
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
-  def getNewKey(newKey: ADKey): InternalProverNode = {
+  def getNewKey(newKey: ADKey): InternalProverNode[T] = {
     if (isNew) {
       k = newKey // label doesn't change when key of an internal node changes
       this
@@ -74,15 +76,15 @@ class InternalProverNode(protected var k: ADKey, protected var l: ProverNodes, p
   }
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
-  def getNew(newLeft: Node = left, newRight: Node = right, newBalance: Balance = b): InternalProverNode = {
+  def getNew(newLeft: Node[T] = left, newRight: Node[T] = right, newBalance: Balance = b): InternalProverNode[T] = {
     if (isNew) {
-      l = newLeft.asInstanceOf[ProverNodes]
-      r = newRight.asInstanceOf[ProverNodes]
+      l = newLeft.asInstanceOf[ProverNodes[T]]
+      r = newRight.asInstanceOf[ProverNodes[T]]
       b = newBalance
       labelOpt = None
       this
     } else {
-      new InternalProverNode(k, newLeft.asInstanceOf[ProverNodes], newRight.asInstanceOf[ProverNodes], newBalance)
+      new InternalProverNode(k, newLeft.asInstanceOf[ProverNodes[T]], newRight.asInstanceOf[ProverNodes[T]], newBalance)
     }
   }
 
@@ -92,19 +94,19 @@ class InternalProverNode(protected var k: ADKey, protected var l: ProverNodes, p
   }
 }
 
-class InternalVerifierNode(protected var l: Node, protected var r: Node, protected var b: Balance)
-                          (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends VerifierNodes with InternalNode {
+class InternalVerifierNode[T <: Digest](protected var l: Node[T], protected var r: Node[T], protected var b: Balance)
+                          (implicit val hf: ThreadUnsafeHash[T]) extends VerifierNodes[T] with InternalNode[T] {
 
 
-  override def left: Node = l
+  override def left: Node[T] = l
 
-  override def right: Node = r
+  override def right: Node[T] = r
 
   // Internal Verifier Keys have no keys -- so no-op
-  def getNewKey(newKey: ADKey): InternalNode = this
+  def getNewKey(newKey: ADKey): InternalNode[T] = this
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
-  def getNew(newLeft: Node = l, newRight: Node = r, newBalance: Balance = b): InternalVerifierNode = {
+  def getNew(newLeft: Node[T] = l, newRight: Node[T] = r, newBalance: Balance = b): InternalVerifierNode[T] = {
     l = newLeft
     r = newRight
     b = newBalance
@@ -117,7 +119,7 @@ class InternalVerifierNode(protected var l: Node, protected var r: Node, protect
   }
 }
 
-sealed trait Leaf extends Node with KeyInVar {
+sealed trait Leaf[T <: Digest] extends Node[T] with KeyInVar {
   protected var nk: ADKey
   protected var v: ADValue
 
@@ -126,22 +128,22 @@ sealed trait Leaf extends Node with KeyInVar {
 
   def value: ADValue = v
 
-  protected val hf: ThreadUnsafeHash[_ <: Digest] // TODO: Seems very wasteful to store hf in every node of the tree, when they are all the same. Is there a better way? Pass them in to label method from above? Same for InternalNode and for other, non-batch, trees
+  protected val hf: ThreadUnsafeHash[T] // TODO: Seems very wasteful to store hf in every node of the tree, when they are all the same. Is there a better way? Pass them in to label method from above? Same for InternalNode and for other, non-batch, trees
 
-  protected def computeLabel: Digest = hf.prefixedHash(0: Byte, k, v, nk)
+  protected def computeLabel: T = hf.prefixedHash(0: Byte, k, v, nk)
 
-  def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): Leaf
+  def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): Leaf[T]
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
   }
 }
 
-class VerifierLeaf(protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
-                  (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends Leaf with VerifierNodes {
+class VerifierLeaf[T <: Digest](protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
+                  (implicit val hf: ThreadUnsafeHash[T]) extends Leaf[T] with VerifierNodes[T] {
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
-  def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): VerifierLeaf = {
+  def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): VerifierLeaf[T] = {
     k = newKey
     v = newValue
     nk = newNextLeafKey
@@ -150,11 +152,11 @@ class VerifierLeaf(protected var k: ADKey, protected var v: ADValue, protected v
   }
 }
 
-class ProverLeaf(protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
-                (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends Leaf with ProverNodes {
+class ProverLeaf[T <: Digest](protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
+                (implicit val hf: ThreadUnsafeHash[T]) extends Leaf[T] with ProverNodes[T] {
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
-  def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): ProverLeaf = {
+  def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): ProverLeaf[T] = {
     if (isNew) {
       k = newKey
       v = newValue

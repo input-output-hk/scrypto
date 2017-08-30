@@ -22,15 +22,14 @@ import scala.util.{Failure, Try}
   * @param hf               - hash function
   */
 
-class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDigest,
+class BatchAVLVerifier[T <: Digest, HF <: ThreadUnsafeHash[T]](startingDigest: ADDigest,
                                                proof: ADProof,
                                                override val keyLength: Int,
                                                override val valueLengthOpt: Option[Int],
                                                maxNumOperations: Option[Int] = None,
-                                               maxDeletes: Option[Int] = None
-                                              )
+                                               maxDeletes: Option[Int] = None)
                                               (implicit hf: HF = new Blake2b256Unsafe)
-  extends AuthenticatedTreeOps with ToStringHelper {
+  extends AuthenticatedTreeOps[T] with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 
@@ -62,7 +61,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
     * @param r
     * @return - true if to go left, false if to go right in the search
     */
-  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode): Boolean = {
+  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode[T]): Boolean = {
     // Decode bits of the proof as Booleans
     val ret = if ((proof(directionsIndex >> 3) & (1 << (directionsIndex & 7)).toByte) != 0) {
       true
@@ -82,7 +81,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
     * @param r
     * @return
     */
-  protected def keyMatchesLeaf(key: ADKey, r: Leaf): Boolean = {
+  protected def keyMatchesLeaf(key: ADKey, r: Leaf[T]): Boolean = {
     // keyMatchesLeaf for the verifier is different than for the prover:
     // since the verifier doesn't have keys in internal nodes, keyMatchesLeaf
     // checks that the key is either equal to the leaf's key
@@ -126,7 +125,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
     * @param v
     * @return - A new verifier node with two leaves: r on the left and a new leaf containing key and value on the right
     */
-  protected def addNode(r: Leaf, key: ADKey, v: ADValue): InternalVerifierNode = {
+  protected def addNode(r: Leaf[T], key: ADKey, v: ADValue): InternalVerifierNode[T] = {
     val n = r.nextLeafKey
     new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), Balance @@ 0.toByte)
   }
@@ -134,7 +133,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
   protected var rootNodeHeight = 0
 
   // Will be None if the proof is not correct and thus a tree cannot be reconstructed
-  private lazy val reconstructedTree: Option[VerifierNodes] = Try {
+  private lazy val reconstructedTree: Option[VerifierNodes[T]] = Try {
     require(labelLength > 0)
     require(keyLength > 0)
     valueLengthOpt.foreach(vl => require(vl >= 0))
@@ -168,9 +167,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
     // Now reconstruct the tree from the proof, which has the post order traversal
     // of the tree
     var numNodes = 0
-    val s = new mutable.Stack[VerifierNodes] // Nodes and depths
+    val s = new mutable.Stack[VerifierNodes[T]] // Nodes and depths
     var i = 0
-    var previousLeaf: Option[Leaf] = None
+    var previousLeaf: Option[Leaf[T]] = None
     while (proof(i) != EndOfTreeInPackagedProof) {
       val n = proof(i)
       i += 1
@@ -178,9 +177,9 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
       require(maxNumOperations.isEmpty || numNodes <= maxNodes, "Proof too long")
       n match {
         case LabelInPackagedProof =>
-          val label = Digest32 @@ proof.slice(i, i + labelLength)
+          val label = proof.slice(i, i + labelLength).asInstanceOf[T]
           i += labelLength
-          s.push(new LabelOnlyNode(label))
+          s.push(new LabelOnlyNode[T](label))
           previousLeaf = None
         case LeafInPackagedProof =>
           val key = if (previousLeaf.nonEmpty) {
@@ -200,7 +199,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
           }
           val value = ADValue @@ proof.slice(i, i + valueLength)
           i += valueLength
-          val leaf = new VerifierLeaf(key, value, nextLeafKey)
+          val leaf = new VerifierLeaf[T](key, value, nextLeafKey)
           s.push(leaf)
           previousLeaf = Some(leaf)
         case _ =>
@@ -221,7 +220,7 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
   }.getOrElse(None)
 
   // None if the proof is wrong or any operation fails
-  private var topNode: Option[VerifierNodes] = reconstructedTree
+  private var topNode: Option[VerifierNodes[T]] = reconstructedTree
 
   /**
     * If operation.key exists in the tree and the operation succeeds,
@@ -239,22 +238,22 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
     replayIndex = directionsIndex
     val operationResult = returnResultOfOneOperation(operation, topNode.get)
     // if topNode is None, the line above will fail and nothing will change
-    topNode = operationResult.map(s => Some(s._1.asInstanceOf[VerifierNodes])).getOrElse(None)
+    topNode = operationResult.map(s => Some(s._1.asInstanceOf[VerifierNodes[T]])).getOrElse(None)
     operationResult.get._2
   }
 
   override def toString: String = {
 
-    def stringTreeHelper(rNode: VerifierNodes, depth: Int): String =
+    def stringTreeHelper(rNode: VerifierNodes[T], depth: Int): String =
       Seq.fill(depth + 2)(" ").mkString + (rNode match {
-        case leaf: VerifierLeaf =>
+        case leaf: VerifierLeaf[T] =>
           "At leaf label = " + arrayToString(leaf.label) + " key = " + arrayToString(leaf.key) +
             " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "value = " + leaf.value + "\n"
-        case r: InternalVerifierNode =>
+        case r: InternalVerifierNode[T] =>
           "Internal node label = " + arrayToString(r.label) + " balance = " +
-            r.balance + "\n" + stringTreeHelper(r.left.asInstanceOf[VerifierNodes], depth + 1) +
-            stringTreeHelper(r.right.asInstanceOf[VerifierNodes], depth + 1)
-        case n: LabelOnlyNode =>
+            r.balance + "\n" + stringTreeHelper(r.left.asInstanceOf[VerifierNodes[T]], depth + 1) +
+            stringTreeHelper(r.right.asInstanceOf[VerifierNodes[T]], depth + 1)
+        case n: LabelOnlyNode[T] =>
           "Label-only node label = " + arrayToString(n.label) + "\n"
       })
 
@@ -264,27 +263,27 @@ class BatchAVLVerifier[HF <: ThreadUnsafeHash[_ <: Digest]](startingDigest: ADDi
     }
   }
 
-  def extractNodes(extractor: VerifierNodes => Boolean): Option[Seq[VerifierNodes]] = {
-    def treeTraverser(rNode: VerifierNodes, collected: Seq[VerifierNodes]): Seq[VerifierNodes] = rNode match {
-      case l: VerifierLeaf => if (extractor(l)) l +: collected else collected
-      case ln: LabelOnlyNode => if (extractor(ln)) ln +: collected else collected
-      case int: InternalVerifierNode =>
+  def extractNodes(extractor: VerifierNodes[T] => Boolean): Option[Seq[VerifierNodes[T]]] = {
+    def treeTraverser(rNode: VerifierNodes[T], collected: Seq[VerifierNodes[T]]): Seq[VerifierNodes[T]] = rNode match {
+      case l: VerifierLeaf[T] => if (extractor(l)) l +: collected else collected
+      case ln: LabelOnlyNode[T] => if (extractor(ln)) ln +: collected else collected
+      case int: InternalVerifierNode[T] =>
         collected ++
-          treeTraverser(int.right.asInstanceOf[VerifierNodes], Seq()) ++
-          treeTraverser(int.left.asInstanceOf[VerifierNodes], Seq())
+          treeTraverser(int.right.asInstanceOf[VerifierNodes[T]], Seq()) ++
+          treeTraverser(int.left.asInstanceOf[VerifierNodes[T]], Seq())
     }
 
     topNode.map(t => treeTraverser(t, Seq()))
   }
 
   //todo: test
-  def extractFirstNode(extractor: VerifierNodes => Boolean): Option[VerifierNodes] = {
-    def treeTraverser(rNode: VerifierNodes, collected: Option[VerifierNodes]): Option[VerifierNodes] = rNode match {
-      case l: VerifierLeaf => if (extractor(l)) Some(l) else None
-      case ln: LabelOnlyNode => if (extractor(ln)) Some(ln) else None
-      case int: InternalVerifierNode => if (collected.isEmpty) {
-        treeTraverser(int.left.asInstanceOf[VerifierNodes], None) orElse
-          treeTraverser(int.right.asInstanceOf[VerifierNodes], None)
+  def extractFirstNode(extractor: VerifierNodes[T] => Boolean): Option[VerifierNodes[T]] = {
+    def treeTraverser(rNode: VerifierNodes[T], collected: Option[VerifierNodes[T]]): Option[VerifierNodes[T]] = rNode match {
+      case l: VerifierLeaf[T] => if (extractor(l)) Some(l) else None
+      case ln: LabelOnlyNode[T] => if (extractor(ln)) Some(ln) else None
+      case int: InternalVerifierNode[T] => if (collected.isEmpty) {
+        treeTraverser(int.left.asInstanceOf[VerifierNodes[T]], None) orElse
+          treeTraverser(int.right.asInstanceOf[VerifierNodes[T]], None)
       } else {
         collected
       }
