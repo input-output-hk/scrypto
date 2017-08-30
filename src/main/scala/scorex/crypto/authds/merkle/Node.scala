@@ -4,14 +4,14 @@ import scorex.crypto.authds.LeafData
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Digest32, _}
 
-trait Node[T <: Digest] {
-  def hash: T
+trait Node[D <: Digest] {
+  def hash: D
 }
 
-case class InternalNode[T <: Digest](left: Node[T], right: Node[T])
-                                    (implicit val hf: CryptographicHash[T]) extends Node[T] {
+case class InternalNode[D <: Digest](left: Node[D], right: Node[D])
+                                    (implicit val hf: CryptographicHash[D]) extends Node[D] {
 
-  override lazy val hash: T = hf.prefixedHash(MerkleTree.InternalNodePrefix, left.hash, right.hash)
+  override lazy val hash: D = hf.prefixedHash(MerkleTree.InternalNodePrefix, left.hash, right.hash)
 
   override def toString: String = s"InternalNode(" +
     s"left: ${Base58.encode(left.hash)}, " +
@@ -19,12 +19,12 @@ case class InternalNode[T <: Digest](left: Node[T], right: Node[T])
     s"hash: ${Base58.encode(hash)})"
 }
 
-case class Leaf[T <: Digest](data: LeafData)(implicit val hf: CryptographicHash[T]) extends Node[T] {
-  override lazy val hash: T = hf.prefixedHash(MerkleTree.LeafPrefix, data)
+case class Leaf[D <: Digest](data: LeafData)(implicit val hf: CryptographicHash[D]) extends Node[D] {
+  override lazy val hash: D = hf.prefixedHash(MerkleTree.LeafPrefix, data)
 
   override def toString: String = s"Leaf(${Base58.encode(hash)})"
 }
 
-case class EmptyNode[T <: Digest]() extends Node[T] {
-  override val hash: T = Array[Byte]().asInstanceOf[T]
+case class EmptyNode[D <: Digest]() extends Node[D] {
+  override val hash: D = Array[Byte]().asInstanceOf[D]
 }

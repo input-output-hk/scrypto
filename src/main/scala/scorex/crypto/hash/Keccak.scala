@@ -3,7 +3,7 @@ package scorex.crypto.hash
 import org.bouncycastle.crypto.digests.KeccakDigest
 
 
-trait Keccak[T <: Digest] extends BouncyCastleHash[T] {
+trait Keccak[D <: Digest] extends BouncyCastleHash[D] {
 
   override protected lazy val digestFn = new KeccakDigest(DigestSize * 8)
 

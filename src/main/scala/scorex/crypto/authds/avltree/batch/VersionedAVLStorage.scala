@@ -5,14 +5,14 @@ import scorex.crypto.hash.Digest
 
 import scala.util.Try
 
-trait VersionedAVLStorage[T <: Digest] {
+trait VersionedAVLStorage[D <: Digest] {
 
-  def update(batchProver: BatchAVLProver[T, _]): Try[Unit]
+  def update(batchProver: BatchAVLProver[D, _]): Try[Unit]
 
   /**
     * Return root node and tree height at version
     */
-  def rollback(version: ADDigest): Try[(ProverNodes[T], Int)]
+  def rollback(version: ADDigest): Try[(ProverNodes[D], Int)]
 
   def version: ADDigest
 

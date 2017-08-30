@@ -16,22 +16,22 @@ package scorex.crypto.hash
   * "
   */
 
-trait CryptographicHash[Result <: Digest] {
+trait CryptographicHash[D <: Digest] {
 
   type Message = Array[Byte]
 
   val DigestSize: Int // in bytes
 
-  def apply(input: Message): Result = hash(input)
+  def apply(input: Message): D = hash(input)
 
-  def apply(input: String): Result = hash(input.getBytes)
+  def apply(input: String): D = hash(input.getBytes)
 
-  def hash(input: Message): Result
+  def hash(input: Message): D
 
-  def hash(input: String): Result = hash(input.getBytes)
+  def hash(input: String): D = hash(input.getBytes)
 
-  def prefixedHash(prefix: Byte, x: Message): Result = hash(prefix +: x)
+  def prefixedHash(prefix: Byte, x: Message): D = hash(prefix +: x)
 
-  def prefixedHash(prefix: Byte, x: Message, y: Message): Result = hash(prefix +: (x ++ y))
+  def prefixedHash(prefix: Byte, x: Message, y: Message): D = hash(prefix +: (x ++ y))
 }
 

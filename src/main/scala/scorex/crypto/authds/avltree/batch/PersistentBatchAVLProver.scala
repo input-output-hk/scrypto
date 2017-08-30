@@ -35,14 +35,14 @@ abstract class PersistentBatchAVLProver[T<: Digest, HF <: ThreadUnsafeHash[T]]{
 }
 
 object PersistentBatchAVLProver {
-  def create[T <: Digest, HF <: ThreadUnsafeHash[T]](avlBatchProver: BatchAVLProver[T, HF],
-                                     versionedStorage: VersionedAVLStorage[T],
+  def create[D <: Digest, HF <: ThreadUnsafeHash[D]](avlBatchProver: BatchAVLProver[D, HF],
+                                     versionedStorage: VersionedAVLStorage[D],
                                      paranoidChecks: Boolean = false
-                                    ): Try[PersistentBatchAVLProver[T, HF]] = Try {
+                                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
 
-    new PersistentBatchAVLProver[T, HF] {
-      override var avlProver: BatchAVLProver[T, HF] = avlBatchProver
-      override val storage: VersionedAVLStorage[T] = versionedStorage
+    new PersistentBatchAVLProver[D, HF] {
+      override var avlProver: BatchAVLProver[D, HF] = avlBatchProver
+      override val storage: VersionedAVLStorage[D] = versionedStorage
 
       (if (storage.nonEmpty) {
         rollback(storage.version).get

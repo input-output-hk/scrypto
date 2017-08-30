@@ -12,7 +12,7 @@ import scala.util.{Failure, Success, Try}
   * Code common to the prover and verifier of https://eprint.iacr.org/2016/994
   * (see Appendix B, "Our Algorithms")
   */
-trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with ScryptoLogging {
+trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ScryptoLogging {
 
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
@@ -30,7 +30,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
     * The digest consists of the label of the root node followed by its height,
     * expressed as a single (unsigned) byte
     */
-  protected def digest(rootNode: Node[T]): ADDigest = {
+  protected def digest(rootNode: Node[D]): ADDigest = {
     assert(rootNodeHeight >= 0 && rootNodeHeight < 256)
     // rootNodeHeight should never be more than 255, so the toByte conversion is safe (though it may cause an incorrect
     // sign on the signed byte if rootHeight>127, but we handle that case correctly on decoding the byte back to int in the
@@ -44,17 +44,17 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
   /**
     * @return - whether we found the correct leaf and the key contains it
     */
-  protected def keyMatchesLeaf(key: ADKey, r: Leaf[T]): Boolean
+  protected def keyMatchesLeaf(key: ADKey, r: Leaf[D]): Boolean
 
   /**
     * @return - whether to go left or right when searching for key and standing at r
     */
-  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode[T]): Boolean
+  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode[D]): Boolean
 
   /**
     * @return - a new node with two leaves: r on the left and a new leaf containing key and value on the right
     */
-  protected def addNode(r: Leaf[T], key: ADKey, v: ADValue): InternalNode[T]
+  protected def addNode(r: Leaf[D], key: ADKey, v: ADValue): InternalNode[D]
 
   /**
     * Deletions go down the tree twice -- once to find the leaf and realize
@@ -73,8 +73,8 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
     * and rightChild.left.visited = true
     * neither child needs to be attached to currentRoot
     */
-  private def doubleLeftRotate(currentRoot: InternalNode[T], leftChild: Node[T], rightChild: InternalNode[T]): InternalNode[T] = {
-    val newRoot = rightChild.left.asInstanceOf[InternalNode[T]]
+  private def doubleLeftRotate(currentRoot: InternalNode[D], leftChild: Node[D], rightChild: InternalNode[D]): InternalNode[D] = {
+    val newRoot = rightChild.left.asInstanceOf[InternalNode[D]]
     val (newLeftBalance: Balance, newRightBalance: Balance) = newRoot.balance match {
       case a if a == 0 =>
         (Balance @@ 0.toByte, Balance @@ 0.toByte)
@@ -93,8 +93,8 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
     * and leftChild.right.visited = true
     * neither child needs to be attached to currentRoot
     */
-  private def doubleRightRotate[T <: Digest](currentRoot: InternalNode[T], leftChild: InternalNode[T], rightChild: Node[T]): InternalNode[T] = {
-    val newRoot = leftChild.right.asInstanceOf[InternalNode[T]]
+  private def doubleRightRotate[D <: Digest](currentRoot: InternalNode[D], leftChild: InternalNode[D], rightChild: Node[D]): InternalNode[D] = {
+    val newRoot = leftChild.right.asInstanceOf[InternalNode[D]]
     val (newLeftBalance: Balance, newRightBalance: Balance) = newRoot.balance match {
       case a if a == 0 =>
         (Balance @@ 0.toByte, Balance @@ 0.toByte)
@@ -108,14 +108,14 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
     newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = Balance @@ 0.toByte)
   }
 
-  protected def returnResultOfOneOperation(operation: Operation, rootNode: Node[T]): Try[(Node[T], Option[ADValue])] = Try {
+  protected def returnResultOfOneOperation(operation: Operation, rootNode: Node[D]): Try[(Node[D], Option[ADValue])] = Try {
     val key = operation.key
 
     require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
     require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
     require(key.length == keyLength)
 
-    var savedNode: Option[Leaf[T]] = None // The leaf to be saved in the hard deletion case, where we delete a leaf and copy its info over to another leaf
+    var savedNode: Option[Leaf[D]] = None // The leaf to be saved in the hard deletion case, where we delete a leaf and copy its info over to another leaf
 
 
     /**
@@ -130,11 +130,11 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
       * we don't change the tree, but simply return toDelete = true.
       * We then go in and delete using deleteHelper
       */
-    def modifyHelper(rNode: Node[T], key: ADKey, operation: Operation): (Node[T], ChangeHappened, HeightIncreased, ToDelete, Option[ADValue]) = {
+    def modifyHelper(rNode: Node[D], key: ADKey, operation: Operation): (Node[D], ChangeHappened, HeightIncreased, ToDelete, Option[ADValue]) = {
       // Do not set the visited flag on the way down -- set it only after you know the operation did not fail,
       // because if the operation failed, there is no need to put nodes in the proof.
       rNode match {
-        case r: Leaf[T] =>
+        case r: Leaf[D] =>
           if (keyMatchesLeaf(key, r)) {
             operation match {
               case m: Modification =>
@@ -175,7 +175,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
                 (r, false, false, false, None)
             }
           }
-        case r: InternalNode[T] =>
+        case r: InternalNode[D] =>
           // Go recursively in the correct direction
           // Get a new node
           // See if a single or double rotation is needed for AVL tree balancing
@@ -188,7 +188,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
               if (childHeightIncreased && r.balance < 0) {
                 // need to rotate
                 // at this point we know newLeftM must be an internal node and not a leaf -- because height increased
-                val newLeft = newLeftM.asInstanceOf[InternalNode[T]]
+                val newLeft = newLeftM.asInstanceOf[InternalNode[D]]
                 if (newLeft.balance < 0) {
                   // single right rotate
                   val newR = r.getNew(newLeft = newLeft.right, newBalance = Balance @@ 0.toByte)
@@ -216,7 +216,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
               if (childHeightIncreased && r.balance > 0) {
                 // need to rotate
                 // at this point we know newRightM must be an internal node and not a leaf -- because height increased
-                val newRight = newRightM.asInstanceOf[InternalNode[T]]
+                val newRight = newRightM.asInstanceOf[InternalNode[D]]
 
                 if (newRight.balance > 0) {
                   // single left rotate
@@ -236,7 +236,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
               (r, false, false, toDelete, oldValue)
             }
           }
-        case r: LabelOnlyNode[T] =>
+        case r: LabelOnlyNode[D] =>
           throw new Error("Should never reach this point. If in prover, this is a bug. If in verifier, this proof is wrong.")
       }
     }
@@ -252,7 +252,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
       *
       * Returns the new root and an indicator whether the tree height decreased
       */
-    def deleteHelper(r: InternalNode[T], deleteMax: Boolean): (Node[T], Boolean) = {
+    def deleteHelper(r: InternalNode[D], deleteMax: Boolean): (Node[D], Boolean) = {
       // Overall strategy: if key is found in the node that has only a leaf as either
       // of the two children, we can just delete the node. If it has a leaf as the right child,
       // we can also delete the right child, update the nextLeafKey in the rightmost leaf of the left subtree,
@@ -266,26 +266,26 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
       // with deleteMax = true), and copy the information from that deleted leaf into the node where the
       // key was found and into the leftmost leaf of its right subtree
 
-      def changeNextLeafKeyOfMaxNode(rNode: Node[T], nextLeafKey: ADKey): Node[T] = {
+      def changeNextLeafKeyOfMaxNode(rNode: Node[D], nextLeafKey: ADKey): Node[D] = {
         rNode.visited = true
         rNode match {
-          case leaf: Leaf[T] =>
+          case leaf: Leaf[D] =>
             leaf.getNew(newNextLeafKey = nextLeafKey)
-          case rN: InternalNode[T] =>
+          case rN: InternalNode[D] =>
             rN.getNew(newRight = changeNextLeafKeyOfMaxNode(rN.right, nextLeafKey))
-          case rN: LabelOnlyNode[T] =>
+          case rN: LabelOnlyNode[D] =>
             throw new Error("Should never reach this point. If in prover, this is a bug. In in verifier, this proof is wrong.")
         }
       }
 
-      def changeKeyAndValueOfMinNode(rNode: Node[T], newKey: ADKey, newValue: ADValue): Node[T] = {
+      def changeKeyAndValueOfMinNode(rNode: Node[D], newKey: ADKey, newValue: ADValue): Node[D] = {
         rNode.visited = true
         rNode match {
-          case leaf: Leaf[T] =>
+          case leaf: Leaf[D] =>
             leaf.getNew(newKey = newKey, newValue = newValue)
-          case rN: InternalNode[T] =>
+          case rN: InternalNode[D] =>
             rN.getNew(newLeft = changeKeyAndValueOfMinNode(rN.left, newKey, newValue))
-          case rN: LabelOnlyNode[T] =>
+          case rN: LabelOnlyNode[D] =>
             throw new Error("Should never reach this point. If in prover, this is a bug. If in verifier, this proof is wrong.")
         }
       }
@@ -294,17 +294,17 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
 
       val direction = if (deleteMax) 1 else replayComparison
 
-      assert(!(direction < 0 && r.left.isInstanceOf[Leaf[T]]))
+      assert(!(direction < 0 && r.left.isInstanceOf[Leaf[D]]))
       // If direction<0, this means we are not in deleteMax mode and we still haven't found
       // the value we are trying to delete
       // If the next step -- which is to the left -- is a leaf, then the value
       // we are looking for is not a key of any internal node in the tree,
       // which is impossible
 
-      if (direction >= 0 && r.right.isInstanceOf[Leaf[T]]) {
+      if (direction >= 0 && r.right.isInstanceOf[Leaf[D]]) {
         // we delete this node and its right child (leaf)
         // we return the left subtree
-        val rightChild = r.right.asInstanceOf[Leaf[T]]
+        val rightChild = r.right.asInstanceOf[Leaf[D]]
         rightChild.visited = true
         if (deleteMax) {
           // If we are in deleteMax mode,
@@ -318,18 +318,18 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
           assert(direction == 0)
           (changeNextLeafKeyOfMaxNode(r.left, rightChild.nextLeafKey), true)
         }
-      } else if (direction == 0 && r.left.isInstanceOf[Leaf[T]]) {
+      } else if (direction == 0 && r.left.isInstanceOf[Leaf[D]]) {
         // we know (r.left.isInstanceOf[Leaf])
         // we delete the node and its left child (leaf); we return the right
         // subtree, after changing the key and value stored in its leftmost leaf
-        val leftChild = r.left.asInstanceOf[Leaf[T]]
+        val leftChild = r.left.asInstanceOf[Leaf[D]]
         leftChild.visited = true
         (changeKeyAndValueOfMinNode(r.right, leftChild.key, leftChild.value), true)
       } else {
         // Potential hard deletion cases:
         if (direction <= 0) {
           // going left; know left child is not a leaf; deleteMax if and only if direction == 0
-          val (newLeft, childHeightDecreased) = deleteHelper(r.left.asInstanceOf[InternalNode[T]], direction == 0)
+          val (newLeft, childHeightDecreased) = deleteHelper(r.left.asInstanceOf[InternalNode[D]], direction == 0)
 
           val newRoot = if (direction == 0) {
             // this is the case where we needed to delete the min of the right
@@ -348,7 +348,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
             // new to rotate because my left subtree is shorter than my right
             newRoot.right.visited = true
             // I know my right child is not a leaf, because it is taller than my left
-            val rightChild = newRoot.right.asInstanceOf[InternalNode[T]]
+            val rightChild = newRoot.right.asInstanceOf[InternalNode[D]]
             if (rightChild.balance < 0) {
               // double left rotate
               // I know rightChild.left is not a leaf, because rightChild has a higher subtree on the left
@@ -369,12 +369,12 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
           }
         } else {
           // going right; know right child is not a leaf
-          val (newRight, childHeightDecreased) = deleteHelper(r.right.asInstanceOf[InternalNode[T]], deleteMax)
+          val (newRight, childHeightDecreased) = deleteHelper(r.right.asInstanceOf[InternalNode[D]], deleteMax)
           if (childHeightDecreased && r.balance < 0) {
             // new to rotate because my right subtree is shorter than my left
             r.left.visited = true
             // I know my left child is not a leaf, because it is taller than my right
-            val leftChild = r.left.asInstanceOf[InternalNode[T]]
+            val leftChild = r.left.asInstanceOf[InternalNode[D]]
             if (leftChild.balance > 0) {
               // double right rotate
               // I know leftChild.right is not a leaf, because leftChild has a higher subtree on the right
@@ -399,7 +399,7 @@ trait AuthenticatedTreeOps[T <: Digest] extends BatchProofConstants with Scrypto
 
     val (newRootNode, _, heightIncreased, toDelete, oldValue) = modifyHelper(rootNode, key, operation)
     if (toDelete) {
-      val (postDeleteRootNode, heightDecreased) = deleteHelper(newRootNode.asInstanceOf[InternalNode[T]], deleteMax = false)
+      val (postDeleteRootNode, heightDecreased) = deleteHelper(newRootNode.asInstanceOf[InternalNode[D]], deleteMax = false)
       if (heightDecreased) rootNodeHeight -= 1
       (postDeleteRootNode, oldValue)
     } else {
