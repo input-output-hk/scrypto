@@ -1,3 +1,9 @@
+**2.0.0**
+---------
+
+* Shapeless dependency removed
+* Using tagged types instead of *Array[Byte]*, *suppertagged* microframework is used for that 
+
 **1.3.2**
 ---------
 
