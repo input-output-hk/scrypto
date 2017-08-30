@@ -3,6 +3,7 @@
 
 * Shapeless dependency removed
 * Using tagged types instead of *Array[Byte]*, *suppertagged* microframework is used for that 
+* BouncyCastle 1.58
 
 **1.3.2**
 ---------
