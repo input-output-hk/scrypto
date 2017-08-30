@@ -1,27 +1,27 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Longs
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
+import scorex.crypto.authds.{ADKey, ADValue}
 
 import scala.util.{Failure, Success, Try}
 
 sealed trait Operation {
-  val key: AVLKey
+  val key: ADKey
 }
 
-case class Lookup(override val key: AVLKey) extends Operation
+case class Lookup(override val key: ADKey) extends Operation
 
 case object UnknownModification extends Modification {
-  override val key: AVLKey = Array.empty
+  override val key: ADKey = ADKey @@ Array[Byte]()
 
   override def updateFn: UpdateFunction = old => Success(old)
 }
 
 trait Modification extends Operation {
-  val key: AVLKey
-  type OldValue = Option[AVLValue]
+  val key: ADKey
+  type OldValue = Option[ADValue]
 
-  type NewValue = AVLValue
+  type NewValue = ADValue
 
   type UpdateFunction = OldValue => Try[Option[NewValue]]
 
@@ -37,33 +37,33 @@ trait Modification extends Operation {
   def updateFn: UpdateFunction
 }
 
-case class Insert(key: AVLKey, value: Array[Byte]) extends Modification {
+case class Insert(key: ADKey, value: ADValue) extends Modification {
   override def updateFn: UpdateFunction = {
     case None => Success(Some(value))
     case Some(_) => Failure(new Exception("already exists"))
   }: UpdateFunction
 }
 
-case class Update(key: AVLKey, value: Array[Byte]) extends Modification {
+case class Update(key: ADKey, value: ADValue) extends Modification {
   override def updateFn: UpdateFunction = {
     case None => Failure(new Exception("does not exist"))
     case Some(_) => Success(Some(value))
   }: UpdateFunction
 }
 
-case class InsertOrUpdate(key: AVLKey, value: Array[Byte]) extends Modification {
+case class InsertOrUpdate(key: ADKey, value: ADValue) extends Modification {
   override def updateFn: UpdateFunction = (_ => Success(Some(value))): UpdateFunction
 }
 
 
-case class Remove(key: AVLKey) extends Modification {
+case class Remove(key: ADKey) extends Modification {
   override def updateFn: UpdateFunction = {
     case None => Failure(new Exception("does not exist"))
     case Some(_) => Success(None)
   }: UpdateFunction
 }
 
-case class RemoveIfExists(key: AVLKey) extends Modification {
+case class RemoveIfExists(key: ADKey) extends Modification {
   override def updateFn: UpdateFunction = (_ => Success(None)): UpdateFunction
 }
 
@@ -74,17 +74,17 @@ case class RemoveIfExists(key: AVLKey) extends Modification {
   * insert the key with value delta if delta is positive,
   * fail if delta is negative, and do nothing if delta is 0.
   */
-case class UpdateLongBy(key: AVLKey, delta: Long) extends Modification {
+case class UpdateLongBy(key: ADKey, delta: Long) extends Modification {
   override def updateFn: UpdateFunction = {
     case m if delta == 0 => Success(m)
-    case None if delta > 0 => Success(Some(Longs.toByteArray(delta)))
+    case None if delta > 0 => Success(Some(ADValue @@ Longs.toByteArray(delta)))
     case None if delta < 0 => Failure(new Exception("Trying to decrease non-existing value"))
     case Some(oldV) =>
       val newVal = Math.addExact(Longs.fromByteArray(oldV), delta)
       if (newVal == 0) {
         Success(None)
       } else if (newVal > 0) {
-        Success(Some(Longs.toByteArray(newVal)))
+        Success(Some(ADValue @@ Longs.toByteArray(newVal)))
       } else {
         Failure(new Exception("New value is negative"))
       }

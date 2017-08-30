@@ -18,9 +18,5 @@ trait TwoPartyDictionary {
   /**
     * @return current digest of structure
     */
-  def rootHash(): Array[Byte]
-}
-
-object TwoPartyDictionary {
-  type Label = CryptographicHash#Digest
+  def rootHash(): ADDigest
 }

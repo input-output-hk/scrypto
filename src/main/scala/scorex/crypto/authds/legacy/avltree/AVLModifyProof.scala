@@ -1,28 +1,26 @@
 package scorex.crypto.authds.legacy.avltree
 
 import com.google.common.primitives.Bytes
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
-import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.avltree.batch.Modification
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
-case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
-                         (implicit hf: ThreadUnsafeHash) extends TwoPartyProof {
+case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
+                         (implicit hf: ThreadUnsafeHash[_ <: Digest]) extends TwoPartyProof {
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
 
 
-  def verifyLookup(digest: Label, existence: Boolean): Option[Label] = {
-    def existenceLookupFunction: Option[AVLValue] => Try[Option[AVLValue]] = {
+  def verifyLookup(digest: ADDigest, existence: Boolean): Option[ADDigest] = {
+    def existenceLookupFunction: Option[ADValue] => Try[Option[ADValue]] = {
       case Some(v) => Success(Some(v))
       case None => Failure(new Error("Key not found"))
     }
 
-    def nonExistenceLookupFunction: Option[AVLValue] => Try[Option[AVLValue]] = {
+    def nonExistenceLookupFunction: Option[ADValue] => Try[Option[ADValue]] = {
       case Some(v) => Failure(new Error("Key found"))
       case None => Success(None)
     }
@@ -39,11 +37,11 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     * and whether the height has increased
     * Also returns the label of the old root
     */
-  private def verifyHelper(updateFn: Modification#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Label) = {
+  private def verifyHelper(updateFn: Modification#UpdateFunction): (VerifierNodes, ChangeHappened, HeightIncreased, Digest) = {
     dequeueDirection() match {
       case LeafFound =>
-        val nextLeafKey: AVLKey = dequeueNextLeafKey()
-        val value: AVLValue = dequeueValue()
+        val nextLeafKey: ADKey = dequeueNextLeafKey()
+        val value: ADValue = dequeueValue()
 
         updateFn(Some(value)) match {
           case Success(None) => //delete value
@@ -59,8 +57,8 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 
       case LeafNotFound =>
         val neighbourLeafKey = dequeueKey()
-        val nextLeafKey: AVLKey = dequeueNextLeafKey()
-        val value: AVLValue = dequeueValue()
+        val nextLeafKey: ADKey = dequeueNextLeafKey()
+        val value: ADValue = dequeueValue()
         require(ByteArray.compare(neighbourLeafKey, key) < 0)
         require(ByteArray.compare(key, nextLeafKey) < 0)
 
@@ -72,14 +70,14 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           case Success(Some(v)) => //insert new value
             val newLeaf = Leaf(key, v, r.nextLeafKey)
             r.nextLeafKey = key
-            val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), 0: Byte)
+            val newR = VerifierNode(LabelOnlyNode(r.label), LabelOnlyNode(newLeaf.label), Balance @@ 0.toByte)
             (newR, true, true, oldLabel)
           case Failure(e) => // found incorrect value
             // (r, false, false, oldLabel)
             throw e
         }
       case GoingLeft =>
-        val rightLabel: Label = dequeueRightLabel()
+        val rightLabel: Digest = dequeueRightLabel()
         val balance: Balance = dequeueBalance()
 
         val (newLeftM, changeHappened, childHeightIncreased, oldLeftLabel) = verifyHelper(updateFn)
@@ -92,14 +90,14 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
           if (childHeightIncreased && r.balance < 0) {
             // need to rotate
             newLeftM match {
-              // at this point we know newleftM must be an internal node an not a leaf -- b/c height increased;
+              // at this point we know newLeftM must be an internal node an not a leaf -- b/c height increased;
               case newLeft: VerifierNode =>
                 if (newLeft.balance < 0) {
                   // single rotate
                   r.left = newLeft.right
-                  r.balance = 0: Byte
+                  r.balance = Balance @@ 0.toByte
                   newLeft.right = r
-                  newLeft.balance = 0: Byte
+                  newLeft.balance = Balance @@ 0.toByte
                   (newLeft, true, false, oldLabel)
                 }
 
@@ -113,18 +111,18 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   newLeft.right = newRoot.left
                   newRoot.left = newLeft
                   newRoot.balance match {
-                    case 0 =>
+                    case a if a == 0 =>
                       // newRoot is a newly created node
-                      newLeft.balance = 0: Byte
-                      r.balance = 0: Byte
-                    case -1 =>
-                      newLeft.balance = 0: Byte
-                      r.balance = 1: Byte
-                    case 1 =>
-                      newLeft.balance = -1: Byte
-                      r.balance = 0: Byte
+                      newLeft.balance = Balance @@ 0.toByte
+                      r.balance = Balance @@ 0.toByte
+                    case a if a == -1 =>
+                      newLeft.balance = Balance @@ 0.toByte
+                      r.balance = Balance @@ 1.toByte
+                    case a if a == 1 =>
+                      newLeft.balance = Balance @@ (-1.toByte)
+                      r.balance = Balance @@ 0.toByte
                   }
-                  newRoot.balance = 0: Byte
+                  newRoot.balance = Balance @@ 0.toByte
                   (newRoot, true, false, oldLabel)
                 }
 
@@ -136,7 +134,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             // no need to rotate
             r.left = newLeftM
             val myHeightIncreased: Boolean = childHeightIncreased && (r.balance == (0: Byte))
-            if (childHeightIncreased) r.balance = (r.balance - 1).toByte
+            if (childHeightIncreased) r.balance = Balance @@ (r.balance - 1).toByte
             (r, true, myHeightIncreased, oldLabel)
           }
 
@@ -146,7 +144,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
         }
 
       case GoingRight =>
-        val leftLabel: Label = dequeueLeftLabel()
+        val leftLabel: Digest = dequeueLeftLabel()
         val balance: Balance = dequeueBalance()
 
         val (newRightM, changeHappened, childHeightIncreased, oldRightLabel) = verifyHelper(updateFn)
@@ -163,9 +161,9 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                 if (newRight.balance > 0) {
                   // single rotate
                   r.right = newRight.left
-                  r.balance = 0: Byte
+                  r.balance = Balance @@ 0.toByte
                   newRight.left = r
-                  newRight.balance = 0: Byte
+                  newRight.balance = Balance @@ 0.toByte
                   (newRight, true, false, oldLabel)
                 } else {
                   // double rotate
@@ -178,18 +176,18 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
                   newRoot.right = newRight
 
                   newRoot.balance match {
-                    case 0 =>
+                    case a if a == 0 =>
                       // newRoot is a newly created node
-                      newRight.balance = 0: Byte
-                      r.balance = 0: Byte
-                    case -1 =>
-                      newRight.balance = 1: Byte
-                      r.balance = 0: Byte
-                    case 1 =>
-                      newRight.balance = 0: Byte
-                      r.balance = -1: Byte
+                      newRight.balance = Balance @@ 0.toByte
+                      r.balance = Balance @@ 0.toByte
+                    case a if a == -1 =>
+                      newRight.balance = Balance @@ 1.toByte
+                      r.balance = Balance @@ 0.toByte
+                    case a if a == 1 =>
+                      newRight.balance = Balance @@ 0.toByte
+                      r.balance = Balance @@ -1.toByte
                   }
-                  newRoot.balance = 0: Byte
+                  newRoot.balance = Balance @@ 0.toByte
 
                   (newRoot, true, false, oldLabel)
                 }
@@ -201,7 +199,7 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
             // no need to rotate
             r.right = newRightM
             val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-            if (childHeightIncreased) r.balance = (r.balance + 1).toByte
+            if (childHeightIncreased) r.balance = Balance @@ (r.balance + 1).toByte
             (r, true, myHeightIncreased, oldLabel)
           }
         } else {
@@ -211,11 +209,11 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
     }
   }
 
-  def verify(digest: Label, updateFn: Modification#UpdateFunction): Option[Label] = Try {
+  def verify(digest: ADDigest, updateFn: Modification#UpdateFunction): Option[ADDigest] = Try {
     initializeIterator()
 
     val (newTopNode, _, _, oldLabel) = verifyHelper(updateFn)
-    if (oldLabel sameElements digest) Some(newTopNode.label) else None
+    if (oldLabel sameElements digest) Some(ADDigest @@ newTopNode.label) else None
   }.getOrElse(None)
 
   /**
@@ -250,10 +248,10 @@ case class AVLModifyProof(key: AVLKey, proofSeq: Seq[AVLProofElement])
 object AVLModifyProof {
 
   def parseBytes(bytes: Array[Byte])(implicit keyLength: Int = 32, digestSize: Int = 32,
-                                     hf: ThreadUnsafeHash = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
+                                     hf: ThreadUnsafeHash[_ <: Digest] = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
     val pathLength: Int = bytes.head.ensuring(_ % 3 == 0)
 
-    val key = bytes.slice(1, 1 + keyLength)
+    val key = ADKey @@ bytes.slice(1, 1 + keyLength)
     val pathProofs: Seq[AVLProofElement] = (0 until pathLength / 3) flatMap { i: Int =>
       val start = 1 + keyLength + i * (1 + 32)
       val (direction, balance) = parseDirectionBalance(bytes.slice(start, start + 1).head)
@@ -292,7 +290,7 @@ object AVLModifyProof {
 
   def combineBytes(b1: Byte, b2: Byte): Byte = ((b1 << 4) | (b2 + 1)).toByte
 
-  def splitBytes(b: Byte): (Byte, Byte) = ((b >>> 4).toByte, ((b & 15) - 1).toByte)
+  def splitBytes(b: Byte): (Byte, Balance) = ((b >>> 4).toByte, Balance @@ ((b & 15) - 1).toByte)
 
   def directionBalanceByte(dir: ProofDirection, balance: ProofBalance): Byte =
     combineBytes(dir.bytes.head, balance.bytes.head)

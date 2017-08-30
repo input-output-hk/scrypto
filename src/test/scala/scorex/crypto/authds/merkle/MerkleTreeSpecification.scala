@@ -3,6 +3,7 @@ package scorex.crypto.authds.merkle
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
+import scorex.crypto.authds.LeafData
 import scorex.crypto.hash.Keccak256
 
 class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
@@ -13,7 +14,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Proof generation by element") {
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
-        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(LeafSize))
+        val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
         val leafs = d.map(data => Leaf(data))
         val tree = MerkleTree(d)
         leafs.foreach { l =>
@@ -28,7 +29,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Proof generation by index") {
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
-        val d = (0 until N).map(_ => scorex.utils.Random.randomBytes(LeafSize))
+        val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
         val tree = MerkleTree(d)
         (0 until N).foreach { i =>
           tree.proofByIndex(i).get.leafData shouldEqual d(i)
@@ -47,7 +48,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Tree creation from 1 element") {
     forAll { d: Array[Byte] =>
       whenever(d.length > 0) {
-        val tree = MerkleTree(Seq(d))(hf)
+        val tree = MerkleTree(Seq(LeafData @@ d))(hf)
         tree.rootHash shouldEqual
           hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d), Array())
       }
@@ -56,7 +57,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
 
   property("Tree creation from 2 element") {
     forAll { (d1: Array[Byte], d2: Array[Byte]) =>
-      val tree = MerkleTree(Seq(d1, d2))(hf)
+      val tree = MerkleTree(Seq(LeafData @@ d1, LeafData @@ d2))(hf)
       tree.rootHash shouldEqual
         hf.prefixedHash(MerkleTree.InternalNodePrefix,
           hf.prefixedHash(MerkleTree.LeafPrefix, d1),
@@ -67,7 +68,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Tree creation from a lot of elements") {
     forAll { d: Seq[Array[Byte]] =>
       whenever(d.nonEmpty) {
-        val tree = MerkleTree(d)
+        val tree = MerkleTree(d.map(a => LeafData @@ a))
         tree.rootHash
       }
     }

@@ -5,14 +5,9 @@ import java.lang.reflect.Constructor
 import org.slf4j.LoggerFactory
 import org.whispersystems.curve25519.OpportunisticCurve25519Provider
 import scorex.crypto.hash.Sha256
-import scorex.utils.NatConstants.Nat32
-
 import scala.util.{Failure, Try}
 
-//todo: why Nat32, not [Nat32, Nat64]? so pubkey size also included(and priv key?)
-object Curve25519 extends EllipticCurveSignatureScheme[Nat32] {
-
-  import SigningFunctions._
+object Curve25519 extends EllipticCurveSignatureScheme {
 
   val SignatureLength25519 = 64
   val KeyLength25519 = 32
@@ -35,13 +30,13 @@ object Curve25519 extends EllipticCurveSignatureScheme[Nat32] {
 
   override def createKeyPair(seed: Array[Byte]): (PrivateKey, PublicKey) = {
     val hashedSeed = Sha256.hash(seed)
-    val privateKey = provider.generatePrivateKey(hashedSeed)
-    privateKey -> provider.generatePublicKey(privateKey)
+    val privateKey = PrivateKey @@ provider.generatePrivateKey(hashedSeed)
+    privateKey -> PublicKey @@ provider.generatePublicKey(privateKey)
   }
 
   override def sign(privateKey: PrivateKey, message: MessageToSign): Signature = {
     require(privateKey.length == KeyLength)
-    provider.calculateSignature(provider.getRandom(SignatureLength), privateKey, message)
+    Signature @@ provider.calculateSignature(provider.getRandom(SignatureLength), privateKey, message)
   }
 
   override def verify(signature: Signature, message: MessageToSign, publicKey: PublicKey): Boolean = Try {
@@ -54,7 +49,7 @@ object Curve25519 extends EllipticCurveSignatureScheme[Nat32] {
   }.getOrElse(false)
 
   override def createSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): SharedSecret = {
-    provider.calculateAgreement(privateKey, publicKey)
+    SharedSecret @@ provider.calculateAgreement(privateKey, publicKey)
   }
 
   protected lazy val log = LoggerFactory.getLogger(this.getClass)

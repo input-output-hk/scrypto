@@ -1,8 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.authds._
+import scorex.crypto.hash.{Blake2b256Unsafe, Digest, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -18,17 +18,17 @@ import scala.util.{Failure, Success, Try}
   *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
-class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
+class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
                                              val valueLengthOpt: Option[Int],
-                                             oldRootAndHeight: Option[(ProverNodes, Int)] = None)
+                                             oldRootAndHeight: Option[(ProverNodes[D], Int)] = None)
                                             (implicit val hf: HF = new Blake2b256Unsafe)
-  extends AuthenticatedTreeOps with ToStringHelper {
+  extends AuthenticatedTreeOps[D] with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
 
-  private[batch] var topNode: ProverNodes = oldRootAndHeight.map(_._1).getOrElse({
+  private[batch] var topNode: ProverNodes[D] = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
-      Array.fill(valueLengthOpt.map(_.toInt).getOrElse(0))(0: Byte), PositiveInfinityKey)
+      ADValue @@ Array.fill(valueLengthOpt.getOrElse(0))(0: Byte), PositiveInfinityKey)
     t.isNew = false
     t
   })
@@ -60,11 +60,11 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param r
     * @return - true if to go left, false if to go right in the search
     */
-  protected def nextDirectionIsLeft(key: AVLKey, r: InternalNode): Boolean = {
+  protected def nextDirectionIsLeft(key: ADKey, r: InternalNode[D]): Boolean = {
     val ret = if (found) {
       true
     } else {
-      ByteArray.compare(key, r.asInstanceOf[InternalProverNode].key) match {
+      ByteArray.compare(key, r.asInstanceOf[InternalProverNode[D]].key) match {
         case 0 => // found in the tree -- go one step right, then left to the leaf
           found = true
           lastRightStep = directionsBitLength
@@ -75,10 +75,13 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
           false
       }
     }
-    // encode Booleans as bits
+    // encode Booleans as bits 
     if ((directionsBitLength & 7) == 0) {
       // new byte needed
-      directions += (if (ret) 1: Byte else 0: Byte)
+      directions += (ret match {
+        case true => 1: Byte
+        case false => 0: Byte
+      })
     } else {
       if (ret) {
         val i = directionsBitLength >> 3
@@ -96,7 +99,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param r
     * @return
     */
-  protected def keyMatchesLeaf(key: AVLKey, r: Leaf): Boolean = {
+  protected def keyMatchesLeaf(key: ADKey, r: Leaf[D]): Boolean = {
     // The prover doesn't actually need to look at the leaf key,
     // because the prover would have already seen this key on the way
     // down the to leaf if and only if the leaf matches the key that is being sought
@@ -133,10 +136,10 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param v
     * @return - A new prover node with two leaves: r on the left and a new leaf containing key and value on the right
     */
-  protected def addNode(r: Leaf, key: AVLKey, v: AVLValue): InternalProverNode = {
+  protected def addNode(r: Leaf[D], key: ADKey, v: ADValue): InternalProverNode[D] = {
     val n = r.nextLeafKey
-    new InternalProverNode(key, r.getNew(newNextLeafKey = key).asInstanceOf[ProverLeaf],
-      new ProverLeaf(key, v, n), 0: Byte)
+    new InternalProverNode(key, r.getNew(newNextLeafKey = key).asInstanceOf[ProverLeaf[D]],
+      new ProverLeaf(key, v, n), Balance @@ 0.toByte)
   }
 
   /**
@@ -145,7 +148,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     *
     * @return - the digest
     */
-  def digest: Array[Byte] = digest(topNode)
+  def digest: ADDigest = digest(topNode)
 
 
   /**
@@ -159,11 +162,11 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     * @param operation
     * @return - Success(Some(old value)), Success(None), or Failure
     */
-  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = Try {
+  def performOneOperation(operation: Operation): Try[Option[ADValue]] = Try {
     replayIndex = directionsBitLength
     returnResultOfOneOperation(operation, topNode) match {
       case Success(n) =>
-        topNode = n._1.asInstanceOf[ProverNodes]
+        topNode = n._1.asInstanceOf[ProverNodes[D]]
         n._2
       case Failure(e) =>
         // take the bit length before fail and divide by 8 with rounding up
@@ -188,7 +191,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     *
     * @return - the proof
     */
-  def generateProof(): Array[Byte] = {
+  def generateProof(): ADProof = {
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 
@@ -204,7 +207,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
      *   that contains only this info)
      * - Condense the sequence of values if they are mostly not randomly distributed
      * */
-    def packTree(rNode: ProverNodes) {
+    def packTree(rNode: ProverNodes[D]) {
       // Post order traversal to pack up the tree
       if (!rNode.visited) {
         packagedTree += LabelInPackagedProof
@@ -214,7 +217,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
       } else {
         rNode.visited = false
         rNode match {
-          case r: ProverLeaf =>
+          case r: ProverLeaf[D] =>
             packagedTree += LeafInPackagedProof
             if (!previousLeafAvailable) packagedTree ++= r.key
             packagedTree ++= r.nextLeafKey
@@ -223,7 +226,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
             }
             packagedTree ++= r.value
             previousLeafAvailable = true
-          case r: InternalProverNode =>
+          case r: InternalProverNode[D] =>
             packTree(r.left)
             packTree(r.right)
             packagedTree += r.balance
@@ -232,10 +235,10 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     }
 
     // Recursively reset the new flags
-    def resetNew(r: ProverNodes): Unit = {
+    def resetNew(r: ProverNodes[D]): Unit = {
       if (r.isNew) {
         r match {
-          case rn: InternalProverNode =>
+          case rn: InternalProverNode[D] =>
             resetNew(rn.left)
             resetNew(rn.right)
           case _ =>
@@ -255,7 +258,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     directionsBitLength = 0
     oldTopNode = topNode
 
-    packagedTree.toArray
+    ADProof @@ packagedTree.toArray
   }
 
   /**
@@ -264,17 +267,19 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
     *
     * @return Some(value) for value associated with the given key if key is in the tree, and None otherwise
     */
-  def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = {
-    def unauthenticatedLookupHelper(rNode: ProverNodes, found: Boolean): Option[AVLValue] = {
+  def unauthenticatedLookup(key: ADKey): Option[ADValue] = {
+    def unauthenticatedLookupHelper(rNode: ProverNodes[D], found: Boolean): Option[ADValue] = {
       rNode match {
-        case leaf: ProverLeaf =>
-          if (found) Some(leaf.value) else None
+        case leaf: ProverLeaf[D] =>
+          if (found)
+            Some(leaf.value)
+          else
+            None
 
-        case r: InternalProverNode =>
-          if (found) {
-            // left all the way to the leaf
+        case r: InternalProverNode[D] =>
+          if (found) // left all the way to the leaf
             unauthenticatedLookupHelper(r.left, found = true)
-          } else {
+          else {
             ByteArray.compare(key, r.key) match {
               case 0 => // found in the tree -- go one step right, then left to the leaf
                 unauthenticatedLookupHelper(r.right, found = true)
@@ -301,7 +306,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
   private[batch] def checkTree(postProof: Boolean = false): Unit = {
     var fail: Boolean = false
 
-    def checkTreeHelper(rNode: ProverNodes): (ProverLeaf, ProverLeaf, Int) = {
+    def checkTreeHelper(rNode: ProverNodes[D]): (ProverLeaf[D], ProverLeaf[D], Int) = {
       def myRequire(t: Boolean, s: String) = {
         if (!t) {
           var x = rNode.key(0).toInt
@@ -313,10 +318,10 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
       myRequire(!postProof || (!rNode.visited && !rNode.isNew), "postproof flags")
       rNode match {
-        case r: InternalProverNode =>
-          if (r.left.isInstanceOf[InternalProverNode])
+        case r: InternalProverNode[D] =>
+          if (r.left.isInstanceOf[InternalProverNode[D]])
             myRequire(ByteArray.compare(r.left.key, r.key) < 0, "wrong left key")
-          if (r.right.isInstanceOf[InternalProverNode])
+          if (r.right.isInstanceOf[InternalProverNode[D]])
             myRequire(ByteArray.compare(r.right.key, r.key) > 0, "wrong right key")
 
           val (minLeft, maxLeft, leftHeight) = checkTreeHelper(r.left)
@@ -327,7 +332,7 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
           val height = math.max(leftHeight, rightHeight) + 1
           (minLeft, maxRight, height)
 
-        case l: ProverLeaf =>
+        case l: ProverLeaf[D] =>
           (l, l, 0)
       }
     }
@@ -343,12 +348,12 @@ class BatchAVLProver[HF <: ThreadUnsafeHash](val keyLength: Int,
 
   override def toString: String = {
 
-    def stringTreeHelper(rNode: ProverNodes, depth: Int): String = {
+    def stringTreeHelper(rNode: ProverNodes[D], depth: Int): String = {
       Seq.fill(depth + 2)(" ").mkString + (rNode match {
-        case leaf: ProverLeaf =>
+        case leaf: ProverLeaf[D] =>
           "At leaf label = " + arrayToString(leaf.label) + " key = " + arrayToString(leaf.key) +
             " nextLeafKey = " + arrayToString(leaf.nextLeafKey) + "\n"
-        case r: InternalProverNode =>
+        case r: InternalProverNode[D] =>
           "Internal node label = " + arrayToString(r.label) + " key = " + arrayToString(r.key) + " balance = " +
             r.balance + "\n" + stringTreeHelper(r.left, depth + 1) +
             stringTreeHelper(r.right, depth + 1)

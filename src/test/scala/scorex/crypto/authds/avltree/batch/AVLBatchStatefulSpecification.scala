@@ -4,7 +4,8 @@ import com.google.common.primitives.Longs
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.PropSpec
-import scorex.crypto.hash.Blake2b256Unsafe
+import scorex.crypto.authds._
+import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
 import scorex.utils.{Random => RandomBytes}
 
 import scala.util.{Failure, Random, Success, Try}
@@ -27,16 +28,17 @@ object AVLCommands extends Commands {
   val UPDATE_FRACTION = 2
   val REMOVE_FRACTION = 4
 
-  type Hash = Blake2b256Unsafe
+  type T = Digest32
+  type HF = Blake2b256Unsafe
 
   case class Operations(operations: List[Operation]) {
     def include(ops: List[Operation]): Operations = Operations(operations ++ ops)
   }
 
-  case class BatchResult(digest: Array[Byte], proof: Array[Byte], postDigest: Array[Byte])
+  case class BatchResult(digest: ADDigest, proof: ADProof, postDigest: Array[Byte])
 
   override type State = Operations
-  override type Sut = BatchAVLProver[Hash]
+  override type Sut = BatchAVLProver[T, HF]
 
   val initialState = Operations(operations = List.empty[Operation])
 
@@ -44,7 +46,7 @@ object AVLCommands extends Commands {
                                initSuts: Traversable[State],
                                runningSuts: Traversable[Sut]): Boolean = true
 
-  override def newSut(state: State): Sut = new BatchAVLProver[Hash](keyLength = KL, valueLengthOpt = Some(VL))
+  override def newSut(state: State): Sut = new BatchAVLProver[T, HF](keyLength = KL, valueLengthOpt = Some(VL))
 
   override def destroySut(sut: Sut): Unit = ()
 
@@ -59,14 +61,14 @@ object AVLCommands extends Commands {
   private def generateOperations(state: State): List[Operation] = {
     val appendsCommandsLength = Random.nextInt(MAXIMUM_GENERATED_OPERATIONS) + MINIMUM_OPERATIONS_LENGTH
 
-    val keys = (0 until appendsCommandsLength).map { _ => RandomBytes.randomBytes(KL) }.toList
+    val keys = (0 until appendsCommandsLength).map { _ => ADKey @@ RandomBytes.randomBytes(KL) }.toList
     val removedKeys = state.operations.filter(_.isInstanceOf[Remove]).map(_.key).distinct
     val prevKeys = state.operations.map(_.key).distinct.filterNot(k1 => removedKeys.exists{k2 => k1.sameElements(k2)})
     val uniqueKeys = keys.filterNot(prevKeys.contains).distinct
     val updateKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, UPDATE_FRACTION))
     val removeKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, REMOVE_FRACTION))
 
-    val appendCommands: List[Operation] = uniqueKeys.map { k => Insert(k, Longs.toByteArray(nextPositiveLong)) }
+    val appendCommands: List[Operation] = uniqueKeys.map { k => Insert(k, ADValue @@ Longs.toByteArray(nextPositiveLong)) }
     val updateCommands: List[Operation] = updateKeys.map { k => UpdateLongBy(k, nextPositiveLong) }
     val removeCommands: List[Operation] = removeKeys.map { k => Remove(k) }
 
@@ -95,7 +97,7 @@ object AVLCommands extends Commands {
     override def postCondition(state: Operations, result: Try[Result]): Prop = {
       val check = result match {
         case Success(res) =>
-          val verifier = new BatchAVLVerifier(res.digest, res.proof, KL, Some(VL))
+          val verifier = new BatchAVLVerifier[T, HF](res.digest, res.proof, KL, Some(VL))
           ops.foreach(verifier.performOneOperation)
           verifier.digest.exists(_.sameElements(res.postDigest))
         case Failure(_) =>

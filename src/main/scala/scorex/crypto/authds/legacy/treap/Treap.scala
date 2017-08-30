@@ -1,10 +1,9 @@
 package scorex.crypto.authds.legacy.treap
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
 import scorex.crypto.authds.legacy.treap.Constants._
-import scorex.crypto.hash.{Blake2b256Unsafe, ThreadUnsafeHash}
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
@@ -13,13 +12,13 @@ import scala.util.{Failure, Success, Try}
   * Authenticated data structure, representing both treap and binary tree, depending on level selection function
   */
 //todo: make explicit skiplist interface
-class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
+class Treap[HF <: ThreadUnsafeHash[_ <: Digest]](rootOpt: Option[Leaf] = None)
                                    (implicit hf: HF = new Blake2b256Unsafe, lf: LevelFunction = Level.treapLevel)
   extends TwoPartyDictionary {
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
-  def rootHash(): Label = topNode.label
+  def rootHash(): ADDigest = ADDigest @@ topNode.label
 
   override def run[O <: Operation](operation: O): Try[TreapModifyProof] = Try {
     val key = operation.key
@@ -28,8 +27,8 @@ class Treap[HF <: ThreadUnsafeHash](rootOpt: Option[Leaf] = None)
     require(ByteArray.compare(key, PositiveInfinity._1) < 0)
 
     //todo: unify types AVLValue/TreapValue and then generalize 4 LoCs below which are the same for Treap & AVLTree
-    val updateFn: Option[TreapValue] => Try[Option[TreapValue]] = operation match {
-      case _: Lookup => x: Option[TreapValue] => Success(x)
+    val updateFn: Option[ADValue] => Try[Option[ADValue]] = operation match {
+      case _: Lookup => x: Option[ADValue] => Success(x)
       case m: Modification => m.updateFn
     }
 
