@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
+import scorex.crypto.authds._
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 
 import scala.collection.mutable.ArrayBuffer
@@ -39,18 +39,17 @@ class LegacyProver(tree: AVLTree[_]) {
     case Failure(e) => BatchFailure(e, UnknownModification)
   }
 
-  def rootHash: Label = tree.rootHash()
+  def rootHash: ADDigest = tree.rootHash()
 }
 
 
-class LegacyVerifier(digest: Label) {
+class LegacyVerifier(digest: ADDigest) {
   def verifyBatchSimple(operations: Seq[Modification], batch: BatchSuccessSimple): Boolean = {
     require(operations.size == batch.proofs.size)
-    batch.proofs.zip(operations).foldLeft(Some(digest): Option[Label]) {
+    batch.proofs.zip(operations).foldLeft(Some(digest): Option[ADDigest]) {
       case (digestOpt, (proof, op)) =>
         digestOpt.flatMap(digest => proof.verify(digest, op))
     }.isDefined
   }
 
-  def verifyBatchComprehensive(modifications: Seq[Operation], batch: BatchSuccess): Boolean = ???
 }

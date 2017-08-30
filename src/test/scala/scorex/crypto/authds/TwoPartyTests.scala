@@ -2,18 +2,17 @@ package scorex.crypto.authds
 
 import com.google.common.primitives.Longs
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.authds.avltree.batch.{Modification, Operation, Update}
-import scorex.crypto.authds.legacy.treap.Constants.{TreapKey, TreapValue}
+import scorex.crypto.authds.avltree.batch.{Modification, Update}
+import scorex.crypto.hash.Digest
 
 import scala.util.Success
 
 
 trait TwoPartyTests extends TestingCommons {
 
-  def genUpd(key: Array[Byte]) = Update(key, key.take(8))
+  def genUpd(key: ADKey) = Update(key, ADValue @@ key.take(8))
 
-  def profileTree(tree: TwoPartyDictionary, elements: Seq[Array[Byte]], inDigest: Label): Seq[Float] = {
+  def profileTree(tree: TwoPartyDictionary, elements: Seq[ADKey], inDigest: ADDigest): Seq[Float] = {
     var digest = inDigest
     val (insertTime: Float, proofs) = time(elements.map(e => tree.run(genUpd(e)).get))
     val (verifyTime: Float, _) = time {
@@ -45,16 +44,16 @@ trait TwoPartyTests extends TestingCommons {
     Seq(insertTime, verifyTime, proofSize, m(0) / pl, m(1) / pl, m(2) / pl, m(3) / pl, m(4) / pl, m(5) / pl)
   }
 
-  case class Append(key: TreapKey, value: TreapValue) extends Modification {
+  case class Append(key: ADKey, value: ADValue) extends Modification {
     override def updateFn: UpdateFunction = {
-      oldOpt: Option[TreapValue] => Success(Some(oldOpt.map(_ ++ value).getOrElse(value)))
+      oldOpt: Option[ADValue] => Success(Some(ADValue @@ oldOpt.map(_ ++ value).getOrElse(value)))
     }: UpdateFunction
   }
 
-  case class TransactionUpdate(key: TreapKey, amount: Long) extends Modification {
+  case class TransactionUpdate(key: ADKey, amount: Long) extends Modification {
     override def updateFn: UpdateFunction = {
-      oldOpt: Option[TreapValue] =>
-        Success(Some(Longs.toByteArray(oldOpt.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
+      oldOpt: Option[ADValue] =>
+        Success(Some(ADValue @@ Longs.toByteArray(oldOpt.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
     }: UpdateFunction
   }
 

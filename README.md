@@ -18,7 +18,7 @@ resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositori
 
 You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
 ```scala
-libraryDependencies += "org.scorexfoundation" %% "scrypto" % "1.3.3"
+libraryDependencies += "org.scorexfoundation" %% "scrypto" % "2.0.0"
 ```
 
 ### Hash functions
@@ -36,24 +36,6 @@ Take a look at CryptographicHash interface and use supported hash algorithms lik
 Keccak512("some string or bytes")
 ```
 All provided hash functions are secure, and their implementations are thread safe.
-
-### Hash chain
-
-It's possible to apply hash functions sequentially to create more secure hash function. The most well-known [X11](http://en.wiki.dashninja.pl/wiki/X11) hash chain is available from this library.
-
-You can easily create your own hash chain function:
-```scala
-import scorex.utils.HashHelpers.applyHashes
-object MyCustomHash extends CryptographicHash {
-  override val DigestSize: Int = 64 //in bytes
-  override def hash(input: Message): Digest = applyHashes(input, Blake2b512, Keccak512)
-}
-```
-or just
-```scala
-val myHashChain = hashChain(Blake2b512, Keccak512)
-```
-Note, that hash chain will be as good as the [strongest](https://en.wikipedia.org/wiki/Cryptographic_hash_function#Concatenation_of_cryptographic_hash_functions) of the algorithms included in the chain.
 
 ### Commutative hash
 

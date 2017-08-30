@@ -1,6 +1,5 @@
 package scorex.crypto.authds
 
-import scorex.crypto.authds.avltree.Balance
 import scorex.crypto.authds.legacy.treap.Level
 import scorex.crypto.encode.Base58
 
@@ -70,8 +69,8 @@ case object GoingRight extends Direction
 
 case class ProofBalance(e: Balance) extends AVLProofElement {
   override val bytes: Array[Byte] = Array(e match {
-    case -1 => -1: Byte
-    case 0 => 0: Byte
-    case 1 => 1: Byte
+    case a if a == -1 => -1: Byte
+    case a if a == 0 => 0: Byte
+    case a if a == 1 => 1: Byte
   })
 }

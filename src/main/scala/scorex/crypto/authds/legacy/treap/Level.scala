@@ -1,7 +1,7 @@
 package scorex.crypto.authds.legacy.treap
 
 import com.google.common.primitives.Ints
-import scorex.crypto.authds.legacy.treap.Constants.TreapKey
+import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Sha256
 import scorex.utils.ByteArray
 
@@ -12,7 +12,7 @@ trait Level extends Ordered[Level] {
 }
 
 object Level {
-  def skiplistLevel(key: TreapKey): Level = {
+  def skiplistLevel(key: ADKey): Level = {
     def isBitSet(byte: Byte)(bit: Int): Boolean =
       ((byte >> bit) & 1) == 1
 
@@ -22,7 +22,7 @@ object Level {
     ByteLevel(i.toByte)
   }
 
-  def treapLevel(key: TreapKey): Level = IntLevel(Ints.fromByteArray(Sha256(key).take(4)))
+  def treapLevel(key: ADKey): Level = IntLevel(Ints.fromByteArray(Sha256(key).take(4)))
 }
 
 

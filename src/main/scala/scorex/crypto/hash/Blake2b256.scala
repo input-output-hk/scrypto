@@ -1,3 +1,5 @@
 package scorex.crypto.hash
 
-object Blake2b256 extends Blake2b with CryptographicHash32
+object Blake2b256 extends Blake2b[Digest32] with CryptographicHash32 {
+  override def hash(input: Message): Digest32 = Digest32 @@ internalHash(input)
+}

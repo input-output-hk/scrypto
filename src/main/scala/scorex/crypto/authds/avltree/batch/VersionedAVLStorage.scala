@@ -1,26 +1,23 @@
 package scorex.crypto.authds.avltree.batch
 
+import scorex.crypto.authds.ADDigest
+import scorex.crypto.hash.Digest
+
 import scala.util.Try
 
-trait VersionedAVLStorage {
+trait VersionedAVLStorage[D <: Digest] {
 
-  type Version = Array[Byte]
-
-  def update(batchProver: BatchAVLProver[_]): Try[Unit]
+  def update(batchProver: BatchAVLProver[D, _]): Try[Unit]
 
   /**
     * Return root node and tree height at version
     */
-  def rollback(version: Version): Try[(ProverNodes, Int)]
+  def rollback(version: ADDigest): Try[(ProverNodes[D], Int)]
 
-  def version: Version
+  def version: ADDigest
 
   def isEmpty: Boolean
 
   def nonEmpty: Boolean = !isEmpty
 
-}
-
-object VersionedAVLStorage {
-  type Version = Array[Byte]
 }

@@ -3,8 +3,9 @@
 // https://github.com/tkawachi/sbt-lock/
 dependencyOverrides in ThisBuild ++= Set(
   "com.google.guava" % "guava" % "19.0",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.57",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.58",
+  "org.rudogma" % "supertagged_2.12" % "1.3",
   "org.slf4j" % "slf4j-api" % "1.7.25",
   "org.whispersystems" % "curve25519-java" % "0.4.1"
 )
-// LIBRARY_DEPENDENCIES_HASH 187809aa6d6649ce17fe756821bae5d6d28a84dc
+// LIBRARY_DEPENDENCIES_HASH e6dffb26be7e663b97db35cc9cd2e13bb28f9f08

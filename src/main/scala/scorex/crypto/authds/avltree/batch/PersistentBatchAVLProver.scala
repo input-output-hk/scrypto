@@ -1,33 +1,33 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.avltree.{AVLKey, AVLValue}
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 
 import scala.util.Try
 
-abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
+abstract class PersistentBatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]] {
 
-  var avlProver: BatchAVLProver[HF]
-  val storage: VersionedAVLStorage
+  var avlProver: BatchAVLProver[D, HF]
+  val storage: VersionedAVLStorage[D]
 
-  def digest: Array[Byte] = avlProver.digest
+  def digest: ADDigest = avlProver.digest
 
   def height: Int = avlProver.rootNodeHeight
 
-  def prover(): BatchAVLProver[HF] = avlProver
+  def prover(): BatchAVLProver[D, HF] = avlProver
 
-  def unauthenticatedLookup(key: AVLKey): Option[AVLValue] = avlProver.unauthenticatedLookup(key)
+  def unauthenticatedLookup(key: ADKey): Option[ADValue] = avlProver.unauthenticatedLookup(key)
 
-  def performOneOperation(operation: Operation): Try[Option[AVLValue]] = avlProver.performOneOperation(operation)
+  def performOneOperation(operation: Operation): Try[Option[ADValue]] = avlProver.performOneOperation(operation)
 
   //side effect: avlProver modifies itself
-  def generateProof(): Array[Byte] = {
+  def generateProof(): ADProof = {
     storage.update(avlProver).get
     avlProver.generateProof()
   }
 
-  def rollback(version: VersionedAVLStorage.Version): Try[Unit] = Try {
-    val recoveredTop: (ProverNodes, Int) = storage.rollback(version).get
+  def rollback(version: ADDigest): Try[Unit] = Try {
+    val recoveredTop: (ProverNodes[D], Int) = storage.rollback(version).get
     avlProver = new BatchAVLProver(avlProver.keyLength, avlProver.valueLengthOpt, Some(recoveredTop))(avlProver.hf)
   }
 
@@ -35,20 +35,20 @@ abstract class PersistentBatchAVLProver[HF <: ThreadUnsafeHash]{
 }
 
 object PersistentBatchAVLProver {
-  def create[HF <: ThreadUnsafeHash](avlBatchProver: BatchAVLProver[HF],
-                                     versionedStorage: VersionedAVLStorage,
-                                     paranoidChecks: Boolean = false
-                                    ): Try[PersistentBatchAVLProver[HF]] = Try {
+  def create[D <: Digest, HF <: ThreadUnsafeHash[D]](avlBatchProver: BatchAVLProver[D, HF],
+                                                     versionedStorage: VersionedAVLStorage[D],
+                                                     paranoidChecks: Boolean = false
+                                                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
 
-    new PersistentBatchAVLProver[HF] {
-      override var avlProver: BatchAVLProver[HF] = avlBatchProver
-      override val storage: VersionedAVLStorage = versionedStorage
+    new PersistentBatchAVLProver[D, HF] {
+      override var avlProver: BatchAVLProver[D, HF] = avlBatchProver
+      override val storage: VersionedAVLStorage[D] = versionedStorage
 
       (if (storage.nonEmpty) {
         rollback(storage.version).get
       } else {
         generateProof() //to save prover's tree into database and clear its state
-      }).ensuring{_ =>
+      }).ensuring { _ =>
         storage.version.sameElements(avlProver.digest) &&
           (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
       }

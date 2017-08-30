@@ -3,9 +3,9 @@ package scorex.crypto.authds.avltree
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scorex.crypto.authds.TwoPartyTests
 import scorex.crypto.authds.avltree.batch.{Insert, InsertOrUpdate, Lookup, Update}
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
+import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.hash.Sha256
 
 class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
@@ -13,18 +13,18 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   val KL = 26
   val VL = 8
 
-  def kvGen: Gen[(Array[Byte], Array[Byte])] = for {
+  def kvGen: Gen[(ADKey, ADValue)] = for {
     key <- Gen.listOfN(KL, Arbitrary.arbitrary[Byte]).map(_.toArray) suchThat
       (k => !(k sameElements Array.fill(KL)(-1: Byte)) && !(k sameElements Array.fill(KL)(0: Byte)) && k.length == KL)
     value <- Gen.listOfN(VL, Arbitrary.arbitrary[Byte]).map(_.toArray)
-  } yield (key, value)
+  } yield (ADKey @@ key, ADValue @@ value)
 
 
   property("lookup") {
     val tree = new AVLTree(KL)
 
     forAll(kvGen) { case (ak, aValue) =>
-      val aKey = Sha256(ak).take(KL)
+      val aKey = ADKey @@ Sha256(ak).take(KL)
 
       val l = Lookup(aKey)
 
@@ -34,7 +34,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
 
       val lookupProof = tree.run(l).get
 
-      val lw = Lookup(Sha256(aKey).take(KL))
+      val lw = Lookup(ADKey @@ Sha256(aKey).take(KL))
       val lwProof = tree.run(lw).get
       val lwProofDigest = lwProof.verifyLookup(rootBefore, existence = false).get
       lwProof.verifyLookup(rootBefore, existence = true).isEmpty shouldBe true
@@ -102,12 +102,12 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
       (key: Array[Byte], value: Array[Byte], value2: Array[Byte]) =>
         whenever(!(value sameElements value2)) {
           val digest1 = wt.rootHash()
-          val rewrite1 = InsertOrUpdate(key, value.take(VL))
+          val rewrite1 = InsertOrUpdate(ADKey @@ key, ADValue @@ value.take(VL))
           val proof = wt.run(rewrite1).get
           proof.verify(digest1, rewrite1).get shouldEqual wt.rootHash()
 
           val digest2 = wt.rootHash()
-          val rewrite2 = InsertOrUpdate(key, value.take(VL))
+          val rewrite2 = InsertOrUpdate(ADKey @@ key, ADValue @@ value.take(VL))
           val updateProof = wt.run(rewrite2).get
           updateProof.verify(digest2, rewrite2).get shouldEqual wt.rootHash()
         }
@@ -117,13 +117,13 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
   property("AVLModifyProof serialization") {
     val wt = new AVLTree(KL)
 
-    genElements(100, 1, 26).foreach(e => wt.run(genUpd(e)))
+    genElements(100, 1, 26).foreach(e => wt.run(genUpd(ADKey @@ e)))
 
     var digest = wt.rootHash()
     forAll(kvGen) { case (aKey, aValue) =>
       whenever(aKey.length == KL && aValue.length == VL) {
         digest shouldEqual wt.rootHash()
-        val rewrite = InsertOrUpdate(aKey, aValue.take(VL))
+        val rewrite = InsertOrUpdate(aKey, ADValue @@ aValue.take(VL))
         val proof = wt.run(rewrite).get
         digest = proof.verify(digest, rewrite).get
         val parsed = AVLModifyProof.parseBytes(proof.bytes)(KL, 32).get
@@ -135,7 +135,7 @@ class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks w
         parsed.bytes shouldEqual proof.bytes
 
         val value2 = Sha256(aValue)
-        val rewrite2 = InsertOrUpdate(aKey, value2.take(VL))
+        val rewrite2 = InsertOrUpdate(aKey, ADValue @@ value2.take(VL))
         val digest2 = wt.rootHash()
         val uProof = wt.run(rewrite2).get
         digest = uProof.verify(digest2, rewrite2).get

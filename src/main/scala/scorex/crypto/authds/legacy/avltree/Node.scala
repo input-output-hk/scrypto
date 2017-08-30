@@ -1,19 +1,17 @@
 package scorex.crypto.authds.legacy.avltree
 
-import scorex.crypto.authds.TwoPartyDictionary.Label
-import scorex.crypto.authds.avltree._
+import scorex.crypto.authds.avltree.batch.ToStringHelper
+import scorex.crypto.authds.{ADKey, ADValue, Balance}
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.ThreadUnsafeHash
+import scorex.crypto.hash._
 
-sealed trait Node {
+sealed trait Node extends ToStringHelper {
 
-  def computeLabel: Label
+  def computeLabel: Digest
 
-  protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
+  protected var labelOpt: Option[Digest] = None
 
-  protected var labelOpt: Option[Label] = None
-
-  def label: Label = labelOpt match {
+  def label: Digest = labelOpt match {
     case None =>
       val l = computeLabel
       labelOpt = Some(l)
@@ -25,7 +23,7 @@ sealed trait Node {
 }
 
 trait InternalNode extends Node {
-  val hf: ThreadUnsafeHash
+  val hf: ThreadUnsafeHash[_ <: Digest]
 
   protected var _balance: Balance
 
@@ -36,16 +34,16 @@ trait InternalNode extends Node {
     labelOpt = None
   }
 
-  def leftLabel: Label
+  def leftLabel: Digest
 
-  def rightLabel: Label
+  def rightLabel: Digest
 
-  def computeLabel: Label = hf.prefixedHash(1: Byte, Array(balance), leftLabel, rightLabel)
+  def computeLabel: Digest = hf.prefixedHash(1: Byte, Array(balance), leftLabel, rightLabel)
 
 }
 
 sealed trait ProverNodes extends Node {
-  val key: AVLKey
+  val key: ADKey
   protected[avltree] var height: Int
   var isNew: Boolean = true
   var visited: Boolean = false
@@ -53,14 +51,14 @@ sealed trait ProverNodes extends Node {
 
 sealed trait VerifierNodes extends Node
 
-case class LabelOnlyNode(l: Label) extends Node {
-  override val computeLabel: Label = l
-  override val label: Label = l
+case class LabelOnlyNode(l: Digest) extends Node {
+  override val computeLabel: Digest = l
+  override val label: Digest = l
 }
 
-case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _right: ProverNodes,
-                      protected var _balance: Balance = 0.toByte)(implicit val hf: ThreadUnsafeHash)
-  extends ProverNodes with InternalNode {
+case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes,
+                      protected var _balance: Balance = Balance @@ 0.toByte)
+                     (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
 
@@ -76,9 +74,9 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
     labelOpt = None
   }
 
-  def rightLabel: Label = right.label
+  def rightLabel: Digest = right.label
 
-  def leftLabel: Label = left.label
+  def leftLabel: Digest = left.label
 
   var height = 1
 
@@ -96,7 +94,7 @@ case class ProverNode(key: AVLKey, private var _left: ProverNodes, private var _
 }
 
 case class VerifierNode(private var _left: Node, private var _right: Node, protected var _balance: Balance)
-                       (implicit val hf: ThreadUnsafeHash) extends VerifierNodes with InternalNode {
+                       (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends VerifierNodes with InternalNode {
 
   def left: Node = _left
 
@@ -113,9 +111,9 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
   }
 
 
-  def rightLabel: Label = right.label
+  def rightLabel: Digest = right.label
 
-  def leftLabel: Label = left.label
+  def leftLabel: Digest = left.label
 
 
   override def toString: String = {
@@ -124,27 +122,27 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
 
 }
 
-case class Leaf(key: AVLKey, private var _value: AVLValue, private var _nextLeafKey: AVLKey)
-               (implicit val hf: ThreadUnsafeHash) extends ProverNodes with VerifierNodes {
+case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKey: ADKey)
+               (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with VerifierNodes {
 
 
   protected[avltree] var height = 0 //needed for debug only
 
-  def value: AVLValue = _value
+  def value: ADValue = _value
 
-  def value_=(newValue: AVLValue) = {
+  def value_=(newValue: ADValue) = {
     _value = newValue
     labelOpt = None
   }
 
-  def nextLeafKey: AVLKey = _nextLeafKey
+  def nextLeafKey: ADKey = _nextLeafKey
 
-  def nextLeafKey_=(newNextLeafKey: AVLValue) = {
+  def nextLeafKey_=(newNextLeafKey: ADKey) = {
     _nextLeafKey = newNextLeafKey
     labelOpt = None
   }
 
-  def computeLabel: Label = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
+  def computeLabel: Digest = hf.prefixedHash(0: Byte, key, value, nextLeafKey)
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"

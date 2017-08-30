@@ -1,8 +1,7 @@
 package scorex.crypto.authds
 
-import scorex.crypto.authds.TwoPartyDictionary._
-import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.legacy.treap.Level
+import scorex.crypto.hash._
 
 trait ProofIterator {
   private var i = -1
@@ -11,29 +10,29 @@ trait ProofIterator {
 
   val proofSeq: Seq[TwoPartyProofElement]
 
-  protected def dequeueValue(): Array[Byte] = {
+  protected def dequeueValue(): ADValue = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofValue].e
+    ADValue @@ proofSeq(i).asInstanceOf[ProofValue].e
   }
 
-  protected def dequeueKey(): Array[Byte] = {
+  protected def dequeueKey(): ADKey = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofKey].e
+    ADKey @@ proofSeq(i).asInstanceOf[ProofKey].e
   }
 
-  protected def dequeueNextLeafKey(): Array[Byte] = {
+  protected def dequeueNextLeafKey(): ADKey = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofNextLeafKey].e
+    ADKey @@ proofSeq(i).asInstanceOf[ProofNextLeafKey].e
   }
 
-  protected def dequeueRightLabel(): Label = {
+  protected def dequeueRightLabel(): Digest = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofRightLabel].e
+    Digest32 @@ proofSeq(i).asInstanceOf[ProofRightLabel].e
   }
 
-  protected def dequeueLeftLabel(): Label = {
+  protected def dequeueLeftLabel(): Digest = {
     i = i + 1
-    proofSeq(i).asInstanceOf[ProofLeftLabel].e
+    Digest32 @@ proofSeq(i).asInstanceOf[ProofLeftLabel].e
   }
 
   protected def dequeueDirection(): Direction = {
@@ -49,9 +48,9 @@ trait ProofIterator {
   protected def dequeueBalance(): Balance = {
     i = i + 1
     proofSeq(i).bytes(0) match {
-      case -1 => -1: Byte
-      case 0 => 0: Byte
-      case 1 => 1: Byte
+      case -1 => Balance @@ -1.toByte
+      case 0 => Balance @@ 0.toByte
+      case 1 => Balance @@ 1.toByte
     }
   }
 }

@@ -1,7 +1,8 @@
 package scorex.crypto.authds.merkle
 
+import scorex.crypto.authds.{LeafData, Side}
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.CryptographicHash
+import scorex.crypto.hash.{CryptographicHash, Digest}
 
 /**
   * Proof is given leaf data, leaf hash sibling and also siblings for parent nodes. Using this data, it is possible to
@@ -21,15 +22,18 @@ import scorex.crypto.hash.CryptographicHash
   * @param levels - levels in proof, bottom up, each level is about stored value and position of computed element
   *               (whether it is left or right to stored value)
   */
-case class MerkleProof(leafData: Array[Byte], levels: Seq[(Array[Byte], MerkleProof.Side)])
-                      (implicit val hf: CryptographicHash) {
+case class MerkleProof(leafData: LeafData, levels: Seq[(Digest, Side)])
+                      (implicit val hf: CryptographicHash[_ <: Digest]) {
 
-  def valid(expectedRootHash: Array[Byte]): Boolean = {
+  def valid(expectedRootHash: Digest): Boolean = {
     val leafHash = hf.prefixedHash(MerkleTree.LeafPrefix, leafData)
 
     levels.foldLeft(leafHash) { case (prevHash, (hash, side)) =>
-      if (side == MerkleProof.LeftSide) hf.prefixedHash(MerkleTree.InternalNodePrefix, prevHash ++ hash)
-      else hf.prefixedHash(MerkleTree.InternalNodePrefix, hash ++ prevHash)
+      if (side == MerkleProof.LeftSide) {
+        hf.prefixedHash(MerkleTree.InternalNodePrefix, prevHash ++ hash)
+      } else {
+        hf.prefixedHash(MerkleTree.InternalNodePrefix, hash ++ prevHash)
+      }
     }.sameElements(expectedRootHash)
   }
 
@@ -39,9 +43,8 @@ case class MerkleProof(leafData: Array[Byte], levels: Seq[(Array[Byte], MerklePr
 }
 
 object MerkleProof {
-  type Side = Byte
 
-  val LeftSide: Side = 0: Byte
-  val RightSide: Side = 1: Byte
+  val LeftSide: Side = Side @@ 0.toByte
+  val RightSide: Side = Side @@ 1.toByte
 }
 
