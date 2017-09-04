@@ -18,8 +18,13 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test"
+  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
+  "com.storm-enroute" %% "scalameter" % "0.8.2" % "test"
 )
+
+testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+
+parallelExecution in Test := false
 
 licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
 
