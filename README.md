@@ -175,6 +175,10 @@ Here are code examples for generating proofs and checking them. In this example 
 
 Run `sbt test` from a folder containing the framework to launch tests.
 
+# Benchmarks
+
+Run `sbt bench:test` from a folder containing the framework to launch embedded benchmarks.
+
 # License
 
 The code is under Public Domain CC0 license means you can do anything with it. Full license text is in [COPYING file](https://github.com/ScorexProject/scrypto/blob/master/COPYING)

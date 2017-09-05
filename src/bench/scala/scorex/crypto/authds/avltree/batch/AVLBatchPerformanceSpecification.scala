@@ -6,7 +6,7 @@ import scorex.crypto.authds.avltree.batch.common.{OperationsOps, PreparedAVLBatc
 
 object AVLBatchPerformanceSpecification extends Bench.ForkedTime with OperationsOps {
 
-  protected val start = 5000000
+  protected val start = 100000
   protected val inserts = 2000
   protected val deletes = 1000
   protected val steps = 50
@@ -18,10 +18,10 @@ object AVLBatchPerformanceSpecification extends Bench.ForkedTime with Operations
 
   implicit val config: Config = PreparedAVLBatchProver.Config(KL, VL)
 
-  val heatedProver = PreparedAVLBatchProver.getProver(start)
-
   val opsCount =
     Gen.range(s"Applying $inserts inserts and $deletes deletes to tree with $start operations")(start, end, step)
+
+  val heatedProver = PreparedAVLBatchProver.getProver(start)
 
   performance of "AVLBatchProver" in {
     measure method "perform batch of operations" in {
