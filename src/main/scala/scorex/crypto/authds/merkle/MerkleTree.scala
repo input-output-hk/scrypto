@@ -12,15 +12,15 @@ case class MerkleTree[D <: Digest](topNode: InternalNode[D],
   lazy val rootHash: D = topNode.hash
   lazy val length: Int = elementsHashIndexes.size
 
-  def proofByElement(element: Leaf[D]): Option[MerkleProof] = proofByElementHash(element.hash)
+  def proofByElement(element: Leaf[D]): Option[MerkleProof[D]] = proofByElementHash(element.hash)
 
-  def proofByElementHash(hash: Digest): Option[MerkleProof] = {
+  def proofByElementHash(hash: D): Option[MerkleProof[D]] = {
     elementsHashIndexes.get(new mutable.WrappedArray.ofByte(hash)).flatMap(i => proofByIndex(i))
   }
 
-  def proofByIndex(index: Int): Option[MerkleProof] = if (index >= 0 && index < length) {
-    def loop(node: Node[D], i: Int, curLength: Int, acc: Seq[(Digest, Side)])
-    : Option[(Leaf[D], Seq[(Digest, Side)])] = {
+  def proofByIndex(index: Int): Option[MerkleProof[D]] = if (index >= 0 && index < length) {
+    def loop(node: Node[D], i: Int, curLength: Int, acc: Seq[(D, Side)])
+    : Option[(Leaf[D], Seq[(D, Side)])] = {
       node match {
         case n: InternalNode[D] if i < curLength / 2 =>
           loop(n.left, i, curLength / 2, acc :+ (n.right.hash, MerkleProof.LeftSide))
