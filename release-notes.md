@@ -2,7 +2,8 @@
 ---------
 
 * Style fixes
-* Missed changes from 1.3.3
+* *version* method signature change in *VersionedAVLStorage*
+* *rollbackVersions* method in *VersionedAVLStorage*
 * *AdProof* was renamed to *SerializedAdProof*
 
 **2.0.0**
@@ -11,6 +12,7 @@
 * Shapeless dependency removed
 * Using tagged types instead of *Array[Byte]*, *suppertagged* microframework is used for that 
 * BouncyCastle 1.58
+* Rollback changes from 1.3.3
 
 **1.3.3**
 ---------
