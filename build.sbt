@@ -18,8 +18,15 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test"
+  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
+  "com.storm-enroute" %% "scalameter" % "0.8.2" % "bench"
 )
+
+lazy val Benchmark = config("bench") extend Test
+
+testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
+
+parallelExecution in Test := false
 
 licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
 
@@ -49,3 +56,5 @@ pomExtra :=
         <url>http://chepurnoy.org/</url>
       </developer>
     </developers>
+
+lazy val scrypto = (project in file(".")).configs(Benchmark).settings(inConfig(Benchmark)(Defaults.testSettings): _*)
