@@ -14,8 +14,6 @@ class VersionedAVLStorageMock[D <: Digest] extends VersionedAVLStorage[D] {
 
   private var v: ADDigest = InitialVersion
 
-  override def isEmpty: Boolean = v sameElements InitialVersion
-
   // Map from version to topNode
   private val savedNodes: mutable.Map[mutable.WrappedArray[Byte], (ProverNodes[D], Int)] = mutable.Map()
 
@@ -30,5 +28,7 @@ class VersionedAVLStorageMock[D <: Digest] extends VersionedAVLStorage[D] {
     Try(savedNodes(version))
   }
 
-  override def version: ADDigest = v
+  override def version: Option[ADDigest] = if(v.sameElements(InitialVersion)) None else Some(v)
+
+  override def rollbackVersions: Iterable[ADDigest] = Seq(v)
 }

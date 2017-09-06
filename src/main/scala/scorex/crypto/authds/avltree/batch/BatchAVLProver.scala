@@ -78,10 +78,7 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
     // encode Booleans as bits 
     if ((directionsBitLength & 7) == 0) {
       // new byte needed
-      directions += (ret match {
-        case true => 1: Byte
-        case false => 0: Byte
-      })
+      directions += (if (ret) 1: Byte else 0: Byte)
     } else {
       if (ret) {
         val i = directionsBitLength >> 3
@@ -271,15 +268,13 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
     def unauthenticatedLookupHelper(rNode: ProverNodes[D], found: Boolean): Option[ADValue] = {
       rNode match {
         case leaf: ProverLeaf[D] =>
-          if (found)
-            Some(leaf.value)
-          else
-            None
+          if (found) Some(leaf.value) else None
 
         case r: InternalProverNode[D] =>
-          if (found) // left all the way to the leaf
+          if (found) {
+            // left all the way to the leaf
             unauthenticatedLookupHelper(r.left, found = true)
-          else {
+          } else {
             ByteArray.compare(key, r.key) match {
               case 0 => // found in the tree -- go one step right, then left to the leaf
                 unauthenticatedLookupHelper(r.right, found = true)

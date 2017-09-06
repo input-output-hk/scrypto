@@ -10,10 +10,16 @@
 * Using tagged types instead of *Array[Byte]*, *suppertagged* microframework is used for that 
 * BouncyCastle 1.58
 
+**1.3.3**
+---------
+
+* *version* method signature change in *VersionedAVLStorage*
+* *rollbackVersions* method in *VersionedAVLStorage*
+
 **1.3.2**
 ---------
 
-* prover() in PersistentBatchAVLProver (don't store the ref, it is mutable!)
+* *prover()* in *PersistentBatchAVLProver* (don't store the ref, it is mutable!)
 * No constructor for PersistentBatchAVLProver anymore, use PersistentBatchAVLProver.create
 
 **1.3.1**
@@ -24,7 +30,7 @@
 **1.3.0**
 ---------
 
-* performOneOperation() return value type fix in PersistentBatchAVLProver 
+* *performOneOperation()* return value type fix in PersistentBatchAVLProver 
 * Instead of imported Java implementations for hash functions, BouncyCastle to be used for hash functions
 * Because of previous item, most of hash functions were removed. Scrypto has SHA-256, Blake2b-(256/512) 
   and Keccak-(256/512) wrappers only in this version.
@@ -33,7 +39,7 @@
 ---------
 
 * Index checking in Merkle proof generation
-* PersistentBatchAVLProver interface improvements
+* *PersistentBatchAVLProver* interface improvements
 
 **1.2.2**
 ---------
