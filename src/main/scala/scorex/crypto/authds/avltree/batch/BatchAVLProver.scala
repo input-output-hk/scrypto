@@ -255,7 +255,7 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
     directionsBitLength = 0
     oldTopNode = topNode
 
-    ADProof @@ packagedTree.toArray
+    SerializedAdProof @@ packagedTree.toArray
   }
 
   /**
