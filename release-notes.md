@@ -2,6 +2,8 @@
 ---------
 
 * Style fixes
+* Missed changes from 1.3.3
+* *AdProof* was renamed to *SerializedAdProof*
 
 **2.0.0**
 ---------
