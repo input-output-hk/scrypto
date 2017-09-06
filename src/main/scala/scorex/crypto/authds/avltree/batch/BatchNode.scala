@@ -11,7 +11,7 @@ sealed trait Node[D <: Digest] extends ToStringHelper {
 
   protected var labelOpt: Option[D] = None
 
-  def label: Digest = labelOpt match {
+  def label: D = labelOpt match {
     case None =>
       val l = computeLabel
       labelOpt = Some(l)

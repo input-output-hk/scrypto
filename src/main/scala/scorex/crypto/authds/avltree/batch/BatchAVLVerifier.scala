@@ -23,11 +23,11 @@ import scala.util.{Failure, Try}
   */
 
 class BatchAVLVerifier[D <: Digest, HF <: ThreadUnsafeHash[D]](startingDigest: ADDigest,
-                                               proof: ADProof,
-                                               override val keyLength: Int,
-                                               override val valueLengthOpt: Option[Int],
-                                               maxNumOperations: Option[Int] = None,
-                                               maxDeletes: Option[Int] = None)
+                                                               proof: SerializedAdProof,
+                                                               override val keyLength: Int,
+                                                               override val valueLengthOpt: Option[Int],
+                                                               maxNumOperations: Option[Int] = None,
+                                                               maxDeletes: Option[Int] = None)
                                               (implicit hf: HF = new Blake2b256Unsafe)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 

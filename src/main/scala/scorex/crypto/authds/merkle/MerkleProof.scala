@@ -22,8 +22,8 @@ import scorex.crypto.hash.{CryptographicHash, Digest}
   * @param levels - levels in proof, bottom up, each level is about stored value and position of computed element
   *               (whether it is left or right to stored value)
   */
-case class MerkleProof(leafData: LeafData, levels: Seq[(Digest, Side)])
-                      (implicit val hf: CryptographicHash[_ <: Digest]) {
+case class MerkleProof[D <: Digest](leafData: LeafData, levels: Seq[(Digest, Side)])
+                      (implicit val hf: CryptographicHash[D]) {
 
   def valid(expectedRootHash: Digest): Boolean = {
     val leafHash = hf.prefixedHash(MerkleTree.LeafPrefix, leafData)
