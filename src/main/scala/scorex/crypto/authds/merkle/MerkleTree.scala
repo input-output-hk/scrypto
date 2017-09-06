@@ -9,7 +9,7 @@ import scala.collection.mutable
 case class MerkleTree[D <: Digest](topNode: InternalNode[D],
                       elementsHashIndexes: Map[mutable.WrappedArray.ofByte, Int]) {
 
-  lazy val rootHash: Digest = topNode.hash
+  lazy val rootHash: D = topNode.hash
   lazy val length: Int = elementsHashIndexes.size
 
   def proofByElement(element: Leaf[D]): Option[MerkleProof] = proofByElementHash(element.hash)
