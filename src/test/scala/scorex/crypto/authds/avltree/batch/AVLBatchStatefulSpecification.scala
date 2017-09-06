@@ -35,7 +35,7 @@ object AVLCommands extends Commands {
     def include(ops: List[Operation]): Operations = Operations(operations ++ ops)
   }
 
-  case class BatchResult(digest: ADDigest, proof: ADProof, postDigest: Array[Byte])
+  case class BatchResult(digest: ADDigest, proof: SerializedAdProof, postDigest: Array[Byte])
 
   override type State = Operations
   override type Sut = BatchAVLProver[T, HF]

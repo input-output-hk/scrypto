@@ -188,7 +188,7 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
     *
     * @return - the proof
     */
-  def generateProof(): ADProof = {
+  def generateProof(): SerializedAdProof = {
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 

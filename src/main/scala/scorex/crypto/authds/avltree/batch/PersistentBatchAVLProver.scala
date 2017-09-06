@@ -21,7 +21,7 @@ abstract class PersistentBatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]] 
   def performOneOperation(operation: Operation): Try[Option[ADValue]] = avlProver.performOneOperation(operation)
 
   //side effect: avlProver modifies itself
-  def generateProof(): ADProof = {
+  def generateProof(): SerializedAdProof = {
     storage.update(avlProver).get
     avlProver.generateProof()
   }

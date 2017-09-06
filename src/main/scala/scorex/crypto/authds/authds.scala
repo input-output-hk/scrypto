@@ -9,7 +9,7 @@ package object authds {
   type ADKey = ADKey.Type
   type ADValue = ADValue.Type
   type ADDigest = ADDigest.Type
-  type ADProof = SerializedAdProof.Type
+  type SerializedAdProof = SerializedAdProof.Type
   type Balance = Balance.Type
 
   object LeafData extends TaggedType[Array[Byte]]
