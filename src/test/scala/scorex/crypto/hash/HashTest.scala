@@ -65,7 +65,5 @@ trait HashTest extends PropSpec
         }
       }
     }
-
   }
-
 }

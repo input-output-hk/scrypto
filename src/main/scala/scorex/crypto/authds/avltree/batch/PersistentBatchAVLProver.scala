@@ -21,10 +21,12 @@ abstract class PersistentBatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]] 
   def performOneOperation(operation: Operation): Try[Option[ADValue]] = avlProver.performOneOperation(operation)
 
   //side effect: avlProver modifies itself
-  def generateProof(): SerializedAdProof = {
-    storage.update(avlProver).get
+  def generateProofAndUpdateStorage[K <: Array[Byte], V <: Array[Byte]](additionalData: Seq[(K, V)]): SerializedAdProof = {
+    storage.update(avlProver, additionalData).get
     avlProver.generateProof()
   }
+
+  def generateProofAndUpdateStorage(): SerializedAdProof = generateProofAndUpdateStorage(Seq())
 
   def rollback(version: ADDigest): Try[Unit] = Try {
     val recoveredTop: (ProverNodes[D], Int) = storage.rollback(version).get
@@ -46,7 +48,7 @@ object PersistentBatchAVLProver {
 
       (storage.version match {
         case Some(ver) => rollback(ver).get
-        case None => generateProof() //to initialize storage and clear prover's state
+        case None => generateProofAndUpdateStorage() //to initialize storage and clear prover's state
       }).ensuring { _ =>
         storage.version.get.sameElements(avlProver.digest) &&
           (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)

@@ -16,7 +16,10 @@ trait VersionedAVLStorage[D <: Digest] {
     * @param batchProver - prover to synchronize storage with
     * @return
     */
-  def update(batchProver: BatchAVLProver[D, _]): Try[Unit]
+  def update[K <: Array[Byte], V <: Array[Byte]](batchProver: BatchAVLProver[D, _],
+                                                 additionalData: Seq[(K, V)]): Try[Unit]
+
+  def update(batchProver: BatchAVLProver[D, _]): Try[Unit] = update(batchProver, Seq())
 
   /**
     * Return root node and tree height at version
@@ -45,5 +48,4 @@ trait VersionedAVLStorage[D <: Digest] {
     * @return versions store keeps
     */
   def rollbackVersions: Iterable[ADDigest]
-
 }
