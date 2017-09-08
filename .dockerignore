@@ -1,0 +1,8 @@
+**/target
+.git
+.gitignore
+.travis.yml
+COPYING
+Dockerfile
+README.md
+release-notes.md
