@@ -37,10 +37,15 @@ abstract class PersistentBatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]] 
 }
 
 object PersistentBatchAVLProver {
-  def create[D <: Digest, HF <: ThreadUnsafeHash[D]](avlBatchProver: BatchAVLProver[D, HF],
-                                                     versionedStorage: VersionedAVLStorage[D],
-                                                     paranoidChecks: Boolean = false
-                                                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
+  def create[D <: Digest,
+  HF <: ThreadUnsafeHash[D],
+  K <: Array[Byte],
+  V <: Array[Byte]](
+                     avlBatchProver: BatchAVLProver[D, HF],
+                     versionedStorage: VersionedAVLStorage[D],
+                     additionalData: Seq[(K, V)],
+                     paranoidChecks: Boolean
+                   ): Try[PersistentBatchAVLProver[D, HF]] = Try {
 
     new PersistentBatchAVLProver[D, HF] {
       override var avlProver: BatchAVLProver[D, HF] = avlBatchProver
@@ -48,11 +53,18 @@ object PersistentBatchAVLProver {
 
       (storage.version match {
         case Some(ver) => rollback(ver).get
-        case None => generateProofAndUpdateStorage() //to initialize storage and clear prover's state
+        case None => generateProofAndUpdateStorage(additionalData) //to initialize storage and clear prover's state
       }).ensuring { _ =>
         storage.version.get.sameElements(avlProver.digest) &&
           (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
       }
     }
   }
+
+  def create[D <: Digest, HF <: ThreadUnsafeHash[D]](
+                     avlBatchProver: BatchAVLProver[D, HF],
+                     versionedStorage: VersionedAVLStorage[D],
+                     paranoidChecks: Boolean = false
+                   ): Try[PersistentBatchAVLProver[D, HF]] =
+    create(avlBatchProver, versionedStorage, Seq(), paranoidChecks)
 }

@@ -1,3 +1,11 @@
+**2.0.2**
+---------
+
+* generateProof() -> generateProofAndUpdateStorage() in PersistentBatchAVLProver, new optional parameter 
+for this method (to pass additional key-value pairs into storage)
+* additional optional parameter for PersistentBatchAVLProver (with the same meaning as above)
+
+
 **2.0.1**
 ---------
 
