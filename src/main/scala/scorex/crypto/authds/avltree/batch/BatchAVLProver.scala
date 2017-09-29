@@ -1,8 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.{Ints, Longs}
+import com.google.common.primitives.Ints
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest, Digest32, ThreadUnsafeHash}
+import scorex.crypto.hash.{Blake2b256Unsafe, Digest, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
