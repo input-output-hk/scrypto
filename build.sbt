@@ -1,12 +1,27 @@
-organization := "org.scorexfoundation"
+import sbt.Keys.{homepage, scalaVersion}
 
 name := "scrypto"
 
-version := "2.0.2"
-
-scalaVersion := "2.12.3"
-
-crossScalaVersions := Seq("2.11.11", "2.12.3")
+lazy val commonSettings = Seq(
+  organization := "org.scorexfoundation",
+  version := "2.0.2-SNAPSHOT",
+  scalaVersion := "2.12.3",
+  crossScalaVersions := Seq("2.11.11", "2.12.3"),
+  licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
+  homepage := Some(url("https://github.com/input-output-hk/scrypto")),
+  pomExtra :=
+    <scm>
+      <url>git@github.com:ScorexProject/scrypto.git</url>
+      <connection>scm:git:git@github.com:ScorexProject/scrypto.git</connection>
+    </scm>
+      <developers>
+        <developer>
+          <id>kushti</id>
+          <name>Alexander Chepurnoy</name>
+          <url>http://chepurnoy.org/</url>
+        </developer>
+      </developers>
+)
 
 libraryDependencies ++= Seq(
   "org.rudogma" %% "supertagged" % "1.+",
@@ -18,19 +33,8 @@ libraryDependencies ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test",
-  "com.storm-enroute" %% "scalameter" % "0.8.2" % "bench"
+  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test"
 )
-
-lazy val Benchmark = config("bench") extend Test
-
-testFrameworks += new TestFramework("org.scalameter.ScalaMeterFramework")
-
-parallelExecution in Test := false
-
-licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode"))
-
-homepage := Some(url("https://github.com/input-output-hk/scrypto"))
 
 publishMavenStyle := true
 
@@ -38,23 +42,15 @@ publishArtifact in Test := false
 
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
-  if (isSnapshot.value) Some("snapshots" at nexus + "content/repositories/snapshots")
-  else Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+  if (isSnapshot.value) { Some("snapshots" at nexus + "content/repositories/snapshots") }
+  else { Some("releases"  at nexus + "service/local/staging/deploy/maven2") }
 }
 
 pomIncludeRepository := { _ => false }
 
-pomExtra :=
-  <scm>
-    <url>git@github.com:ScorexProject/scrypto.git</url>
-    <connection>scm:git:git@github.com:ScorexProject/scrypto.git</connection>
-  </scm>
-    <developers>
-      <developer>
-        <id>kushti</id>
-        <name>Alexander Chepurnoy</name>
-        <url>http://chepurnoy.org/</url>
-      </developer>
-    </developers>
+lazy val scrypto = (project in file(".")).settings(commonSettings: _*)
 
-lazy val scrypto = (project in file(".")).configs(Benchmark).settings(inConfig(Benchmark)(Defaults.testSettings): _*)
+lazy val benchmarks = (project in file("benchmarks"))
+  .settings(commonSettings, name := "scrypto-benchmarks")
+  .dependsOn(scrypto)
+  .enablePlugins(JmhPlugin)
