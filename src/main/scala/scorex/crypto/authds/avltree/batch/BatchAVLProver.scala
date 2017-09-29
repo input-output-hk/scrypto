@@ -1,12 +1,12 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Ints
+import com.google.common.primitives.{Ints, Longs}
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest, ThreadUnsafeHash}
+import scorex.crypto.hash.{Blake2b256Unsafe, Digest, Digest32, ThreadUnsafeHash}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Random, Success, Try}
 
 
 /**
@@ -19,9 +19,9 @@ import scala.util.{Failure, Success, Try}
   * @param hf               - hash function
   */
 class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
-                                             val valueLengthOpt: Option[Int],
-                                             oldRootAndHeight: Option[(ProverNodes[D], Int)] = None)
-                                            (implicit val hf: HF = new Blake2b256Unsafe)
+                                                             val valueLengthOpt: Option[Int],
+                                                             oldRootAndHeight: Option[(ProverNodes[D], Int)] = None)
+                                                            (implicit val hf: HF = new Blake2b256Unsafe)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
@@ -75,7 +75,7 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
           false
       }
     }
-    // encode Booleans as bits 
+    // encode Booleans as bits
     if ((directionsBitLength & 7) == 0) {
       // new byte needed
       directions += (if (ret) 1: Byte else 0: Byte)
@@ -258,12 +258,73 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
     SerializedAdProof @@ packagedTree.toArray
   }
 
+
+  def treeWalk[IR, LR](internalNodeFn: (InternalProverNode[D], IR) => (ProverNodes[D], IR),
+                       leafFn: (ProverLeaf[D], IR) => LR,
+                       initial: IR): LR = {
+    def walk(rNode: ProverNodes[D], ir: IR): LR = {
+      rNode match {
+        case leaf: ProverLeaf[D] =>
+          leafFn(leaf, ir)
+
+        case r: InternalProverNode[D] =>
+          val i = internalNodeFn(r, ir)
+          walk(i._1, i._2)
+      }
+    }
+
+    walk(topNode, initial)
+  }
+
+
+  def randomWalk(): Option[(ADKey, ADValue)] = {
+    def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
+      Random.nextBoolean() match {
+          case true =>
+            (r.right, Unit)
+          case false=>
+            (r.left, Unit)
+        }
+
+    def leafFn(leaf: ProverLeaf[D], dummy: Unit.type): Option[(ADKey, ADValue)] = {
+      if(leaf.key sameElements PositiveInfinityKey) None
+      else if(leaf.key sameElements NegativeInfinityKey) None
+      else Some(leaf.key -> leaf.value)
+    }
+
+    treeWalk(internalNodeFn, leafFn, Unit)
+  }
+
   /**
     * A simple non-modifying non-proof-generating lookup.
     * Does not mutate the data structure
     *
     * @return Some(value) for value associated with the given key if key is in the tree, and None otherwise
     */
+  def unauthenticatedLookup(key: ADKey): Option[ADValue] = {
+    def internalNodeFn(r: InternalProverNode[D], found: Boolean) =
+      if (found) {
+        // left all the way to the leaf
+        (r.left, true)
+      } else {
+        ByteArray.compare(key, r.key) match {
+          case 0 => // found in the tree -- go one step right, then left to the leaf
+            (r.right, true)
+          case o if o < 0 => // going left, not yet found
+            (r.left, false)
+          case _ => // going right, not yet found
+            (r.right, false)
+        }
+      }
+
+    def leafFn(leaf: ProverLeaf[D], found: Boolean): Option[ADValue] =
+      if (found) Some(leaf.value) else None
+
+    treeWalk(internalNodeFn, leafFn, false)
+  }
+
+
+  /*
   def unauthenticatedLookup(key: ADKey): Option[ADValue] = {
     def unauthenticatedLookupHelper(rNode: ProverNodes[D], found: Boolean): Option[ADValue] = {
       rNode match {
@@ -287,7 +348,7 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
       }
     }
     unauthenticatedLookupHelper(topNode, found = false)
-  }
+  }*/
 
   /**
     * Is for debug only
@@ -354,6 +415,7 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
             stringTreeHelper(r.right, depth + 1)
       })
     }
+
     stringTreeHelper(topNode, 0)
   }
 }

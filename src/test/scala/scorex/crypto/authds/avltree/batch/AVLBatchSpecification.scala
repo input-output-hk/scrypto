@@ -24,6 +24,26 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
 
+  property("unauthenticatedLookup") {
+    val p = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 8, valueLengthOpt = None)
+
+    p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(1.toLong), ADValue @@ Array.fill(4)(0: Byte)))
+    p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(2.toLong), ADValue @@ Array.fill(5)(0: Byte)))
+    p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(3.toLong), ADValue @@ Array.fill(6)(0: Byte)))
+    p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(4.toLong), ADValue @@ Array.fill(7)(0: Byte)))
+    p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(5.toLong), ADValue @@ Array.fill(8)(0: Byte)))
+    p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(6.toLong), ADValue @@ Array.fill(9)(0: Byte)))
+
+
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(0.toLong)) shouldBe None
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(1.toLong)).get.length shouldBe 4
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(2.toLong)).get.length shouldBe 5
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(3.toLong)).get.length shouldBe 6
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(4.toLong)).get.length shouldBe 7
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(5.toLong)).get.length shouldBe 8
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(6.toLong)).get.length shouldBe 9
+    p.unauthenticatedLookup(ADKey @@ Longs.toByteArray(7.toLong)) shouldBe None
+  }
 
   property("BatchAVLVerifier: extractNodes and extractFirstNode") {
     val TreeSize = 1000
