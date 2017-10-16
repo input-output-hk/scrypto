@@ -8,11 +8,7 @@ scorex.yaml
 target
 
 # dotfiles
-.dockerignore
 .editorconfig
-
-# standalone docker
-Dockerfile
 
 # logs
 scorex-errors.log
