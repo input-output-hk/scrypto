@@ -1,8 +1,9 @@
 FROM aa8y/sbt:1.0
 
-ARG APP_DIR=/app
+ARG APP_DIR=/scrypto_app
 
 USER root
+RUN rm -rf $APP_DIR
 RUN mkdir $APP_DIR
 RUN chown -R docker:docker $APP_DIR
 WORKDIR $APP_DIR
