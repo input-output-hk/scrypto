@@ -152,7 +152,7 @@ Here are code examples for generating proofs and checking them. In this example 
   verifier1.performOneOperation(op2) // Returns Success(None)
   verifier1.performOneOperation(op3) // Returns Success(None)
   verifier1.digest match {
-    case Some(d1) if digest1.sameElements(digest1) =>
+    case Some(d1) if d1.sameElements(digest1) =>
       //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
       val verifier2 = new BatchAVLVerifier(d1, proof2, keyLength = 1, valueLengthOpt = Some(8), maxNumOperations = Some(3), maxDeletes = Some(1))
       verifier2.performOneOperation(op4) // Returns Try(Some(Longs.toByteArray(10)))
