@@ -14,9 +14,9 @@ object Base58 {
     val s = new StringBuilder()
     if (bi > 0) {
       while (bi >= Base) {
-        val mod = bi.mod(Base)
+        val (newBi, mod) = bi /% Base
         s.insert(0, Alphabet.charAt(mod.intValue()))
-        bi = (bi - mod) / Base
+        bi = newBi
       }
       s.insert(0, Alphabet.charAt(bi.intValue()))
     }
