@@ -7,6 +7,12 @@ import scala.util.Try
   */
 object Base58 {
   private val Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+  private val DecodeTable = Array(
+    0, 1, 2, 3, 4, 5, 6, 7, 8, -1, -1, -1, -1, -1, -1, -1, 9, 10, 11, 12, 13, 14, 15, 16, -1, 17, 18, 19, 20, 21, -1,
+    22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, -1, -1, -1, -1, -1, -1, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, -1,
+    44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57
+  )
+
   private val Base = BigInt(58)
 
   def encode(input: Array[Byte]): String = {
@@ -14,9 +20,9 @@ object Base58 {
     val s = new StringBuilder()
     if (bi > 0) {
       while (bi >= Base) {
-        val mod = bi.mod(Base)
+        val (newBi, mod) = bi /% Base
         s.insert(0, Alphabet.charAt(mod.intValue()))
-        bi = (bi - mod) / Base
+        bi = newBi
       }
       s.insert(0, Alphabet.charAt(bi.intValue()))
     }
@@ -50,9 +56,13 @@ object Base58 {
 
   private def decodeToBigInteger(input: String): BigInt =
   // Work backwards through the string.
-    input.foldRight((BigInt(0), input.length - 1)) { case (ch, (bi, i)) =>
-      val alphaIndex = Alphabet.indexOf(ch)
-        .ensuring(_ != -1, "Wrong char in Base58 string")
-      (bi + BigInt(alphaIndex) * Base.pow(input.length - 1 - i), i - 1)
+    input.foldRight((BigInt(0), BigInt(1))) { case (ch, (bi, k)) =>
+      val alphaIndex = toBase58(ch).ensuring(_ != -1, "Wrong char in Base58 string")
+      (bi + BigInt(alphaIndex) * k, k * Base)
     }._1
+
+  private def toBase58(c: Char): Int = {
+    val x = c.toInt
+    if (x < 49) -1 else if (x <= 122) DecodeTable(x - 49) else -1
+  }
 }
