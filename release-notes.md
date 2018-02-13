@@ -1,3 +1,8 @@
+**2.0.4**
+---------
+* improved performance of Base58-related operations
+
+
 **2.0.3**
 ---------
 * *treeWalk()* and *randomWalk()* methods in *BatchAVLProver*
