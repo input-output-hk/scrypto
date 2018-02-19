@@ -24,6 +24,23 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
 
+  property("randomWalk") {
+    val TreeSize = 1000
+    val prover = new BatchAVLProver[T, Blake2b256Unsafe](KL, None)
+    val keyValues = (0 until TreeSize) map { i =>
+      (ADKey @@ Blake2b256(i.toString.getBytes).take(KL), ADValue @@ (i.toString.getBytes))
+    }
+    keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
+    prover.generateProof()
+
+    forAll { seed: Long =>
+      val e1 = prover.randomWalk(new scala.util.Random(seed))
+      val e2 = prover.randomWalk(new scala.util.Random(seed))
+      e1.get._1 shouldEqual e2.get._1
+      e1.get._2 shouldEqual e2.get._2
+    }
+  }
+
   property("unauthenticatedLookup") {
     val p = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 8, valueLengthOpt = None)
 

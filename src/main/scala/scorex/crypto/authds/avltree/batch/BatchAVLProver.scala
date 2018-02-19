@@ -277,9 +277,9 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
   }
 
 
-  def randomWalk(): Option[(ADKey, ADValue)] = {
+  def randomWalk(rand: Random = new Random): Option[(ADKey, ADValue)] = {
     def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
-      Random.nextBoolean() match {
+      rand.nextBoolean() match {
           case true =>
             (r.right, Unit)
           case false=>
