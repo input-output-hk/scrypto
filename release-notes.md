@@ -1,3 +1,7 @@
+**2.0.5**
+---------
+* *randomWalk()* in *BatchAVLProver* can accept external randomness via an optional parameter
+
 **2.0.4**
 ---------
 * improved performance of Base58-related operations
