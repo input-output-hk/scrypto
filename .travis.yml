@@ -1,4 +1,8 @@
 sudo: required
+branches:
+  only:
+    - master
+    - /^\d\.\d+$/
 services:
   - docker
 before_install:
