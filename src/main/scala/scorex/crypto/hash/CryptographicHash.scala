@@ -1,5 +1,7 @@
 package scorex.crypto.hash
 
+import scorex.utils.ByteArray
+
 /**
   * From Wikipedia (https://en.wikipedia.org/wiki/Cryptographic_hash_function):
   * "A cryptographic hash function is a hash function which is considered practically impossible to invert,
@@ -30,8 +32,9 @@ trait CryptographicHash[D <: Digest] {
 
   def hash(input: String): D = hash(input.getBytes)
 
-  def prefixedHash(prefix: Byte, x: Message): D = hash(prefix +: x)
+  def prefixedHash(prefix: Byte, inputs: Array[Byte]*): D = hash(prefix +: ByteArray.concat(inputs))
 
-  def prefixedHash(prefix: Byte, x: Message, y: Message): D = hash(prefix +: (x ++ y))
+  def hash(inputs: Array[Byte]*): D = hash(ByteArray.concat(inputs))
+
 }
 

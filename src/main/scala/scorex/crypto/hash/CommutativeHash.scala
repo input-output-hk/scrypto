@@ -11,7 +11,7 @@ class CommutativeHash[D <: Digest](hf: CryptographicHash[D]) extends Cryptograph
 
   override def hash(input: Message): D = hf.hash(input)
 
-  override def prefixedHash(prefix: Byte, x: Message, y: Message): D = prefixedHash(prefix, commutativeBytes(x, y))
+  def prefixedHash(prefix: Byte, x: Message, y: Message): D = prefixedHash(prefix, commutativeBytes(x, y))
 
   private def commutativeBytes(x: Message, y: Message): Message = if (ByteArray.compare(x, y) > 0) x ++ y else y ++ x
 }
