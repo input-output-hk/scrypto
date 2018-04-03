@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest, ThreadUnsafeHash}
+import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
 import scorex.utils.ByteArray
 
 import scala.collection.mutable
@@ -11,6 +11,7 @@ import scala.util.{Failure, Random, Success, Try}
 
 /**
   * Implements the batch AVL prover from https://eprint.iacr.org/2016/994
+  * Not thread safe if you use with ThreadUnsafeHash
   *
   * @param keyLength        - length of keys in tree
   * @param valueLengthOpt   - length of values in tree. None if it is not fixed
@@ -18,10 +19,10 @@ import scala.util.{Failure, Random, Success, Try}
   *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
   * @param hf               - hash function
   */
-class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
-                                                             val valueLengthOpt: Option[Int],
-                                                             oldRootAndHeight: Option[(ProverNodes[D], Int)] = None)
-                                                            (implicit val hf: HF = new Blake2b256Unsafe)
+class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int,
+                                                              val valueLengthOpt: Option[Int],
+                                                              oldRootAndHeight: Option[(ProverNodes[D], Int)] = None)
+                                                             (implicit val hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 
   protected val labelLength = hf.DigestSize
@@ -280,15 +281,15 @@ class BatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]](val keyLength: Int,
   def randomWalk(rand: Random = new Random): Option[(ADKey, ADValue)] = {
     def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
       rand.nextBoolean() match {
-          case true =>
-            (r.right, Unit)
-          case false=>
-            (r.left, Unit)
-        }
+        case true =>
+          (r.right, Unit)
+        case false =>
+          (r.left, Unit)
+      }
 
     def leafFn(leaf: ProverLeaf[D], dummy: Unit.type): Option[(ADKey, ADValue)] = {
-      if(leaf.key sameElements PositiveInfinityKey) None
-      else if(leaf.key sameElements NegativeInfinityKey) None
+      if (leaf.key sameElements PositiveInfinityKey) None
+      else if (leaf.key sameElements NegativeInfinityKey) None
       else Some(leaf.key -> leaf.value)
     }
 

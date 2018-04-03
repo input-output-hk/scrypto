@@ -9,7 +9,7 @@ import scorex.utils.ByteArray
 import scala.util.{Failure, Success, Try}
 
 case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
-                           (implicit hf: ThreadUnsafeHash[_ <: Digest], levelFunc: LevelFunction)
+                           (implicit hf: CryptographicHash[_ <: Digest], levelFunc: LevelFunction)
   extends TwoPartyProof {
 
   def verify(digest: ADDigest, updateFn: Modification#UpdateFunction): Option[ADDigest] = Try {

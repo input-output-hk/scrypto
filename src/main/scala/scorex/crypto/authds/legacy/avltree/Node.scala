@@ -23,7 +23,7 @@ sealed trait Node extends ToStringHelper {
 }
 
 trait InternalNode extends Node {
-  val hf: ThreadUnsafeHash[_ <: Digest]
+  val hf: CryptographicHash[_ <: Digest]
 
   protected var _balance: Balance
 
@@ -58,7 +58,7 @@ case class LabelOnlyNode(l: Digest) extends Node {
 
 case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes,
                       protected var _balance: Balance = Balance @@ 0.toByte)
-                     (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with InternalNode {
+                     (implicit val hf: CryptographicHash[_ <: Digest]) extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
 
@@ -94,7 +94,7 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
 }
 
 case class VerifierNode(private var _left: Node, private var _right: Node, protected var _balance: Balance)
-                       (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends VerifierNodes with InternalNode {
+                       (implicit val hf: CryptographicHash[_ <: Digest]) extends VerifierNodes with InternalNode {
 
   def left: Node = _left
 
@@ -123,7 +123,7 @@ case class VerifierNode(private var _left: Node, private var _right: Node, prote
 }
 
 case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKey: ADKey)
-               (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with VerifierNodes {
+               (implicit val hf: CryptographicHash[_ <: Digest]) extends ProverNodes with VerifierNodes {
 
 
   protected[avltree] var height = 0 //needed for debug only

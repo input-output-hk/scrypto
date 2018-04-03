@@ -3,7 +3,7 @@ package scorex.benchmarks
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Operation, Remove}
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 
 import scala.util.Random
 
@@ -24,7 +24,7 @@ object Helpers {
     Random.shuffle(inserts).take(count).map { in => Remove(in.key)}
 
   type D = Digest32
-  type HF = Blake2b256Unsafe
+  type HF = Blake2b256
   type Prover = BatchAVLProver[D, HF]
 
   private val STEP = 2000

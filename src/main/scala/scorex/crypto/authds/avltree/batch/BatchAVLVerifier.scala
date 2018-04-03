@@ -22,13 +22,13 @@ import scala.util.{Failure, Try}
   * @param hf               - hash function
   */
 
-class BatchAVLVerifier[D <: Digest, HF <: ThreadUnsafeHash[D]](startingDigest: ADDigest,
-                                                               proof: SerializedAdProof,
-                                                               override val keyLength: Int,
-                                                               override val valueLengthOpt: Option[Int],
-                                                               maxNumOperations: Option[Int] = None,
-                                                               maxDeletes: Option[Int] = None)
-                                              (implicit hf: HF = new Blake2b256Unsafe)
+class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: ADDigest,
+                                                                proof: SerializedAdProof,
+                                                                override val keyLength: Int,
+                                                                override val valueLengthOpt: Option[Int],
+                                                                maxNumOperations: Option[Int] = None,
+                                                                maxDeletes: Option[Int] = None)
+                                                               (implicit hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 
   protected val labelLength = hf.DigestSize

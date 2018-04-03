@@ -7,7 +7,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.{Blake2b256Unsafe, _}
+import scorex.crypto.hash.{Blake2b256, _}
 import scorex.utils.{ByteArray, Random}
 
 import scala.util.Random.{nextInt => randomInt}
@@ -19,14 +19,14 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val VL = 8
   val HL = 32
   type T = Digest32
-  type HF = Blake2b256Unsafe
+  type HF = Blake2b256.type
   
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
 
   property("randomWalk") {
     val TreeSize = 1000
-    val prover = new BatchAVLProver[T, Blake2b256Unsafe](KL, None)
+    val prover = new BatchAVLProver[T, HF](KL, None)
     val keyValues = (0 until TreeSize) map { i =>
       (ADKey @@ Blake2b256(i.toString.getBytes).take(KL), ADValue @@ (i.toString.getBytes))
     }
@@ -42,7 +42,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("unauthenticatedLookup") {
-    val p = new BatchAVLProver[Digest32, Blake2b256Unsafe](keyLength = 8, valueLengthOpt = None)
+    val p = new BatchAVLProver[Digest32, HF](keyLength = 8, valueLengthOpt = None)
 
     p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(1.toLong), ADValue @@ Array.fill(4)(0: Byte)))
     p.performOneOperation(Insert(ADKey @@ Longs.toByteArray(2.toLong), ADValue @@ Array.fill(5)(0: Byte)))
@@ -64,7 +64,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   property("BatchAVLVerifier: extractNodes and extractFirstNode") {
     val TreeSize = 1000
-    val prover = new BatchAVLProver[T, Blake2b256Unsafe](KL, None)
+    val prover = new BatchAVLProver[T, HF](KL, None)
     val digest = prover.digest
     val keyValues = (0 until TreeSize) map { i =>
       val aValue = Keccak256(i.toString.getBytes)
@@ -74,7 +74,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     val pf = prover.generateProof()
 
-    val verifier = new BatchAVLVerifier[T, Blake2b256Unsafe](digest, pf, KL, None)
+    val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, None)
     val infinityLeaf: VerifierNodes[T] = verifier.extractFirstNode {
       case _: VerifierLeaf[T] => true
       case _ => false

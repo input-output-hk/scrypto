@@ -24,7 +24,7 @@ sealed trait Node extends ToStringHelper {
 }
 
 trait InternalNode {
-  val hf: ThreadUnsafeHash[_ <: Digest]
+  val hf: CryptographicHash[_ <: Digest]
   val level: Level
 
   def leftLabel: Digest
@@ -42,7 +42,7 @@ sealed trait ProverNodes extends Node {
 sealed trait VerifierNodes extends Node
 
 case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes)
-                     (implicit val hf: ThreadUnsafeHash[_ <: Digest], levelFunc: LevelFunction)
+                     (implicit val hf: CryptographicHash[_ <: Digest], levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
   lazy val level: Level = levelFunc(key)
@@ -72,7 +72,7 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
 }
 
 case class VerifierNode(private var _leftLabel: Digest, private var _rightLabel: Digest, level: Level)
-                       (implicit val hf: ThreadUnsafeHash[_ <: Digest]) extends VerifierNodes with InternalNode {
+                       (implicit val hf: CryptographicHash[_ <: Digest]) extends VerifierNodes with InternalNode {
 
   def leftLabel: Digest = _leftLabel
 
@@ -95,7 +95,7 @@ case class VerifierNode(private var _leftLabel: Digest, private var _rightLabel:
 }
 
 case class Leaf(key: ADKey, private var _value: ADValue, private var _nextLeafKey: ADKey)
-               (implicit hf: ThreadUnsafeHash[_ <: Digest]) extends ProverNodes with VerifierNodes {
+               (implicit hf: CryptographicHash[_ <: Digest]) extends ProverNodes with VerifierNodes {
 
   def value: ADValue = _value
 

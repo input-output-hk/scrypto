@@ -9,10 +9,10 @@ import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
-class AVLTree[HF <: ThreadUnsafeHash[_ <: Digest]](keyLength: Int,
+class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
                                                    valueLength: Int = 8,
                                                    rootOpt: Option[ProverNodes] = None)
-                                                  (implicit hf: HF = new Blake2b256Unsafe) extends TwoPartyDictionary {
+                                                  (implicit hf: HF = Blake2b256) extends TwoPartyDictionary {
 
   type ChangeHappened = Boolean
   type ChildHeightIncreased = Boolean

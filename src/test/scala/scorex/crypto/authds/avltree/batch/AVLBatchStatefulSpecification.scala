@@ -5,7 +5,7 @@ import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.PropSpec
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.utils.{Random => RandomBytes}
 
 import scala.util.{Failure, Random, Success, Try}
@@ -29,7 +29,7 @@ object AVLCommands extends Commands {
   val REMOVE_FRACTION = 4
 
   type T = Digest32
-  type HF = Blake2b256Unsafe
+  type HF = Blake2b256.type
 
   case class Operations(operations: List[Operation]) {
     def include(ops: List[Operation]): Operations = Operations(operations ++ ops)
@@ -63,7 +63,7 @@ object AVLCommands extends Commands {
 
     val keys = (0 until appendsCommandsLength).map { _ => ADKey @@ RandomBytes.randomBytes(KL) }.toList
     val removedKeys = state.operations.filter(_.isInstanceOf[Remove]).map(_.key).distinct
-    val prevKeys = state.operations.map(_.key).distinct.filterNot(k1 => removedKeys.exists{k2 => k1.sameElements(k2)})
+    val prevKeys = state.operations.map(_.key).distinct.filterNot(k1 => removedKeys.exists { k2 => k1.sameElements(k2) })
     val uniqueKeys = keys.filterNot(prevKeys.contains).distinct
     val updateKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, UPDATE_FRACTION))
     val removeKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, REMOVE_FRACTION))
@@ -106,4 +106,5 @@ object AVLCommands extends Commands {
       Prop.propBoolean(check)
     }
   }
+
 }
