@@ -3,7 +3,7 @@ package scorex.crypto.authds.avltree.batch
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256Unsafe, Digest32, Sha256}
+import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.Random
 
 import scala.util.Success
@@ -13,7 +13,7 @@ object BatchingPlayground extends App with ToStringHelper {
   val KL = 32
   val VL = 8
   type T = Digest32
-  type HF = Blake2b256Unsafe
+  type HF = Blake2b256.type
 
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
 
@@ -740,7 +740,6 @@ object BatchingPlayground extends App with ToStringHelper {
 
       }
     }
-
 
 
     def testSuccessfulChanges(toPrint: Boolean) = {

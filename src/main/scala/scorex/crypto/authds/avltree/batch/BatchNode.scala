@@ -36,7 +36,7 @@ class LabelOnlyNode[D <: Digest](l: D) extends VerifierNodes[D] {
 sealed trait InternalNode[D <: Digest] extends Node[D] {
   protected var b: Balance
 
-  protected val hf: ThreadUnsafeHash[D]
+  protected val hf: CryptographicHash[D]
 
   protected def computeLabel: D = hf.prefixedHash(1: Byte, Array(b), left.label, right.label)
 
@@ -55,7 +55,7 @@ sealed trait InternalNode[D <: Digest] extends Node[D] {
 class InternalProverNode[D <: Digest](protected var k: ADKey,
                                       protected var l: ProverNodes[D],
                                       protected var r: ProverNodes[D],
-                         protected var b: Balance = Balance @@ 0.toByte)(implicit val hf: ThreadUnsafeHash[D])
+                         protected var b: Balance = Balance @@ 0.toByte)(implicit val hf: CryptographicHash[D])
   extends ProverNodes[D] with InternalNode[D] {
 
 
@@ -95,7 +95,7 @@ class InternalProverNode[D <: Digest](protected var k: ADKey,
 }
 
 class InternalVerifierNode[D <: Digest](protected var l: Node[D], protected var r: Node[D], protected var b: Balance)
-                          (implicit val hf: ThreadUnsafeHash[D]) extends VerifierNodes[D] with InternalNode[D] {
+                          (implicit val hf: CryptographicHash[D]) extends VerifierNodes[D] with InternalNode[D] {
 
 
   override def left: Node[D] = l
@@ -128,7 +128,7 @@ sealed trait Leaf[D <: Digest] extends Node[D] with KeyInVar {
 
   def value: ADValue = v
 
-  protected val hf: ThreadUnsafeHash[D] // TODO: Seems very wasteful to store hf in every node of the tree, when they are all the same. Is there a better way? Pass them in to label method from above? Same for InternalNode and for other, non-batch, trees
+  protected val hf: CryptographicHash[D] // TODO: Seems very wasteful to store hf in every node of the tree, when they are all the same. Is there a better way? Pass them in to label method from above? Same for InternalNode and for other, non-batch, trees
 
   protected def computeLabel: D = hf.prefixedHash(0: Byte, k, v, nk)
 
@@ -140,7 +140,7 @@ sealed trait Leaf[D <: Digest] extends Node[D] with KeyInVar {
 }
 
 class VerifierLeaf[D <: Digest](protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
-                  (implicit val hf: ThreadUnsafeHash[D]) extends Leaf[D] with VerifierNodes[D] {
+                  (implicit val hf: CryptographicHash[D]) extends Leaf[D] with VerifierNodes[D] {
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): VerifierLeaf[D] = {
@@ -153,7 +153,7 @@ class VerifierLeaf[D <: Digest](protected var k: ADKey, protected var v: ADValue
 }
 
 class ProverLeaf[D <: Digest](protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
-                (implicit val hf: ThreadUnsafeHash[D]) extends Leaf[D] with ProverNodes[D] {
+                (implicit val hf: CryptographicHash[D]) extends Leaf[D] with ProverNodes[D] {
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): ProverLeaf[D] = {

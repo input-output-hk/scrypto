@@ -1,28 +1,29 @@
 package scorex.crypto.authds.legacy.treap
 
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Gen
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.InsertOrUpdate
 import scorex.crypto.authds.legacy.treap.Constants._
-import scorex.crypto.hash.Blake2b256Unsafe
+import scorex.crypto.hash.Blake2b256
 
 
 class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TwoPartyTests {
 
 
   def validKey(key: ADKey): Boolean = key.length > 1 && key.length < MaxKeySize
+
   def keyValue2Gen: Gen[(ADKey, ADValue, ADValue)] = for {
     key <- genBoundedBytes(1, MaxKeySize)
-    value <-  genBoundedBytes(1, MaxKeySize)
-    value2 <-  genBoundedBytes(1, MaxKeySize)
+    value <- genBoundedBytes(1, MaxKeySize)
+    value2 <- genBoundedBytes(1, MaxKeySize)
   } yield (ADKey @@ key, ADValue @@ value, ADValue @@ value2)
 
   def keyValueGen: Gen[(ADKey, ADValue)] = keyValue2Gen.map(a => (a._1, a._2))
 
   property("skiplist stream") {
-    val wt = new Treap()(new Blake2b256Unsafe, Level.skiplistLevel)
+    val wt = new Treap()(Blake2b256, Level.skiplistLevel)
     var digest = wt.rootHash()
     forAll(keyValueGen) { case (key: ADKey, value: ADValue) =>
       whenever(validKey(key) && value.nonEmpty) {

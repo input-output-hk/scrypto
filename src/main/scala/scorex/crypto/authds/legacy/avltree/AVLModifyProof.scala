@@ -3,13 +3,13 @@ package scorex.crypto.authds.legacy.avltree
 import com.google.common.primitives.Bytes
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.Modification
-import scorex.crypto.hash._
+import scorex.crypto.hash.{CryptographicHash, _}
 import scorex.utils.ByteArray
 
 import scala.util.{Failure, Success, Try}
 
 case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
-                         (implicit hf: ThreadUnsafeHash[_ <: Digest]) extends TwoPartyProof {
+                         (implicit hf: CryptographicHash[_ <: Digest]) extends TwoPartyProof {
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
 
@@ -248,7 +248,7 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
 object AVLModifyProof {
 
   def parseBytes(bytes: Array[Byte])(implicit keyLength: Int = 32, digestSize: Int = 32,
-                                     hf: ThreadUnsafeHash[_ <: Digest] = new Blake2b256Unsafe): Try[AVLModifyProof] = Try {
+                                     hf: CryptographicHash[_ <: Digest] = Blake2b256): Try[AVLModifyProof] = Try {
     val pathLength: Int = bytes.head.ensuring(_ % 3 == 0)
 
     val key = ADKey @@ bytes.slice(1, 1 + keyLength)

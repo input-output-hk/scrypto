@@ -5,7 +5,7 @@ import scorex.crypto.hash._
 
 import scala.util.Try
 
-abstract class PersistentBatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]] {
+abstract class PersistentBatchAVLProver[D <: Digest, HF <: CryptographicHash[D]] {
 
   var avlProver: BatchAVLProver[D, HF]
   val storage: VersionedAVLStorage[D]
@@ -38,7 +38,7 @@ abstract class PersistentBatchAVLProver[D <: Digest, HF <: ThreadUnsafeHash[D]] 
 
 object PersistentBatchAVLProver {
   def create[D <: Digest,
-  HF <: ThreadUnsafeHash[D],
+  HF <: CryptographicHash[D],
   K <: Array[Byte],
   V <: Array[Byte]](
                      avlBatchProver: BatchAVLProver[D, HF],
@@ -61,7 +61,7 @@ object PersistentBatchAVLProver {
     }
   }
 
-  def create[D <: Digest, HF <: ThreadUnsafeHash[D]](
+  def create[D <: Digest, HF <: CryptographicHash[D]](
                      avlBatchProver: BatchAVLProver[D, HF],
                      versionedStorage: VersionedAVLStorage[D],
                      paranoidChecks: Boolean = false
