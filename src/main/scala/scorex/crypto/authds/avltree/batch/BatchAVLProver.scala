@@ -182,6 +182,14 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     }
   }
 
+  /**
+    * Generates the proof for all the operations in the list.
+    * Does NOT modify the tree
+    */
+  def generateProofForOperations(operations: Seq[Operation]): SerializedAdProof = {
+    ???
+  }
+
 
   /**
     * Generates the proof for all the operations performed (except the ones that failed)

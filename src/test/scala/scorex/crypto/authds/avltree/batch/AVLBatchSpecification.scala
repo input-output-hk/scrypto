@@ -4,8 +4,8 @@ import com.google.common.primitives.Longs
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.authds.legacy.avltree.AVLTree
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, _}
 import scorex.utils.{ByteArray, Random}
@@ -15,23 +15,46 @@ import scala.util.{Failure, Try}
 
 class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
+  val InitialTreeSize = 1000
   val KL = 26
   val VL = 8
   val HL = 32
   type T = Digest32
   type HF = Blake2b256.type
-  
+
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
+
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
 
-  property("randomWalk") {
-    val TreeSize = 1000
+  private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[T, HF] = {
     val prover = new BatchAVLProver[T, HF](KL, None)
-    val keyValues = (0 until TreeSize) map { i =>
+    val keyValues = (0 until size) map { i =>
       (ADKey @@ Blake2b256(i.toString.getBytes).take(KL), ADValue @@ (i.toString.getBytes))
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
     prover.generateProof()
+    prover
+  }
+
+  property("proof generation without tree modification") {
+    val prover = generateProver()
+    forAll(kvSeqGen) { kvSeq =>
+      val insertNum = Math.min(10, kvSeq.length)
+      val toInsert = kvSeq.take(insertNum).map(ti => Insert(ti._1, ti._2))
+      val initialDigest = prover.digest
+      // generate proof without tree modification
+      val nonModifyingProof = prover.generateProofForOperations(toInsert)
+      prover.digest shouldEqual initialDigest
+      // modify tree and generate proof
+      toInsert.foreach(ti => prover.performOneOperation(ti))
+      val modifyingProof = prover.generateProof()
+      Base58.encode(prover.digest) should not be Base58.encode(initialDigest)
+      modifyingProof shouldEqual nonModifyingProof
+    }
+  }
+
+  property("randomWalk") {
+    val prover = generateProver()
 
     forAll { seed: Long =>
       val e1 = prover.randomWalk(new scala.util.Random(seed))
@@ -63,10 +86,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("BatchAVLVerifier: extractNodes and extractFirstNode") {
-    val TreeSize = 1000
     val prover = new BatchAVLProver[T, HF](KL, None)
     val digest = prover.digest
-    val keyValues = (0 until TreeSize) map { i =>
+    val keyValues = (0 until InitialTreeSize) map { i =>
       val aValue = Keccak256(i.toString.getBytes)
       (ADKey @@ aValue.take(KL), ADValue @@ aValue)
     }
@@ -84,13 +106,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       case _ => false
     }
 
-    (0 until TreeSize) foreach { i =>
+    (0 until InitialTreeSize) foreach { i =>
       val aValue = Keccak256(i.toString.getBytes)
-      verifier.performOneOperation(Insert(ADKey @@ aValue.take(KL), ADValue @@aValue))
+      verifier.performOneOperation(Insert(ADKey @@ aValue.take(KL), ADValue @@ aValue))
     }
     //extract all leafs
     val allLeafs = verifier.extractNodes(nonInfiniteLeaf)
-    allLeafs.get.length shouldBe TreeSize
+    allLeafs.get.length shouldBe InitialTreeSize
     //First extracted leaf should be smallest
     val ordering: (Array[Byte], Array[Byte]) => Boolean = (a, b) => ByteArray.compare(a, b) > 0
     val smallestKey = keyValues.map(_._1).sortWith(ordering).last
@@ -104,12 +126,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   property("Batch of lookups") {
     //prepare tree
-    val prover = new BatchAVLProver[T, HF](KL, None)
-    (0 until 1000) foreach { i =>
-      val aValue = Keccak256(i.toString.getBytes)
-      prover.performOneOperation(Insert(ADKey @@aValue.take(KL),ADValue @@ aValue))
-    }
-    prover.generateProof()
+    val prover = generateProver()
     val digest = prover.digest
 
     forAll(smallInt) { numberOfLookups: Int =>
@@ -373,7 +390,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val prover = new BatchAVLProver[T, HF](KL, Some(VL))
 
         (1 to cnt) foreach { _ =>
-          val key:ADKey = randomKey(KL)
+          val key: ADKey = randomKey(KL)
           val value = randomValue(VL)
 
           keys = key +: keys
