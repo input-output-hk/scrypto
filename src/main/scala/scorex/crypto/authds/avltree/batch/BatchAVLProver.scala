@@ -187,9 +187,11 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * Does NOT modify the tree
     */
   def generateProofForOperations(operations: Seq[Operation]): SerializedAdProof = {
-    ???
+    // TODO copy only required subtree, not all the tree
+    val newProver: BatchAVLProver[D, HF] = new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(topNode, rootNodeHeight))
+    operations.foreach(o => newProver.performOneOperation(o))
+    newProver.generateProof()
   }
-
 
   /**
     * Generates the proof for all the operations performed (except the ones that failed)
