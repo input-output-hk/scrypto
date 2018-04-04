@@ -45,11 +45,14 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       // generate proof without tree modification
       val nonModifyingProof = prover.generateProofForOperations(toInsert)
       prover.digest shouldEqual initialDigest
+      toInsert.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe None)
+
       // modify tree and generate proof
       toInsert.foreach(ti => prover.performOneOperation(ti))
       val modifyingProof = prover.generateProof()
       Base58.encode(prover.digest) should not be Base58.encode(initialDigest)
       modifyingProof shouldEqual nonModifyingProof
+      toInsert.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe Some(ti.value))
     }
   }
 
