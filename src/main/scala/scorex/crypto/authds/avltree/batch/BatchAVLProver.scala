@@ -183,6 +183,15 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   }
 
   /**
+    * @return nodes, that where presented in old tree (starting form oldTopNode, but are not presented in new tree
+    */
+  def getRemovedNodes(): Seq[ProverNodes[D]] = {
+    oldTopNode
+    topNode
+    ???
+  }
+
+  /**
     * Generates the proof for all the operations in the list.
     * Does NOT modify the tree
     */

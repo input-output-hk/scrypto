@@ -36,6 +36,25 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     prover
   }
 
+  property("return removed leafs and internal nodes") {
+    val prover = generateProver()
+    forAll(kvSeqGen) { kvSeq =>
+      val mSize = Math.min(10, kvSeq.length)
+      val toInsert = kvSeq.take(mSize).map(ti => Insert(ti._1, ti._2))
+      val toRemove = (0 until mSize).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
+      val modifications = toInsert ++ toRemove
+      modifications.foreach(ti => prover.performOneOperation(ti))
+      val removed = prover.getRemovedNodes()
+      removed.length should be > mSize
+      toRemove.foreach(tr => removed.exists(_.key sameElements tr.key) shouldBe true)
+
+      val modifyingProof = prover.generateProof()
+      prover.getRemovedNodes().isEmpty shouldBe true
+
+    }
+  }
+
+
   property("proof generation without tree modification") {
     val prover = generateProver()
     forAll(kvSeqGen) { kvSeq =>
