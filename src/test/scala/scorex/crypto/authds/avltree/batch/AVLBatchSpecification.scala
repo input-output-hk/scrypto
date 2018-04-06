@@ -41,18 +41,33 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     forAll(kvSeqGen) { kvSeq =>
       val insertNum = Math.min(10, kvSeq.length)
       val toInsert = kvSeq.take(insertNum).map(ti => Insert(ti._1, ti._2))
+      val toRemove = (0 until insertNum).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
+      val modifications = toInsert ++ toRemove
       val initialDigest = prover.digest
+
       // generate proof without tree modification
-      val nonModifyingProof = prover.generateProofForOperations(toInsert)
+      val nonModifyingProof = prover.generateProofForOperations(modifications)
       prover.digest shouldEqual initialDigest
       toInsert.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe None)
+      toRemove.foreach(ti => prover.unauthenticatedLookup(ti.key).isDefined shouldBe true)
+      val verifier = new BatchAVLVerifier[T, HF](initialDigest, nonModifyingProof, KL, None)
+      modifications foreach (m => verifier.performOneOperation(m).get)
+
+      // generate another proof without tree modification
+      val toInsert2 = toInsert.map(ti => Insert(ADKey @@ Blake2b256(ti.key), ADValue @@ Blake2b256(ti.value)))
+      val toRemove2 = (0 until insertNum + 1).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
+      val modifications2 = toRemove2
+      val nonModifyingProof2 = prover.generateProofForOperations(modifications2)
+      prover.digest shouldEqual initialDigest
 
       // modify tree and generate proof
-      toInsert.foreach(ti => prover.performOneOperation(ti))
+      modifications.foreach(ti => prover.performOneOperation(ti))
       val modifyingProof = prover.generateProof()
+      prover.digest shouldEqual verifier.digest.get
       Base58.encode(prover.digest) should not be Base58.encode(initialDigest)
       modifyingProof shouldEqual nonModifyingProof
       toInsert.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe Some(ti.value))
+      toRemove.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe None)
     }
   }
 
