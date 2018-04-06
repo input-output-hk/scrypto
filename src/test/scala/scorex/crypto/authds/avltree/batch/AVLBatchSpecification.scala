@@ -44,12 +44,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val toRemove = (0 until mSize).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
       val modifications = toInsert ++ toRemove
       modifications.foreach(ti => prover.performOneOperation(ti))
-      val removed = prover.getRemovedNodes()
+      val removed = prover.removedNodes()
       removed.length should be > mSize
       toRemove.foreach(tr => removed.exists(_.key sameElements tr.key) shouldBe true)
 
       val modifyingProof = prover.generateProof()
-      prover.getRemovedNodes().isEmpty shouldBe true
+      prover.removedNodes().isEmpty shouldBe true
 
     }
   }

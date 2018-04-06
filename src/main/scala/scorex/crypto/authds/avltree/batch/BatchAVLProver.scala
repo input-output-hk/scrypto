@@ -5,6 +5,7 @@ import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
 import scorex.utils.ByteArray
 
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Failure, Random, Success, Try}
 
@@ -185,11 +186,41 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     * @return nodes, that where presented in old tree (starting form oldTopNode, but are not presented in new tree
     */
-  def getRemovedNodes(): Seq[ProverNodes[D]] = {
-    oldTopNode
-    topNode
-    ???
+  def removedNodes(): Seq[ProverNodes[D]] = {
+    val visitedNodes = filter(oldTopNode, n => n.visited)
+    visitedNodes.filter(n => nodeByKey(n.key).isEmpty)
   }
+
+  def nodeByKey(key: ADKey): Option[ProverNodes[D]] = nodeByKey(topNode, key)
+
+  @tailrec
+  final def nodeByKey(startNode: ProverNodes[D], key: ADKey): Option[ProverNodes[D]] = {
+    startNode match {
+      case _ if startNode.key sameElements key => Some(startNode)
+      case l: Leaf[D] => None
+      case in: InternalProverNode[D] if nextDirectionIsLeft(key, in) => nodeByKey(in.left, key)
+      case in: InternalProverNode[D] => nodeByKey(in.right, key)
+    }
+  }
+
+  /**
+    * TODO make tailrec
+    *
+    * @return node and all subnodes that where
+    */
+  def filter(startNode: ProverNodes[D], f: ProverNodes[D] => Boolean): Seq[ProverNodes[D]] = {
+    if (f(startNode)) {
+      startNode match {
+        case n: InternalProverNode[D] =>
+          val leftSubtree = filter(n.left, f)
+          val rightSubtree = filter(n.right, f)
+          startNode +: (leftSubtree ++ rightSubtree)
+        case l: ProverLeaf[D] if f(l) => Seq(startNode)
+        case _ => Seq()
+      }
+    } else Seq()
+  }
+
 
   /**
     * Generates the proof for all the operations in the list.
