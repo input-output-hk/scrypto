@@ -2,6 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
 import scorex.crypto.authds._
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
 import scorex.utils.ByteArray
 
@@ -188,19 +189,23 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     */
   def removedNodes(): Seq[ProverNodes[D]] = {
     val visitedNodes = filter(oldTopNode, n => n.visited)
-    visitedNodes.filter(n => nodeByKey(n.key).isEmpty)
+    visitedNodes.filter(n => !contains(n))
   }
 
-  def nodeByKey(key: ADKey): Option[ProverNodes[D]] = nodeByKey(topNode, key)
-
-  @tailrec
-  final def nodeByKey(startNode: ProverNodes[D], key: ADKey): Option[ProverNodes[D]] = {
-    startNode match {
-      case _ if startNode.key sameElements key => Some(startNode)
-      case l: Leaf[D] => None
-      case in: InternalProverNode[D] if nextDirectionIsLeft(key, in) => nodeByKey(in.left, key)
-      case in: InternalProverNode[D] => nodeByKey(in.right, key)
+  final def contains(node: ProverNodes[D]): Boolean = {
+    @tailrec
+    def loop(currentNode: ProverNodes[D]): Option[ProverNodes[D]] = {
+      currentNode match {
+        case _ if currentNode.label sameElements node.label => Some(currentNode)
+        case in: InternalProverNode[D] if nextDirectionIsLeft(node.key, in) => loop(in.left)
+        case in: InternalProverNode[D] => loop(in.right)
+        case _ =>
+          println(s"!! $currentNode |= ${node}")
+          None
+      }
     }
+
+    loop(topNode).isDefined
   }
 
   /**
@@ -209,16 +214,14 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * @return node and all subnodes that where
     */
   def filter(startNode: ProverNodes[D], f: ProverNodes[D] => Boolean): Seq[ProverNodes[D]] = {
-    if (f(startNode)) {
-      startNode match {
-        case n: InternalProverNode[D] =>
-          val leftSubtree = filter(n.left, f)
-          val rightSubtree = filter(n.right, f)
-          startNode +: (leftSubtree ++ rightSubtree)
-        case l: ProverLeaf[D] if f(l) => Seq(startNode)
-        case _ => Seq()
-      }
-    } else Seq()
+    startNode match {
+      case n: InternalProverNode[D] if f(n) =>
+        val leftSubtree = filter(n.left, f)
+        val rightSubtree = filter(n.right, f)
+        startNode +: (leftSubtree ++ rightSubtree)
+      case l: ProverLeaf[D] if f(l) => Seq(startNode)
+      case _ => Seq()
+    }
   }
 
 

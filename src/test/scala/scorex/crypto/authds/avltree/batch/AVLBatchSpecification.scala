@@ -19,21 +19,51 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   val KL = 26
   val VL = 8
   val HL = 32
-  type T = Digest32
+  type D = Digest32
   type HF = Blake2b256.type
 
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
 
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
 
-  private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[T, HF] = {
-    val prover = new BatchAVLProver[T, HF](KL, None)
+  private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[D, HF] = {
+    val prover = new BatchAVLProver[D, HF](KL, None)
     val keyValues = (0 until size) map { i =>
       (ADKey @@ Blake2b256(i.toString.getBytes).take(KL), ADValue @@ (i.toString.getBytes))
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
     prover.generateProof()
     prover
+  }
+
+  property("return removed leafs and internal nodes for small tree") {
+    /**
+      * manual check, that correct leafs and internal nodes where deleted
+      * ______________top(V9WU)                                top2(5VjC)
+      * ________________/   \                                      /   \
+      * NegativeInfinity    right(5VjC)       =>   NegativeInfinity     Leaf1(5VjC)
+      * ____________________/     \
+      * __________Leaf0(V9WU)      Leaf1(5VjC)
+      **/
+    val prover = generateProver(2)
+    val top = prover.topNode.asInstanceOf[InternalProverNode[D]] // V9WUMj6PYcMMgi8FNYELQPrzHbQs15HYwMi
+    val negativeInfinity = top.left.asInstanceOf[Leaf[D]] // 11111111111111111111111111
+    val right = top.right.asInstanceOf[InternalProverNode[D]] // 5VjCEAdtJfWHnXZau2oxogRg2xESXgF68sUm
+    val leaf0 = right.left.asInstanceOf[Leaf[D]] // V9WUMj6PYcMMgi8FNYELQPrzHbQs15HYwMi
+    val leaf1 = right.right.asInstanceOf[Leaf[D]] // 5VjCEAdtJfWHnXZau2oxogRg2xESXgF68sUm
+    prover.performOneOperation(Remove(leaf0.key))
+    prover.performOneOperation(Lookup(leaf1.key))
+   val removed = prover.removedNodes()
+
+    prover.generateProof()
+
+    // Top, Right and Leaf0 are not on the path any more, NegativeInfinity.newNextLeafKey changed.
+    // Leaf1 is not affected
+    removed.length shouldBe 4
+    removed.exists(_.label sameElements top.label) shouldBe true
+    removed.exists(_.label sameElements right.label) shouldBe true
+    removed.exists(_.label sameElements leaf0.label) shouldBe true
+    removed.exists(_.label sameElements negativeInfinity.label) shouldBe true
   }
 
   property("return removed leafs and internal nodes") {
@@ -50,7 +80,6 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       val modifyingProof = prover.generateProof()
       prover.removedNodes().isEmpty shouldBe true
-
     }
   }
 
@@ -69,7 +98,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       prover.digest shouldEqual initialDigest
       toInsert.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe None)
       toRemove.foreach(ti => prover.unauthenticatedLookup(ti.key).isDefined shouldBe true)
-      val verifier = new BatchAVLVerifier[T, HF](initialDigest, nonModifyingProof, KL, None)
+      val verifier = new BatchAVLVerifier[D, HF](initialDigest, nonModifyingProof, KL, None)
       modifications foreach (m => verifier.performOneOperation(m).get)
 
       // generate another proof without tree modification
@@ -123,7 +152,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("BatchAVLVerifier: extractNodes and extractFirstNode") {
-    val prover = new BatchAVLProver[T, HF](KL, None)
+    val prover = new BatchAVLProver[D, HF](KL, None)
     val digest = prover.digest
     val keyValues = (0 until InitialTreeSize) map { i =>
       val aValue = Keccak256(i.toString.getBytes)
@@ -133,13 +162,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     val pf = prover.generateProof()
 
-    val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, None)
-    val infinityLeaf: VerifierNodes[T] = verifier.extractFirstNode {
-      case _: VerifierLeaf[T] => true
+    val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, None)
+    val infinityLeaf: VerifierNodes[D] = verifier.extractFirstNode {
+      case _: VerifierLeaf[D] => true
       case _ => false
     }.get
-    val nonInfiniteLeaf: VerifierNodes[T] => Boolean = {
-      case l: VerifierLeaf[T] => !(l.label sameElements infinityLeaf.label)
+    val nonInfiniteLeaf: VerifierNodes[D] => Boolean = {
+      case l: VerifierLeaf[D] => !(l.label sameElements infinityLeaf.label)
       case _ => false
     }
 
@@ -153,7 +182,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     //First extracted leaf should be smallest
     val ordering: (Array[Byte], Array[Byte]) => Boolean = (a, b) => ByteArray.compare(a, b) > 0
     val smallestKey = keyValues.map(_._1).sortWith(ordering).last
-    val minLeaf = verifier.extractFirstNode(nonInfiniteLeaf).get.asInstanceOf[VerifierLeaf[T]]
+    val minLeaf = verifier.extractFirstNode(nonInfiniteLeaf).get.asInstanceOf[VerifierLeaf[D]]
     minLeaf.key shouldEqual smallestKey
   }
 
@@ -172,7 +201,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       currentMods foreach (m => prover.performOneOperation(m))
       val pf = prover.generateProof()
 
-      val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, None)
+      val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, None)
       currentMods foreach (m => verifier.performOneOperation(m).get)
       prover.digest shouldEqual verifier.digest.get
     }
@@ -180,7 +209,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Tree without fixed value length") {
-    val prover = new BatchAVLProver[T, HF](KL, None)
+    val prover = new BatchAVLProver[D, HF](KL, None)
     var digest = prover.digest
 
     forAll { valueLength: Short =>
@@ -192,7 +221,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         currentMods foreach (m => prover.performOneOperation(m))
         val pf = prover.generateProof()
 
-        val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, None)
+        val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, None)
         currentMods foreach (m => verifier.performOneOperation(m))
         digest = verifier.digest.get
 
@@ -208,7 +237,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val KL = aKey.length
         val VL = aValue.length
         whenever(KL > 0 && VL > 0 && !aKey.forall(_ equals (-1: Byte)) && !aKey.forall(_ equals (0: Byte))) {
-          val prover = new BatchAVLProver[T, HF](KL, Some(VL))
+          val prover = new BatchAVLProver[D, HF](KL, Some(VL))
           val m = Insert(ADKey @@ aKey, ADValue @@ aValue)
 
           val digest = prover.digest
@@ -216,7 +245,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           val pf = prover.generateProof()
           prover.digest
 
-          val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL))
+          val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL))
           verifier.performOneOperation(m)
           if (verifier.digest.isEmpty) {
             println("problematic key: " + aKey.mkString("-"))
@@ -228,13 +257,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
           val lookup = Lookup(ADKey @@ aKey)
           prover.performOneOperation(lookup)
           val pr = prover.generateProof()
-          val vr = new BatchAVLVerifier[T, HF](prover.digest, pr, KL, Some(VL))
+          val vr = new BatchAVLVerifier[D, HF](prover.digest, pr, KL, Some(VL))
           vr.performOneOperation(lookup).get.get shouldEqual aValue
 
           val nonExistinglookup = Lookup(randomKey(KL))
           prover.performOneOperation(nonExistinglookup)
           val pr2 = prover.generateProof()
-          val vr2 = new BatchAVLVerifier[T, HF](prover.digest, pr2, KL, Some(VL))
+          val vr2 = new BatchAVLVerifier[D, HF](prover.digest, pr2, KL, Some(VL))
           vr2.performOneOperation(nonExistinglookup).get shouldBe None
         }
       }
@@ -246,7 +275,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Lookups") {
-    val prover = new BatchAVLProver[T, HF](KL, Some(VL))
+    val prover = new BatchAVLProver[D, HF](KL, Some(VL))
     forAll(kvSeqGen) { kvSeq =>
       val insertNum = Math.min(3, kvSeq.length)
       val toInsert = kvSeq.take(insertNum)
@@ -259,7 +288,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       lookups.foreach(l => prover.performOneOperation(l))
       val pr = prover.generateProof()
 
-      val vr = new BatchAVLVerifier[T, HF](prover.digest, pr, KL, Some(VL))
+      val vr = new BatchAVLVerifier[D, HF](prover.digest, pr, KL, Some(VL))
       kvSeq.foreach { kv =>
         vr.performOneOperation(Lookup(kv._1)).get match {
           case Some(v) =>
@@ -274,7 +303,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   property("Usage as authenticated set") {
     val SetVL = Some(0)
-    val prover = new BatchAVLProver[T, HF](KL, SetVL)
+    val prover = new BatchAVLProver[D, HF](KL, SetVL)
     var digest = prover.digest
     //    val valueToInsert:Array[Byte] = Array.fill(SetVL)(0.toByte)
     val valueToInsert: Array[Byte] = Array.empty
@@ -286,7 +315,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         val pf = prover.generateProof()
         prover.digest
 
-        val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, SetVL)
+        val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, SetVL)
         verifier.performOneOperation(m)
         digest = verifier.digest.get
         prover.digest shouldEqual digest
@@ -296,7 +325,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Long updates") {
-    val prover = new BatchAVLProver[T, HF](KL, Some(VL))
+    val prover = new BatchAVLProver[D, HF](KL, Some(VL))
     var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -309,7 +338,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
         prover.performOneOperation(m).get.getOrElse(0L) shouldBe oldValue
         val pf = prover.generateProof()
 
-        val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL))
+        val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL))
         verifier.performOneOperation(m)
         digest = verifier.digest.get
         prover.digest shouldEqual digest
@@ -324,12 +353,12 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
 
   property("zero-mods verification on empty tree") {
-    val p = new BatchAVLProver[T, HF](KL, Some(VL))
+    val p = new BatchAVLProver[D, HF](KL, Some(VL))
     p.checkTree()
     val digest = p.digest
     val pf = p.generateProof()
     p.checkTree(true)
-    val v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(0), Some(0))
+    val v = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL), Some(0), Some(0))
     v.digest match {
       case Some(d) =>
         require(d sameElements digest, "wrong digest for zero-mods")
@@ -341,7 +370,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   property("conversion to byte and back") {
     // There is no way to test this without building a tree with at least 2^88 leaves,
     // so we resort to a very basic test
-    val p = new BatchAVLProver[T, HF](KL, Some(VL))
+    val p = new BatchAVLProver[D, HF](KL, Some(VL))
     val digest = p.digest
     for (i <- 0 to 255) {
       digest(digest.length - 1) = i.toByte
@@ -352,7 +381,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
 
   property("various verifier fails") {
-    val p = new BatchAVLProver[T, HF](KL, Some(VL))
+    val p = new BatchAVLProver[D, HF](KL, Some(VL))
 
     p.checkTree()
     for (i <- 0 until 1000) {
@@ -368,11 +397,11 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     var pf = p.generateProof()
 
     // see if the proof for 50 mods will be allowed when we permit only 2
-    var v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(2), Some(0))
+    var v = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL), Some(2), Some(0))
     require(v.digest.isEmpty, "Failed to reject too long a proof")
 
     // see if wrong digest will be allowed
-    v = new BatchAVLVerifier[T, HF](ADDigest @@ Random.randomBytes(KL), pf, KL, Some(VL), Some(50), Some(0))
+    v = new BatchAVLVerifier[D, HF](ADDigest @@ Random.randomBytes(KL), pf, KL, Some(VL), Some(50), Some(0))
     require(v.digest.isEmpty, "Failed to reject wrong digest")
 
     for (i <- 0 until 10) {
@@ -380,7 +409,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       for (i <- 0 until 8)
         require(p.performOneOperation(Insert(randomKey(KL), randomValue(8))).isSuccess, "failed to insert")
 
-      v = new BatchAVLVerifier[T, HF](digest, p.generateProof(), KL, Some(VL), Some(8), Some(0))
+      v = new BatchAVLVerifier[D, HF](digest, p.generateProof(), KL, Some(VL), Some(8), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
       // that is not in the conveyed tree, and verifier will complain
@@ -396,7 +425,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       // Change the direction of the proof and make sure verifier fails
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
-      v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(1), Some(0))
+      v = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL), Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneOperation(Insert(key, randomValue(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
@@ -407,7 +436,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
       val oldKey = key(0)
       key(0) = (key(0) ^ (1 << 7)).toByte
-      v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(1), Some(0))
+      v = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL), Some(1), Some(0))
       require(v.digest.nonEmpty, "verification failed to construct tree")
       v.performOneOperation(Insert(key, randomValue(8)))
       require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
@@ -424,7 +453,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     forAll(Gen.choose(minSetSize, maxSetSize), Arbitrary.arbBool.arbitrary) { case (cnt, generateProof) =>
       whenever(cnt > minSetSize) {
         var keys = IndexedSeq[ADKey]()
-        val prover = new BatchAVLProver[T, HF](KL, Some(VL))
+        val prover = new BatchAVLProver[D, HF](KL, Some(VL))
 
         (1 to cnt) foreach { _ =>
           val key: ADKey = randomKey(KL)
@@ -460,7 +489,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("successful modifications") {
-    val p = new BatchAVLProver[T, HF](KL, Some(VL))
+    val p = new BatchAVLProver[D, HF](KL, Some(VL))
 
     val numMods = 5000
 
@@ -564,7 +593,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val pf = p.generateProof()
       p.checkTree(true)
 
-      val v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(n), Some(numCurrentDeletes))
+      val v = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL), Some(n), Some(numCurrentDeletes))
       v.digest match {
         case None =>
           throw new Error("Verification failed to construct the tree")
@@ -587,9 +616,9 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Persistence AVL batch prover") {
-    val storage = new VersionedAVLStorageMock[T]
-    val p = new BatchAVLProver[T, HF](KL, Some(VL))
-    val prover = PersistentBatchAVLProver.create[T, HF](p, storage, paranoidChecks = true).get
+    val storage = new VersionedAVLStorageMock[D]
+    val p = new BatchAVLProver[D, HF](KL, Some(VL))
+    val prover = PersistentBatchAVLProver.create[D, HF](p, storage, paranoidChecks = true).get
     var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -597,7 +626,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       prover.performOneOperation(m)
       val pf = prover.generateProofAndUpdateStorage()
 
-      val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL))
+      val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL))
       verifier.digest.get
       verifier.performOneOperation(m)
 
@@ -611,7 +640,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       digest = prover.digest
     }
 
-    val prover2 = PersistentBatchAVLProver.create(new BatchAVLProver[T, HF](KL, Some(VL)), storage, paranoidChecks = true).get
+    val prover2 = PersistentBatchAVLProver.create(new BatchAVLProver[D, HF](KL, Some(VL)), storage, paranoidChecks = true).get
     prover2.digest shouldEqual prover.digest
   }
 
@@ -619,7 +648,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     val tree = new AVLTree(KL)
     var digest = tree.rootHash()
     val oldProver = new LegacyProver(tree)
-    val newProver = new BatchAVLProver[T, HF](KL, Some(VL))
+    val newProver = new BatchAVLProver[D, HF](KL, Some(VL))
     require(newProver.digest startsWith oldProver.rootHash)
     require(newProver.digest.length == oldProver.rootHash.length + 1)
 
@@ -642,7 +671,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("Verifier should calculate the same digest") {
-    val prover = new BatchAVLProver[T, HF](KL, Some(VL))
+    val prover = new BatchAVLProver[D, HF](KL, Some(VL))
     var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
@@ -651,7 +680,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       currentMods foreach (m => prover.performOneOperation(m))
       val pf = prover.generateProof()
 
-      val verifier = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL))
+      val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, Some(VL))
       currentMods foreach (m => verifier.performOneOperation(m))
       digest = verifier.digest.get
 
