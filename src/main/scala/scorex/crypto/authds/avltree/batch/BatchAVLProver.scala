@@ -193,15 +193,15 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   }
 
   final def contains(node: ProverNodes[D]): Boolean = {
+    found = false
+
     @tailrec
     def loop(currentNode: ProverNodes[D]): Option[ProverNodes[D]] = {
       currentNode match {
         case _ if currentNode.label sameElements node.label => Some(currentNode)
         case in: InternalProverNode[D] if nextDirectionIsLeft(node.key, in) => loop(in.left)
         case in: InternalProverNode[D] => loop(in.right)
-        case _ =>
-          println(s"!! $currentNode |= ${node}")
-          None
+        case _ => None
       }
     }
 

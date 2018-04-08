@@ -47,23 +47,24 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       **/
     val prover = generateProver(2)
     val top = prover.topNode.asInstanceOf[InternalProverNode[D]] // V9WUMj6PYcMMgi8FNYELQPrzHbQs15HYwMi
-    val negativeInfinity = top.left.asInstanceOf[Leaf[D]] // 11111111111111111111111111
+    val negativeInfinity = top.left.asInstanceOf[ProverLeaf[D]] // 11111111111111111111111111
     val right = top.right.asInstanceOf[InternalProverNode[D]] // 5VjCEAdtJfWHnXZau2oxogRg2xESXgF68sUm
-    val leaf0 = right.left.asInstanceOf[Leaf[D]] // V9WUMj6PYcMMgi8FNYELQPrzHbQs15HYwMi
-    val leaf1 = right.right.asInstanceOf[Leaf[D]] // 5VjCEAdtJfWHnXZau2oxogRg2xESXgF68sUm
+    val leaf0 = right.left.asInstanceOf[ProverLeaf[D]] // V9WUMj6PYcMMgi8FNYELQPrzHbQs15HYwMi
+    val leaf1 = right.right.asInstanceOf[ProverLeaf[D]] // 5VjCEAdtJfWHnXZau2oxogRg2xESXgF68sUm
+
+    val all = Seq(leaf1, top, right, leaf0, negativeInfinity)
+    all.foreach(n => prover.contains(n) shouldBe true)
+    val removedManual = all.tail
+
     prover.performOneOperation(Remove(leaf0.key))
     prover.performOneOperation(Lookup(leaf1.key))
-   val removed = prover.removedNodes()
-
+    val removed = prover.removedNodes()
     prover.generateProof()
 
     // Top, Right and Leaf0 are not on the path any more, NegativeInfinity.newNextLeafKey changed.
     // Leaf1 is not affected
-    removed.length shouldBe 4
-    removed.exists(_.label sameElements top.label) shouldBe true
-    removed.exists(_.label sameElements right.label) shouldBe true
-    removed.exists(_.label sameElements leaf0.label) shouldBe true
-    removed.exists(_.label sameElements negativeInfinity.label) shouldBe true
+    removed.length shouldBe removedManual.length
+    removedManual.foreach(n => removed.exists(_.label sameElements n.label) shouldBe true)
   }
 
   property("return removed leafs and internal nodes") {
