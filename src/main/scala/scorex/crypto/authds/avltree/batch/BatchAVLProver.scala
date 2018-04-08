@@ -192,20 +192,26 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     visitedNodes.filter(n => !contains(n))
   }
 
+  /**
+    * @return `true` if this tree has an element that has the same label, as `node.label`, `false` otherwise.
+    */
   final def contains(node: ProverNodes[D]): Boolean = {
+    val foundStart = found
     found = false
 
     @tailrec
-    def loop(currentNode: ProverNodes[D]): Option[ProverNodes[D]] = {
+    def loop(currentNode: ProverNodes[D]): Boolean = {
       currentNode match {
-        case _ if currentNode.label sameElements node.label => Some(currentNode)
+        case _ if currentNode.label sameElements node.label => true
         case in: InternalProverNode[D] if nextDirectionIsLeft(node.key, in) => loop(in.left)
         case in: InternalProverNode[D] => loop(in.right)
-        case _ => None
+        case _ => false
       }
     }
 
-    loop(topNode).isDefined
+    val result = loop(topNode)
+    found = foundStart
+    result
   }
 
   /**
