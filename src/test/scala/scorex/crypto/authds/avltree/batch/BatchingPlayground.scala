@@ -54,12 +54,14 @@ object BatchingPlayground extends App with ToStringHelper {
     prover.generateProof()
     prover.digest
     println("Tree created")
-    Thread.sleep(1000 * 60)
+    Thread.sleep(1000 * 10)
     println("Started")
+    (0 until 100) foreach { _ =>
     val (filterTime, res) = time {
-      prover.filter(prover.topNode, _ => true)
+        prover.filter(prover.topNode, _ => true)
+      }
+      println(s"time = $filterTime")
     }
-    println(s"time = $filterTime")
   }
 
   def removedNodesBenchmark(startTreeSize: Int = 10000000,
@@ -128,7 +130,7 @@ object BatchingPlayground extends App with ToStringHelper {
     }
 
     println(s"${oldLookupProof.length},$oldLookupTime,$oldLookupVerificationTime," +
-        s"${lookupProof.length},$lookupTime,$lookupVerificationTime")
+      s"${lookupProof.length},$lookupTime,$lookupVerificationTime")
 
   }
 

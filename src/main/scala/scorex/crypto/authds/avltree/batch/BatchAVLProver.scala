@@ -7,6 +7,7 @@ import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Random, Success, Try}
 
 
@@ -217,14 +218,20 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * @return node and all subnodes of `startNode` that sutisfies condition `condition`
     */
   private[batch] def filter(startNode: ProverNodes[D], condition: ProverNodes[D] => Boolean): Seq[ProverNodes[D]] = {
-    startNode match {
-      case n: InternalProverNode[D] if condition(n) =>
-        val leftSubtree = filter(n.left, condition)
-        val rightSubtree = filter(n.right, condition)
-        startNode +: (leftSubtree ++ rightSubtree)
-      case l: ProverLeaf[D] if condition(l) => Seq(startNode)
-      case _ => Seq()
+    val acc: ArrayBuffer[ProverNodes[D]] = ArrayBuffer.empty
+
+    def loop(currentNode: ProverNodes[D]): Unit = {
+      if (condition(currentNode)) acc += currentNode
+      currentNode match {
+        case n: InternalProverNode[D] if condition(currentNode) =>
+          loop(n.left)
+          loop(n.right)
+        case _ =>
+      }
     }
+
+    loop(startNode)
+    acc
   }
 
 
