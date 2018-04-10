@@ -216,7 +216,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     * @return node and all subnodes of `startNode` that sutisfies condition `condition`
     */
-  private def filter(startNode: ProverNodes[D], condition: ProverNodes[D] => Boolean): Seq[ProverNodes[D]] = {
+  private[batch] def filter(startNode: ProverNodes[D], condition: ProverNodes[D] => Boolean): Seq[ProverNodes[D]] = {
     startNode match {
       case n: InternalProverNode[D] if condition(n) =>
         val leftSubtree = filter(n.left, condition)

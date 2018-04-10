@@ -42,7 +42,25 @@ object BatchingPlayground extends App with ToStringHelper {
   //spaceBenchmarks
   //lookupBenchmark()
   //  testReadme
-  removedNodesBenchmark()
+  //removedNodesBenchmark
+  filterBenchmark()
+
+  def filterBenchmark(startTreeSize: Int = 1000000): Unit = {
+    val prover = new BatchAVLProver[T, HF](KL, Some(VL))
+    val elements: Seq[(ADKey, ADValue)] = (0 until startTreeSize)
+      .map(i => Sha256(i.toString))
+      .map(k => (ADKey @@ k, ADValue @@ k.take(8)))
+    elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)))
+    prover.generateProof()
+    prover.digest
+    println("Tree created")
+    Thread.sleep(1000 * 60)
+    println("Started")
+    val (filterTime, res) = time {
+      prover.filter(prover.topNode, _ => true)
+    }
+    println(s"time = $filterTime")
+  }
 
   def removedNodesBenchmark(startTreeSize: Int = 10000000,
                             toRemoveSize: Int = 1000,
