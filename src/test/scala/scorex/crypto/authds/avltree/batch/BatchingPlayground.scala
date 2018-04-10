@@ -8,7 +8,6 @@ import scorex.utils.Random
 
 import scala.util.Success
 
-
 object BatchingPlayground extends App with ToStringHelper {
   val KL = 32
   val VL = 8
@@ -18,7 +17,6 @@ object BatchingPlayground extends App with ToStringHelper {
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
 
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
-
 
   def time[R](block: => R): (Float, R) = {
     val t0 = System.nanoTime()
@@ -40,14 +38,47 @@ object BatchingPlayground extends App with ToStringHelper {
   //timeBenchmarksOld
   //spaceBenchmarks
   //lookupBenchmark()
-  testReadme
+  //  testReadme
+  removedNodesBenchmark()
+
+  def removedNodesBenchmark(startTreeSize: Int = 10000000,
+                            toRemoveSize: Int = 1000,
+                            toInsertSize: Int = 10000): Unit = {
+    val prover = new BatchAVLProver[T, HF](KL, Some(VL))
+    val elements: Seq[(ADKey, ADValue)] = (0 until startTreeSize)
+      .map(i => Sha256(i.toString))
+      .map(k => (ADKey @@ k, ADValue @@ k.take(8)))
+    elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)))
+    prover.generateProof()
+    prover.digest
+    println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
+    (0 until 100).foreach { i =>
+      val toRemove = elements.slice(i * toRemoveSize, (i + 1) * toRemoveSize).map(e => Remove(e._1))
+      val toInsert = (0 until toInsertSize).map(j => Sha256(s"$i-$j"))
+        .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
+      val mods = toRemove ++ toInsert
+      val (performOperationsTime, _) = time {
+        mods.foreach(op => prover.performOneOperation(op))
+      }
+      val (removedNodesTime, removedNodes) = time {
+        prover.removedNodes().length
+      }
+      val (proofGenerationTime, _) = time {
+        prover.generateProof()
+      }
+      val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
+      println(s"$treeSize,$toRemoveSize,$removedNodes,$removedNodesTime,$proofGenerationTime,$performOperationsTime")
+    }
+  }
 
   def lookupBenchmark(): Unit = {
     val prover = new BatchAVLProver[T, HF](KL, Some(VL))
     println(s"modifyingLookupProoflength,modifyingLookupTime,modifyingLookupVerificationTime,lookupProoflength,lookupTime,lookupVerificationTime")
 
     val ElementsToInsert = 100000
-    val elements = (0 until ElementsToInsert).map(i => Sha256(i.toString)).map(k => (ADKey @@ k, ADValue @@ k.take(8)))
+    val elements = (0 until ElementsToInsert)
+      .map(i => Sha256(i.toString))
+      .map(k => (ADKey @@ k, ADValue @@ k.take(8)))
 
     elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)))
     prover.generateProof()
@@ -59,8 +90,10 @@ object BatchingPlayground extends App with ToStringHelper {
       lookups.foreach(l => prover.performOneOperation(l))
       prover.generateProof()
     }
-    val vr = new BatchAVLVerifier[T, HF](prover.digest, lookupProof, KL, Some(VL))
-    val (lookupVerificationTime, _) = time(lookups.map(lookup => lookup.key -> vr.performOneOperation(lookup).get))
+    val vr =
+      new BatchAVLVerifier[T, HF](prover.digest, lookupProof, KL, Some(VL))
+    val (lookupVerificationTime, _) = time(
+      lookups.map(lookup => lookup.key -> vr.performOneOperation(lookup).get))
     // modifying lookups
 
     val digest2 = prover.digest
@@ -74,10 +107,9 @@ object BatchingPlayground extends App with ToStringHelper {
     }
 
     println(s"${oldLookupProof.length},$oldLookupTime,$oldLookupVerificationTime," +
-      s"${lookupProof.length},$lookupTime,$lookupVerificationTime")
+        s"${lookupProof.length},$lookupTime,$lookupVerificationTime")
 
   }
-
 
   def lookupTest() {
     val kl = 4
@@ -116,7 +148,10 @@ object BatchingPlayground extends App with ToStringHelper {
       p.generateProof()
     }
 
-    val vr = new BatchAVLVerifier[T, HF](p.digest, pr, keyLength = kl, valueLengthOpt = Some(vl))
+    val vr = new BatchAVLVerifier[T, HF](p.digest,
+      pr,
+      keyLength = kl,
+      valueLengthOpt = Some(vl))
     assert(vr.performOneOperation(l1).get.isDefined)
     assert(vr.performOneOperation(l2).get.isDefined)
     assert(vr.performOneOperation(l3).get.isEmpty)
@@ -138,12 +173,15 @@ object BatchingPlayground extends App with ToStringHelper {
       p.generateProof()
     }
 
-    val vr2 = new BatchAVLVerifier[T, HF](p.digest, pr2, keyLength = kl, valueLengthOpt = Some(vl))
+    val vr2 = new BatchAVLVerifier[T, HF](p.digest,
+      pr2,
+      keyLength = kl,
+      valueLengthOpt = Some(vl))
 
-    val pl2 = Seq(l1, l2, l3, l4, l5, l6).map(lookup => lookup.key -> vr2.performOneOperation(lookup).get)
+    val pl2 = Seq(l1, l2, l3, l4, l5, l6).map(lookup =>
+      lookup.key -> vr2.performOneOperation(lookup).get)
     println(pl2)
   }
-
 
   def smallDeleteTest = {
     def intToKey(k: Int): ADKey = {
@@ -172,7 +210,6 @@ object BatchingPlayground extends App with ToStringHelper {
       newProver.checkTree()
       println(newProver)
     }
-
 
     deleteTest2
 
@@ -243,7 +280,6 @@ object BatchingPlayground extends App with ToStringHelper {
       del(48)
     }
 
-
     def deleteTest1 = {
 
       // testCase: 1 for testing deletes of the root, 2 for testing deletes to the left of the root, 3 for testing deletes to the right of the root
@@ -266,10 +302,8 @@ object BatchingPlayground extends App with ToStringHelper {
 
       ins(20)
 
-
       // testCase *.a no children of the node being removed exist
       del(20)
-
 
       // testCase *.b: only left child of the node being removed exists
       clearTree
@@ -278,8 +312,7 @@ object BatchingPlayground extends App with ToStringHelper {
       ins(10)
       del(20)
 
-
-      // testCase *.c only right child of the node being removed exists    
+      // testCase *.c only right child of the node being removed exists
       clearTree
 
       ins(10)
@@ -321,9 +354,7 @@ object BatchingPlayground extends App with ToStringHelper {
       del(7)
     }
 
-
   }
-
 
   def memoryTestWithBatching() {
     // Generate a key out of an int
@@ -336,7 +367,9 @@ object BatchingPlayground extends App with ToStringHelper {
     val newProver = new BatchAVLProver[T, HF](KL, Some(VL))
     val numKeys = 400000
     var p: Option[Seq[Byte]] = None
-    var prevMemory: Long = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+    var prevMemory: Long = Runtime.getRuntime().totalMemory() - Runtime
+      .getRuntime()
+      .freeMemory()
     var curMemory: Long = prevMemory
 
     for (i <- 1 until numKeys) {
@@ -348,7 +381,9 @@ object BatchingPlayground extends App with ToStringHelper {
     newProver.digest
     newProver.generateProof()
     System.gc
-    curMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+    curMemory = Runtime.getRuntime().totalMemory() - Runtime
+      .getRuntime()
+      .freeMemory()
     println(curMemory)
 
     var i = 0
@@ -374,7 +409,9 @@ object BatchingPlayground extends App with ToStringHelper {
       if (i % 50000 == 0) {
         System.gc
         prevMemory = curMemory
-        curMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+        curMemory = Runtime.getRuntime().totalMemory() - Runtime
+          .getRuntime()
+          .freeMemory()
         print(i)
         print(",")
         print(curMemory)
@@ -417,13 +454,15 @@ object BatchingPlayground extends App with ToStringHelper {
         }
       }
     }
-  */
+   */
 
   def memoryTestNoBatching {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
     var p: Option[scala.util.Try[AVLModifyProof]] = None
-    var prevMemory: Long = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+    var prevMemory: Long = Runtime.getRuntime().totalMemory() - Runtime
+      .getRuntime()
+      .freeMemory()
     var curMemory: Long = prevMemory
 
     var i = 0
@@ -523,7 +562,6 @@ object BatchingPlayground extends App with ToStringHelper {
     }
   }
 
-
   def timeBenchmarksOld {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
@@ -583,7 +621,6 @@ object BatchingPlayground extends App with ToStringHelper {
       batchSize /= 2
     }
   }
-
 
   def spaceBenchmarks {
     val newProver = new BatchAVLProver[T, HF](KL, Some(VL))
@@ -649,7 +686,8 @@ object BatchingPlayground extends App with ToStringHelper {
     len = 0
     for (i <- 0 until testAtTheEnd) {
       val j = Random.randomBytes(3)
-      val key = ADKey @@ keys((j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % keys.size)
+      val key = ADKey @@ keys(
+        (j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % keys.size)
       keys -= key
       val m = Remove(key)
       newProver.performOneOperation(m)
@@ -667,7 +705,8 @@ object BatchingPlayground extends App with ToStringHelper {
       val digest = p.digest
       val pf = p.generateProof()
       p.checkTree(true)
-      val v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(0), Some(0))
+      val v =
+        new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(0), Some(0))
       v.digest match {
         case None =>
           throw new Error("zero-mods verification failed to construct tree")
@@ -681,36 +720,55 @@ object BatchingPlayground extends App with ToStringHelper {
 
       p.checkTree()
       for (i <- 0 until 1000) {
-        require(p.performOneOperation(Insert(randomKey(), randomValue(8))).isSuccess, "failed to insert")
+        require(
+          p.performOneOperation(Insert(randomKey(), randomValue(8))).isSuccess,
+          "failed to insert")
         p.checkTree()
       }
       p.generateProof()
 
       var digest = p.digest
       for (i <- 0 until 50)
-        require(p.performOneOperation(Insert(randomKey(), randomValue(8))).isSuccess, "failed to insert")
+        require(
+          p.performOneOperation(Insert(randomKey(), randomValue(8))).isSuccess,
+          "failed to insert")
 
       var pf = p.generateProof()
       // see if the proof for 50 mods will be allowed when we permit only 2
-      var v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(2), Some(0))
+      var v =
+        new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(2), Some(0))
       require(v.digest.isEmpty, "Failed to reject too long a proof")
 
       // see if wrong digest will be allowed
-      v = new BatchAVLVerifier[T, HF](ADDigest @@ Random.randomBytes(), pf, KL, Some(VL), Some(50), Some(0))
+      v = new BatchAVLVerifier[T, HF](ADDigest @@ Random.randomBytes(),
+        pf,
+        KL,
+        Some(VL),
+        Some(50),
+        Some(0))
       require(v.digest.isEmpty, "Failed to reject wrong digest")
 
       for (i <- 0 until 10) {
         digest = p.digest
         for (i <- 0 until 8)
-          require(p.performOneOperation(Insert(randomKey(), randomValue(8))).isSuccess, "failed to insert")
+          require(p.performOneOperation(Insert(randomKey(), randomValue(8)))
+            .isSuccess,
+            "failed to insert")
 
-        v = new BatchAVLVerifier[T, HF](digest, p.generateProof(), KL, Some(VL), Some(8), Some(0))
+        v = new BatchAVLVerifier[T, HF](digest,
+          p.generateProof(),
+          KL,
+          Some(VL),
+          Some(8),
+          Some(0))
         require(v.digest.nonEmpty, "verification failed to construct tree")
         // Try 5 inserts that do not match -- with overwhelming probability one of them will go to a leaf
         // that is not in the conveyed tree, and verifier will complain
         for (i <- 0 until 5)
           v.performOneOperation(Insert(randomKey(), randomValue(8)))
-        require(v.digest.isEmpty, "verification succeeded when it should have failed, because of a missing leaf")
+        require(
+          v.digest.isEmpty,
+          "verification succeeded when it should have failed, because of a missing leaf")
 
         digest = p.digest
         val key = randomKey()
@@ -720,10 +778,17 @@ object BatchingPlayground extends App with ToStringHelper {
 
         // Change the direction of the proof and make sure verifier fails
         pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
-        v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(1), Some(0))
+        v = new BatchAVLVerifier[T, HF](digest,
+          pf,
+          KL,
+          Some(VL),
+          Some(1),
+          Some(0))
         require(v.digest.nonEmpty, "verification failed to construct tree")
         v.performOneOperation(Insert(key, randomValue(8)))
-        require(v.digest.isEmpty, "verification succeeded when it should have failed, because of the wrong direction")
+        require(
+          v.digest.isEmpty,
+          "verification succeeded when it should have failed, because of the wrong direction")
 
         // Change the key by a large amount -- verification should fail with overwhelming probability
         // because there are 1000 keys in the tree
@@ -731,16 +796,22 @@ object BatchingPlayground extends App with ToStringHelper {
         pf(pf.length - 1) = (~pf(pf.length - 1)).toByte
         val oldKey = key(0)
         key(0) = (key(0) ^ (1 << 7)).toByte
-        v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(1), Some(0))
+        v = new BatchAVLVerifier[T, HF](digest,
+          pf,
+          KL,
+          Some(VL),
+          Some(1),
+          Some(0))
         require(v.digest.nonEmpty, "verification failed to construct tree")
         v.performOneOperation(Insert(key, randomValue(8)))
-        require(v.digest.isEmpty, "verification succeeded when it should have failed because of the wrong key")
+        require(
+          v.digest.isEmpty,
+          "verification succeeded when it should have failed because of the wrong key")
         // put the key back the way it should be, because otherwise it's messed up in the prover tree
         key(0) = (key(0) ^ (1 << 7)).toByte
 
       }
     }
-
 
     def testSuccessfulChanges(toPrint: Boolean) = {
       def randomInt(max: Int) = scala.util.Random.nextInt(max)
@@ -758,7 +829,8 @@ object BatchingPlayground extends App with ToStringHelper {
       // ListBuffer would also be terrible here, because it doesn't have
       // fast lookup and remove by index
       // SetTree doesn't allow lookup by rank.
-      val keysAndVals = new scala.collection.mutable.ArrayBuffer[(ADKey, ADValue)]
+      val keysAndVals =
+      new scala.collection.mutable.ArrayBuffer[(ADKey, ADValue)]
 
       var i = 0
       var numInserts = 0
@@ -789,44 +861,53 @@ object BatchingPlayground extends App with ToStringHelper {
               val j = Random.randomBytes(3)
               val index = randomInt(keysAndVals.size)
               val key = keysAndVals(index)._1
-              require(p.performOneOperation(Insert(key, randomValue(8))).isFailure, "prover succeeded on inserting a value that's already in tree")
+              require(
+                p.performOneOperation(Insert(key, randomValue(8))).isFailure,
+                "prover succeeded on inserting a value that's already in tree")
               p.checkTree()
-              require(p.unauthenticatedLookup(key).get == keysAndVals(index)._2, "value changed after duplicate insert") // check insert didn't do damage
+              require(
+                p.unauthenticatedLookup(key).get == keysAndVals(index)._2,
+                "value changed after duplicate insert") // check insert didn't do damage
               numFailures += 1
-            }
-            else {
+            } else {
               val key = randomKey()
               val newVal = randomValue(8)
               keysAndVals += ((key, newVal))
               val mod = Insert(key, newVal)
               currentMods += mod
-              require(p.performOneOperation(mod).isSuccess, "prover failed to insert")
+              require(p.performOneOperation(mod).isSuccess,
+                "prover failed to insert")
               p.checkTree()
-              require(p.unauthenticatedLookup(key).get == newVal, "inserted key is missing") // check insert
+              require(p.unauthenticatedLookup(key).get == newVal,
+                "inserted key is missing") // check insert
               numInserts += 1
             }
-          }
-          else {
+          } else {
             // with probability .25 update, with .25 delete
             if (randomInt(2) == 0) {
               // update
               if (randomInt(10) == 0) {
                 // with probability 1/10 cause a fail by modifying a nonexisting key
                 val key = randomKey()
-                require(p.performOneOperation(Update(key, randomValue(8))).isFailure, "prover updated a nonexistent value")
+                require(
+                  p.performOneOperation(Update(key, randomValue(8))).isFailure,
+                  "prover updated a nonexistent value")
                 p.checkTree()
-                require(p.unauthenticatedLookup(key).isEmpty, "a nonexistent value appeared after an update") // check update didn't do damage
+                require(
+                  p.unauthenticatedLookup(key).isEmpty,
+                  "a nonexistent value appeared after an update") // check update didn't do damage
                 numFailures += 1
-              }
-              else {
+              } else {
                 val index = randomInt(keysAndVals.size)
                 val key = keysAndVals(index)._1
                 val newVal = randomValue(8)
                 val mod = Update(key, newVal)
                 currentMods += mod
-                require(p.performOneOperation(mod).isSuccess, "prover failed to update value")
+                require(p.performOneOperation(mod).isSuccess,
+                  "prover failed to update value")
                 keysAndVals(index) = key -> newVal
-                require(p.unauthenticatedLookup(key).get.sameElements(newVal), "wrong value after update") // check update
+                require(p.unauthenticatedLookup(key).get.sameElements(newVal),
+                  "wrong value after update") // check update
                 numModifies += 1
               }
             } else {
@@ -837,22 +918,25 @@ object BatchingPlayground extends App with ToStringHelper {
                 val mod = RemoveIfExists(key)
                 val d = p.digest
                 currentMods += mod
-                require(p.performOneOperation(mod).isSuccess, "prover failed when it should have done nothing")
-                require(d sameElements p.digest, "Tree changed when it shouldn't have")
+                require(p.performOneOperation(mod).isSuccess,
+                  "prover failed when it should have done nothing")
+                require(d sameElements p.digest,
+                  "Tree changed when it shouldn't have")
                 p.checkTree()
                 numNonDeletes += 1
-              }
-              else {
+              } else {
                 // remove an existing key
                 val index = randomInt(keysAndVals.size)
                 val key = keysAndVals(index)._1
                 val mod = Remove(key)
                 val oldVal = keysAndVals(index)._2
                 currentMods += mod
-                require(p.performOneOperation(mod).isSuccess, "failed ot delete")
+                require(p.performOneOperation(mod).isSuccess,
+                  "failed ot delete")
                 keysAndVals -= ((key, oldVal))
                 deletedKeys += key
-                require(p.unauthenticatedLookup(key).isEmpty, "deleted key still in tree") // check delete
+                require(p.unauthenticatedLookup(key).isEmpty,
+                  "deleted key still in tree") // check delete
                 numDeletes += 1
                 numCurrentDeletes += 1
               }
@@ -873,7 +957,12 @@ object BatchingPlayground extends App with ToStringHelper {
           }
         }
 
-        val v = new BatchAVLVerifier[T, HF](digest, pf, KL, Some(VL), Some(n), Some(numCurrentDeletes))
+        val v = new BatchAVLVerifier[T, HF](digest,
+          pf,
+          KL,
+          Some(VL),
+          Some(n),
+          Some(numCurrentDeletes))
         v.digest match {
           case None =>
             throw new Error("Verification failed to construct the tree")
@@ -886,13 +975,18 @@ object BatchingPlayground extends App with ToStringHelper {
           case None =>
             throw new Error("Verification failed")
           case Some(d) =>
-            require(d sameElements p.digest, "Tree has wrong digest after verification")
+            require(d sameElements p.digest,
+              "Tree has wrong digest after verification")
         }
       }
 
-      // Check that all the inserts, deletes, and updates we did actually stayed 
-      deletedKeys foreach (k => require(p.unauthenticatedLookup(k).isEmpty, "Key that was deleted is still in the tree"))
-      keysAndVals foreach (pair => require(p.unauthenticatedLookup(pair._1).get == pair._2, "Key has wrong value"))
+      // Check that all the inserts, deletes, and updates we did actually stayed
+      deletedKeys foreach (k =>
+        require(p.unauthenticatedLookup(k).isEmpty,
+          "Key that was deleted is still in the tree"))
+      keysAndVals foreach (pair =>
+        require(p.unauthenticatedLookup(pair._1).get == pair._2,
+          "Key has wrong value"))
 
       if (toPrint) {
         print("NumInserts = ")
@@ -917,9 +1011,9 @@ object BatchingPlayground extends App with ToStringHelper {
     override def updateFn: UpdateFunction = old => Success(old)
   }
 
-
   def testReadme {
-    val prover = new BatchAVLProver[T, HF](keyLength = 1, valueLengthOpt = Some(VL))
+    val prover =
+      new BatchAVLProver[T, HF](keyLength = 1, valueLengthOpt = Some(VL))
     val initialDigest = prover.digest
     val key1 = ADKey @@ Array(1: Byte)
     val key2 = ADKey @@ Array(2: Byte)
@@ -938,28 +1032,52 @@ object BatchingPlayground extends App with ToStringHelper {
     val op6 = Lookup(key3)
     val op7 = Remove(ADKey @@ Array(5: Byte))
     val op8 = Remove(key3)
-    require(prover.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
-    require(prover.unauthenticatedLookup(key1).get sameElements Longs.toByteArray(50))
+    require(
+      prover.performOneOperation(op4).get.get sameElements Longs.toByteArray(
+        10))
+    require(
+      prover.unauthenticatedLookup(key1).get sameElements Longs.toByteArray(50))
     require(!prover.performOneOperation(op5).isSuccess) // Fails
-    require(prover.performOneOperation(op6).get.get sameElements Longs.toByteArray(30))
+    require(
+      prover.performOneOperation(op6).get.get sameElements Longs.toByteArray(
+        30))
     require(!prover.performOneOperation(op7).isSuccess) // Fails
-    require(prover.performOneOperation(op8).get.get sameElements Longs.toByteArray(30))
+    require(
+      prover.performOneOperation(op8).get.get sameElements Longs.toByteArray(
+        30))
     val proof2 = prover.generateProof() // Proof onlyu for op4 and op6
     val digest2 = prover.digest
 
-    val verifier1 = new BatchAVLVerifier[T, HF](initialDigest, proof1, keyLength = 1, valueLengthOpt = Some(VL), maxNumOperations = Some(2), maxDeletes = Some(0))
+    val verifier1 = new BatchAVLVerifier[T, HF](initialDigest,
+      proof1,
+      keyLength = 1,
+      valueLengthOpt = Some(VL),
+      maxNumOperations = Some(2),
+      maxDeletes = Some(0))
     require(verifier1.performOneOperation(op1).get.isEmpty) // Should return None
     require(verifier1.performOneOperation(op2).get.isEmpty) // Should return None
     require(verifier1.performOneOperation(op3).get.isEmpty) // Should return None
     verifier1.digest match {
       case Some(d1) if digest1.sameElements(digest1) =>
         //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
-        val verifier2 = new BatchAVLVerifier[T, HF](d1, proof2, keyLength = 1, valueLengthOpt = Some(VL), maxNumOperations = Some(3), maxDeletes = Some(1))
-        require(verifier2.performOneOperation(op4).get.get sameElements Longs.toByteArray(10))
-        require(verifier2.performOneOperation(op6).get.get sameElements Longs.toByteArray(30))
-        require(verifier2.performOneOperation(op8).get.get sameElements Longs.toByteArray(30))
+        val verifier2 = new BatchAVLVerifier[T, HF](d1,
+          proof2,
+          keyLength = 1,
+          valueLengthOpt = Some(VL),
+          maxNumOperations = Some(3),
+          maxDeletes = Some(1))
+        require(
+          verifier2.performOneOperation(op4).get.get sameElements Longs
+            .toByteArray(10))
+        require(
+          verifier2.performOneOperation(op6).get.get sameElements Longs
+            .toByteArray(30))
+        require(
+          verifier2.performOneOperation(op8).get.get sameElements Longs
+            .toByteArray(30))
         verifier2.digest match {
-          case Some(d2) if d2.sameElements(digest2) => println("declared root2 value and proofs are valid")
+          case Some(d2) if d2.sameElements(digest2) =>
+            println("declared root2 value and proofs are valid")
           case _ => println("second proof or announced root value NOT valid")
         }
       case _ =>
@@ -967,4 +1085,3 @@ object BatchingPlayground extends App with ToStringHelper {
     }
   }
 }
-

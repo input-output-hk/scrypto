@@ -2,7 +2,6 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
 import scorex.crypto.authds._
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
 import scorex.utils.ByteArray
 
