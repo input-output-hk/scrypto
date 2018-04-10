@@ -18,11 +18,14 @@ object BatchingPlayground extends App with ToStringHelper {
 
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
 
-  def time[R](block: => R): (Float, R) = {
+  /**
+    * Return time in milliseconds and execution result
+    */
+  def time[R](block: => R): (Long, R) = {
     val t0 = System.nanoTime()
     val result = block // call-by-name
     val t1 = System.nanoTime()
-    ((t1 - t0).toFloat / 1000000, result)
+    ((t1 - t0) / 1000000, result)
   }
 
   //smallDeleteTest
