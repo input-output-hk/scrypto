@@ -43,7 +43,8 @@ object BatchingPlayground extends App with ToStringHelper {
   //lookupBenchmark()
   //  testReadme
   //removedNodesBenchmark
-  filterBenchmark()
+  //  filterBenchmark()
+  removedNodesBenchmark()
 
   def filterBenchmark(startTreeSize: Int = 1000000): Unit = {
     val prover = new BatchAVLProver[T, HF](KL, Some(VL))
@@ -54,10 +55,8 @@ object BatchingPlayground extends App with ToStringHelper {
     prover.generateProof()
     prover.digest
     println("Tree created")
-    Thread.sleep(1000 * 10)
-    println("Started")
     (0 until 100) foreach { _ =>
-    val (filterTime, res) = time {
+      val (filterTime, res) = time {
         prover.filter(prover.topNode, _ => true)
       }
       println(s"time = $filterTime")
@@ -67,6 +66,7 @@ object BatchingPlayground extends App with ToStringHelper {
   def removedNodesBenchmark(startTreeSize: Int = 10000000,
                             toRemoveSize: Int = 1000,
                             toInsertSize: Int = 10000): Unit = {
+    var totalTime: Long = 0
     val prover = new BatchAVLProver[T, HF](KL, Some(VL))
     val elements: Seq[(ADKey, ADValue)] = (0 until startTreeSize)
       .map(i => Sha256(i.toString))
@@ -75,23 +75,25 @@ object BatchingPlayground extends App with ToStringHelper {
     prover.generateProof()
     prover.digest
     println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
+    val toRemove = elements.slice(toRemoveSize, 1 * toRemoveSize).map(e => Remove(e._1))
+    val toInsert = (0 until toInsertSize).map(j => Sha256(s"-$j"))
+      .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
+    val mods = toRemove ++ toInsert
+    val (performOperationsTime, _) = time {
+      mods.foreach(op => prover.performOneOperation(op))
+    }
+    println("removedNodes() test started")
+    Thread.sleep(10000)
     (0 until 100).foreach { i =>
-      val toRemove = elements.slice(i * toRemoveSize, (i + 1) * toRemoveSize).map(e => Remove(e._1))
-      val toInsert = (0 until toInsertSize).map(j => Sha256(s"$i-$j"))
-        .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
-      val mods = toRemove ++ toInsert
-      val (performOperationsTime, _) = time {
-        mods.foreach(op => prover.performOneOperation(op))
-      }
       val (removedNodesTime, removedNodes) = time {
         prover.removedNodes().length
       }
-      val (proofGenerationTime, _) = time {
-        prover.generateProof()
-      }
+      totalTime += removedNodesTime
       val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
-      println(s"$treeSize,$toRemoveSize,$removedNodes,$removedNodesTime,$proofGenerationTime,$performOperationsTime")
+      println(s"$treeSize,$toRemoveSize,$removedNodes,$removedNodesTime")
     }
+    println(s"Average time: ${totalTime / 100}")
+    // Average time: 226
   }
 
   def lookupBenchmark(): Unit = {
@@ -113,8 +115,7 @@ object BatchingPlayground extends App with ToStringHelper {
       lookups.foreach(l => prover.performOneOperation(l))
       prover.generateProof()
     }
-    val vr =
-      new BatchAVLVerifier[T, HF](prover.digest, lookupProof, KL, Some(VL))
+    val vr = new BatchAVLVerifier[T, HF](prover.digest, lookupProof, KL, Some(VL))
     val (lookupVerificationTime, _) = time(
       lookups.map(lookup => lookup.key -> vr.performOneOperation(lookup).get))
     // modifying lookups
