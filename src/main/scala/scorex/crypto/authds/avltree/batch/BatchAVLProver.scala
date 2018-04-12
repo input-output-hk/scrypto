@@ -322,6 +322,17 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   }
 
 
+  /**
+    * Walk from tree to a leaf.
+    *
+    * @param internalNodeFn - function applied to internal nodes. Takes current internal node and current IR, returns
+    *                       new internal nod and new IR
+    * @param leafFn- function applied to leafss. Takes current leaf and current IR, returns result of walk LR
+    * @param initial - initial value of IR
+    * @tparam IR - result of applying internalNodeFn to internal node. E.g. some accumutalor of previous results
+    * @tparam LR - result of applying leafFn to a leaf. Result of all walk application
+    * @return
+    */
   def treeWalk[IR, LR](internalNodeFn: (InternalProverNode[D], IR) => (ProverNodes[D], IR),
                        leafFn: (ProverLeaf[D], IR) => LR,
                        initial: IR): LR = {
@@ -340,6 +351,11 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   }
 
 
+  /**
+    *
+    * @param rand - source of randomness
+    * @return Random leaf from the tree, that is not positive or negative infinity
+    */
   def randomWalk(rand: Random = new Random): Option[(ADKey, ADValue)] = {
     def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
       rand.nextBoolean() match {
