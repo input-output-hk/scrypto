@@ -36,6 +36,9 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     t
   })
 
+  /**
+    * Longest path length in a tree
+    */
   var rootNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
 
   private var oldTopNode = topNode
