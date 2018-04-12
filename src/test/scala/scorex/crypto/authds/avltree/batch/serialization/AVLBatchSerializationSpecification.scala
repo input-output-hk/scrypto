@@ -1,13 +1,12 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
+import org.scalacheck.Gen
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert}
 import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.hash.{Blake2b256, _}
 import scorex.utils.Random
-
-import scala.util.Random.{nextInt => randomInt}
 
 class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
 
@@ -34,12 +33,14 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   }
 
   property("slice to pieces and combine tree back") {
-    val tree = generateProver(10)
-    val digest = tree.digest
-    val serializer = new BatchAVLProverSerializer[D, HF]
-    val sliced = serializer.slice(tree, 2)
-    val recovered = serializer.combine(sliced).get
-    recovered.digest shouldEqual digest
+    forAll(Gen.choose(100, 100000)) { treeSize: Int =>
+      val tree = generateProver(treeSize)
+      val digest = tree.digest
+      val serializer = new BatchAVLProverSerializer[D, HF]
+      val sliced = serializer.slice(tree)
+      val recovered = serializer.combine(sliced).get
+      recovered.digest shouldEqual digest
+    }
   }
 
 
