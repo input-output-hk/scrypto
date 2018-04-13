@@ -6,14 +6,14 @@ import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CryptographicHash, Digest}
 
 class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
-                                     val selfLabel: D,
+                                     val selfLabelOpt: Option[D],
                                      val leftLabel: D,
                                      val rightLabel: D,
                                      protected var pb: Balance)
                                     (implicit val phf: CryptographicHash[D])
   extends InternalProverNode(k = pk, l = null, r = null, b = pb)(phf) {
 
-  override def label: D = selfLabel
+  override def label: D = if (isEmpty) selfLabelOpt.getOrElse(leftLabel) else super.label
 
   def mutate(n: ProverNodes[D]): Unit = {
     if (n.label sameElements leftLabel) {
@@ -27,11 +27,11 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
 
   def isEmpty: Boolean = l == null || r == null
 
-  override def toString: String = s"${hashCode()} ProxyInternalNode($isEmpty,${Base58.encode(pk).take(8)},${Base58.encode(leftLabel).take(8)}|${l == null},${Base58.encode(rightLabel).take(8)}}|${r == null},$pb})"
+  override def toString: String = s"${arrayToString(label)} ProxyInternalNode($isEmpty,${arrayToString(pk)},${arrayToString(leftLabel)}|${l == null},${arrayToString(rightLabel)}}|${r == null},$pb})"
 }
 
 object ProxyInternalNode {
   def apply[D <: Digest](node: InternalProverNode[D])(implicit phf: CryptographicHash[D]): ProxyInternalNode[D] = {
-    new ProxyInternalNode[D](node.key, node.label, node.left.label, node.right.label, node.balance)
+    new ProxyInternalNode[D](node.key, Some(node.label), node.left.label, node.right.label, node.balance)
   }
 }

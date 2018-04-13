@@ -2,6 +2,8 @@ package scorex.crypto.hash
 
 import scorex.utils.ByteArray
 
+import scala.util.Try
+
 /**
   * From Wikipedia (https://en.wikipedia.org/wiki/Cryptographic_hash_function):
   * "A cryptographic hash function is a hash function which is considered practically impossible to invert,
@@ -36,5 +38,6 @@ trait CryptographicHash[D <: Digest] {
 
   def hash(inputs: Array[Byte]*): D = hash(ByteArray.concat(inputs))
 
+  def byteArrayToDigest(bytes: Array[Byte]): Try[D]
 }
 

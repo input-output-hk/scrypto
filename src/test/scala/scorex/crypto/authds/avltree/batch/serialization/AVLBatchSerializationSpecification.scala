@@ -55,7 +55,6 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
 
   property("slice to Array[Byte] pieces and combine tree back") {
     forAll(Gen.choose(100, 100000)) { treeSize: Int =>
-      val treeSize = 100
       val serializer = new BatchAVLProverSerializer[D, HF]
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
@@ -75,6 +74,7 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
 
       val recoveredSliced = (recoveredManifest, recoveredSubtrees)
       val recovered = serializer.combine(recoveredSliced).get
+
       recovered.digest shouldEqual digest
     }
   }

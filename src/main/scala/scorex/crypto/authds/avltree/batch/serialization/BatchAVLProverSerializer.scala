@@ -9,6 +9,8 @@ import scala.util.Try
 
 class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit val hf: HF) {
 
+  private val labelLength = hf.DigestSize
+
   type SlicedTree = (BatchAVLProverManifest[D, HF], Seq[BatchAVLProverSubtree[D, HF]])
 
   def slice(tree: BatchAVLProver[D, HF]): SlicedTree = slice(tree, tree.rootNodeHeight / 2)
@@ -99,13 +101,10 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
   def nodesToBytes(obj: ProverNodes[D]): Array[Byte] = {
     def loop(currentNode: ProverNodes[D]): Array[Byte] = currentNode match {
       case l: ProverLeaf[D] =>
-        println(s"leaf: $l")
         Bytes.concat(Array(0.toByte), l.key, l.nextLeafKey, l.value)
       case n: ProxyInternalNode[D] if n.isEmpty =>
-        println(s"proxy: $n")
-        ???
+        Bytes.concat(Array(2.toByte, n.balance), n.key, n.leftLabel, n.rightLabel)
       case n: InternalProverNode[D] =>
-        println(s"internal: $n")
         val leftBytes = loop(n.left)
         val rightBytes = loop(n.right)
         Bytes.concat(Array(1.toByte, n.balance), n.key, Ints.toByteArray(leftBytes.length), leftBytes, rightBytes)
@@ -130,6 +129,12 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val left = loop(leftBytes)
         val right = loop(rightBytes)
         new InternalProverNode[D](key, left, right, balance)
+      case 2 =>
+        val balance = Balance @@ bytes.slice(1, 2).head
+        val key = ADKey @@ bytes.slice(2, keyLength + 2)
+        val leftLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2, keyLength + 2 + labelLength)).get
+        val rightLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2 + labelLength, keyLength + 2 + 2 * labelLength)).get
+        new ProxyInternalNode[D](key, None, leftLabel, rightLabel, balance)
       case _ =>
         ???
     }
