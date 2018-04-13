@@ -1,7 +1,8 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
+import com.google.common.primitives.{Bytes, Ints}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, InternalProverNode, ProverLeaf, ProverNodes}
-import scorex.crypto.encode.Base58
+import scorex.crypto.authds.{ADKey, ADValue, Balance}
 import scorex.crypto.hash.{CryptographicHash, Digest}
 
 import scala.util.Try
@@ -67,6 +68,50 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
       case l: ProverLeaf[D] =>
         new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.oldRootAndHeight))
     }
+  }
+
+
+  def subtreeToBytes(t: BatchAVLProverSubtree[D, HF]): Array[Byte] = nodesToBytes(t.subtreeTop)
+
+  def subtreeFromBytes(b: Array[Byte], kl: Int): Try[BatchAVLProverSubtree[D, HF]] = nodesFromBytes(b, kl).
+    map(topNode => BatchAVLProverSubtree[D, HF](topNode))
+
+  def nodesToBytes(obj: ProverNodes[D]): Array[Byte] = {
+    def loop(currentNode: ProverNodes[D]): Array[Byte] = currentNode match {
+      case l: ProverLeaf[D] =>
+        Bytes.concat(Array(0.toByte), l.key, l.nextLeafKey, l.value)
+      case n: ProxyInternalNode[D] if n.isEmty =>
+        ???
+      case n: InternalProverNode[D] =>
+        val leftBytes = loop(n.left)
+        val rightBytes = loop(n.right)
+        Bytes.concat(Array(1.toByte, n.balance), n.key, Ints.toByteArray(leftBytes.length), leftBytes, rightBytes)
+    }
+
+    loop(obj)
+  }
+
+  def nodesFromBytes(bytesIN: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
+    def loop(bytes: Array[Byte]): ProverNodes[D] = bytes.head match {
+      case 0 =>
+        val key = ADKey @@ bytes.slice(1, keyLength + 1)
+        val nextLeafKey = ADKey @@ bytes.slice(keyLength + 1, 2 * keyLength + 1)
+        val value = ADValue @@ bytes.slice(2 * keyLength + 1, bytes.length)
+        new ProverLeaf[D](key, value, nextLeafKey)
+      case 1 =>
+        val balance = Balance @@ bytes.slice(1, 2).head
+        val key = ADKey @@ bytes.slice(2, keyLength + 2)
+        val leftLength = Ints.fromByteArray(bytes.slice(keyLength + 2, keyLength + 6))
+        val leftBytes = bytes.slice(keyLength + 6, keyLength + 6 + leftLength)
+        val rightBytes = bytes.slice(keyLength + 6 + leftLength, bytes.length)
+        val left = loop(leftBytes)
+        val right = loop(rightBytes)
+        new InternalProverNode[D](key, left, right, balance)
+      case _ =>
+        ???
+    }
+
+    loop(bytesIN)
   }
 }
 

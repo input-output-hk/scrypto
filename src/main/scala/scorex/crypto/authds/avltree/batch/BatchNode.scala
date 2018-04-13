@@ -55,7 +55,7 @@ sealed trait InternalNode[D <: Digest] extends Node[D] {
 class InternalProverNode[D <: Digest](protected var k: ADKey,
                                       protected var l: ProverNodes[D],
                                       protected var r: ProverNodes[D],
-                         protected var b: Balance = Balance @@ 0.toByte)(implicit val hf: CryptographicHash[D])
+                                      protected var b: Balance = Balance @@ 0.toByte)(implicit val hf: CryptographicHash[D])
   extends ProverNodes[D] with InternalNode[D] {
 
 
@@ -95,7 +95,7 @@ class InternalProverNode[D <: Digest](protected var k: ADKey,
 }
 
 class InternalVerifierNode[D <: Digest](protected var l: Node[D], protected var r: Node[D], protected var b: Balance)
-                          (implicit val hf: CryptographicHash[D]) extends VerifierNodes[D] with InternalNode[D] {
+                                       (implicit val hf: CryptographicHash[D]) extends VerifierNodes[D] with InternalNode[D] {
 
 
   override def left: Node[D] = l
@@ -140,7 +140,7 @@ sealed trait Leaf[D <: Digest] extends Node[D] with KeyInVar {
 }
 
 class VerifierLeaf[D <: Digest](protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
-                  (implicit val hf: CryptographicHash[D]) extends Leaf[D] with VerifierNodes[D] {
+                               (implicit val hf: CryptographicHash[D]) extends Leaf[D] with VerifierNodes[D] {
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): VerifierLeaf[D] = {
@@ -153,7 +153,7 @@ class VerifierLeaf[D <: Digest](protected var k: ADKey, protected var v: ADValue
 }
 
 class ProverLeaf[D <: Digest](protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)
-                (implicit val hf: CryptographicHash[D]) extends Leaf[D] with ProverNodes[D] {
+                             (implicit val hf: CryptographicHash[D]) extends Leaf[D] with ProverNodes[D] {
 
   /* This method will mutate the existing node if isNew = true; else create a new one */
   def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): ProverLeaf[D] = {
