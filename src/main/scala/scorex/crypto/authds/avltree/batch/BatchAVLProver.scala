@@ -192,7 +192,12 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     * @return nodes, that where presented in old tree (starting form oldTopNode, but are not presented in new tree
     */
-  def removedNodes(): ArrayBuffer[ProverNodes[D]] = changedNodesBuffer
+  def removedNodes(): ArrayBuffer[ProverNodes[D]] = {
+    changedNodesBufferToCheck.foreach { cn =>
+      if(!contains(cn)) changedNodesBuffer += cn
+    }
+    changedNodesBuffer
+  }
 
   /**
     * @return `true` if this tree has an element that has the same label, as `node.label`, `false` otherwise.
@@ -243,6 +248,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     */
   def generateProof(): SerializedAdProof = {
     changedNodesBuffer.clear()
+    changedNodesBufferToCheck.clear()
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 

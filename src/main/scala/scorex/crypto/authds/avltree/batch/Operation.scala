@@ -7,12 +7,9 @@ import scala.util.{Failure, Success, Try}
 
 sealed trait Operation {
   val key: ADKey
-  val isModification: Boolean
 }
 
-case class Lookup(override val key: ADKey) extends Operation {
-  override val isModification: Boolean = false
-}
+case class Lookup(override val key: ADKey) extends Operation
 
 case object UnknownModification extends Modification {
   override val key: ADKey = ADKey @@ Array[Byte]()
@@ -27,8 +24,6 @@ trait Modification extends Operation {
   type NewValue = ADValue
 
   type UpdateFunction = OldValue => Try[Option[NewValue]]
-
-  override val isModification: Boolean = true
 
   /**
     * Update functions takes Option[oldValue] and return Try[Option[newValue]]

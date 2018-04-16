@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.{Balance, _}
 import scorex.crypto.encode.Base58
-import scorex.crypto.hash.Digest
+import scorex.crypto.hash.{Digest, Digest32}
 import scorex.utils.{ByteArray, ScryptoLogging}
 
 import scala.collection.mutable.ArrayBuffer
@@ -22,17 +22,36 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
   protected val keyLength: Int
   protected val valueLengthOpt: Option[Int]
   protected val collectChangedNodes: Boolean
+  /**
+    * Sequence of leafs and internal nodes that where likely by modified after last proof generation
+    */
   protected val changedNodesBuffer: ArrayBuffer[ProverNodes[D]] = ArrayBuffer.empty
+  /**
+    * Nodes that may, or may not be mofidied after last proof generation
+    */
+  protected val changedNodesBufferToCheck: ArrayBuffer[ProverNodes[D]] = ArrayBuffer.empty
 
   protected val PositiveInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(-1: Byte)
   protected val NegativeInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(0: Byte)
 
   protected var rootNodeHeight: Int
 
-  protected def onNodeVisit(n: Node[D], operation: Operation): Unit = {
+  protected def onNodeVisit(n: Node[D], operation: Operation, isRotate: Boolean = false): Unit = {
     n match {
-      case p: ProverNodes[D] if collectChangedNodes && operation.isModification && !p.visited && !p.isNew =>
-        changedNodesBuffer += p
+      case p: ProverNodes[D] =>
+        if (collectChangedNodes && !n.visited && !p.isNew) {
+          if(isRotate) {
+            // during rotate operation node may stay in the tree in a different position
+            changedNodesBufferToCheck += p
+          } else if(operation.isInstanceOf[Insert] || operation.isInstanceOf[Remove]
+            || operation.isInstanceOf[InsertOrUpdate]) {
+            // during non-rotate insert and remove operations nodes on the path should not be presented in a new tree
+            changedNodesBuffer += p
+          } else if(!operation.isInstanceOf[Lookup]) {
+            // during other non-lookup operations we don't know, whether node will stay in thee tree or not
+            changedNodesBufferToCheck += p
+          }
+        }
       case _ =>
     }
     n.visited = true
@@ -138,7 +157,7 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
       *
       * Handles binary tree search and AVL rebalancing
       *
-      * Deletions are not handled here in order not to complicate the code even more -- in case of deletion, 
+      * Deletions are not handled here in order not to complicate the code even more -- in case of deletion,
       * we don't change the tree, but simply return toDelete = true.
       * We then go in and delete using deleteHelper
       */
@@ -385,7 +404,7 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
           val (newRight, childHeightDecreased) = deleteHelper(r.right.asInstanceOf[InternalNode[D]], deleteMax)
           if (childHeightDecreased && r.balance < 0) {
             // new to rotate because my right subtree is shorter than my left
-            onNodeVisit(r.left, operation)
+            onNodeVisit(r.left, operation, isRotate = true)
 
             // I know my left child is not a leaf, because it is taller than my right
             val leftChild = r.left.asInstanceOf[InternalNode[D]]

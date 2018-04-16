@@ -3,6 +3,7 @@ package scorex.crypto.authds.avltree.batch
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
+import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 import scorex.utils.Random
 
@@ -17,6 +18,27 @@ object BatchingPlayground extends App with ToStringHelper {
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
 
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
+
+  def pathToString(path: Seq[ProverNodes[T]]): String = {
+    def loop(prevNode: ProverNodes[T], remaining: Seq[ProverNodes[T]], acc: Seq[String]): Seq[String] = {
+      if (remaining.nonEmpty) {
+        prevNode match {
+          case pn: InternalProverNode[T] =>
+            val n = remaining.head
+            val direction = if (n.label sameElements pn.left.label) "L" else "R"
+
+
+            val newAcc = s"$direction-${arrayToString(n.label)}" +: acc
+            loop(n, remaining.tail, newAcc)
+          case _ => ???
+        }
+      } else {
+        acc
+      }
+    }
+
+    loop(path.head, path.tail, Seq(arrayToString(path.head.label))).reverse.mkString(",")
+  }
 
   /**
     * Return time in milliseconds and execution result
@@ -59,11 +81,14 @@ object BatchingPlayground extends App with ToStringHelper {
     elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)))
     prover.generateProof()
     prover.digest
+
     println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
     (0 until iterations).foreach { i =>
       val toRemove = elements.slice(i * toRemoveSize, (i + 1) * toRemoveSize).map(e => Remove(e._1))
       val toInsert = (0 until toInsertSize).map(j => Sha256(s"$i-$j"))
         .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
+      val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
+
       val mods = toRemove ++ toInsert
       val (performOperationsTime, _) = time {
         mods.foreach(op => prover.performOneOperation(op))
@@ -75,7 +100,8 @@ object BatchingPlayground extends App with ToStringHelper {
       removedNodes.foreach { rn =>
         if (prover.contains(rn)) {
           println("top node " + prover.topNode)
-          println("path = " + prover.path(rn.key, rn.label))
+          println(s"key=${Base58.encode(rn.key)}, label=${Base58.encode(rn.label)}")
+          println("path = " + pathToString(prover.path(rn.key, rn.label).get))
           throw new Error(s"Prover still contains node $rn that is marked to remove")
         }
       }
@@ -85,7 +111,6 @@ object BatchingPlayground extends App with ToStringHelper {
       toRemoveTotal += removedNodesTime
       proofGenerationTotal += proofGenerationTime
       performOperationTotal += performOperationsTime
-      val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
       println(s"$treeSize,$toRemoveSize,$removedNodesLength,$removedNodesTime,$proofGenerationTime,$performOperationsTime")
     }
     println(s"Average times for startTreeSize=$startTreeSize,toRemoveSize=$toRemoveSize,toInsertSize=$toInsertSize:" +
