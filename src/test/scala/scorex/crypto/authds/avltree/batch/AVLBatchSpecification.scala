@@ -4,6 +4,7 @@ import com.google.common.primitives.Longs
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import scorex.crypto.authds.avltree.batch.BatchingPlayground.{D, HF}
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.encode.Base58
@@ -68,8 +69,38 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("return removed leafs and internal nodes") {
+    /**
+      * check, that removedNodes contains all nodes, that are where removed, and do not contain nodes, that are still in the tree
+      */
+    def checkTree(prover: BatchAVLProver[D, HF], oldTop: ProverNodes[D], removedNodes: Seq[ProverNodes[D]]): Unit = {
+      // check that there are no nodes in removedNodes, that are still in the tree
+      removedNodes.foreach(r => prover.contains(r) shouldBe false)
+
+      var removed = 0
+      // check that all removed nodes are in removedNodes list
+      def checkRemoved(node: ProverNodes[D]): Unit = {
+        val contains = prover.contains(node)
+        if (!contains) removed = removed + 1
+
+        node match {
+          case i: InternalProverNode[D] =>
+            if (!contains) removedNodes.exists(_.label sameElements node.label) shouldBe true
+            checkRemoved(i.left)
+            checkRemoved(i.right)
+          case _ if !contains =>
+            removedNodes.exists(_.label sameElements node.label) shouldBe true
+          case _ =>
+          // do nothing
+        }
+      }
+
+      checkRemoved(oldTop)
+      removed shouldBe removedNodes.length
+    }
+
     val prover = generateProver()
     forAll(kvSeqGen) { kvSeq =>
+      val oldTop = prover.topNode
       val mSize = Math.min(10, kvSeq.length)
       val toInsert = kvSeq.take(mSize).map(ti => Insert(ti._1, ti._2))
       val toRemove = (0 until mSize).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
@@ -78,7 +109,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val removed = prover.removedNodes()
       removed.length should be > mSize
       toRemove.foreach(tr => removed.exists(_.key sameElements tr.key) shouldBe true)
-      removed.foreach(r => prover.contains(r) shouldBe false)
+      checkTree(prover, oldTop, removed)
 
       val modifyingProof = prover.generateProof()
       prover.removedNodes().isEmpty shouldBe true
