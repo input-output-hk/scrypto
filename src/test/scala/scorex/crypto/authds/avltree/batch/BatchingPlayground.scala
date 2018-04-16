@@ -63,10 +63,13 @@ object BatchingPlayground extends App with ToStringHelper {
     }
   }
 
-  def removedNodesBenchmark(startTreeSize: Int = 10000000,
+  def removedNodesBenchmark(startTreeSize: Int = 1000000,
                             toRemoveSize: Int = 1000,
                             toInsertSize: Int = 10000): Unit = {
-    var totalTime: Long = 0
+    val iterations = 100
+    var toRemoveTotal: Long = 0
+    var proofGenerationTotal: Long = 0
+    var performOperationTotal: Long = 0
     val prover = new BatchAVLProver[T, HF](KL, Some(VL))
     val elements: Seq[(ADKey, ADValue)] = (0 until startTreeSize)
       .map(i => Sha256(i.toString))
@@ -75,25 +78,29 @@ object BatchingPlayground extends App with ToStringHelper {
     prover.generateProof()
     prover.digest
     println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
-    val toRemove = elements.slice(toRemoveSize, 1 * toRemoveSize).map(e => Remove(e._1))
-    val toInsert = (0 until toInsertSize).map(j => Sha256(s"-$j"))
-      .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
-    val mods = toRemove ++ toInsert
-    val (performOperationsTime, _) = time {
-      mods.foreach(op => prover.performOneOperation(op))
-    }
-    println("removedNodes() test started")
-    Thread.sleep(10000)
-    (0 until 100).foreach { i =>
+    (0 until iterations).foreach { i =>
+      val toRemove = elements.slice(i * toRemoveSize,  (i + 1) * toRemoveSize).map(e => Remove(e._1))
+      val toInsert = (0 until toInsertSize).map(j => Sha256(s"$i-$j"))
+        .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
+      val mods = toRemove ++ toInsert
+      val (performOperationsTime, _) = time {
+        mods.foreach(op => prover.performOneOperation(op))
+      }
       val (removedNodesTime, removedNodes) = time {
         prover.removedNodes().length
       }
-      totalTime += removedNodesTime
+      val (proofGenerationTime, _) = time {
+        prover.generateProof()
+      }
+      toRemoveTotal += removedNodesTime
+      proofGenerationTotal += proofGenerationTime
+      performOperationTotal += performOperationsTime
       val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
-      println(s"$treeSize,$toRemoveSize,$removedNodes,$removedNodesTime")
+      println(s"$treeSize,$toRemoveSize,$removedNodes,$removedNodesTime,$proofGenerationTime,$performOperationsTime")
     }
-    println(s"Average time: ${totalTime / 100}")
-    // Average time: 226
+    println(s"Average times for startTreeSize=$startTreeSize,toRemoveSize=$toRemoveSize,toInsertSize=$toInsertSize:" +
+      s" toRemove=${toRemoveTotal / iterations}, proofGeneration=${proofGenerationTotal / iterations}, performOperation=${performOperationTotal / iterations}")
+    // Average times for startTreeSize=1000000,toRemoveSize=1000,toInsertSize=10000: toRemove=244, proofGeneration=68, performOperation=61
   }
 
   def lookupBenchmark(): Unit = {
