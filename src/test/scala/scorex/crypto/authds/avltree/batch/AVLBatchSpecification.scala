@@ -13,7 +13,7 @@ import scorex.utils.{ByteArray, Random}
 import scala.util.Random.{nextInt => randomInt}
 import scala.util.{Failure, Try}
 
-class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
+class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests with ToStringHelper {
 
   val InitialTreeSize = 1000
   val KL = 26
@@ -39,18 +39,18 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   property("return removed leafs and internal nodes for small tree") {
     /**
       * manual check, that correct leafs and internal nodes where deleted
-      * ______________top(V9WU)                                top2(5VjC)
-      * ________________/   \                                      /   \
-      * NegativeInfinity    right(5VjC)       =>   NegativeInfinity     Leaf1(5VjC)
-      * ____________________/     \
-      * __________Leaf0(V9WU)      Leaf1(5VjC)
+      * ______________top(V9WUMj6P,ES5Rnuf1)                                         top2(5VjCEAdt,2VT2d2nG)
+      * __________________/           \                                                       /   \
+      * NInf(11111111,ChyvjCc9)    right(5VjCEAdt,26ouau2w)       =>   NInf(11111111,DuQAiTxk)     Leaf1(5VjCEAdt,A889CP2P)
+      * __________________________________/     \
+      * __________Leaf0(V9WUMj6P,Fx5gbhBF)      Leaf1(5VjCEAdt,A889CP2P)
       **/
     val prover = generateProver(2)
-    val top = prover.topNode.asInstanceOf[InternalProverNode[D]] // V9WUMj6PYcMMgi8FNYELQPrzHbQs15HYwMi
-    val negativeInfinity = top.left.asInstanceOf[ProverLeaf[D]] // 11111111111111111111111111
-    val right = top.right.asInstanceOf[InternalProverNode[D]] // 5VjCEAdtJfWHnXZau2oxogRg2xESXgF68sUm
-    val leaf0 = right.left.asInstanceOf[ProverLeaf[D]] // V9WUMj6PYcMMgi8FNYELQPrzHbQs15HYwMi
-    val leaf1 = right.right.asInstanceOf[ProverLeaf[D]] // 5VjCEAdtJfWHnXZau2oxogRg2xESXgF68sUm
+    val top = prover.topNode.asInstanceOf[InternalProverNode[D]] // V9WUMj6P,ES5Rnuf1
+    val negativeInfinity = top.left.asInstanceOf[ProverLeaf[D]] // 11111111,ChyvjCc9
+    val right = top.right.asInstanceOf[InternalProverNode[D]] // 5VjCEAdt,26ouau2w
+    val leaf0 = right.left.asInstanceOf[ProverLeaf[D]] // V9WUMj6P,Fx5gbhBF
+    val leaf1 = right.right.asInstanceOf[ProverLeaf[D]] // 5VjCEAdt,A889CP2P
 
     val all = Seq(leaf1, top, right, leaf0, negativeInfinity)
     all.foreach(n => prover.contains(n) shouldBe true)
@@ -59,6 +59,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     prover.performOneOperation(Remove(leaf0.key))
     prover.performOneOperation(Lookup(leaf1.key))
     val removed = prover.removedNodes()
+
     prover.generateProof()
 
     // Top, Right and Leaf0 are not on the path any more, NegativeInfinity.newNextLeafKey changed.

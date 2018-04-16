@@ -15,15 +15,17 @@ import scala.util.{Failure, Random, Success, Try}
   * Implements the batch AVL prover from https://eprint.iacr.org/2016/994
   * Not thread safe if you use with ThreadUnsafeHash
   *
-  * @param keyLength        - length of keys in tree
-  * @param valueLengthOpt   - length of values in tree. None if it is not fixed
-  * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
-  *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
-  * @param hf               - hash function
+  * @param keyLength           - length of keys in tree
+  * @param valueLengthOpt      - length of values in tree. None if it is not fixed
+  * @param oldRootAndHeight    - option root node and height of old tree. Tree should contain new nodes only
+  *                            WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
+  * @param collectChangedNodes - changed nodes will be collected to a separate buffer during tree modifications if `true`
+  * @param hf                  - hash function
   */
 class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int,
                                                               val valueLengthOpt: Option[Int],
-                                                              oldRootAndHeight: Option[(ProverNodes[D], Int)] = None)
+                                                              oldRootAndHeight: Option[(ProverNodes[D], Int)] = None,
+                                                              val collectChangedNodes: Boolean = true)
                                                              (implicit val hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 
@@ -191,8 +193,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * @return nodes, that where presented in old tree (starting form oldTopNode, but are not presented in new tree
     */
   def removedNodes(): Seq[ProverNodes[D]] = {
-    val visitedNodes = filter(oldTopNode, n => n.visited)
-    visitedNodes.filter(n => !contains(n))
+    changedNodesBuffer.filter(n => !contains(n))
   }
 
   /**
@@ -218,27 +219,6 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   }
 
   /**
-    * @return node and all subnodes of `startNode` that sutisfies condition `condition`
-    */
-  private[batch] def filter(startNode: ProverNodes[D], condition: ProverNodes[D] => Boolean): Seq[ProverNodes[D]] = {
-    val acc: ArrayBuffer[ProverNodes[D]] = ArrayBuffer.empty
-
-    def loop(currentNode: ProverNodes[D]): Unit = {
-      if (condition(currentNode)) acc += currentNode
-      currentNode match {
-        case n: InternalProverNode[D] if condition(currentNode) =>
-          loop(n.left)
-          loop(n.right)
-        case _ =>
-      }
-    }
-
-    loop(startNode)
-    acc
-  }
-
-
-  /**
     * Generates the proof for all the operations in the list.
     * Does NOT modify the tree
     */
@@ -255,6 +235,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * @return - the proof
     */
   def generateProof(): SerializedAdProof = {
+    changedNodesBuffer.clear()
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 
@@ -330,8 +311,8 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     *
     * @param internalNodeFn - function applied to internal nodes. Takes current internal node and current IR, returns
     *                       new internal nod and new IR
-    * @param leafFn- function applied to leafss. Takes current leaf and current IR, returns result of walk LR
-    * @param initial - initial value of IR
+    * @param leafFn         - function applied to leafss. Takes current leaf and current IR, returns result of walk LR
+    * @param initial        - initial value of IR
     * @tparam IR - result of applying internalNodeFn to internal node. E.g. some accumutalor of previous results
     * @tparam LR - result of applying leafFn to a leaf. Result of all walk application
     * @return
