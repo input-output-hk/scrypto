@@ -60,12 +60,11 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     prover.performOneOperation(Lookup(leaf1.key))
     val removed = prover.removedNodes()
 
-    prover.generateProof()
-
     // Top, Right and Leaf0 are not on the path any more, NegativeInfinity.newNextLeafKey changed.
     // Leaf1 is not affected
     removed.length shouldBe removedManual.length
     removedManual.foreach(n => removed.exists(_.label sameElements n.label) shouldBe true)
+    prover.generateProof()
   }
 
   property("return removed leafs and internal nodes") {
@@ -79,6 +78,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val removed = prover.removedNodes()
       removed.length should be > mSize
       toRemove.foreach(tr => removed.exists(_.key sameElements tr.key) shouldBe true)
+      removed.foreach(r => prover.contains(r) shouldBe false)
 
       val modifyingProof = prover.generateProof()
       prover.removedNodes().isEmpty shouldBe true
