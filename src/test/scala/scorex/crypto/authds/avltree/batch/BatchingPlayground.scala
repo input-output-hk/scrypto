@@ -69,7 +69,15 @@ object BatchingPlayground extends App with ToStringHelper {
         mods.foreach(op => prover.performOneOperation(op))
       }
       val (removedNodesTime, removedNodes) = time {
-        prover.removedNodes().length
+        prover.removedNodes()
+      }
+      val removedNodesLength = removedNodes.length
+      removedNodes.foreach { rn =>
+        if (prover.contains(rn)) {
+          println("top node " + prover.topNode)
+          println("path = " + prover.path(rn.key, rn.label))
+          throw new Error(s"Prover still contains node $rn that is marked to remove")
+        }
       }
       val (proofGenerationTime, _) = time {
         prover.generateProof()
@@ -78,7 +86,7 @@ object BatchingPlayground extends App with ToStringHelper {
       proofGenerationTotal += proofGenerationTime
       performOperationTotal += performOperationsTime
       val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
-      println(s"$treeSize,$toRemoveSize,$removedNodes,$removedNodesTime,$proofGenerationTime,$performOperationsTime")
+      println(s"$treeSize,$toRemoveSize,$removedNodesLength,$removedNodesTime,$proofGenerationTime,$performOperationsTime")
     }
     println(s"Average times for startTreeSize=$startTreeSize,toRemoveSize=$toRemoveSize,toInsertSize=$toInsertSize:" +
       s" toRemove=${toRemoveTotal / iterations}, proofGeneration=${proofGenerationTotal / iterations}, performOperation=${performOperationTotal / iterations}")
