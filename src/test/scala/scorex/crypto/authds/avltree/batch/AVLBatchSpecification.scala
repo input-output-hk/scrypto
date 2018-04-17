@@ -78,12 +78,13 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val initialDigest = prover.digest
 
       // generate proof without tree modification
-      val nonModifyingProof = prover.generateProofForOperations(modifications).get
+      val (nonModifyingProof, nonModifyingDigest) = prover.generateProofForOperations(modifications).get
       prover.digest shouldEqual initialDigest
       toInsert.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe None)
       toRemove.foreach(ti => prover.unauthenticatedLookup(ti.key).isDefined shouldBe true)
       val verifier = new BatchAVLVerifier[D, HF](initialDigest, nonModifyingProof, KL, None)
       modifications foreach (m => verifier.performOneOperation(m).get)
+      verifier.digest.get shouldEqual nonModifyingDigest
 
       // generate another proof without tree modification
       val toInsert2 = toInsert.map(ti => Insert(ADKey @@ Blake2b256(ti.key), ADValue @@ Blake2b256(ti.value)))
