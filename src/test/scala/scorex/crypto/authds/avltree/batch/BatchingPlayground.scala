@@ -38,10 +38,10 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
   //removedNodesBenchmark
   removedNodesBenchmark()
 
-  def removedNodesBenchmark(startTreeSize: Int = 1000000,
+  def removedNodesBenchmark(startTreeSize: Int = 10000000,
                             toRemoveSize: Int = 3000,
                             toInsertSize: Int = 3000): Unit = {
-    val iterations = 20
+    val iterations = 50
     var toRemoveTotal: Long = 0
     var proofGenerationTotal: Long = 0
     var performOperationTotal: Long = 0
@@ -55,6 +55,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
     println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
     (0 until iterations).foreach { i =>
+      System.gc()
       val toRemove = elements.slice(i * toRemoveSize, (i + 1) * toRemoveSize).map(e => Remove(e._1))
       val toInsert = (0 until toInsertSize).map(j => Sha256(s"$i-$j"))
         .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
@@ -80,7 +81,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
     println(s"Average times for startTreeSize=$startTreeSize,toRemoveSize=$toRemoveSize,toInsertSize=$toInsertSize:" +
       s" toRemove=${toRemoveTotal / iterations}, proofGeneration=${proofGenerationTotal / iterations}, performOperation=${performOperationTotal / iterations}")
-    // Average times for startTreeSize=1000000,toRemoveSize=1000,toInsertSize=10000: toRemove=244, proofGeneration=68, performOperation=61
+    // Average times for startTreeSize=10000000,toRemoveSize=3000,toInsertSize=3000: toRemove=71, proofGeneration=85, performOperation=44
   }
 
   def lookupBenchmark(): Unit = {
