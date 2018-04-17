@@ -78,7 +78,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val initialDigest = prover.digest
 
       // generate proof without tree modification
-      val nonModifyingProof = prover.generateProofForOperations(modifications)
+      val nonModifyingProof = prover.generateProofForOperations(modifications).get
       prover.digest shouldEqual initialDigest
       toInsert.foreach(ti => prover.unauthenticatedLookup(ti.key) shouldBe None)
       toRemove.foreach(ti => prover.unauthenticatedLookup(ti.key).isDefined shouldBe true)
@@ -89,7 +89,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       val toInsert2 = toInsert.map(ti => Insert(ADKey @@ Blake2b256(ti.key), ADValue @@ Blake2b256(ti.value)))
       val toRemove2 = (0 until insertNum + 1).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
       val modifications2 = toRemove2
-      val nonModifyingProof2 = prover.generateProofForOperations(modifications2)
+      val nonModifyingProof2 = prover.generateProofForOperations(modifications2).get
       prover.digest shouldEqual initialDigest
 
       // modify tree and generate proof
