@@ -208,16 +208,23 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     * @return `true` if this tree has an element that has the same label, as `node.label`, `false` otherwise.
     */
-  def contains(key: ADKey, label: D): Boolean = path(key, label).nonEmpty
+  def contains(key: ADKey, label: D): Boolean = path(key, label, existenceOnly = true).nonEmpty
 
-  def path(key: ADKey, label: D): Option[Seq[ProverNodes[D]]] = {
+  /**
+    *
+    * @param key - node key
+    * @param label - node label
+    * @param existenceOnly - only check that node exists in the tree
+    * @return path from topNode to a node with specified key and label
+    */
+  def path(key: ADKey, label: D, existenceOnly: Boolean = false): Option[Seq[ProverNodes[D]]] = {
     val foundStart = found
     found = false
     val path: ArrayBuffer[ProverNodes[D]] = ArrayBuffer.empty
 
     @tailrec
     def loop(currentNode: ProverNodes[D]): Option[Seq[ProverNodes[D]]] = {
-      path += currentNode
+      if(!existenceOnly) path += currentNode
       currentNode match {
         case _ if currentNode.label sameElements label => Some(path)
         case in: InternalProverNode[D] if nextDirectionIsLeft(key, in) => loop(in.left)
