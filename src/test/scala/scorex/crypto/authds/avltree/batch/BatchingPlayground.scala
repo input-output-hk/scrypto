@@ -9,36 +9,7 @@ import scorex.utils.Random
 
 import scala.util.Success
 
-object BatchingPlayground extends App with ToStringHelper with Matchers {
-  val KL = 32
-  val VL = 8
-  type D = Digest32
-  type HF = Blake2b256.type
-
-  def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
-
-  def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
-
-  def pathToString(path: Seq[ProverNodes[D]]): String = {
-    def loop(prevNode: ProverNodes[D], remaining: Seq[ProverNodes[D]], acc: Seq[String]): Seq[String] = {
-      if (remaining.nonEmpty) {
-        prevNode match {
-          case pn: InternalProverNode[D] =>
-            val n = remaining.head
-            val direction = if (n.label sameElements pn.left.label) "L" else "R"
-
-
-            val newAcc = s"$direction-${arrayToString(n.label)}" +: acc
-            loop(n, remaining.tail, newAcc)
-          case _ => ???
-        }
-      } else {
-        acc
-      }
-    }
-
-    loop(path.head, path.tail, Seq(arrayToString(path.head.label))).reverse.mkString(",")
-  }
+object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
   /**
     * Return time in milliseconds and execution result

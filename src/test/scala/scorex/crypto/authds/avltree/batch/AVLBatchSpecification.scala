@@ -14,28 +14,8 @@ import scorex.utils.{ByteArray, Random}
 import scala.util.Random.{nextInt => randomInt}
 import scala.util.{Failure, Try}
 
-class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests with ToStringHelper {
-
-  val InitialTreeSize = 1000
-  val KL = 26
-  val VL = 8
-  val HL = 32
-  type D = Digest32
-  type HF = Blake2b256.type
-
-  def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
-
-  def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
-
-  private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[D, HF] = {
-    val prover = new BatchAVLProver[D, HF](KL, None)
-    val keyValues = (0 until size) map { i =>
-      (ADKey @@ Blake2b256(i.toString.getBytes).take(KL), ADValue @@ (i.toString.getBytes))
-    }
-    keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
-    prover.generateProof()
-    prover
-  }
+class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests
+  with BatchTestingHelpers {
 
   property("return removed leafs and internal nodes for small tree") {
     /**
@@ -77,6 +57,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       removedNodes.foreach(r => prover.contains(r) shouldBe false)
 
       var removed = 0
+
       // check that all removed nodes are in removedNodes list
       def checkRemoved(node: ProverNodes[D]): Unit = {
         val contains = prover.contains(node)
