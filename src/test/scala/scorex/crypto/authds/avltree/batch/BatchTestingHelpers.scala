@@ -1,11 +1,11 @@
 package scorex.crypto.authds.avltree.batch
 
+import org.scalatest.Matchers
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.authds.avltree.batch.BatchingPlayground.arrayToString
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.utils.Random
 
-trait BatchTestingHelpers extends ToStringHelper {
+trait BatchTestingHelpers extends ToStringHelper with Matchers {
 
   val InitialTreeSize = 1000
 
@@ -26,6 +26,36 @@ trait BatchTestingHelpers extends ToStringHelper {
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
     prover.generateProof()
     prover
+  }
+
+  /**
+    * check, that removedNodes contains all nodes, that are where removed, and do not contain nodes, that are still in the tree
+    */
+  def checkTree(prover: BatchAVLProver[D, HF], oldTop: ProverNodes[D], removedNodes: Seq[ProverNodes[D]]): Unit = {
+    // check that there are no nodes in removedNodes, that are still in the tree
+    removedNodes.foreach(r => prover.contains(r) shouldBe false)
+
+    var removed = 0
+
+    // check that all removed nodes are in removedNodes list
+    def checkRemoved(node: ProverNodes[D]): Unit = {
+      val contains = prover.contains(node)
+      if (!contains) removed = removed + 1
+      if (!contains && !removedNodes.exists(_.label sameElements node.label)) {
+        throw new Error(s"Node $node is not in the new tree but is not in removedNodes list")
+      }
+
+      node match {
+        case i: InternalProverNode[D] =>
+          checkRemoved(i.left)
+          checkRemoved(i.right)
+        case _ =>
+        // do nothing
+      }
+    }
+
+    checkRemoved(oldTop)
+    removed shouldBe removedNodes.length
   }
 
 

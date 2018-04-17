@@ -39,8 +39,8 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
   removedNodesBenchmark()
 
   def removedNodesBenchmark(startTreeSize: Int = 1000000,
-                            toRemoveSize: Int = 1000,
-                            toInsertSize: Int = 10000): Unit = {
+                            toRemoveSize: Int = 3000,
+                            toInsertSize: Int = 3000): Unit = {
     val iterations = 20
     var toRemoveTotal: Long = 0
     var proofGenerationTotal: Long = 0
@@ -49,7 +49,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     val elements: Seq[(ADKey, ADValue)] = (0 until startTreeSize)
       .map(i => Sha256(i.toString))
       .map(k => (ADKey @@ k, ADValue @@ k.take(8)))
-    elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)))
+    elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)).get)
     prover.generateProof()
     prover.digest
 
@@ -63,7 +63,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
       val mods = toRemove ++ toInsert
       val (performOperationsTime, _) = time {
-        mods.foreach(op => prover.performOneOperation(op))
+        mods.foreach(op => prover.performOneOperation(op).get)
       }
       val (removedNodesTime, removedNodes) = time {
         prover.removedNodes()
@@ -72,6 +72,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
       val (proofGenerationTime, _) = time {
         prover.generateProof()
       }
+//      checkTree(prover, oldTop, removedNodes)
       toRemoveTotal += removedNodesTime
       proofGenerationTotal += proofGenerationTime
       performOperationTotal += performOperationsTime

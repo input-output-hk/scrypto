@@ -192,11 +192,12 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     * @return nodes, that where presented in old tree (starting form oldTopNode, but are not presented in new tree
     */
-  def removedNodes(): ArrayBuffer[ProverNodes[D]] = {
+  def removedNodes(): List[ProverNodes[D]] = {
     changedNodesBufferToCheck.foreach { cn =>
       if(!contains(cn)) changedNodesBuffer += cn
     }
-    changedNodesBuffer
+    // .toList is important here, otherwise mutable object will be returned that will be changed during further modifications
+    changedNodesBuffer.toList
   }
 
   /**
