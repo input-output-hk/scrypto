@@ -208,34 +208,29 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     * @return `true` if this tree has an element that has the same label, as `node.label`, `false` otherwise.
     */
-  def contains(key: ADKey, label: D): Boolean = path(key, label, existenceOnly = true).nonEmpty
-
-  /**
-    *
-    * @param key           - node key
-    * @param label         - node label
-    * @param existenceOnly - only check that node exists in the tree
-    * @return path from topNode to a node with specified key and label
-    */
-  def path(key: ADKey, label: D, existenceOnly: Boolean = false): Option[Seq[ProverNodes[D]]] = {
-    val foundStart = found
-    found = false
-    val path: ArrayBuffer[ProverNodes[D]] = ArrayBuffer.empty
-
+  def contains(key: ADKey, label: D): Boolean = {
     @tailrec
-    def loop(currentNode: ProverNodes[D]): Option[Seq[ProverNodes[D]]] = {
-      if (!existenceOnly) path += currentNode
+    def loop(currentNode: ProverNodes[D], keyFound: Boolean): Boolean = {
       currentNode match {
-        case _ if currentNode.label sameElements label => Some(path)
-        case in: InternalProverNode[D] if nextDirectionIsLeft(key, in) => loop(in.left)
-        case in: InternalProverNode[D] => loop(in.right)
-        case _ => None
+        case _ if currentNode.label sameElements label => true
+        case r: InternalProverNode[D] =>
+          if (keyFound) {
+            loop(r.left, keyFound = true)
+          } else {
+            ByteArray.compare(key, r.key) match {
+              case 0 => // found in the tree -- go one step right, then left to the leaf
+                loop(r.right, keyFound = true)
+              case o if o < 0 => // going left, not yet found
+                loop(r.left, keyFound = false)
+              case _ => // going right, not yet found
+                loop(r.right, keyFound = false)
+            }
+          }
+        case _ => false
       }
     }
 
-    val result = loop(topNode)
-    found = foundStart
-    result
+    loop(topNode, false)
   }
 
   /**
