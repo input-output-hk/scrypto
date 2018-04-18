@@ -78,7 +78,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
     mods.foreach(op => prover.performOneOperation(op).get)
 
-    val removedNodes = prover.removedNodes()
+    prover.removedNodes()
 
     val proofBytes = prover.generateProof()
 
@@ -106,6 +106,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
       // modify tree and generate proof
       modifications.foreach(ti => prover.performOneOperation(ti))
+      prover.removedNodes()
       val modifyingProof = prover.generateProof()
       prover.digest shouldEqual verifier.digest.get
       Base58.encode(prover.digest) should not be Base58.encode(initialDigest)
