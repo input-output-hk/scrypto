@@ -38,7 +38,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
   //removedNodesBenchmark
   removedNodesBenchmark()
 
-  def removedNodesBenchmark(startTreeSize: Int = 10000000,
+  def removedNodesBenchmark(startTreeSize: Int = 1000000,
                             toRemoveSize: Int = 3000,
                             toInsertSize: Int = 3000): Unit = {
     val iterations = 50
@@ -53,7 +53,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     prover.generateProof()
     prover.digest
 
-    println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
+    println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),nonModifyingproofGenerationTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
     (0 until iterations).foreach { i =>
       System.gc()
       val toRemove = elements.slice(i * toRemoveSize, (i + 1) * toRemoveSize).map(e => Remove(e._1))
@@ -61,8 +61,12 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
         .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
       val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
       val oldTop = prover.topNode
-
       val mods = toRemove ++ toInsert
+
+      val (nonModifyingTime, nonModifyingProof) =  time {
+        prover.generateProofForOperations(mods)
+      }
+
       val (performOperationsTime, _) = time {
         mods.foreach(op => prover.performOneOperation(op).get)
       }
@@ -70,14 +74,16 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
         prover.removedNodes()
       }
       val removedNodesLength = removedNodes.length
-      val (proofGenerationTime, _) = time {
+      val (proofGenerationTime, proofBytes) = time {
         prover.generateProof()
       }
+
+      nonModifyingProof shouldEqual proofBytes
 //      checkTree(prover, oldTop, removedNodes)
       toRemoveTotal += removedNodesTime
       proofGenerationTotal += proofGenerationTime
       performOperationTotal += performOperationsTime
-      println(s"$treeSize,$toRemoveSize,$removedNodesLength,$removedNodesTime,$proofGenerationTime,$performOperationsTime")
+      println(s"$treeSize,$toRemoveSize,$removedNodesLength,$removedNodesTime,$nonModifyingTime,$proofGenerationTime,$performOperationsTime")
     }
     println(s"Average times for startTreeSize=$startTreeSize,toRemoveSize=$toRemoveSize,toInsertSize=$toInsertSize:" +
       s" toRemove=${toRemoveTotal / iterations}, proofGeneration=${proofGenerationTotal / iterations}, performOperation=${performOperationTotal / iterations}")

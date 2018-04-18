@@ -194,7 +194,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     */
   def removedNodes(): List[ProverNodes[D]] = {
     changedNodesBufferToCheck.foreach { cn =>
-      if(!contains(cn)) changedNodesBuffer += cn
+      if (!contains(cn)) changedNodesBuffer += cn
     }
     // .toList is important here, otherwise mutable object will be returned that will be changed during further modifications
     changedNodesBuffer.toList
@@ -212,8 +212,8 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
 
   /**
     *
-    * @param key - node key
-    * @param label - node label
+    * @param key           - node key
+    * @param label         - node label
     * @param existenceOnly - only check that node exists in the tree
     * @return path from topNode to a node with specified key and label
     */
@@ -224,7 +224,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
 
     @tailrec
     def loop(currentNode: ProverNodes[D]): Option[Seq[ProverNodes[D]]] = {
-      if(!existenceOnly) path += currentNode
+      if (!existenceOnly) path += currentNode
       currentNode match {
         case _ if currentNode.label sameElements label => Some(path)
         case in: InternalProverNode[D] if nextDirectionIsLeft(key, in) => loop(in.left)
@@ -243,7 +243,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * Does NOT modify the tree
     */
   def generateProofForOperations(operations: Seq[Operation]): Try[(SerializedAdProof, ADDigest)] = Try {
-    val newProver: BatchAVLProver[D, HF] = new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(topNode, rootNodeHeight))
+    val newProver = new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(topNode, rootNodeHeight), false)
     operations.foreach(o => newProver.performOneOperation(o).get)
     (newProver.generateProof(), newProver.digest)
   }

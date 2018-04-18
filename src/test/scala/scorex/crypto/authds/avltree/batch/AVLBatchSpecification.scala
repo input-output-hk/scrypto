@@ -86,13 +86,6 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       modifications foreach (m => verifier.performOneOperation(m).get)
       verifier.digest.get shouldEqual nonModifyingDigest
 
-      // generate another proof without tree modification
-      val toInsert2 = toInsert.map(ti => Insert(ADKey @@ Blake2b256(ti.key), ADValue @@ Blake2b256(ti.value)))
-      val toRemove2 = (0 until insertNum + 1).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
-      val modifications2 = toRemove2
-      val nonModifyingProof2 = prover.generateProofForOperations(modifications2).get
-      prover.digest shouldEqual initialDigest
-
       // modify tree and generate proof
       modifications.foreach(ti => prover.performOneOperation(ti))
       val modifyingProof = prover.generateProof()
