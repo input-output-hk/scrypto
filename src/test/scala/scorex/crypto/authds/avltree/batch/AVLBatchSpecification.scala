@@ -26,7 +26,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
       * __________________________________/     \
       * __________Leaf0(V9WUMj6P,Fx5gbhBF)      Leaf1(5VjCEAdt,A889CP2P)
       **/
-    val prover = generateProver(2)
+    val prover = generateProver(2)._1
     val top = prover.topNode.asInstanceOf[InternalProverNode[D]] // V9WUMj6P,ES5Rnuf1
     val negativeInfinity = top.left.asInstanceOf[ProverLeaf[D]] // 11111111,ChyvjCc9
     val right = top.right.asInstanceOf[InternalProverNode[D]] // 5VjCEAdt,26ouau2w
@@ -49,7 +49,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("return removed leafs and internal nodes") {
-    val prover = generateProver()
+    val prover = generateProver()._1
     forAll(kvSeqGen) { kvSeq =>
       val oldTop = prover.topNode
       val mSize = Math.min(10, kvSeq.length)
@@ -69,7 +69,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
 
   property("proof generation without tree modification") {
-    val prover = generateProver()
+    val prover = generateProver()._1
     forAll(kvSeqGen) { kvSeq =>
       val insertNum = Math.min(10, kvSeq.length)
       val toInsert = kvSeq.take(insertNum).map(ti => Insert(ti._1, ti._2))
@@ -98,7 +98,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("randomWalk") {
-    val prover = generateProver()
+    val prover = generateProver()._1
 
     forAll { seed: Long =>
       val e1 = prover.randomWalk(new scala.util.Random(seed))
@@ -170,7 +170,7 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
 
   property("Batch of lookups") {
     //prepare tree
-    val prover = generateProver()
+    val prover = generateProver()._1
     val digest = prover.digest
 
     forAll(smallInt) { numberOfLookups: Int =>

@@ -18,14 +18,14 @@ trait BatchTestingHelpers extends ToStringHelper with Matchers {
 
   def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
 
-  def generateProver(size: Int = InitialTreeSize): BatchAVLProver[D, HF] = {
+  def generateProver(size: Int = InitialTreeSize): (BatchAVLProver[D, HF], Seq[(ADKey, ADValue)]) = {
     val prover = new BatchAVLProver[D, HF](KL, None)
-    val keyValues = (0 until size) map { i =>
+    val initialElements: Seq[(ADKey, ADValue)] = (0 until size) map { i =>
       (ADKey @@ Blake2b256(i.toString.getBytes).take(KL), ADValue @@ (i.toString.getBytes))
     }
-    keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
+    initialElements.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
     prover.generateProof()
-    prover
+    (prover, initialElements)
   }
 
   /**

@@ -45,13 +45,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     var toRemoveTotal: Long = 0
     var proofGenerationTotal: Long = 0
     var performOperationTotal: Long = 0
-    val prover = new BatchAVLProver[D, HF](KL, Some(VL))
-    val elements: Seq[(ADKey, ADValue)] = (0 until startTreeSize)
-      .map(i => Sha256(i.toString))
-      .map(k => (ADKey @@ k, ADValue @@ k.take(8)))
-    elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)).get)
-    prover.generateProof()
-    prover.digest
+    val (prover, elements) = generateProver(startTreeSize)
 
     println(s"tree size,removed leafs,removed nodes,removedNodesTime(ms),nonModifyingproofGenerationTime(ms),proofGenerationTime(ms),performOperationsTime(ms)")
     (0 until iterations).foreach { i =>
