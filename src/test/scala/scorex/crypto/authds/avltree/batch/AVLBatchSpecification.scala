@@ -48,11 +48,41 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     prover.generateProof()
   }
 
+  property("removedNodes() should not contain new nodes") {
+    def visitedNodes(node: ProverNodes[D]): Seq[ProverNodes[D]] = {
+      if (node.isNew) {
+        val pair = node
+        node match {
+          case n: InternalProverNode[D] =>
+            val leftSubtree = visitedNodes(n.left)
+            val rightSubtree = visitedNodes(n.right)
+            pair +: (leftSubtree ++ rightSubtree)
+          case _: ProverLeaf[D] => Seq(pair)
+        }
+      } else Seq()
+    }
+
+    val prover = generateProver()._1
+    forAll(kvSeqGen) { kvSeq =>
+      val mSize = kvSeq.length
+      val toInsert = kvSeq.take(mSize).map(ti => Insert(ti._1, ti._2))
+      val toRemove = (0 until mSize).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
+      val modifications = toInsert ++ toRemove
+      modifications.foreach(ti => prover.performOneOperation(ti))
+      val removed = prover.removedNodes()
+      val newNodes = visitedNodes(prover.topNode)
+      newNodes.foreach(nn => removed.find(r => r.label sameElements nn.label) shouldBe None)
+
+     prover.generateProof()
+    }
+
+  }
+
   property("return removed leafs and internal nodes") {
     val prover = generateProver()._1
     forAll(kvSeqGen) { kvSeq =>
       val oldTop = prover.topNode
-      val mSize = Math.min(10, kvSeq.length)
+      val mSize = kvSeq.length
       val toInsert = kvSeq.take(mSize).map(ti => Insert(ti._1, ti._2))
       val toRemove = (0 until mSize).flatMap(i => prover.randomWalk(new scala.util.Random(i))).map(kv => Remove(kv._1))
       val modifications = toInsert ++ toRemove
