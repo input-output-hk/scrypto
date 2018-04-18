@@ -58,7 +58,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
       val mods = toRemove ++ toInsert
 
       val (nonModifyingTime, nonModifyingProof) =  time {
-        prover.generateProofForOperations(mods)
+        prover.generateProofForOperations(mods).get._1
       }
 
       val (performOperationsTime, _) = time {

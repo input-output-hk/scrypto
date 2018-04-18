@@ -4,9 +4,9 @@ import com.google.common.primitives.Longs
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scorex.crypto.authds.avltree.batch.BatchingPlayground.{D, HF}
+import scorex.crypto.authds.avltree.batch.BatchingPlayground.{D, HF, generateProver, time}
 import scorex.crypto.authds.legacy.avltree.AVLTree
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue, TwoPartyTests}
+import scorex.crypto.authds._
 import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{Blake2b256, _}
 import scorex.utils.{ByteArray, Random}
@@ -67,6 +67,24 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     }
   }
 
+  property("proof generation without tree modification special case") {
+    val startTreeSize = 82
+    val toRemoveSize = 1
+    val (prover, elements) = generateProver(startTreeSize)
+
+    val mods = elements.take(toRemoveSize).map(e => Remove(e._1))
+
+    val (nonModifyingProof: SerializedAdProof, nonModifyingDigest) = prover.generateProofForOperations(mods).get
+
+    mods.foreach(op => prover.performOneOperation(op).get)
+
+    val removedNodes = prover.removedNodes()
+
+    val proofBytes = prover.generateProof()
+
+    nonModifyingProof.length shouldEqual proofBytes.length
+    nonModifyingProof shouldEqual proofBytes
+  }
 
   property("proof generation without tree modification") {
     val prover = generateProver()._1
