@@ -43,6 +43,8 @@ case class Insert(key: ADKey, value: ADValue) extends Modification {
     case None => Success(Some(value))
     case Some(_) => Failure(new Exception(s"Key ${encoder.encode(key)} already exists"))
   }: UpdateFunction
+
+  override def toString: String = s"""Insert(\"${encoder.encode(key)}\",\"${encoder.encode(value)}\")"""
 }
 
 case class Update(key: ADKey, value: ADValue) extends Modification {
@@ -50,10 +52,14 @@ case class Update(key: ADKey, value: ADValue) extends Modification {
     case None => Failure(new Exception(s"Key ${encoder.encode(key)} does not exist"))
     case Some(_) => Success(Some(value))
   }: UpdateFunction
+
+  override def toString: String = s"""Update(\"${encoder.encode(key)}\",\"${encoder.encode(value)}\")"""
 }
 
 case class InsertOrUpdate(key: ADKey, value: ADValue) extends Modification {
   override def updateFn: UpdateFunction = (_ => Success(Some(value))): UpdateFunction
+
+  override def toString: String = s"""InsertOrUpdate(\"${encoder.encode(key)}\",\"${encoder.encode(value)}\")"""
 }
 
 
@@ -62,10 +68,14 @@ case class Remove(key: ADKey) extends Modification {
     case None => Failure(new Exception(s"Key ${encoder.encode(key)} does not exist"))
     case Some(_) => Success(None)
   }: UpdateFunction
+
+  override def toString: String = s"""Remove(\"${encoder.encode(key)}\")"""
 }
 
 case class RemoveIfExists(key: ADKey) extends Modification {
   override def updateFn: UpdateFunction = (_ => Success(None)): UpdateFunction
+
+  override def toString: String = s"""RemoveIfExists(\"${encoder.encode(key)}\")"""
 }
 
 /**
