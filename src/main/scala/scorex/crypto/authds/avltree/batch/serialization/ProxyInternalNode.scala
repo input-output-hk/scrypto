@@ -2,7 +2,6 @@ package scorex.crypto.authds.avltree.batch.serialization
 
 import scorex.crypto.authds.avltree.batch.{InternalProverNode, ProverNodes}
 import scorex.crypto.authds.{ADKey, Balance}
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CryptographicHash, Digest}
 
 class ProxyInternalNode[D <: Digest](protected var pk: ADKey,

@@ -1,8 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.{Balance, _}
-import scorex.crypto.encode.Base58
-import scorex.crypto.hash.{Digest, Digest32}
+import scorex.crypto.hash.Digest
 import scorex.utils.{ByteArray, ScryptoLogging}
 
 import scala.collection.mutable.ArrayBuffer
@@ -40,14 +39,14 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
     n match {
       case p: ProverNodes[D] =>
         if (collectChangedNodes && !n.visited && !p.isNew) {
-          if(isRotate) {
+          if (isRotate) {
             // during rotate operation node may stay in the tree in a different position
             changedNodesBufferToCheck += p
-          } else if(operation.isInstanceOf[Insert] || operation.isInstanceOf[Remove]
+          } else if (operation.isInstanceOf[Insert] || operation.isInstanceOf[Remove]
             || operation.isInstanceOf[InsertOrUpdate]) {
             // during non-rotate insert and remove operations nodes on the path should not be presented in a new tree
             changedNodesBuffer += p
-          } else if(!operation.isInstanceOf[Lookup]) {
+          } else if (!operation.isInstanceOf[Lookup]) {
             // during other non-lookup operations we don't know, whether node will stay in thee tree or not
             changedNodesBufferToCheck += p
           }
@@ -142,8 +141,8 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
   protected def returnResultOfOneOperation(operation: Operation, rootNode: Node[D]): Try[(Node[D], Option[ADValue])] = Try {
     val key = operation.key
 
-    require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
-    require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
+    require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${encoder.encode(key)} is less than -inf")
+    require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${encoder.encode(key)} is more than +inf")
     require(key.length == keyLength)
 
     var savedNode: Option[Leaf[D]] = None // The leaf to be saved in the hard deletion case, where we delete a leaf and copy its info over to another leaf
