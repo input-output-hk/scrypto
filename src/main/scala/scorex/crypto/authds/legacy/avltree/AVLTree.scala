@@ -1,9 +1,7 @@
 package scorex.crypto.authds.legacy.avltree
 
 import scorex.crypto.authds._
-import scorex.crypto.authds.avltree._
 import scorex.crypto.authds.avltree.batch.{Lookup, Modification, Operation}
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
@@ -29,8 +27,8 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
   override def run[O <: Operation](operation: O): Try[AVLModifyProof] = Try {
     val key = operation.key
 
-    require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${Base58.encode(key)} is less than -inf")
-    require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${Base58.encode(key)} is more than +inf")
+    require(ByteArray.compare(key, NegativeInfinityKey) > 0, s"Key ${encoder.encode(key)} is less than -inf")
+    require(ByteArray.compare(key, PositiveInfinityKey) < 0, s"Key ${encoder.encode(key)} is more than +inf")
     require(key.length == keyLength, s"Key length ${key.length} != $keyLength")
 
     val proofStream = new scala.collection.mutable.Queue[AVLProofElement]

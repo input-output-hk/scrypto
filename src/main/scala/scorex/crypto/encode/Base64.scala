@@ -1,8 +1,13 @@
 package scorex.crypto.encode
 
-object Base64 {
-  def encode(input: Array[Byte]): String = new String(java.util.Base64.getEncoder.encode(input))
+import scala.util.Try
 
-  def decode(input: String): Array[Byte] = java.util.Base64.getDecoder.decode(input)
+object Base64 extends BytesEncoder {
+
+  override val Alphabet: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+
+  override def encode(input: Array[Byte]): String = new String(java.util.Base64.getEncoder.encode(input))
+
+  override def decode(input: String): Try[Array[Byte]] = Try(java.util.Base64.getDecoder.decode(input))
 
 }

@@ -1,9 +1,9 @@
 package scorex.crypto.authds
 
 import scorex.crypto.authds.legacy.treap.Level
-import scorex.crypto.encode.Base58
+import scorex.utils.ScryptoLogging
 
-trait TwoPartyProofElement {
+trait TwoPartyProofElement extends ScryptoLogging {
   val bytes: Array[Byte]
 }
 
@@ -21,7 +21,7 @@ trait ProofLabel extends WTProofElement with AVLProofElement with SLTProofElemen
   val e: Array[Byte]
   val bytes: Array[Byte] = e
 
-  override def toString: String = s"ProofLabel(${Base58.encode(e).take(8)})"
+  override def toString: String = s"ProofLabel(${encoder.encode(e).take(8)})"
 }
 
 case class ProofRightLabel(e: Array[Byte]) extends ProofLabel
@@ -32,7 +32,7 @@ trait Key extends WTProofElement with AVLProofElement with SLTProofElement {
   val e: Array[Byte]
   val bytes: Array[Byte] = e
 
-  override def toString: String = s"ProofKey(${Base58.encode(e).take(8)})"
+  override def toString: String = s"ProofKey(${encoder.encode(e).take(8)})"
 }
 
 case class ProofKey(e: Array[Byte]) extends Key
@@ -42,7 +42,7 @@ case class ProofNextLeafKey(e: Array[Byte]) extends Key
 case class ProofValue(e: Array[Byte]) extends WTProofElement with AVLProofElement with SLTProofElement {
   val bytes: Array[Byte] = e
 
-  override def toString: String = s"ProofValue(${Base58.encode(e).take(8)})"
+  override def toString: String = s"ProofValue(${encoder.encode(e).take(8)})"
 }
 
 case class ProofDirection(direction: Direction) extends WTProofElement with AVLProofElement {

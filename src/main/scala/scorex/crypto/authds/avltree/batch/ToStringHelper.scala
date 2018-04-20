@@ -1,8 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.encode.Base58
+import scorex.utils.ScryptoLogging
 
-trait ToStringHelper {
+trait ToStringHelper extends ScryptoLogging {
   //Needed for debug (toString) only
-  protected def arrayToString(a: Array[Byte]): String = Base58.encode(a).take(8)
+  protected def arrayToString(a: Array[Byte]): String = encoder.encode(a).take(8)
 }

@@ -31,6 +31,8 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
                                                                (implicit hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 
+  override val collectChangedNodes: Boolean = false
+
   protected val labelLength = hf.DigestSize
 
   /**
