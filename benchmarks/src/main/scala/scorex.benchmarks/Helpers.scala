@@ -24,7 +24,7 @@ object Helpers {
     Random.shuffle(inserts).take(count).map { in => Remove(in.key)}
 
   type D = Digest32
-  type HF = Blake2b256
+  type HF = Blake2b256.type
   type Prover = BatchAVLProver[D, HF]
 
   private val STEP = 2000
