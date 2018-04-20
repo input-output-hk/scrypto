@@ -1,6 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.{Balance, _}
+import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Digest
 import scorex.utils.{ByteArray, ScryptoLogging}
 
@@ -376,7 +377,7 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
 
           if (childHeightDecreased && newRoot.balance > 0) {
             // new to rotate because my left subtree is shorter than my right
-            onNodeVisit(newRoot.right, operation)
+            onNodeVisit(newRoot.right, operation, isRotate = true)
 
             // I know my right child is not a leaf, because it is taller than my left
             val rightChild = newRoot.right.asInstanceOf[InternalNode[D]]
