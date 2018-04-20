@@ -38,8 +38,7 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
 
   protected def onNodeVisit(n: Node[D], operation: Operation, isRotate: Boolean = false): Unit = {
     n match {
-      case p: ProverNodes[D] =>
-        if (collectChangedNodes && !n.visited && !p.isNew) {
+      case p: ProverNodes[D] if collectChangedNodes && !n.visited && !p.isNew =>
           if (isRotate) {
             // during rotate operation node may stay in the tree in a different position
             changedNodesBufferToCheck += p
@@ -51,7 +50,6 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
             // during other non-lookup operations we don't know, whether node will stay in thee tree or not
             changedNodesBufferToCheck += p
           }
-        }
       case _ =>
     }
     n.visited = true
