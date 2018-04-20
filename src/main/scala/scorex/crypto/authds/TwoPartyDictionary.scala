@@ -1,11 +1,11 @@
 package scorex.crypto.authds
 
 import scorex.crypto.authds.avltree.batch.Operation
-import scorex.crypto.hash.CryptographicHash
+import scorex.utils.ScryptoLogging
 
 import scala.util.Try
 
-trait TwoPartyDictionary {
+trait TwoPartyDictionary extends ScryptoLogging {
 
   /**
     * Run an operation, whether a lookup or a modification, against the tree

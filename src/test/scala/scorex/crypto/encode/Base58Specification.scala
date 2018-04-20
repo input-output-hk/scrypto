@@ -6,21 +6,9 @@ import org.scalacheck.Arbitrary
 import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
 import org.scalatest.{Matchers, PropSpec}
 
-class Base58Specification extends PropSpec
-with PropertyChecks
-with GeneratorDrivenPropertyChecks
-with Matchers {
+class Base58Specification extends EncoderSpecification {
 
-
-  property("Base58 encoding then decoding preserves data") {
-    forAll { data: Array[Byte] =>
-      whenever(data.length > 0 && data.head != 0) {
-        val encoded = Base58.encode(data)
-        val restored = Base58.decode(encoded).get
-        restored shouldBe data
-      }
-    }
-  }
+  override val encoder: BytesEncoder = Base58
 
   property("Base58 encoding then decoding for genesis signature") {
     val data = Array.fill(64)(0: Byte)

@@ -5,8 +5,8 @@ import scala.util.Try
 /**
   * A custom form of base58 is used to encode Scorex addresses.
   */
-object Base58 {
-  private val Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+object Base58 extends BytesEncoder {
+  val Alphabet: String = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
   private val DecodeTable = Array(
     0, 1, 2, 3, 4, 5, 6, 7, 8, -1, -1, -1, -1, -1, -1, -1, 9, 10, 11, 12, 13, 14, 15, 16, -1, 17, 18, 19, 20, 21, -1,
     22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, -1, -1, -1, -1, -1, -1, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, -1,
@@ -15,7 +15,7 @@ object Base58 {
 
   private val Base = BigInt(58)
 
-  def encode(input: Array[Byte]): String = {
+  override def encode(input: Array[Byte]): String = {
     var bi = BigInt(1, input)
     val s = new StringBuilder()
     if (bi > 0) {
@@ -32,7 +32,7 @@ object Base58 {
     }.toString()
   }
 
-  def decode(input: String): Try[Array[Byte]] = Try {
+  override def decode(input: String): Try[Array[Byte]] = Try {
     require(input.length > 0, "Empty input for Base58.decode")
 
     val decoded = decodeToBigInteger(input)

@@ -5,7 +5,9 @@ import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
 import scorex.utils.ByteArray
 
+import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Random, Success, Try}
 
 
@@ -13,15 +15,17 @@ import scala.util.{Failure, Random, Success, Try}
   * Implements the batch AVL prover from https://eprint.iacr.org/2016/994
   * Not thread safe if you use with ThreadUnsafeHash
   *
-  * @param keyLength        - length of keys in tree
-  * @param valueLengthOpt   - length of values in tree. None if it is not fixed
-  * @param oldRootAndHeight - option root node and height of old tree. Tree should contain new nodes only
-  *                         WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
-  * @param hf               - hash function
+  * @param keyLength           - length of keys in tree
+  * @param valueLengthOpt      - length of values in tree. None if it is not fixed
+  * @param oldRootAndHeight    - option root node and height of old tree. Tree should contain new nodes only
+  *                            WARNING if you pass it, all isNew and visited flags should be set correctly and height should be correct
+  * @param collectChangedNodes - changed nodes will be collected to a separate buffer during tree modifications if `true`
+  * @param hf                  - hash function
   */
 class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int,
                                                               val valueLengthOpt: Option[Int],
-                                                              oldRootAndHeight: Option[(ProverNodes[D], Int)] = None)
+                                                              oldRootAndHeight: Option[(ProverNodes[D], Int)] = None,
+                                                              val collectChangedNodes: Boolean = true)
                                                              (implicit val hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 
@@ -34,6 +38,9 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     t
   })
 
+  /**
+    * Longest path length in a tree
+    */
   var rootNodeHeight: Int = oldRootAndHeight.map(_._2).getOrElse(0)
 
   private var oldTopNode = topNode
@@ -182,6 +189,59 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     }
   }
 
+  /**
+    * @return nodes, that where presented in old tree (starting form oldTopNode, but are not presented in new tree
+    */
+  def removedNodes(): List[ProverNodes[D]] = {
+    changedNodesBufferToCheck.foreach { cn =>
+      if (!contains(cn)) changedNodesBuffer += cn
+    }
+    // .toList is important here, otherwise mutable object will be returned that will be changed during further modifications
+    changedNodesBuffer.toList
+  }
+
+  /**
+    * @return `true` if this tree has an element that has the same label, as `node.label`, `false` otherwise.
+    */
+  def contains(node: ProverNodes[D]): Boolean = contains(node.key, node.label)
+
+  /**
+    * @return `true` if this tree has an element that has the same label, as `node.label`, `false` otherwise.
+    */
+  def contains(key: ADKey, label: D): Boolean = {
+    @tailrec
+    def loop(currentNode: ProverNodes[D], keyFound: Boolean): Boolean = {
+      currentNode match {
+        case _ if currentNode.label sameElements label => true
+        case r: InternalProverNode[D] =>
+          if (keyFound) {
+            loop(r.left, keyFound = true)
+          } else {
+            ByteArray.compare(key, r.key) match {
+              case 0 => // found in the tree -- go one step right, then left to the leaf
+                loop(r.right, keyFound = true)
+              case o if o < 0 => // going left, not yet found
+                loop(r.left, keyFound = false)
+              case _ => // going right, not yet found
+                loop(r.right, keyFound = false)
+            }
+          }
+        case _ => false
+      }
+    }
+
+    loop(topNode, false)
+  }
+
+  /**
+    * Generates the proof for all the operations in the list.
+    * Does NOT modify the tree
+    */
+  def generateProofForOperations(operations: Seq[Operation]): Try[(SerializedAdProof, ADDigest)] = Try {
+    val newProver = new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(topNode, rootNodeHeight), false)
+    operations.foreach(o => newProver.performOneOperation(o).get)
+    (newProver.generateProof(), newProver.digest)
+  }
 
   /**
     * Generates the proof for all the operations performed (except the ones that failed)
@@ -190,6 +250,8 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * @return - the proof
     */
   def generateProof(): SerializedAdProof = {
+    changedNodesBuffer.clear()
+    changedNodesBufferToCheck.clear()
     val packagedTree = new mutable.ArrayBuffer[Byte]
     var previousLeafAvailable = false
 
@@ -260,6 +322,17 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   }
 
 
+  /**
+    * Walk from tree to a leaf.
+    *
+    * @param internalNodeFn - function applied to internal nodes. Takes current internal node and current IR, returns
+    *                       new internal nod and new IR
+    * @param leafFn         - function applied to leafss. Takes current leaf and current IR, returns result of walk LR
+    * @param initial        - initial value of IR
+    * @tparam IR - result of applying internalNodeFn to internal node. E.g. some accumutalor of previous results
+    * @tparam LR - result of applying leafFn to a leaf. Result of all walk application
+    * @return
+    */
   def treeWalk[IR, LR](internalNodeFn: (InternalProverNode[D], IR) => (ProverNodes[D], IR),
                        leafFn: (ProverLeaf[D], IR) => LR,
                        initial: IR): LR = {
@@ -278,6 +351,11 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   }
 
 
+  /**
+    *
+    * @param rand - source of randomness
+    * @return Random leaf from the tree, that is not positive or negative infinity
+    */
   def randomWalk(rand: Random = new Random): Option[(ADKey, ADValue)] = {
     def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
       rand.nextBoolean() match {

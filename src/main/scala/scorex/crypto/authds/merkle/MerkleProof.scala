@@ -1,8 +1,8 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.{LeafData, Side}
-import scorex.crypto.encode.Base58
 import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.utils.ScryptoLogging
 
 /**
   * Proof is given leaf data, leaf hash sibling and also siblings for parent nodes. Using this data, it is possible to
@@ -23,7 +23,7 @@ import scorex.crypto.hash.{CryptographicHash, Digest}
   *               (whether it is left or right to stored value)
   */
 case class MerkleProof[D <: Digest](leafData: LeafData, levels: Seq[(Digest, Side)])
-                      (implicit val hf: CryptographicHash[D]) {
+                      (implicit val hf: CryptographicHash[D]) extends ScryptoLogging {
 
   def valid(expectedRootHash: Digest): Boolean = {
     val leafHash = hf.prefixedHash(MerkleTree.LeafPrefix, leafData)
@@ -38,8 +38,8 @@ case class MerkleProof[D <: Digest](leafData: LeafData, levels: Seq[(Digest, Sid
   }
 
   override def toString: String =
-    s"MerkleProof(data: ${Base58.encode(leafData)}, hash: ${Base58.encode(hf(leafData))}, " +
-      s"(${levels.map(ht => Base58.encode(ht._1) + " : " + ht._2)}))"
+    s"MerkleProof(data: ${encoder.encode(leafData)}, hash: ${encoder.encode(hf(leafData))}, " +
+      s"(${levels.map(ht => encoder.encode(ht._1) + " : " + ht._2)}))"
 }
 
 object MerkleProof {
