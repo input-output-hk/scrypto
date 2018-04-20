@@ -1,3 +1,12 @@
+**2.1.0**
+---------
+
+* AVL+ tree serialization, see *BatchAVLProverSerializer* class
+* Possibility to get list of removed nodes, see *removedNodes()* in *BatchAVLProver* 
+* Better Base58 performance
+* Initial implementation of sparse Merkle trees
+
+
 **2.0.5**
 ---------
 * *randomWalk()* in *BatchAVLProver* can accept external randomness via an optional parameter
