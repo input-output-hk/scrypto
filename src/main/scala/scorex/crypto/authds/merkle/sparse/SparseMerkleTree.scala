@@ -5,23 +5,21 @@ import scorex.crypto.authds.LeafData
 import scorex.crypto.hash._
 
 import scala.collection.mutable
-import scala.util.Random
+import scala.util.{Random, Try}
 
 /**
   *
   * An implementation of sparse Merkle tree of predefined height. Supported operations are append new leaf and update
   * previously appended leaf.
   *
-  * @param topNode
-  * @param height - W parameter from the paper, defines how many bits in the key, up to 127
+  * @param rootDigest - root hash of the tree
+  * @param height     - W parameter from the paper, defines how many bits in the key, up to 127
   * @tparam D
   */
-class SparseMerkleTree[D <: Digest](val topNode: Option[Node[D]],
+class SparseMerkleTree[D <: Digest](val rootDigest: Option[D],
                                     val height: Byte,
                                     val lastProof: SparseMerkleProof[D])(implicit hf: CryptographicHash[D]) {
   lazy val lastIndex: Node.ID = lastProof.idx
-
-  lazy val rootDigest: Option[D] = topNode.map(_.hash)
 
   private def firstDivergingBitPosition(idx1: BigInt, idx2: BigInt, max: Byte): Option[Byte] = {
     ((max - 1) to(0, -1)).foreach { bi =>
@@ -83,7 +81,8 @@ class SparseMerkleTree[D <: Digest](val topNode: Option[Node[D]],
   def update(proof: SparseMerkleProof[D],
              newLeafData: Option[LeafData],
              proofsToUpdate: Seq[SparseMerkleProof[D]] = Seq(),
-             filterFn: SparseMerkleTree.FilterFn = SparseMerkleTree.passAllFilterFn): (SparseMerkleTree[D], Seq[SparseMerkleProof[D]]) = {
+             filterFn: SparseMerkleTree.FilterFn = SparseMerkleTree.passAllFilterFn):
+  Try[(SparseMerkleTree[D], Seq[SparseMerkleProof[D]])] = Try {
 
     val proofIdx = proof.idx
 
@@ -129,8 +128,9 @@ object SparseMerkleTree {
 }
 
 /**
+  * Sparse Merkle tree proof for leaf
   *
-  * @param idx
+  * @param idx         - index of a leaf
   * @param leafDataOpt - leaf bytes, or null
   * @param levels      - bottom-up levels
   * @tparam D
@@ -140,7 +140,7 @@ case class SparseMerkleProof[D <: Digest](idx: Node.ID,
                                           levels: Vector[Option[D]]) {
 
   def propagateChanges(leafDataOpt: Option[LeafData])
-                      (implicit hf: CryptographicHash[D]): (Option[Node[D]], Vector[Option[D]]) = {
+                      (implicit hf: CryptographicHash[D]): (Option[D], Vector[Option[D]]) = {
     val height = levels.size.toByte
 
     val leafOpt: Option[Node[D]] = leafDataOpt.map(leafData => Leaf(idx, leafData))
@@ -159,20 +159,22 @@ case class SparseMerkleProof[D <: Digest](idx: Node.ID,
       }): Option[Node[D]]
       updLevel -> (collected :+ updLevel.map(_.hash))
     }
-    rootHashOpt -> wayDigests.dropRight(1)
+    rootHashOpt.map(_.hash) -> wayDigests.dropRight(1)
   }
 
   def valid(expectedRootHash: Option[D], height: Byte)(implicit hf: CryptographicHash[D]): Boolean = {
     require(levels.size == height)
 
-    val calcRootOpt = propagateChanges(leafDataOpt: Option[LeafData])._1
+    val calcRootHash = propagateChanges(leafDataOpt: Option[LeafData])._1
 
-    (calcRootOpt, expectedRootHash) match {
-      case (Some(calcRoot), Some(expRoot)) => calcRoot.hash sameElements expRoot
+    (calcRootHash, expectedRootHash) match {
+      case (Some(calcRoot), Some(expRoot)) => calcRoot sameElements expRoot
       case (None, None) => true
       case _ => false
     }
   }
+
+  def valid(tree: SparseMerkleTree[D])(implicit hf: CryptographicHash[D]): Boolean = valid(tree.rootDigest, tree.height)
 }
 
 
@@ -192,7 +194,7 @@ object TreeTester extends App {
 
   val zp1 = zp.copy(idx = 1)
 
-  val (tree1, updProofs) = tree0.update(zp, Some(LeafData @@ Longs.toByteArray(5)), Seq(zp))
+  val (tree1, updProofs) = tree0.update(zp, Some(LeafData @@ Longs.toByteArray(5)), Seq(zp)).get
 
 
   assert(zp.valid(tree0.rootDigest, height)(hf))
@@ -201,11 +203,10 @@ object TreeTester extends App {
 
   assert(tree1.lastProof.valid(tree1.rootDigest, height)(hf))
 
-  val tree2 = tree1.update(tree1.lastProof, Some(LeafData @@ Longs.toByteArray(10)))._1
+  val tree2 = tree1.update(tree1.lastProof, Some(LeafData @@ Longs.toByteArray(10))).get._1
 
   assert(tree2.lastProof.valid(tree2.rootDigest, height)(hf))
 
-  println(tree2.topNode)
 
   val t0 = System.currentTimeMillis()
   (1 to 10000).foldLeft(SparseMerkleTree.emptyTree(height) -> Seq[SparseMerkleProof[Digest32]]()) { case ((tree, proofs), _) =>
@@ -218,32 +219,92 @@ object TreeTester extends App {
       (nps, tree.lastProof, Some(LeafData @@ Longs.toByteArray(Random.nextInt())))
     }
 
-    tree.update(proof, newValue, newProofs)
+    tree.update(proof, newValue, newProofs).get
   }
   val t = System.currentTimeMillis()
   println((t - t0) + " ms.")
 }
 
 
-object BlockchainSimulator {
+object BlockchainSimulator extends App {
 
   type PubKey = Array[Byte]
+
+  val PubKeyLength = 32
+
+  implicit val hf: CryptographicHash[Digest32] = new Blake2b256Unsafe
 
   case class Transaction(amount: Long,
                          sender: PubKey,
                          recipient: PubKey,
-                         senderBalance: Long,
-                         senderBalanceProof: Long)
+                         coinBalance: Long,
+                         coinProof: SparseMerkleProof[Digest32])
+
+  object Transaction {
+    def coinBytes(pubKey: PubKey, balance: Long) = Some(LeafData @@ (pubKey ++ Longs.toByteArray(balance)))
+
+    def process(tx: Transaction,
+                state: SparseMerkleTree[Digest32]):
+    Try[(SparseMerkleTree[Digest32], Seq[SparseMerkleProof[Digest32]])] = Try {
+
+      require(tx.amount <= tx.coinBalance)
+      require(tx.coinProof.leafDataOpt.get sameElements coinBytes(tx.sender, tx.coinBalance).get)
+      require(tx.coinProof.valid(state.rootDigest, height))
+
+      val (state1, _) = state.update(tx.coinProof, None).get
+
+      val (state2, proofs2) = state1.update(state1.lastProof,
+        coinBytes(tx.recipient, tx.amount),
+        Seq(state1.lastProof)).get
+
+      if (tx.amount == tx.coinBalance) state2 -> proofs2
+      else state2.update(state2.lastProof,
+        coinBytes(tx.sender, tx.coinBalance - tx.amount),
+        proofs2 :+ state2.lastProof).get
+    }
+  }
 
   case class Block(transactions: Seq[Transaction])
 
   val txsCache = new mutable.ArrayBuffer()
+  val maxTxsCacheSize = 5000
 
-  val txsPerBlock = 500
+  val txsPerBlock = 1000
   val numOfBlocks = 1000000
 
-  val height = 30
+  val height = 32: Byte
 
+  val godAccount = Array.fill(32)(0: Byte)
+  val godBalance = 100000000000L //100B
 
+  val emptyState = SparseMerkleTree.emptyTree(height)
+  val (initialState, godProofs) = emptyState.update(emptyState.lastProof,
+    Transaction.coinBytes(godAccount, godBalance),
+    Seq(emptyState.lastProof)).get
 
+  var godProof = godProofs.head
+  var currentGodBalance = godBalance
+  val txAmount = 10
+
+  (1 to numOfBlocks).foldLeft(initialState) { case (beforeBlocktree, blockNum) =>
+    val (afterTree, processingTime) = (1 to txsPerBlock).foldLeft(beforeBlocktree -> 0L) { case ((tree, totalTime), txNum) =>
+      val recipient = hf(scala.util.Random.nextString(20))
+
+      val tx = Transaction(txAmount, godAccount, recipient, currentGodBalance, godProof)
+
+      val t0 = System.currentTimeMillis()
+      val (updState, proofs) = Transaction.process(tx, tree).get //we generate always valid transaction
+      val t = System.currentTimeMillis()
+
+      currentGodBalance = currentGodBalance - txAmount
+      godProof = proofs.last
+
+      updState -> (totalTime + (t - t0))
+    }
+
+    println(s"Block $blockNum, processing time: $processingTime ms")
+    println(godProof)
+
+    afterTree
+  }
 }
