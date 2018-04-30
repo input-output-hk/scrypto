@@ -38,9 +38,9 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
   //removedNodesBenchmark
   removedNodesBenchmark()
 
-  def removedNodesBenchmark(startTreeSize: Int = 1000000,
-                            toRemoveSize: Int = 3000,
-                            toInsertSize: Int = 3000): Unit = {
+  def removedNodesBenchmark(startTreeSize: Int = 10000,
+                            toRemoveSize: Int = 2000,
+                            toInsertSize: Int = 2000): Unit = {
     val iterations = 50
     var toRemoveTotal: Long = 0
     var proofGenerationTotal: Long = 0
@@ -73,7 +73,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
       }
 
       nonModifyingProof shouldEqual proofBytes
-//      checkTree(prover, oldTop, removedNodes)
+      checkTree(prover, oldTop, removedNodes)
       toRemoveTotal += removedNodesTime
       proofGenerationTotal += proofGenerationTime
       performOperationTotal += performOperationsTime
