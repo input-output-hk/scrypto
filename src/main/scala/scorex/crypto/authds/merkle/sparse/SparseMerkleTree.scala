@@ -2,6 +2,7 @@ package scorex.crypto.authds.merkle.sparse
 
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.LeafData
+import scorex.crypto.encode.Base16
 import scorex.crypto.hash._
 
 import scala.collection.mutable
@@ -139,6 +140,48 @@ case class SparseMerkleProof[D <: Digest](idx: Node.ID,
                                           leafDataOpt: Option[LeafData],
                                           levels: Vector[Option[D]]) {
 
+  def bytes = {
+    val idBytes = {
+      val bs = idx.toByteArray
+      bs.length.toByte +: bs
+    }
+
+    val leafDataBytes: Array[Byte] = leafDataOpt match {
+      case Some(leafBytes) => leafBytes.size.toByte +: leafBytes
+      case None => Array(0: Byte)
+    }
+
+    val levelsBytes: Array[Byte] = levels.zipWithIndex.foldLeft(Array.emptyByteArray -> (0: Byte, Array.emptyByteArray)) {
+      case ((lb, (collectedCount, collectedBytes)), (level, idx)) =>
+
+        def serializeSequence(count: Byte, bytes: Array[Byte]): Array[Byte] = count +: bytes
+
+        val levelDefined = level.isDefined
+        val ccPositive = if (collectedCount > 0) Some(true) else if (collectedCount < 0) Some(false) else None
+
+        val (toAppend1, (ccNew, cbNew)) = ccPositive match {
+          case Some(ccp) if levelDefined == ccp =>
+            (Array.emptyByteArray,
+              if (levelDefined) (collectedCount + 1, collectedBytes ++ level.get)
+              else (collectedCount - 1, collectedBytes))
+          case Some(ccp) if levelDefined != ccp =>
+            (serializeSequence(collectedCount, collectedBytes),
+              if (levelDefined) (1, level.get) else (-1, Array.emptyByteArray))
+          case None =>
+            (Array.emptyByteArray,
+              if (levelDefined) (+1, level.get) else (-1, Array.emptyByteArray))
+        }
+
+        val toAppend2 = if (idx != levels.size - 1) Array.emptyByteArray else serializeSequence(ccNew.toByte, cbNew)
+
+        (lb ++ toAppend1 ++ toAppend2, (ccNew.toByte, cbNew))
+    }._1
+
+    idBytes ++ leafDataBytes ++ levelsBytes
+  }
+
+  lazy val proofSize = bytes.size
+
   def propagateChanges(leafDataOpt: Option[LeafData])
                       (implicit hf: CryptographicHash[D]): (Option[D], Vector[Option[D]]) = {
     val height = levels.size.toByte
@@ -238,7 +281,10 @@ object BlockchainSimulator extends App {
                          sender: PubKey,
                          recipient: PubKey,
                          coinBalance: Long,
-                         coinProof: SparseMerkleProof[Digest32])
+                         coinProof: SparseMerkleProof[Digest32]) {
+    lazy val size = 8 + 2 * PubKeyLength + 8 + coinProof.proofSize
+    lazy val proofSize = coinProof.proofSize
+  }
 
   object Transaction {
     def coinBytes(pubKey: PubKey, balance: Long) = Some(LeafData @@ (pubKey ++ Longs.toByteArray(balance)))
@@ -272,7 +318,7 @@ object BlockchainSimulator extends App {
   val txsPerBlock = 1000
   val numOfBlocks = 1000000
 
-  val height = 32: Byte
+  val height = 100: Byte
 
   val godAccount = Array.fill(32)(0: Byte)
   val godBalance = 100000000000L //100B
@@ -287,23 +333,24 @@ object BlockchainSimulator extends App {
   val txAmount = 10
 
   (1 to numOfBlocks).foldLeft(initialState) { case (beforeBlocktree, blockNum) =>
-    val (afterTree, processingTime) = (1 to txsPerBlock).foldLeft(beforeBlocktree -> 0L) { case ((tree, totalTime), txNum) =>
-      val recipient = hf(scala.util.Random.nextString(20))
+    val (afterTree, (processingTime, proofSize)) = (1 to txsPerBlock).foldLeft(beforeBlocktree -> (0L, 0L)) {
+      case ((tree, (totalTime, totalProofSize)), txNum) =>
 
-      val tx = Transaction(txAmount, godAccount, recipient, currentGodBalance, godProof)
+        val recipient = hf(scala.util.Random.nextString(20))
 
-      val t0 = System.currentTimeMillis()
-      val (updState, proofs) = Transaction.process(tx, tree).get //we generate always valid transaction
-      val t = System.currentTimeMillis()
+        val tx = Transaction(txAmount, godAccount, recipient, currentGodBalance, godProof)
 
-      currentGodBalance = currentGodBalance - txAmount
-      godProof = proofs.last
+        val t0 = System.currentTimeMillis()
+        val (updState, proofs) = Transaction.process(tx, tree).get //we generate always valid transaction
+        val t = System.currentTimeMillis()
 
-      updState -> (totalTime + (t - t0))
+        currentGodBalance = currentGodBalance - txAmount
+        godProof = proofs.last
+
+        updState -> (totalTime + (t - t0), totalProofSize + tx.proofSize)
     }
 
-    println(s"Block $blockNum, processing time: $processingTime ms")
-    println(godProof)
+    println(s"Block $blockNum, processing time: $processingTime ms., proof size: ${proofSize/txsPerBlock.toDouble}")
 
     afterTree
   }
