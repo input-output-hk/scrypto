@@ -33,7 +33,11 @@ trait BatchTestingHelpers extends ToStringHelper with Matchers {
     */
   def checkTree(prover: BatchAVLProver[D, HF], oldTop: ProverNodes[D], removedNodes: Seq[ProverNodes[D]]): Unit = {
     // check that there are no nodes in removedNodes, that are still in the tree
-    removedNodes.foreach(r => prover.contains(r) shouldBe false)
+    removedNodes.foreach{r =>
+      if(prover.contains(r)) {
+        throw new Error(s"Node $r is marked to remove while still in the tree")
+      }
+    }
 
     var removed = 0
 
