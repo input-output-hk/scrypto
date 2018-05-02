@@ -2,7 +2,6 @@ package scorex.crypto.authds.merkle.sparse
 
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.LeafData
-import scorex.crypto.encode.Base16
 import scorex.crypto.hash._
 
 import scala.collection.mutable
@@ -67,8 +66,6 @@ class SparseMerkleTree[D <: Digest](val rootDigest: Option[D],
 
     val newLastProof = lastProof.copy(idx = li, levels = newLevels)
 
-    assert(newLastProof.valid(rootDigest, height))
-
     newLastProof
   }
 
@@ -91,8 +88,6 @@ class SparseMerkleTree[D <: Digest](val rootDigest: Option[D],
     require(lastProof.levels.size == height)
     require(proofIdx <= lastIndex + 1)
     require(filterFn(proofIdx, newLeafData))
-    require(proof.valid(rootDigest, height))
-
 
     val (newRoot, changes) = proof.propagateChanges(newLeafData)
 
@@ -103,8 +98,6 @@ class SparseMerkleTree[D <: Digest](val rootDigest: Option[D],
     val updatedProofs = proofsToUpdate.map(p => updateProof(proofIdx, newLeafData, changes, p))
 
     val updTree = new SparseMerkleTree[D](newRoot, height, newLp)
-
-    assert(updTree.lastProof.valid(updTree.rootDigest, updTree.height))
 
     updTree -> updatedProofs
   }
@@ -295,18 +288,17 @@ object BlockchainSimulator extends App {
 
       require(tx.amount <= tx.coinBalance)
       require(tx.coinProof.leafDataOpt.get sameElements coinBytes(tx.sender, tx.coinBalance).get)
-      require(tx.coinProof.valid(state.rootDigest, height))
+      require(tx.coinProof.valid(state))
 
       val (state1, _) = state.update(tx.coinProof, None).get
 
       val (state2, proofs2) = state1.update(state1.lastProof,
-        coinBytes(tx.recipient, tx.amount),
-        Seq(state1.lastProof)).get
+                                            coinBytes(tx.recipient, tx.amount),
+                                            Seq(state1.lastProof)).get
 
       if (tx.amount == tx.coinBalance) state2 -> proofs2
       else state2.update(state2.lastProof,
-        coinBytes(tx.sender, tx.coinBalance - tx.amount),
-        proofs2 :+ state2.lastProof).get
+        coinBytes(tx.sender, tx.coinBalance - tx.amount), proofs2 :+ state2.lastProof).get
     }
   }
 
@@ -333,6 +325,9 @@ object BlockchainSimulator extends App {
   val txAmount = 10
 
   (1 to numOfBlocks).foldLeft(initialState) { case (beforeBlocktree, blockNum) =>
+
+
+
     val (afterTree, (processingTime, proofSize)) = (1 to txsPerBlock).foldLeft(beforeBlocktree -> (0L, 0L)) {
       case ((tree, (totalTime, totalProofSize)), txNum) =>
 
