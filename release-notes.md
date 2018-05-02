@@ -1,3 +1,9 @@
+**2.1.1**
+---------
+
+* Bugfix release: a bug in double rotation processing in AVL+ tree implementation has been fixed
+
+
 **2.1.0**
 ---------
 
