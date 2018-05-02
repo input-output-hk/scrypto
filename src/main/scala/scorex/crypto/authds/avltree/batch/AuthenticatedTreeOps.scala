@@ -1,9 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.crypto.authds.{Balance, _}
-import scorex.crypto.encode.Base16
 import scorex.crypto.hash.Digest
-import scorex.utils.{ByteArray, ScryptoLogging}
+import scorex.utils.ByteArray
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Success, Try}
@@ -13,7 +12,7 @@ import scala.util.{Failure, Success, Try}
   * Code common to the prover and verifier of https://eprint.iacr.org/2016/994
   * (see Appendix B, "Our Algorithms")
   */
-trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ScryptoLogging {
+trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStringHelper {
 
   type ChangeHappened = Boolean
   type HeightIncreased = Boolean
@@ -39,17 +38,17 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
   protected def onNodeVisit(n: Node[D], operation: Operation, isRotate: Boolean = false): Unit = {
     n match {
       case p: ProverNodes[D] if collectChangedNodes && !n.visited && !p.isNew =>
-          if (isRotate) {
-            // during rotate operation node may stay in the tree in a different position
-            changedNodesBufferToCheck += p
-          } else if (operation.isInstanceOf[Insert] || operation.isInstanceOf[Remove]
-            || operation.isInstanceOf[InsertOrUpdate]) {
-            // during non-rotate insert and remove operations nodes on the path should not be presented in a new tree
-            changedNodesBuffer += p
-          } else if (!operation.isInstanceOf[Lookup]) {
-            // during other non-lookup operations we don't know, whether node will stay in thee tree or not
-            changedNodesBufferToCheck += p
-          }
+        if (isRotate) {
+          // during rotate operation node may stay in the tree in a different position
+          changedNodesBufferToCheck += p
+        } else if (operation.isInstanceOf[Insert] || operation.isInstanceOf[Remove]
+          || operation.isInstanceOf[InsertOrUpdate]) {
+          // during non-rotate insert and remove operations nodes on the path should not be presented in a new tree
+          changedNodesBuffer += p
+        } else if (!operation.isInstanceOf[Lookup]) {
+          // during other non-lookup operations we don't know, whether node will stay in thee tree or not
+          changedNodesBufferToCheck += p
+        }
       case _ =>
     }
     n.visited = true
@@ -382,7 +381,7 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
             if (rightChild.balance < 0) {
               // double left rotate
               // I know rightChild.left is not a leaf, because rightChild has a higher subtree on the left
-              onNodeVisit(rightChild.left, operation)
+              onNodeVisit(rightChild.left, operation, isRotate = true)
               (doubleLeftRotate(newRoot, newLeft, rightChild), true)
             } else {
               // single left rotate
@@ -409,7 +408,7 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with Scrypto
             if (leftChild.balance > 0) {
               // double right rotate
               // I know leftChild.right is not a leaf, because leftChild has a higher subtree on the right
-              onNodeVisit(leftChild.right, operation)
+              onNodeVisit(leftChild.right, operation, isRotate = true)
               (doubleRightRotate(r, leftChild, newRight), true)
             } else {
               // single right rotate
