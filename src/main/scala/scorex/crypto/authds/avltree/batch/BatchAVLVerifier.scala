@@ -280,8 +280,8 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
 
   def extractFirstNode(extractor: VerifierNodes[D] => Boolean): Option[VerifierNodes[D]] = {
     def treeTraverser(rNode: VerifierNodes[D]): Option[VerifierNodes[D]] = rNode match {
-      case l: VerifierLeaf[D] => if (extractor(l)) Some(l) else None
-      case ln: LabelOnlyNode[D] => if (extractor(ln)) Some(ln) else None
+      case l: VerifierLeaf[D] => Some(l).filter(extractor)
+      case ln: LabelOnlyNode[D] => Some(ln).filter(extractor)
       case int: InternalVerifierNode[D] =>
         treeTraverser(int.left.asInstanceOf[VerifierNodes[D]]) orElse
           treeTraverser(int.right.asInstanceOf[VerifierNodes[D]])
