@@ -234,7 +234,46 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
   }
 
   property("BatchAVLVerifier: extractFirstNode") {
-    //todo: implement
+    val prover = new BatchAVLProver[D, HF](KL, None)
+    val digest = prover.digest
+    val keyValues = (0 until InitialTreeSize) map { i =>
+      val aValue = Keccak256(i.toString.getBytes)
+      (ADKey @@ aValue.take(KL), ADValue @@ aValue)
+    }
+    keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
+
+    val pf = prover.generateProof()
+
+    val verifier = new BatchAVLVerifier[D, HF](digest, pf, KL, None)
+    val infinityLeaf: VerifierNodes[D] = verifier.extractFirstNode {
+      case _: VerifierLeaf[D] => true
+      case _ => false
+    }.get
+    val nonInfiniteLeaf: VerifierNodes[D] => Boolean = {
+      case l: VerifierLeaf[D] => !(l.label sameElements infinityLeaf.label)
+      case _ => false
+    }
+
+    keyValues.foreach(kv => verifier.performOneOperation(Insert(kv._1, kv._2)))
+
+    //First extracted leaf should be smallest
+    val ordering: (Array[Byte], Array[Byte]) => Boolean = (a, b) => ByteArray.compare(a, b) > 0
+    val smallestKey = keyValues.map(_._1).sortWith(ordering).last
+    val minLeaf = verifier.extractFirstNode(nonInfiniteLeaf).get.asInstanceOf[VerifierLeaf[D]]
+    minLeaf.key shouldEqual smallestKey
+
+    //Test every leaf is extractable by key
+    keyValues.foreach { kv =>
+      val node = verifier.extractFirstNode {
+        case l: VerifierLeaf[D] => l.key sameElements kv._1
+        case _ => false
+      }.get.asInstanceOf[VerifierLeaf[D]]
+      node.key shouldEqual kv._1
+      node.value shouldEqual kv._2
+    }
+
+    //False predicate make it return None
+    verifier.extractFirstNode(_ => false) shouldBe None
   }
 
   property("Batch of lookups") {

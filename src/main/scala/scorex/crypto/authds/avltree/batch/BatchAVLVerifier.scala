@@ -278,7 +278,6 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
     topNode.map(t => treeTraverser(t, Seq()))
   }
 
-  //todo: test
   def extractFirstNode(extractor: VerifierNodes[D] => Boolean): Option[VerifierNodes[D]] = {
     def treeTraverser(rNode: VerifierNodes[D], collected: Option[VerifierNodes[D]]): Option[VerifierNodes[D]] = rNode match {
       case l: VerifierLeaf[D] => if (extractor(l)) Some(l) else None
@@ -287,6 +286,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
         treeTraverser(int.left.asInstanceOf[VerifierNodes[D]], None) orElse
           treeTraverser(int.right.asInstanceOf[VerifierNodes[D]], None)
       } else {
+        // fixme remove since collected is always empty
         collected
       }
     }
