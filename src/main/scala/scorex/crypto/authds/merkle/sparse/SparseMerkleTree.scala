@@ -148,16 +148,17 @@ case class SparseMerkleProof[D <: Digest](idx: Node.ID,
 
     val sides = SparseMerkleTree.indexToBits(idx, height)
 
-    val (rootHashOpt, wayDigests) = levels.zip(sides).foldLeft(leafOpt -> Vector[Option[D]](leafOptHash)) { case ((nodeOpt, collected), (ndigOpt, side)) =>
-      val neighbourOpt: Option[LeafHash[D]] = ndigOpt.map(ndig => LeafHash[D](ndig))
-      val updLevel = ((nodeOpt, neighbourOpt) match {
-        case (None, None) => None
-        case _ =>
-          Some {
-            if (side) InternalNode(neighbourOpt, nodeOpt) else InternalNode(nodeOpt, neighbourOpt)
-          }
-      }): Option[Node[D]]
-      updLevel -> (collected :+ updLevel.map(_.hash))
+    val (rootHashOpt, wayDigests) = levels.zip(sides).foldLeft(leafOpt -> Vector[Option[D]](leafOptHash)) {
+      case ((nodeOpt, collected), (ndigOpt, side)) =>
+        val neighbourOpt: Option[LeafHash[D]] = ndigOpt.map(ndig => LeafHash[D](ndig))
+        val updLevel = ((nodeOpt, neighbourOpt) match {
+          case (None, None) => None
+          case _ =>
+            Some {
+              if (side) InternalNode(neighbourOpt, nodeOpt) else InternalNode(nodeOpt, neighbourOpt)
+            }
+        }): Option[Node[D]]
+        updLevel -> (collected :+ updLevel.map(_.hash))
     }
     rootHashOpt.map(_.hash) -> wayDigests.dropRight(1)
   }
@@ -272,7 +273,7 @@ object BlockchainSimulator extends App {
   val txsPerBlock = 1000
   val numOfBlocks = 1000000
 
-  val height = 32: Byte
+  val height = 30: Byte
 
   val godAccount = Array.fill(32)(0: Byte)
   val godBalance = 100000000000L //100B
@@ -294,7 +295,7 @@ object BlockchainSimulator extends App {
 
       val t0 = System.currentTimeMillis()
       val (updState, proofs) = Transaction.process(tx, tree).get //we generate always valid transaction
-      val t = System.currentTimeMillis()
+    val t = System.currentTimeMillis()
 
       currentGodBalance = currentGodBalance - txAmount
       godProof = proofs.last
