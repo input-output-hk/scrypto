@@ -33,8 +33,6 @@ object Base58 extends BytesEncoder {
   }
 
   override def decode(input: String): Try[Array[Byte]] = Try {
-    require(input.length > 0, "Empty input for Base58.decode")
-
     val decoded = decodeToBigInteger(input)
 
     val bytes: Array[Byte] = if (decoded == BigInt(0)) Array.empty else decoded.toByteArray
