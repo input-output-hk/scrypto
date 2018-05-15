@@ -31,4 +31,10 @@ class Base58Specification extends EncoderSpecification {
       util.Arrays.equals(origBytes, decodedBytes)
     }
   }
+
+  property("empty string roundtrip") {
+    import Array.emptyByteArray
+    Base58.encode(emptyByteArray) shouldBe ""
+    Base58.decode("").get shouldBe emptyByteArray
+  }
 }
