@@ -10,6 +10,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   implicit val hf = Keccak256
 
   private val LeafSize = 32
+  val emptyHash = EmptyNode[Digest32].hash
 
   property("Proof generation by element") {
     forAll(smallInt) { N: Int =>
@@ -55,7 +56,24 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
       whenever(d.length > 0) {
         val tree = MerkleTree(Seq(LeafData @@ d))(hf)
         tree.rootHash shouldEqual
-          hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d), EmptyNode[Digest32].hash)
+          hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d), emptyHash)
+      }
+    }
+  }
+
+  property("Tree creation from 5 elements") {
+    forAll { d: Array[Byte] =>
+      whenever(d.length > 0) {
+        val leafs: Seq[LeafData] = (0 until 5).map(_ => LeafData @@ d)
+        val tree = MerkleTree(leafs)(hf)
+        val h0x = hf.prefixedHash(MerkleTree.LeafPrefix, d)
+        val h10 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h0x, h0x)
+        val h11 = h10
+        val h12 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h0x, emptyHash)
+        val h20 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h10, h11)
+        val h21 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h12, emptyHash)
+        val h30 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h20, h21)
+        h30 shouldEqual tree.rootHash
       }
     }
   }
