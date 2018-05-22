@@ -4,7 +4,7 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import org.scalatest.{Matchers, PropSpec}
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.LeafData
-import scorex.crypto.hash.Keccak256
+import scorex.crypto.hash.{Digest32, Keccak256}
 
 class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
   implicit val hf = Keccak256
@@ -55,7 +55,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
       whenever(d.length > 0) {
         val tree = MerkleTree(Seq(LeafData @@ d))(hf)
         tree.rootHash shouldEqual
-          hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d), Array())
+          hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d), EmptyNode[Digest32].hash)
       }
     }
   }

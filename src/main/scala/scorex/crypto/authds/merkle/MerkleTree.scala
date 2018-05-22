@@ -85,8 +85,8 @@ object MerkleTree {
       EmptyNode[D]
     } else {
       val nextNodes = nodes.grouped(2)
-        .map(lr => InternalNode[D](lr.head, if (lr.length == 2) lr.last else EmptyNode[D])).toSeq
-      if (nextNodes.length == 1) nextNodes.head else calcTopNode(nextNodes)
+        .map(lr => InternalNode[D](lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D])).toSeq
+      if (nextNodes.lengthCompare(1) == 0) nextNodes.head else calcTopNode(nextNodes)
     }
   }
 }
