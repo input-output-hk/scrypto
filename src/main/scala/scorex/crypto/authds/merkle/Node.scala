@@ -25,6 +25,7 @@ case class Leaf[D <: Digest](data: LeafData)(implicit val hf: CryptographicHash[
   override def toString: String = s"Leaf(${encoder.encode(hash)})"
 }
 
-case class EmptyNode[D <: Digest]() extends Node[D] {
-  override val hash: D = Array[Byte]().asInstanceOf[D]
+case class EmptyNode[D <: Digest]()(implicit hf: CryptographicHash[D]) extends Node[D] {
+  // .get is secure here, because we already know, that byte array size is hf.DigestSize
+  override val hash: D = hf.byteArrayToDigest(Array.fill(hf.DigestSize)(0: Byte)).get
 }

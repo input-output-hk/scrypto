@@ -45,6 +45,11 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
     }
   }
 
+  property("Tree creation from 0 elements") {
+    val tree = MerkleTree(Seq.empty)(hf)
+    tree.rootHash shouldEqual Array.fill(hf.DigestSize)(0: Byte)
+  }
+
   property("Tree creation from 1 element") {
     forAll { d: Array[Byte] =>
       whenever(d.length > 0) {

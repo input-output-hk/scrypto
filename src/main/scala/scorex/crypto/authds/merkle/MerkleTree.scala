@@ -6,8 +6,8 @@ import scorex.crypto.hash._
 import scala.annotation.tailrec
 import scala.collection.mutable
 
-case class MerkleTree[D <: Digest](topNode: InternalNode[D],
-                      elementsHashIndexes: Map[mutable.WrappedArray.ofByte, Int]) {
+case class MerkleTree[D <: Digest](topNode: Node[D],
+                                   elementsHashIndexes: Map[mutable.WrappedArray.ofByte, Int]) {
 
   lazy val rootHash: D = topNode.hash
   lazy val length: Int = elementsHashIndexes.size
@@ -69,7 +69,7 @@ object MerkleTree {
   val InternalNodePrefix: Byte = 1: Byte
 
   def apply[D <: Digest](payload: Seq[LeafData])
-           (implicit hf: CryptographicHash[D]): MerkleTree[D] = {
+                        (implicit hf: CryptographicHash[D]): MerkleTree[D] = {
     val leafs = payload.map(d => Leaf(d))
     val elementsIndex: Map[mutable.WrappedArray.ofByte, Int] = leafs.indices.map { i =>
       (new mutable.WrappedArray.ofByte(leafs(i).hash), i)
@@ -80,9 +80,13 @@ object MerkleTree {
   }
 
   @tailrec
-  def calcTopNode[D <: Digest](nodes: Seq[Node[D]])(implicit hf: CryptographicHash[D]): InternalNode[D] = {
-    val nextNodes = nodes.grouped(2)
-      .map(lr => InternalNode[D](lr.head, if (lr.length == 2) lr.last else EmptyNode[D])).toSeq
-    if (nextNodes.length == 1) nextNodes.head else calcTopNode(nextNodes)
+  def calcTopNode[D <: Digest](nodes: Seq[Node[D]])(implicit hf: CryptographicHash[D]): Node[D] = {
+    if (nodes.isEmpty) {
+      EmptyNode[D]
+    } else {
+      val nextNodes = nodes.grouped(2)
+        .map(lr => InternalNode[D](lr.head, if (lr.length == 2) lr.last else EmptyNode[D])).toSeq
+      if (nextNodes.length == 1) nextNodes.head else calcTopNode(nextNodes)
+    }
   }
 }
