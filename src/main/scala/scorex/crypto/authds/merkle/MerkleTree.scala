@@ -77,31 +77,25 @@ object MerkleTree extends ScryptoLogging {
     * @tparam D - hash function application type
     * @return MerkleTree constructed from current leafs with defined empty node and hash function
     */
-  def apply[D <: Digest](payload: Seq[LeafData], emptyNodeHash: Array[Byte] = Array.fill(32)(0: Byte))
+  def apply[D <: Digest](payload: Seq[LeafData])
                         (implicit hf: CryptographicHash[D]): MerkleTree[D] = {
-    val emptyNode = if (emptyNodeHash.lengthCompare(hf.DigestSize) != 0) {
-      log.warn(s"Empty node hash size ${emptyNodeHash.length} is not equal to hash function hash size ${hf.DigestSize}")
-      EmptyNode[D](emptyNodeHash.asInstanceOf[D])
-    } else {
-      EmptyNode[D](hf.byteArrayToDigest(emptyNodeHash).get)
-    }
     val leafs = payload.map(d => Leaf(d))
     val elementsIndex: Map[mutable.WrappedArray.ofByte, Int] = leafs.indices.map { i =>
       (new mutable.WrappedArray.ofByte(leafs(i).hash), i)
     }.toMap
-    val topNode = calcTopNode[D](leafs, emptyNode)
+    val topNode = calcTopNode[D](leafs)
 
     MerkleTree(topNode, elementsIndex)
   }
 
   @tailrec
-  def calcTopNode[D <: Digest](nodes: Seq[Node[D]], empty: EmptyNode[D])(implicit hf: CryptographicHash[D]): Node[D] = {
+  def calcTopNode[D <: Digest](nodes: Seq[Node[D]])(implicit hf: CryptographicHash[D]): Node[D] = {
     if (nodes.isEmpty) {
-      empty
+      EmptyRootNode[D]
     } else {
       val nextNodes = nodes.grouped(2)
-        .map(lr => InternalNode[D](lr.head, if (lr.lengthCompare(2) == 0) lr.last else empty)).toSeq
-      if (nextNodes.lengthCompare(1) == 0) nextNodes.head else calcTopNode(nextNodes, empty)
+        .map(lr => InternalNode[D](lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D])).toSeq
+      if (nextNodes.lengthCompare(1) == 0) nextNodes.head else calcTopNode(nextNodes)
     }
   }
 }
