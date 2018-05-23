@@ -72,8 +72,7 @@ object MerkleTree extends ScryptoLogging {
     * Construct Merkle tree from leafs
     *
     * @param payload       - sequence of leafs data
-    * @param emptyNodeHash - hash of Empty node
-    * @param hf            - hash fuction
+    * @param hf            - hash function
     * @tparam D - hash function application type
     * @return MerkleTree constructed from current leafs with defined empty node and hash function
     */
