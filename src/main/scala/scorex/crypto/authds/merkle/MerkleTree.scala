@@ -8,20 +8,19 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 case class MerkleTree[D <: Digest](topNode: Node[D],
-                                   elementsHashIndexes: Map[mutable.WrappedArray.ofByte, Int]) {
+                                   elementsHashIndex: Map[mutable.WrappedArray.ofByte, Int]) {
 
   lazy val rootHash: D = topNode.hash
-  lazy val length: Int = elementsHashIndexes.size
+  lazy val length: Int = elementsHashIndex.size
 
   def proofByElement(element: Leaf[D]): Option[MerkleProof[D]] = proofByElementHash(element.hash)
 
   def proofByElementHash(hash: D): Option[MerkleProof[D]] = {
-    elementsHashIndexes.get(new mutable.WrappedArray.ofByte(hash)).flatMap(i => proofByIndex(i))
+    elementsHashIndex.get(new mutable.WrappedArray.ofByte(hash)).flatMap(i => proofByIndex(i))
   }
 
   def proofByIndex(index: Int): Option[MerkleProof[D]] = if (index >= 0 && index < length) {
-    def loop(node: Node[D], i: Int, curLength: Int, acc: Seq[(D, Side)])
-    : Option[(Leaf[D], Seq[(D, Side)])] = {
+    def loop(node: Node[D], i: Int, curLength: Int, acc: Seq[(D, Side)]): Option[(Leaf[D], Seq[(D, Side)])] = {
       node match {
         case n: InternalNode[D] if i < curLength / 2 =>
           loop(n.left, i, curLength / 2, acc :+ (n.right.hash, MerkleProof.LeftSide))
@@ -72,15 +71,15 @@ object MerkleTree extends ScryptoLogging {
   /**
     * Construct Merkle tree from leafs
     *
-    * @param payload - sequence of leafs data
+    * @param payload       - sequence of leafs data
     * @param emptyNodeHash - hash of Empty node
-    * @param hf - hash fuction
+    * @param hf            - hash fuction
     * @tparam D - hash function application type
     * @return MerkleTree constructed from current leafs with defined empty node and hash function
     */
   def apply[D <: Digest](payload: Seq[LeafData], emptyNodeHash: Array[Byte] = Array.fill(32)(0: Byte))
                         (implicit hf: CryptographicHash[D]): MerkleTree[D] = {
-    val emptyNode = if(emptyNodeHash.lengthCompare(hf.DigestSize) != 0) {
+    val emptyNode = if (emptyNodeHash.lengthCompare(hf.DigestSize) != 0) {
       log.warn(s"Empty node hash size ${emptyNodeHash.length} is not equal to hash function hash size ${hf.DigestSize}")
       EmptyNode[D](emptyNodeHash.asInstanceOf[D])
     } else {
