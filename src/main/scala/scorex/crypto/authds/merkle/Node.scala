@@ -25,6 +25,4 @@ case class Leaf[D <: Digest](data: LeafData)(implicit val hf: CryptographicHash[
   override def toString: String = s"Leaf(${encoder.encode(hash)})"
 }
 
-case class EmptyNode[D <: Digest]() extends Node[D] {
-  override val hash: D = Array[Byte]().asInstanceOf[D]
-}
+case class EmptyNode[D <: Digest](hash: D) extends Node[D]
