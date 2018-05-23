@@ -10,7 +10,8 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   implicit val hf = Keccak256
 
   private val LeafSize = 32
-  val emptyHash = EmptyNode[Digest32].hash
+  private val emptyNode = EmptyNode[Digest32](hf.byteArrayToDigest(Array.fill(hf.DigestSize)(0: Byte)).get)
+  private val emptyHash = emptyNode.hash
 
   property("Proof generation by element") {
     forAll(smallInt) { N: Int =>
@@ -49,6 +50,10 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Tree creation from 0 elements") {
     val tree = MerkleTree(Seq.empty)(hf)
     tree.rootHash shouldEqual Array.fill(hf.DigestSize)(0: Byte)
+
+    val emptyNodeHash: Array[Byte] = Array.empty
+    val tree2 = MerkleTree(Seq.empty, emptyNodeHash)(hf)
+    tree2.rootHash shouldEqual emptyNodeHash
   }
 
   property("Tree creation from 1 element") {
