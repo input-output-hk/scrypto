@@ -10,8 +10,6 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   implicit val hf = Keccak256
 
   private val LeafSize = 32
-  private val emptyNode = EmptyNode[Digest32](hf.byteArrayToDigest(Array.fill(hf.DigestSize)(0: Byte)).get)
-  private val emptyHash = emptyNode.hash
 
   property("Proof generation by element") {
     forAll(smallInt) { N: Int =>
@@ -50,10 +48,6 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
   property("Tree creation from 0 elements") {
     val tree = MerkleTree(Seq.empty)(hf)
     tree.rootHash shouldEqual Array.fill(hf.DigestSize)(0: Byte)
-
-    val emptyNodeHash: Array[Byte] = Array.empty
-    val tree2 = MerkleTree(Seq.empty, emptyNodeHash)(hf)
-    tree2.rootHash shouldEqual emptyNodeHash
   }
 
   property("Tree creation from 1 element") {
@@ -61,7 +55,7 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
       whenever(d.length > 0) {
         val tree = MerkleTree(Seq(LeafData @@ d))(hf)
         tree.rootHash shouldEqual
-          hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d), emptyHash)
+          hf.prefixedHash(MerkleTree.InternalNodePrefix, hf.prefixedHash(MerkleTree.LeafPrefix, d))
       }
     }
   }
@@ -74,9 +68,9 @@ class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyCheck
         val h0x = hf.prefixedHash(MerkleTree.LeafPrefix, d)
         val h10 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h0x, h0x)
         val h11 = h10
-        val h12 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h0x, emptyHash)
+        val h12 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h0x)
         val h20 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h10, h11)
-        val h21 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h12, emptyHash)
+        val h21 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h12)
         val h30 = hf.prefixedHash(MerkleTree.InternalNodePrefix, h20, h21)
         h30 shouldEqual tree.rootHash
       }
