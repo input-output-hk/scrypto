@@ -1,11 +1,10 @@
 package scorex.utils
 
-import org.slf4j.{Logger, LoggerFactory}
+import com.typesafe.scalalogging.StrictLogging
 import scorex.crypto.encode.{Base16, BytesEncoder}
 
-trait ScryptoLogging {
-  protected def log: Logger = LoggerFactory.getLogger(this.getClass)
+trait ScryptoLogging extends StrictLogging {
+  @inline protected def log = logger
 
-  val encoder: BytesEncoder = Base16
-
+  implicit val encoder: BytesEncoder = Base16
 }
