@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.utils.ScryptoLogging
+import scorex.utils.{ScorexEncoding, ScryptoLogging}
 
 import scala.util.{Failure, Success, Try}
 
@@ -18,7 +18,7 @@ case object UnknownModification extends Modification {
   override def updateFn: UpdateFunction = old => Success(old)
 }
 
-trait Modification extends Operation with ScryptoLogging {
+trait Modification extends Operation with ScorexEncoding {
   val key: ADKey
   type OldValue = Option[ADValue]
 

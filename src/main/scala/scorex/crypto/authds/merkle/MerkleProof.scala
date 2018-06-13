@@ -2,7 +2,7 @@ package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.{LeafData, Side}
 import scorex.crypto.hash.{CryptographicHash, Digest}
-import scorex.utils.ScryptoLogging
+import scorex.utils.{ScorexEncoding, ScryptoLogging}
 
 /**
   * Proof is given leaf data, leaf hash sibling and also siblings for parent nodes. Using this data, it is possible to
@@ -23,7 +23,7 @@ import scorex.utils.ScryptoLogging
   *               (whether it is left or right to stored value)
   */
 case class MerkleProof[D <: Digest](leafData: LeafData, levels: Seq[(Digest, Side)])
-                      (implicit val hf: CryptographicHash[D]) extends ScryptoLogging {
+                      (implicit val hf: CryptographicHash[D]) extends ScorexEncoding {
 
   def valid(expectedRootHash: Digest): Boolean = {
     val leafHash = hf.prefixedHash(MerkleTree.LeafPrefix, leafData)

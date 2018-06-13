@@ -1,9 +1,9 @@
 package scorex.crypto.authds
 
 import scorex.crypto.authds.legacy.treap.Level
-import scorex.utils.ScryptoLogging
+import scorex.utils.{ScorexEncoding, ScryptoLogging}
 
-trait TwoPartyProofElement extends ScryptoLogging {
+trait TwoPartyProofElement extends ScorexEncoding {
   val bytes: Array[Byte]
 }
 

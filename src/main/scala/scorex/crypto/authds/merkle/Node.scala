@@ -2,18 +2,18 @@ package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.LeafData
 import scorex.crypto.hash._
-import scorex.utils.ScryptoLogging
+import scorex.utils.ScorexEncoding
 
-trait Node[D <: Digest] extends ScryptoLogging {
+trait Node[D <: Digest] extends ScorexEncoding {
   def hash: D
 }
 
 /**
   * Internal node in Merkle tree
   *
-  * @param left - left child. always non-empty
+  * @param left  - left child. always non-empty
   * @param right - right child. can be emptyNode
-  * @param hf - hash function
+  * @param hf    - hash function
   * @tparam D - hash function application type
   */
 case class InternalNode[D <: Digest](left: Node[D], right: Node[D])
@@ -23,7 +23,7 @@ case class InternalNode[D <: Digest](left: Node[D], right: Node[D])
 
   override def toString: String = s"InternalNode(" +
     s"left: ${encoder.encode(left.hash)}, " +
-    s"right: ${if(right.hash.isEmpty) "null" else encoder.encode(right.hash)}," +
+    s"right: ${if (right.hash.isEmpty) "null" else encoder.encode(right.hash)}," +
     s"hash: ${encoder.encode(hash)})"
 }
 
@@ -31,7 +31,7 @@ case class InternalNode[D <: Digest](left: Node[D], right: Node[D])
   * Merkle tree leaf
   *
   * @param data - leaf data.
-  * @param hf - hash function
+  * @param hf   - hash function
   * @tparam D - hash function application type
   */
 case class Leaf[D <: Digest](data: LeafData)(implicit val hf: CryptographicHash[D]) extends Node[D] {
