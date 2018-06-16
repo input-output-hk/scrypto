@@ -27,8 +27,6 @@ class Base16EncodeBenchmark {
       state.xs.map(Base16.decode)
     }
   }
-
-
 }
 
 object Base16DecodeBenchmark {
