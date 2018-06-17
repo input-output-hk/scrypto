@@ -36,7 +36,9 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
   //lookupBenchmark()
   //  testReadme
   //removedNodesBenchmark
-  removedNodesBenchmark()
+  //removedNodesBenchmark()
+
+  testReadme
 
   def removedNodesBenchmark(startTreeSize: Int = 10000,
                             toRemoveSize: Int = 2000,

@@ -1,3 +1,11 @@
+**2.1.2**
+---------
+
+* Base58: empty string allowed as parameter
+* Reworked Base16 implementation has much better performance
+* Minor changes in MerkleTree implementation 
+ 
+
 **2.1.1**
 ---------
 
