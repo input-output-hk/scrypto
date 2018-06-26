@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.scala-logging" %% "scala-logging" % "3.+",
   "ch.qos.logback" % "logback-classic" % "1.+",
   "org.whispersystems" % "curve25519-java" % "+",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.+"
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
+  "org.scorexfoundation" %% "scorex-util" % "1.0.0"
 )
 
 libraryDependencies ++= Seq(
