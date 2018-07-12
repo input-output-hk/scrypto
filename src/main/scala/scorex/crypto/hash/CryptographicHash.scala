@@ -28,11 +28,11 @@ trait CryptographicHash[D <: Digest] {
 
   def apply(input: Message): D = hash(input)
 
-  def apply(input: String): D = hash(input.getBytes)
+  def apply(input: String): D = hash(input.getBytes("UTF-8"))
 
   def hash(input: Message): D
 
-  def hash(input: String): D = hash(input.getBytes)
+  def hash(input: String): D = hash(input.getBytes("UTF-8"))
 
   def prefixedHash(prefix: Byte, inputs: Array[Byte]*): D = hash(prefix +: ByteArray.concat(inputs))
 
