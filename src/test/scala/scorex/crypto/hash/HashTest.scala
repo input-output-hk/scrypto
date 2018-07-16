@@ -15,7 +15,7 @@ trait HashTest extends PropSpec
   val emptyBytes: Array[Byte] = Array.empty
 
   def hashCheckString(hash: CryptographicHash[_ <: Digest], external: Map[String, String]): Unit =
-    hashCheck(hash, external.map(x => x._1.getBytes -> x._2))
+    hashCheck(hash, external.map(x => x._1.getBytes("UTF-8") -> x._2))
 
   def hashCheck[D <: Digest](hash: CryptographicHash[D], external: Map[Array[Byte], String]): Unit = {
 
@@ -48,7 +48,7 @@ trait HashTest extends PropSpec
     property(s"${hash.getClass.getSimpleName} apply method") {
       forAll { (string: String, bytes: Array[Byte]) =>
         hash(string) shouldEqual hash.hash(string)
-        hash(string) shouldEqual hash(string.getBytes)
+        hash(string) shouldEqual hash(string.getBytes("UTF-8"))
         hash(bytes) shouldEqual hash.hash(bytes)
       }
     }

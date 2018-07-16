@@ -25,7 +25,7 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[D, HF] = {
     val prover = new BatchAVLProver[D, HF](KL, None)
     val keyValues = (0 until size) map { i =>
-      (ADKey @@ Blake2b256(i.toString.getBytes).take(KL), ADValue @@ (i.toString.getBytes))
+      (ADKey @@ Blake2b256(i.toString.getBytes("UTF-8")).take(KL), ADValue @@ (i.toString.getBytes("UTF-8")))
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
     prover.generateProof()

@@ -26,7 +26,7 @@ class Base58Specification extends EncoderSpecification {
 
   property("Base58 round trip") {
     forAll(Arbitrary.arbString.arbitrary.filter(_.nonEmpty)) { origStr =>
-      val origBytes = origStr.getBytes()
+      val origBytes = origStr.getBytes("UTF-8")
       val decodedBytes = Base58.decode(Base58.encode(origBytes)).get
       util.Arrays.equals(origBytes, decodedBytes)
     }

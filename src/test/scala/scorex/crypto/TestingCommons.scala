@@ -16,7 +16,7 @@ trait TestingCommons extends Matchers {
     val r = Random
     r.setSeed(seed)
     (0 until howMany).map { l =>
-      r.nextString(16).getBytes.take(size)
+      r.nextString(16).getBytes("UTF-8").take(size)
     }
   }
 
