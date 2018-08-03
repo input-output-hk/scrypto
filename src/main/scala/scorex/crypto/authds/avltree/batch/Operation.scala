@@ -2,7 +2,8 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Longs
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.utils.{ScorexEncoding, ScryptoLogging}
+import scorex.util.ScorexEncoding
+import scorex.utils.ScryptoLogging
 
 import scala.util.{Failure, Success, Try}
 

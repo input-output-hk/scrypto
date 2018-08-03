@@ -2,7 +2,7 @@ package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.LeafData
 import scorex.crypto.hash._
-import scorex.utils.ScorexEncoding
+import scorex.util.ScorexEncoding
 
 trait Node[D <: Digest] extends ScorexEncoding {
   def hash: D

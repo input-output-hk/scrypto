@@ -1,7 +1,7 @@
 package scorex.crypto.authds
 
 import scorex.crypto.authds.avltree.batch.Operation
-import scorex.utils.ScorexEncoding
+import scorex.util.ScorexEncoding
 
 import scala.util.Try
 
