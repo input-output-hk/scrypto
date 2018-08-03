@@ -43,13 +43,13 @@ object Base16Benchmark {
   class BenchmarkState {
     val xs: Seq[String] = (1 to 1000)
       .view
-      .map(_ => Random.nextString(200).getBytes())
+      .map(_ => Random.nextString(200).getBytes("UTF-8"))
       .map(Base16.encode)
       .force
 
     val xab: Seq[Array[Byte]] = (1 to 1000)
       .view
-      .map(_ => Random.nextString(200).getBytes())
+      .map(_ => Random.nextString(200).getBytes("UTF-8"))
       .force
   }
 
