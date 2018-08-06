@@ -8,7 +8,7 @@ dependencyOverrides in ThisBuild ++= Seq(
   "com.sun.mail" % "javax.mail" % "1.6.0",
   "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
   "javax.activation" % "activation" % "1.1",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.59",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.60",
   "org.rudogma" % "supertagged_2.12" % "1.4",
   "org.slf4j" % "slf4j-api" % "1.8.0-beta1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
