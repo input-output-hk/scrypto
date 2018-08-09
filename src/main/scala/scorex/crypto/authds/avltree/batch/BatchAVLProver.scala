@@ -355,7 +355,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     *
     * @param rand - source of randomness
-    * @return Random leaf from the tree, that is not positive or negative infinity
+    * @return Random leaf from the tree that is not positive or negative infinity
     */
   def randomWalk(rand: Random = new Random): Option[(ADKey, ADValue)] = {
     def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
