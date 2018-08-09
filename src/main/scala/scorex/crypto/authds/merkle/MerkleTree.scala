@@ -2,7 +2,6 @@ package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.{LeafData, Side}
 import scorex.crypto.hash._
-import scorex.utils.ScryptoLogging
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -64,7 +63,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
   }
 }
 
-object MerkleTree extends ScryptoLogging {
+object MerkleTree {
   val LeafPrefix: Byte = 0: Byte
   val InternalNodePrefix: Byte = 1: Byte
 

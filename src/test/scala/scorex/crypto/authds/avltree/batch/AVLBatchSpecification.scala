@@ -172,8 +172,8 @@ class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks 
     forAll { seed: Long =>
       val e1 = prover.randomWalk(new scala.util.Random(seed))
       val e2 = prover.randomWalk(new scala.util.Random(seed))
-      e1.get._1 shouldEqual e2.get._1
-      e1.get._2 shouldEqual e2.get._2
+      e1.map(_._1) shouldEqual e2.map(_._1)
+      e1.map(_._2) shouldEqual e2.map(_._2)
     }
   }
 

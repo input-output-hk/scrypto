@@ -2,12 +2,13 @@ package scorex.crypto.signatures
 
 import java.lang.reflect.Constructor
 
-import org.slf4j.LoggerFactory
 import org.whispersystems.curve25519.OpportunisticCurve25519Provider
 import scorex.crypto.hash.Sha256
+import scorex.util.ScorexLogging
+
 import scala.util.{Failure, Try}
 
-object Curve25519 extends EllipticCurveSignatureScheme {
+object Curve25519 extends EllipticCurveSignatureScheme with ScorexLogging {
 
   val SignatureLength25519 = 64
   val KeyLength25519 = 32
@@ -51,6 +52,4 @@ object Curve25519 extends EllipticCurveSignatureScheme {
   override def createSharedSecret(privateKey: PrivateKey, publicKey: PublicKey): SharedSecret = {
     SharedSecret @@ provider.calculateAgreement(privateKey, publicKey)
   }
-
-  protected lazy val log = LoggerFactory.getLogger(this.getClass)
 }

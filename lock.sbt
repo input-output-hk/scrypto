@@ -10,7 +10,8 @@ dependencyOverrides in ThisBuild ++= Seq(
   "javax.activation" % "activation" % "1.1",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.60",
   "org.rudogma" % "supertagged_2.12" % "1.4",
+  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.1-SNAPSHOT",
   "org.slf4j" % "slf4j-api" % "1.8.0-beta1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 6da534ddce5e26a47dc87a4777336311fe979572
+// LIBRARY_DEPENDENCIES_HASH 566ab37b6dd750a11f55c07c094f47be1499f752

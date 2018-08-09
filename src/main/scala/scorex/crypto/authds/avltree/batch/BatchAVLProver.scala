@@ -3,6 +3,7 @@ package scorex.crypto.authds.avltree.batch
 import com.google.common.primitives.Ints
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
+import scorex.util.ScorexLogging
 import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
@@ -27,7 +28,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
                                                               oldRootAndHeight: Option[(ProverNodes[D], Int)] = None,
                                                               val collectChangedNodes: Boolean = true)
                                                              (implicit val hf: HF = Blake2b256)
-  extends AuthenticatedTreeOps[D] with ToStringHelper {
+  extends AuthenticatedTreeOps[D] with ToStringHelper with ScorexLogging {
 
   protected val labelLength = hf.DigestSize
 
@@ -354,7 +355,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   /**
     *
     * @param rand - source of randomness
-    * @return Random leaf from the tree, that is not positive or negative infinity
+    * @return Random leaf from the tree that is not positive or negative infinity
     */
   def randomWalk(rand: Random = new Random): Option[(ADKey, ADValue)] = {
     def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
