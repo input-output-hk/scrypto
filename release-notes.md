@@ -1,3 +1,9 @@
+**2.1.3**
+---------
+
+* Always explicit encoding in .getBytes String method
+* Base* and logging are moved to scorex-utils
+
 **2.1.2**
 ---------
 
