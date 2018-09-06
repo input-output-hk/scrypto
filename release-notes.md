@@ -1,3 +1,8 @@
+**2.1.4**
+---------
+
+* Minor update with dependencies update (Guava 21.x, scorex.utils 0.1.1)
+
 **2.1.3**
 ---------
 

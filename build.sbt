@@ -4,7 +4,7 @@ name := "scrypto"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  version := "2.1.3",
+  version := "2.1.4",
   scalaVersion := "2.12.5",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
@@ -25,12 +25,12 @@ lazy val commonSettings = Seq(
 
 libraryDependencies ++= Seq(
   "org.rudogma" %% "supertagged" % "1.+",
-  "com.google.guava" % "guava" % "19.+",
+  "com.google.guava" % "guava" % "21.+",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.+",
   "ch.qos.logback" % "logback-classic" % "1.+",
   "org.whispersystems" % "curve25519-java" % "+",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  "org.scorexfoundation" %% "scorex-util" % "0.1.1-SNAPSHOT"
+  "org.scorexfoundation" %% "scorex-util" % "0.1.1"
 )
 
 libraryDependencies ++= Seq(
