@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Longs
+import com.google.common.primitives.{Longs, Shorts}
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.utils.ScorexEncoding
 
@@ -100,4 +100,45 @@ case class UpdateLongBy(key: ADKey, delta: Long) extends Modification {
         Failure(new Exception("New value is negative"))
       }
   }: UpdateFunction
+}
+
+object OperationSerializer {
+  def parseBytes(bytes: Array[Byte], keyLength: Int, valueLengthOpt: Option[Int]): Try[Operation] = Try {
+    def parseValue(position: Int): ADValue = {
+      valueLengthOpt match {
+        case Some(vl) => ADValue @@ bytes.slice(position, position + vl)
+        case None =>
+          val vl = Shorts.fromByteArray(bytes.slice(position, position + 2))
+          ADValue @@ bytes.slice(position + 2, position + vl + 2)
+      }
+    }
+
+    bytes.head match {
+      case 0 => UnknownModification
+      case 1 => Lookup(ADKey @@ bytes.tail)
+      case 2 => Remove(ADKey @@ bytes.tail)
+      case 3 => RemoveIfExists(ADKey @@ bytes.tail)
+      case 4 => Insert(ADKey @@ bytes.slice(1, 1 + keyLength), parseValue(1 + keyLength))
+      case 5 => Update(ADKey @@ bytes.slice(1, 1 + keyLength), parseValue(1 + keyLength))
+      case 6 => InsertOrUpdate(ADKey @@ bytes.slice(1, 1 + keyLength), parseValue(1 + keyLength))
+      case m => throw new Error(s"unknown operation type $m")
+    }
+  }
+
+  def toBytes(o: Operation, valueLengthOpt: Option[Int]): Array[Byte] = {
+    def valueBytes(value: Array[Byte]): Array[Byte] = valueLengthOpt match {
+      case Some(_) => value
+      case None => Shorts.toByteArray(value.length.toShort) ++ value
+    }
+
+    o match {
+      case UnknownModification => Array(0: Byte)
+      case Lookup(key) => 1.toByte +: key
+      case Remove(key) => 2.toByte +: key
+      case RemoveIfExists(key) => 3.toByte +: key
+      case Insert(key, value) => Array(4.toByte) ++ key ++ valueBytes(value)
+      case Update(key, value) => Array(5.toByte) ++ key ++ valueBytes(value)
+      case InsertOrUpdate(key, value) => Array(6.toByte) ++ key ++ valueBytes(value)
+    }
+  }
 }
