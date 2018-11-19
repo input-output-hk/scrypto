@@ -79,6 +79,22 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
     }
   }
 
+  property("manifest mutability") {
+    val serializer = new BatchAVLProverSerializer[D, HF]
+    forAll(Gen.choose(100, 100000)) { treeSize: Int =>
+      val tree = generateProver(treeSize)
+      val kl = tree.keyLength
+      val digest = tree.digest
+      val sliced = serializer.slice(tree)
+
+      val manifest = sliced._1
+      val manifestBytes = serializer.manifestToBytes(manifest)
+      val deserializedManifest = serializer.manifestFromBytes(manifestBytes).get
+
+      deserializedManifest.oldRootAndHeight._1.label shouldBe manifest.oldRootAndHeight._1.label
+    }
+  }
+
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {
     case n: ProxyInternalNode[D] if n.isEmpty =>
       Seq(n)
