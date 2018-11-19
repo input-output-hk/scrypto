@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
-import org.scalacheck.Gen
+import org.scalacheck.{Gen, Shrink}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch._
@@ -17,6 +17,8 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   type D = Digest32
   type HF = Blake2b256.type
   implicit val hf: HF = Blake2b256
+
+  implicit def noShrink[A]: Shrink[A] = Shrink(_ => Stream.empty)
 
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
 
