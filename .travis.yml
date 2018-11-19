@@ -1,3 +1,8 @@
+language: scala
+jdk:
+- oraclejdk9
+scala:
+- 2.12.6
 sudo: required
 branches:
   only:
@@ -7,4 +12,6 @@ services:
   - docker
 before_install:
   - docker build -t scrypto:test .
-script: docker run --rm -it scrypto:test sbt test
+script:
+  - sbt test:compile
+  - docker run --rm -it scrypto:test sbt test
