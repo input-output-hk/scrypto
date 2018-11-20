@@ -5,15 +5,14 @@ import scorex.crypto.authds.{ADKey, Balance}
 import scorex.crypto.hash.{CryptographicHash, Digest}
 
 class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
+                                     val selfLabelOpt: Option[D],
                                      val leftLabel: D,
                                      val rightLabel: D,
                                      protected var pb: Balance)
                                     (implicit val phf: CryptographicHash[D])
   extends InternalProverNode(k = pk, l = null, r = null, b = pb)(phf) {
 
-  override def computeLabel: D = hf.prefixedHash(1: Byte, Array(b), leftLabel, rightLabel)
-
-  override def label: D = if (isEmpty) computeLabel else super.label
+  override def label: D = if (isEmpty) selfLabelOpt.getOrElse(leftLabel) else super.label
 
   def mutate(n: ProverNodes[D]): Unit = {
     if (n.label sameElements leftLabel) {
@@ -32,6 +31,6 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
 
 object ProxyInternalNode {
   def apply[D <: Digest](node: InternalProverNode[D])(implicit phf: CryptographicHash[D]): ProxyInternalNode[D] = {
-    new ProxyInternalNode[D](node.key, node.left.label, node.right.label, node.balance)
+    new ProxyInternalNode[D](node.key, Some(node.label), node.left.label, node.right.label, node.balance)
   }
 }
