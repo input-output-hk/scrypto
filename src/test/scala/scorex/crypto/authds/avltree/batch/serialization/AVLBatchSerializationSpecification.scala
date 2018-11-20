@@ -81,7 +81,7 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
     }
   }
 
-  property("manifest mutability") {
+  property("manifest serialization") {
     val serializer = new BatchAVLProverSerializer[D, HF]
     forAll(Gen.choose(100, 100000)) { treeSize: Int =>
       val tree = generateProver(treeSize)
