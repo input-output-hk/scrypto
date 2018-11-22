@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
-import org.scalacheck.Gen
+import org.scalacheck.{Gen, Shrink}
 import org.scalatest.PropSpec
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch._
@@ -17,6 +17,8 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   type D = Digest32
   type HF = Blake2b256.type
   implicit val hf: HF = Blake2b256
+
+  implicit def noShrink[A]: Shrink[A] = Shrink(_ => Stream.empty)
 
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
 
@@ -76,6 +78,22 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
       val recovered = serializer.combine(recoveredSliced).get
 
       recovered.digest shouldEqual digest
+    }
+  }
+
+  property("manifest serialization") {
+    val serializer = new BatchAVLProverSerializer[D, HF]
+    forAll(Gen.choose(100, 100000)) { treeSize: Int =>
+      val tree = generateProver(treeSize)
+      val kl = tree.keyLength
+      val digest = tree.digest
+      val sliced = serializer.slice(tree)
+
+      val manifest = sliced._1
+      val manifestBytes = serializer.manifestToBytes(manifest)
+      val deserializedManifest = serializer.manifestFromBytes(manifestBytes).get
+
+      deserializedManifest.oldRootAndHeight._1.label shouldBe manifest.oldRootAndHeight._1.label
     }
   }
 
