@@ -1,3 +1,10 @@
+**2.1.5**
+---------
+
+* Fix for "BatchAVLProverManifest changes its properties after serialization/deserialization" bug 
+(#58)
+
+
 **2.1.4**
 ---------
 
