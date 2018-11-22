@@ -103,7 +103,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
       case l: ProverLeaf[D] =>
         Bytes.concat(Array(0.toByte), l.key, l.nextLeafKey, l.value)
       case n: ProxyInternalNode[D] if n.isEmpty =>
-        Bytes.concat(Array(2.toByte, n.balance), n.key, n.leftLabel, n.rightLabel)
+        Bytes.concat(Array(2.toByte, n.balance), n.key, n.leftLabel, n.rightLabel, n.label)
       case n: InternalProverNode[D] =>
         val leftBytes = loop(n.left)
         val rightBytes = loop(n.right)
@@ -134,7 +134,8 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val key = ADKey @@ bytes.slice(2, keyLength + 2)
         val leftLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2, keyLength + 2 + labelLength)).get
         val rightLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2 + labelLength, keyLength + 2 + 2 * labelLength)).get
-        new ProxyInternalNode[D](key, None, leftLabel, rightLabel, balance)
+        val selfLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2 + 2 * labelLength, keyLength + 2 + 3 * labelLength)).get
+        new ProxyInternalNode[D](key, Some(selfLabel), leftLabel, rightLabel, balance)
       case _ =>
         ???
     }
