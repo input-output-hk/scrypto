@@ -96,6 +96,16 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
     }
   }
 
+  property("Wrong manifest") {
+    val tree = generateProver()
+    val serializer = new BatchAVLProverSerializer[D, HF]
+    val sliced = serializer.slice(tree)
+    val wrongManifest: BatchAVLProverManifest[D, HF] = sliced._1.copy(valueLengthOpt = Some(-2))
+
+    val manifestBytes = serializer.manifestToBytes(wrongManifest)
+    serializer.manifestFromBytes(manifestBytes).isFailure shouldBe true
+  }
+
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {
     case n: ProxyInternalNode[D] if n.isEmpty =>
       Seq(n)

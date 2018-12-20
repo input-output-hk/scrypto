@@ -76,20 +76,21 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
     }
   }
 
-  def manifestToBytes(m: BatchAVLProverManifest[D, HF]): Array[Byte] = {
-    Bytes.concat(Ints.toByteArray(m.keyLength),
-      Ints.toByteArray(m.valueLengthOpt.getOrElse(-1)),
-      Ints.toByteArray(m.oldRootAndHeight._2),
-      nodesToBytes(m.oldRootAndHeight._1)
+  def manifestToBytes(manifest: BatchAVLProverManifest[D, HF]): Array[Byte] = {
+    Bytes.concat(Ints.toByteArray(manifest.keyLength),
+      Ints.toByteArray(manifest.valueLengthOpt.getOrElse(-1)),
+      Ints.toByteArray(manifest.oldRootAndHeight._2),
+      nodesToBytes(manifest.oldRootAndHeight._1)
     )
   }
 
-  def manifestFromBytes(b: Array[Byte]): Try[BatchAVLProverManifest[D, HF]] = Try {
-    val keyLength = Ints.fromByteArray(b.slice(0, 4))
-    val valueLength = Ints.fromByteArray(b.slice(4, 8))
+  def manifestFromBytes(bytes: Array[Byte]): Try[BatchAVLProverManifest[D, HF]] = Try {
+    val keyLength = Ints.fromByteArray(bytes.slice(0, 4))
+    val valueLength = Ints.fromByteArray(bytes.slice(4, 8))
+    if (valueLength < -1) throw new Error(s"Wrong valueLength: $valueLength")
     val valueLengthOpt = if (valueLength == -1) None else Some(valueLength)
-    val oldHeight = Ints.fromByteArray(b.slice(8, 12))
-    val oldTop = nodesFromBytes(b.slice(12, b.length), keyLength).get
+    val oldHeight = Ints.fromByteArray(bytes.slice(8, 12))
+    val oldTop = nodesFromBytes(bytes.slice(12, bytes.length), keyLength).get
     BatchAVLProverManifest[D, HF](keyLength, valueLengthOpt, (oldTop, oldHeight))
   }
 
@@ -109,6 +110,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val rightBytes = loop(n.right)
         Bytes.concat(Array(1.toByte, n.balance), n.key, Ints.toByteArray(leftBytes.length), leftBytes, rightBytes)
     }
+
     loop(obj)
   }
 
