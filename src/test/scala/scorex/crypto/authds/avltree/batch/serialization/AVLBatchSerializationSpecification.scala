@@ -27,7 +27,7 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[D, HF] = {
     val prover = new BatchAVLProver[D, HF](KL, None)
     val keyValues = (0 until size) map { i =>
-      (ADKey @@ Blake2b256(i.toString.getBytes("UTF-8")).take(KL), ADValue @@ (i.toString.getBytes("UTF-8")))
+      (ADKey @@ Blake2b256(i.toString.getBytes("UTF-8")).take(KL), ADValue @@ i.toString.getBytes("UTF-8"))
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
     prover.generateProof()
@@ -35,7 +35,7 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   }
 
   property("slice to pieces and combine tree back") {
-    forAll(Gen.choose(100, 100000)) { treeSize: Int =>
+    forAll(Gen.choose(0, 100000)) { treeSize: Int =>
       whenever(treeSize >= 100) {
         val tree = generateProver(treeSize)
         val height = tree.rootNodeHeight
@@ -56,14 +56,13 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   }
 
   property("slice to Array[Byte] pieces and combine tree back") {
-    forAll(Gen.choose(100, 100000)) { treeSize: Int =>
+    forAll(Gen.choose(0, 100000)) { treeSize: Int =>
       val serializer = new BatchAVLProverSerializer[D, HF]
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
       val digest = tree.digest
 
       val sliced = serializer.slice(tree)
-
 
       val manifestBytes = serializer.manifestToBytes(sliced._1)
       val subtreeBytes = sliced._2.map(t => serializer.subtreeToBytes(t))
@@ -83,7 +82,7 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
 
   property("manifest serialization") {
     val serializer = new BatchAVLProverSerializer[D, HF]
-    forAll(Gen.choose(100, 100000)) { treeSize: Int =>
+    forAll(Gen.choose(0, 100000)) { treeSize: Int =>
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
       val digest = tree.digest
