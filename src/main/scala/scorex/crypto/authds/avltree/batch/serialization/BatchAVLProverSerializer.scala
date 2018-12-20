@@ -71,7 +71,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
 
         mutateLoop(tn)
         new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.oldRootAndHeight))
-      case l: ProverLeaf[D] =>
+      case _: ProverLeaf[D] =>
         new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.oldRootAndHeight))
     }
   }
@@ -109,11 +109,10 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val rightBytes = loop(n.right)
         Bytes.concat(Array(1.toByte, n.balance), n.key, Ints.toByteArray(leftBytes.length), leftBytes, rightBytes)
     }
-
     loop(obj)
   }
 
-  def nodesFromBytes(bytesIN: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
+  def nodesFromBytes(bytesIn: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
     def loop(bytes: Array[Byte]): ProverNodes[D] = bytes.head match {
       case 0 =>
         val key = ADKey @@ bytes.slice(1, keyLength + 1)
@@ -140,7 +139,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         ???
     }
 
-    loop(bytesIN)
+    loop(bytesIn)
   }
 }
 

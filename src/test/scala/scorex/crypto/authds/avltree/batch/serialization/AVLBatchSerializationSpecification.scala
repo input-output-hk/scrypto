@@ -35,8 +35,8 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
   }
 
   property("slice to pieces and combine tree back") {
-    forAll(Gen.choose(0, 100000)) { treeSize: Int =>
-      whenever(treeSize >= 100) {
+    forAll(Gen.choose(10, 100000)) { treeSize: Int =>
+      whenever(treeSize >= 10) {
         val tree = generateProver(treeSize)
         val height = tree.rootNodeHeight
         val digest = tree.digest
