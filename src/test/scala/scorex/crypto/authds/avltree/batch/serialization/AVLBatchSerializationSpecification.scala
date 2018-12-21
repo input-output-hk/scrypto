@@ -43,7 +43,7 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
         val serializer = new BatchAVLProverSerializer[D, HF]
         val sliced = serializer.slice(tree)
 
-        val manifestLeftTree = leftTree(sliced._1.oldRootAndHeight._1)
+        val manifestLeftTree = leftTree(sliced._1.rootAndHeight._1)
         val subtreeLeftTree = leftTree(sliced._2.head.subtreeTop)
 
         manifestLeftTree.length should be < height
@@ -92,11 +92,11 @@ class AVLBatchSerializationSpecification extends PropSpec with GeneratorDrivenPr
       val manifestBytes = serializer.manifestToBytes(manifest)
       val deserializedManifest = serializer.manifestFromBytes(manifestBytes).get
 
-      deserializedManifest.oldRootAndHeight._1.label shouldBe manifest.oldRootAndHeight._1.label
+      deserializedManifest.rootAndHeight._1.label shouldBe manifest.rootAndHeight._1.label
     }
   }
 
-  property("Wrong manifest") {
+  property("wrong manifest") {
     val tree = generateProver()
     val serializer = new BatchAVLProverSerializer[D, HF]
     val sliced = serializer.slice(tree)

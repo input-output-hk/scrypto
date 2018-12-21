@@ -55,7 +55,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
     * Combine tree pieces into one big tree
     */
   def combine(sliced: SlicedTree): Try[BatchAVLProver[D, HF]] = Try {
-    sliced._1.oldRootAndHeight._1 match {
+    sliced._1.rootAndHeight._1 match {
       case tn: InternalProverNode[D] =>
         def mutateLoop(n: ProverNodes[D]): Unit = n match {
           case n: ProxyInternalNode[D] if n.isEmpty =>
@@ -70,17 +70,17 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         }
 
         mutateLoop(tn)
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.oldRootAndHeight))
+        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
       case _: ProverLeaf[D] =>
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.oldRootAndHeight))
+        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
     }
   }
 
   def manifestToBytes(manifest: BatchAVLProverManifest[D, HF]): Array[Byte] = {
     Bytes.concat(Ints.toByteArray(manifest.keyLength),
       Ints.toByteArray(manifest.valueLengthOpt.getOrElse(-1)),
-      Ints.toByteArray(manifest.oldRootAndHeight._2),
-      nodesToBytes(manifest.oldRootAndHeight._1)
+      Ints.toByteArray(manifest.rootAndHeight._2),
+      nodesToBytes(manifest.rootAndHeight._1)
     )
   }
 

@@ -9,4 +9,4 @@ import scorex.crypto.hash.{CryptographicHash, Digest}
   */
 case class BatchAVLProverManifest[D <: Digest, HF <: CryptographicHash[D]](keyLength: Int,
                                                                            valueLengthOpt: Option[Int],
-                                                                           oldRootAndHeight: (ProverNodes[D], Int))
+                                                                           rootAndHeight: (ProverNodes[D], Int))
