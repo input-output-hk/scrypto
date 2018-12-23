@@ -8,7 +8,6 @@ import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.util.{Failure, Random, Success, Try}
 
 

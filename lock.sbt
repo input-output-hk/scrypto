@@ -6,7 +6,7 @@ dependencyOverrides in ThisBuild ++= Seq(
   "ch.qos.logback" % "logback-core" % "1.3.0-alpha4",
   "com.google.guava" % "guava" % "21.0",
   "com.sun.mail" % "javax.mail" % "1.6.0",
-  "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
+  "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.2",
   "javax.activation" % "activation" % "1.1",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.60",
   "org.rudogma" % "supertagged_2.12" % "1.4",
@@ -14,4 +14,4 @@ dependencyOverrides in ThisBuild ++= Seq(
   "org.slf4j" % "slf4j-api" % "1.8.0-beta1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 5bccd31374d5a2878cfcd4fc35339324fc38aea3
+// LIBRARY_DEPENDENCIES_HASH 09aa9b478d26dc10e237ea6c0f62986425561937

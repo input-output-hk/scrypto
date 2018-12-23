@@ -1,3 +1,9 @@
+**2.1.6**
+---------
+
+* Manifest deserialization now checks that valueLength is not negative
+
+
 **2.1.5**
 ---------
 
