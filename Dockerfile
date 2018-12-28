@@ -1,4 +1,4 @@
-FROM aa8y/sbt:1.0
+FROM aa8y/sbt:1.2.6
 
 WORKDIR $APP_DIR
 
