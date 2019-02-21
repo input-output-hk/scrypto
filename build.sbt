@@ -30,7 +30,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.+",
   "org.whispersystems" % "curve25519-java" % "+",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.+",
-  "org.scorexfoundation" %% "scorex-util" % "0.1.1"
+  "org.scorexfoundation" %% "scorex-util" % "0.1.3"
 )
 
 libraryDependencies ++= Seq(

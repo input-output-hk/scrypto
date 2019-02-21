@@ -6,12 +6,15 @@ dependencyOverrides in ThisBuild ++= Seq(
   "ch.qos.logback" % "logback-core" % "1.3.0-alpha4",
   "com.google.guava" % "guava" % "21.0",
   "com.sun.mail" % "javax.mail" % "1.6.0",
-  "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.0",
+  "com.typesafe" % "config" % "1.3.3",
+  "com.typesafe.akka" % "akka-actor_2.12" % "2.5.19",
+  "com.typesafe.scala-logging" % "scala-logging_2.12" % "3.9.2",
   "javax.activation" % "activation" % "1.1",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.60",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.61",
   "org.rudogma" % "supertagged_2.12" % "1.4",
-  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.1",
+  "org.scala-lang.modules" % "scala-java8-compat_2.12" % "0.8.0",
+  "org.scorexfoundation" % "scorex-util_2.12" % "0.1.3",
   "org.slf4j" % "slf4j-api" % "1.8.0-beta1",
   "org.whispersystems" % "curve25519-java" % "0.5.0"
 )
-// LIBRARY_DEPENDENCIES_HASH 5bccd31374d5a2878cfcd4fc35339324fc38aea3
+// LIBRARY_DEPENDENCIES_HASH 66ae2a4b0c4b0a34ac7c9fbfd37676fa893f4561
