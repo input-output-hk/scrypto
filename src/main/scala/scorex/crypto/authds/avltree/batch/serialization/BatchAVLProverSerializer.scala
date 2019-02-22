@@ -55,7 +55,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
     * Combine tree pieces into one big tree
     */
   def combine(sliced: SlicedTree): Try[BatchAVLProver[D, HF]] = Try {
-    sliced._1.oldRootAndHeight._1 match {
+    sliced._1.rootAndHeight._1 match {
       case tn: InternalProverNode[D] =>
         def mutateLoop(n: ProverNodes[D]): Unit = n match {
           case n: ProxyInternalNode[D] if n.isEmpty =>
@@ -70,26 +70,27 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         }
 
         mutateLoop(tn)
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.oldRootAndHeight))
-      case l: ProverLeaf[D] =>
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.oldRootAndHeight))
+        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
+      case _: ProverLeaf[D] =>
+        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
     }
   }
 
-  def manifestToBytes(m: BatchAVLProverManifest[D, HF]): Array[Byte] = {
-    Bytes.concat(Ints.toByteArray(m.keyLength),
-      Ints.toByteArray(m.valueLengthOpt.getOrElse(-1)),
-      Ints.toByteArray(m.oldRootAndHeight._2),
-      nodesToBytes(m.oldRootAndHeight._1)
+  def manifestToBytes(manifest: BatchAVLProverManifest[D, HF]): Array[Byte] = {
+    Bytes.concat(Ints.toByteArray(manifest.keyLength),
+      Ints.toByteArray(manifest.valueLengthOpt.getOrElse(-1)),
+      Ints.toByteArray(manifest.rootAndHeight._2),
+      nodesToBytes(manifest.rootAndHeight._1)
     )
   }
 
-  def manifestFromBytes(b: Array[Byte]): Try[BatchAVLProverManifest[D, HF]] = Try {
-    val keyLength = Ints.fromByteArray(b.slice(0, 4))
-    val valueLength = Ints.fromByteArray(b.slice(4, 8))
+  def manifestFromBytes(bytes: Array[Byte]): Try[BatchAVLProverManifest[D, HF]] = Try {
+    val keyLength = Ints.fromByteArray(bytes.slice(0, 4))
+    val valueLength = Ints.fromByteArray(bytes.slice(4, 8))
+    if (valueLength < -1) throw new Error(s"Wrong valueLength: $valueLength")
     val valueLengthOpt = if (valueLength == -1) None else Some(valueLength)
-    val oldHeight = Ints.fromByteArray(b.slice(8, 12))
-    val oldTop = nodesFromBytes(b.slice(12, b.length), keyLength).get
+    val oldHeight = Ints.fromByteArray(bytes.slice(8, 12))
+    val oldTop = nodesFromBytes(bytes.slice(12, bytes.length), keyLength).get
     BatchAVLProverManifest[D, HF](keyLength, valueLengthOpt, (oldTop, oldHeight))
   }
 
@@ -113,7 +114,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
     loop(obj)
   }
 
-  def nodesFromBytes(bytesIN: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
+  def nodesFromBytes(bytesIn: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
     def loop(bytes: Array[Byte]): ProverNodes[D] = bytes.head match {
       case 0 =>
         val key = ADKey @@ bytes.slice(1, keyLength + 1)
@@ -140,7 +141,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         ???
     }
 
-    loop(bytesIN)
+    loop(bytesIn)
   }
 }
 

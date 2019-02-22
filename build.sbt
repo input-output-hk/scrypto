@@ -4,8 +4,8 @@ name := "scrypto"
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  version := "2.1.5",
-  scalaVersion := "2.12.7",
+  version := "2.1.6",
+  scalaVersion := "2.12.8",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/input-output-hk/scrypto")),
