@@ -2,7 +2,7 @@ language: scala
 jdk:
 - oraclejdk9
 scala:
-- 2.12.7
+- 2.12.8
 sudo: required
 branches:
   only:
