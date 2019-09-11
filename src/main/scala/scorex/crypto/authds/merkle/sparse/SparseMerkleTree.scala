@@ -180,9 +180,7 @@ object TreeTester extends App {
 
   implicit val hf: CryptographicHash[Digest32] = new Blake2b256Unsafe
 
-  (1 to 2000000).foreach(i => hf.hash(i.toString))
-
-  val height: Byte = 30
+  val height: Byte = 40
 
   val tree0 = SparseMerkleTree.emptyTree(height)
 
@@ -205,23 +203,30 @@ object TreeTester extends App {
 
   assert(tree2.lastProof.valid(tree2.rootDigest, height)(hf))
 
-  println(tree2.topNode)
+  //println(tree2.topNode)
 
-  val t0 = System.currentTimeMillis()
-  (1 to 10000).foldLeft(SparseMerkleTree.emptyTree(height) -> Seq[SparseMerkleProof[Digest32]]()) { case ((tree, proofs), _) =>
+  val repeatsCount = 10
 
-    val (newProofs, proof, newValue) = if (Random.nextInt(3) == 0 && proofs.nonEmpty) {
-      val nps = Random.shuffle(proofs)
-      (nps.tail, nps.head, None)
-    } else {
-      val nps = if (Random.nextInt(2) == 0 && proofs.size < 5) proofs :+ tree.lastProof else proofs
-      (nps, tree.lastProof, Some(LeafData @@ Longs.toByteArray(Random.nextInt())))
+  val avg = (1 to repeatsCount).map { _ =>
+    val t0 = System.currentTimeMillis()
+    (1 to 1000).foldLeft(SparseMerkleTree.emptyTree(height) -> Seq[SparseMerkleProof[Digest32]]()) { case ((tree, proofs), _) =>
+
+      val (newProofs, proof, newValue) = if (Random.nextInt(3) == 0 && proofs.nonEmpty) {
+        val nps = Random.shuffle(proofs)
+        (nps.tail, nps.head, None)
+      } else {
+        val nps = if (Random.nextInt(2) == 0 && proofs.size < 5) proofs :+ tree.lastProof else proofs
+        (nps, tree.lastProof, Some(LeafData @@ Longs.toByteArray(Random.nextInt())))
+      }
+
+      tree.update(proof, newValue, newProofs)
     }
+    val t = System.currentTimeMillis()
+    println((t - t0) + " ms.")
+    t - t0
+  }.sum / repeatsCount
 
-    tree.update(proof, newValue, newProofs)
-  }
-  val t = System.currentTimeMillis()
-  println((t - t0) + " ms.")
+  println("Average time to process a block: " + avg)
 }
 
 
@@ -243,7 +248,5 @@ object BlockchainSimulator {
   val numOfBlocks = 1000000
 
   val height = 30
-
-
 
 }
