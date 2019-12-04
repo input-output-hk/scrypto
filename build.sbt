@@ -2,10 +2,15 @@ import sbt.Keys.{homepage, scalaVersion}
 
 name := "scrypto"
 
+javacOptions ++=
+    "-source" :: "1.7" ::
+    "-target" :: "1.7" ::
+    Nil
+
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   version := "2.1.7-SNAPSHOT",
-  scalaVersion := "2.12.8",
+  scalaVersion := "2.11.12",
   resolvers += Resolver.sonatypeRepo("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/input-output-hk/scrypto")),
@@ -25,7 +30,7 @@ lazy val commonSettings = Seq(
 
 libraryDependencies ++= Seq(
   "org.rudogma" %% "supertagged" % "1.4",
-  "com.google.guava" % "guava" % "21.0",
+  "com.google.guava" % "guava" % "20.0",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.whispersystems" % "curve25519-java" % "0.5.0",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.64",
