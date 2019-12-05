@@ -2,30 +2,34 @@ sudo: true
 dist: trusty
 language: scala
 scala:
-  - 2.12.10
-  - 2.11.12
+- 2.12.10
+- 2.11.12
 jdk:
-  - oraclejdk8
+- oraclejdk8
 cache:
   directories:
-    - "$HOME/.ivy2/cache"
-    - "$HOME/.sbt"
+  - "$HOME/.ivy2/cache"
+  - "$HOME/.sbt"
 before_cache:
-  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
-  - find $HOME/.sbt        -name "*.lock"               -print -delete
+- find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+- find $HOME/.sbt        -name "*.lock"               -print -delete
 stages:
-  - test
-  - name: release
-    if: tag =~ ^v
-  - name: snapshot
-    if: "(NOT tag IS present) AND (type = push)"
+- test
+- name: release
+  if: tag =~ ^v
+- name: snapshot
+  if: "(NOT tag IS present) AND (type = push)"
 jobs:
   include:
-    - stage: test
-      script: sbt +test
-    - stage: release
-      script: openssl aes-256-cbc -K $encrypted_dceea7e6c44e_key -iv $encrypted_dceea7e6c44e_iv
-        -in ci/secring.asc.enc -out ci/secring.asc -d && gpg --import ci/secring.asc
-        && sbt +publishSigned sonatypeBundleRelease
-    - stage: snapshot
-      script: sbt +publish
+  - stage: test
+    script: sbt +test
+  - stage: release
+    script: openssl aes-256-cbc -K $encrypted_dceea7e6c44e_key -iv $encrypted_dceea7e6c44e_iv
+      -in ci/secring.asc.enc -out ci/secring.asc -d && gpg --import ci/secring.asc
+      && sbt +publishSigned sonatypeBundleRelease
+  - stage: snapshot
+    script: sbt +publish
+env:
+  global:
+  - secure: S30h6+w9KkxfkkLoKug4khRF0MiJxGnvragmN3Ff6Q/wpO6GKjGbuu428X3bwra1lQhv6Ng6lX9IYvMYfzJpY+jpgAT3tGYi3pj9pv4PGt/+3CqH6oCa/dPZhUfPqGIfiSGlA5ciT2a9Xp0D7TfWWbKNw9p//kjcA1YOjEwWzzrjL3YTx4RMCO7V+6XeM6oswVFj+BwTW3ZJbKgeD5+hlqsJjArhxsQXCzbZNcBURJUeJyhJWEH/fqp4HkQ3iwmoFfY59UhWYpIsjuh0G6cre0iE4H5TIVEUOtDhrTnmshz06mWs67N7hAgg8L8SJjfsrH4b8eK4Lf0BFaSzFjff0zMUklsRFdp9GDZ+pdOGrliQIVoykldy/vqmj10ubDlDIgQAWV+8NqMTP1XbZ1IQB9bs7mjxg3SgiW6dEAGTJrspbCDMiSQfS+8FgX8kXQA8b5uxHs6JBn3x6NOM3DW4F9HYETiqDJMrfQalwPLCle+nq4wK9Q4iVoVvmM432TGTI2VmyT30480Lm4EpKpzYxx3clS2DWgmJ+QMBoaJvOEw301MbvHpa1u6b2wnK45EMYyNZhOdcyLYw9MisvlTQXx7RHCLq1a0dBX27szIZYv1CAXCWAR01n3r7XLyQ4OPqO7sxAqqCUwzUbqvDbkgu4n3xA1FGliY5EPm7n3gMZds=
+  - secure: LBZidYdC8brE+zlHI4s9lgw1xaNBHmFC2vXkYncx4ZFGGjorm4GqCIgifaMTU9T6mlfaTTxse3mESWhsOJgl+PbvzCoI7oea4Xp5ZIuOJrckrRbPRqJddRh17zhDV7QJicHK2f0Z1amde0EWwtKNNEoxhckAZsFRMOgMGpeZfUZpHy7hRocX3/pFj8JiEBoGOjr7Cj3cnUWUNo+2dL2ADAQatEac9AmyPQyU4BwmhsGofZQfVQbDjXNvCXlCPAIDuHvJRN2gtMZZMIgEzr8N1yYpd0dOQo2BFEvisFdfADArd4vFQi/KyzYoPJaUIJuBoZMugj1NhpXjgljGNxyRcUnacSIvexYPLwUPJOcsTqOApnf1WtVPwNRH1pPfnkJd1lLP6m8KquvdV6foIcDMl2sK/Vvje8j4UqoVyOvvsOlgjD4ikqEOgGmZakzWS6WgZ/MUftgJ1mYZCY12VnNfDCAg/YOIDuT83Sfb6svRrMzSHlhziloHRYLJxs7lhS0NPiWTqLr5jDPZyhZu7XW7HZWwnrmm472vNE3qk9XPSFI1vWwSss7ahNcej7ITaaGF8bsaQmImxUBmYCaxs6Ay58Vbqxlbon+w6oFrdiF3dyAKA3mI72E+qYMh3aaOxJ1bOP83ttEKxkMkQoN6lnk1vIuSk/fio9ESsVGqw3FgBk0=
