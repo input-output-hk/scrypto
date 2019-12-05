@@ -1,17 +1,31 @@
+sudo: true
+dist: trusty
 language: scala
-jdk:
-- oraclejdk9
 scala:
-- 2.12.7
-sudo: required
-branches:
-  only:
-    - master
-    - /^\d\.\d+$/
-services:
-  - docker
-before_install:
-  - docker build -t scrypto:test .
-script:
-  - sbt test:compile
-  - docker run --rm -it scrypto:test sbt test
+  - 2.12.10
+  - 2.11.12
+jdk:
+  - oraclejdk8
+cache:
+  directories:
+    - "$HOME/.ivy2/cache"
+    - "$HOME/.sbt"
+before_cache:
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
+stages:
+  - test
+  - name: release
+    if: tag =~ ^v
+  - name: snapshot
+    if: "(NOT tag IS present) AND (type = push)"
+jobs:
+  include:
+    - stage: test
+      script: sbt coverage +test && sbt coverageReport coveralls
+    - stage: release
+      script: openssl aes-256-cbc -K $encrypted_dceea7e6c44e_key -iv $encrypted_dceea7e6c44e_iv
+        -in ci/secring.asc.enc -out ci/secring.asc -d && gpg --import ci/secring.asc
+        && sbt +publishSigned sonatypeBundleRelease
+    - stage: snapshot
+      script: sbt +publish
