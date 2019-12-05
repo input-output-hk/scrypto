@@ -10,6 +10,11 @@ lazy val scala211 = "2.11.12"
 crossScalaVersions := Seq(scala212, scala211)
 scalaVersion := scala212
 
+javacOptions ++=
+  "-source" :: "1.7" ::
+    "-target" :: "1.7" ::
+    Nil
+
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
   resolvers += Resolver.sonatypeRepo("public"),
