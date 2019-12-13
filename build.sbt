@@ -34,10 +34,9 @@ libraryDependencies ++= Seq(
   "org.rudogma" %% "supertagged" % "1.4",
   "com.google.guava" % "guava" % "20.0",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-  "ch.qos.logback" % "logback-classic" % "1.+",
   "org.whispersystems" % "curve25519-java" % "0.5.0",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.64",
-  "org.scorexfoundation" %% "scorex-util" % "0.1.6-RC6"
+  "org.scorexfoundation" %% "scorex-util" % "0.1.6"
 )
 
 libraryDependencies ++= Seq(
