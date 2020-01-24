@@ -326,10 +326,8 @@ object BlockchainSimulator extends App {
 
   (1 to numOfBlocks).foldLeft(initialState) { case (beforeBlocktree, blockNum) =>
 
-
-
     val (afterTree, (processingTime, proofSize)) = (1 to txsPerBlock).foldLeft(beforeBlocktree -> (0L, 0L)) {
-      case ((tree, (totalTime, totalProofSize)), txNum) =>
+      case ((tree, (totalTime, totalProofSize)), _) =>
 
         val recipient = hf(scala.util.Random.nextString(20))
 
