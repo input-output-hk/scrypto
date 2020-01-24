@@ -1,17 +1,36 @@
+sudo: true
+dist: trusty
 language: scala
-jdk:
-- oraclejdk9
 scala:
-- 2.12.8
-sudo: required
-branches:
-  only:
-    - master
-    - /^\d\.\d+$/
-services:
-  - docker
-before_install:
-  - docker build -t scrypto:test .
-script:
-  - sbt test:compile
-  - docker run --rm -it scrypto:test sbt test
+- 2.12.10
+- 2.11.12
+jdk:
+- oraclejdk8
+cache:
+  directories:
+  - "$HOME/.ivy2/cache"
+  - "$HOME/.sbt"
+before_cache:
+- find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+- find $HOME/.sbt        -name "*.lock"               -print -delete
+stages:
+- test
+- name: release
+  if: tag =~ ^v
+- name: snapshot
+  if: "(NOT tag IS present) AND (type = push)"
+jobs:
+  include:
+  - stage: test
+    script: sbt +test
+  - stage: release
+    script: openssl aes-256-cbc -K $encrypted_39f967873712_key -iv $encrypted_39f967873712_iv
+      -in ci/secring.asc.enc -out ci/secring.asc -d && gpg --import ci/secring.asc
+      && sbt +publishSigned sonatypeBundleRelease
+  - stage: snapshot
+    script: sbt +publish
+env:
+  global:
+  - secure: S30h6+w9KkxfkkLoKug4khRF0MiJxGnvragmN3Ff6Q/wpO6GKjGbuu428X3bwra1lQhv6Ng6lX9IYvMYfzJpY+jpgAT3tGYi3pj9pv4PGt/+3CqH6oCa/dPZhUfPqGIfiSGlA5ciT2a9Xp0D7TfWWbKNw9p//kjcA1YOjEwWzzrjL3YTx4RMCO7V+6XeM6oswVFj+BwTW3ZJbKgeD5+hlqsJjArhxsQXCzbZNcBURJUeJyhJWEH/fqp4HkQ3iwmoFfY59UhWYpIsjuh0G6cre0iE4H5TIVEUOtDhrTnmshz06mWs67N7hAgg8L8SJjfsrH4b8eK4Lf0BFaSzFjff0zMUklsRFdp9GDZ+pdOGrliQIVoykldy/vqmj10ubDlDIgQAWV+8NqMTP1XbZ1IQB9bs7mjxg3SgiW6dEAGTJrspbCDMiSQfS+8FgX8kXQA8b5uxHs6JBn3x6NOM3DW4F9HYETiqDJMrfQalwPLCle+nq4wK9Q4iVoVvmM432TGTI2VmyT30480Lm4EpKpzYxx3clS2DWgmJ+QMBoaJvOEw301MbvHpa1u6b2wnK45EMYyNZhOdcyLYw9MisvlTQXx7RHCLq1a0dBX27szIZYv1CAXCWAR01n3r7XLyQ4OPqO7sxAqqCUwzUbqvDbkgu4n3xA1FGliY5EPm7n3gMZds=
+  - secure: LBZidYdC8brE+zlHI4s9lgw1xaNBHmFC2vXkYncx4ZFGGjorm4GqCIgifaMTU9T6mlfaTTxse3mESWhsOJgl+PbvzCoI7oea4Xp5ZIuOJrckrRbPRqJddRh17zhDV7QJicHK2f0Z1amde0EWwtKNNEoxhckAZsFRMOgMGpeZfUZpHy7hRocX3/pFj8JiEBoGOjr7Cj3cnUWUNo+2dL2ADAQatEac9AmyPQyU4BwmhsGofZQfVQbDjXNvCXlCPAIDuHvJRN2gtMZZMIgEzr8N1yYpd0dOQo2BFEvisFdfADArd4vFQi/KyzYoPJaUIJuBoZMugj1NhpXjgljGNxyRcUnacSIvexYPLwUPJOcsTqOApnf1WtVPwNRH1pPfnkJd1lLP6m8KquvdV6foIcDMl2sK/Vvje8j4UqoVyOvvsOlgjD4ikqEOgGmZakzWS6WgZ/MUftgJ1mYZCY12VnNfDCAg/YOIDuT83Sfb6svRrMzSHlhziloHRYLJxs7lhS0NPiWTqLr5jDPZyhZu7XW7HZWwnrmm472vNE3qk9XPSFI1vWwSss7ahNcej7ITaaGF8bsaQmImxUBmYCaxs6Ay58Vbqxlbon+w6oFrdiF3dyAKA3mI72E+qYMh3aaOxJ1bOP83ttEKxkMkQoN6lnk1vIuSk/fio9ESsVGqw3FgBk0=
+  - secure: ejXKTixqsGdIZPiVYS+IqKZO5qQv+yR/owrt4UTKejEvXkQ2De1Y4FDErFimMDOBpDPpBdAk9NhF+P0jm/wysCYd8Of6AbMw8guEqCmEWooX0mKHoDtVzi6d/N9qaBTJBf/Q+ZKbgz7a7fjXziofcPrbsnLjnbFIjCnfhb2/J9OaN4j8uO6VsZ17p5FaRHJXX6w06aPUnwQzN0IcVD9k1tpgpiRTjvVQpA6HNK1R9R1UD1eKxtN+opmEi7LyZp2C9/FF+vozadjJE2HztzEZ0UgSH0hv5oGufwuSDeKUxZoXvXKUOQhXMpxEfAZ221T8awGo+PQCWGHFNs5wruWCP5zMrX1dh8mHz5qWej0w++MfTzFvqd2/+FyNjnWvZfhXjcUs+Y0YrSl8ct0w3WqYtE8ryKhHdqgGBpiRPWgdWC6YsGDzzsQK95OMx/3UvRz/nz8QEXhM2qgMQCFYaJnTYv70vlB2oE8IRe1Qh3+EGxWjqgcaUnntIRNvYIr89llqByzGpvU8aPnARLNdfMkobzQbRPiDMZ2voc8K7BKGNyV+PspG4zHFGCQwo8Y/3FAvjVgeO5lMn3QRg4ln21RMcQRCX1aG1ikYociuH5BpXt6ck70Axy8wDHyQhqiR7gBZBHQhJfKFDsiqEogwr1MowEZTj6GioaH87LbUXEpoL6M=
