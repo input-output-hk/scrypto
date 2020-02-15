@@ -133,7 +133,7 @@ case class SparseMerkleProof[D <: Digest](idx: Node.ID,
                                           leafDataOpt: Option[LeafData],
                                           levels: Vector[Option[D]]) {
 
-  def bytes = {
+  def bytes: Array[Byte] = {
     val idBytes = {
       val bs = idx.toByteArray
       bs.length.toByte +: bs
@@ -218,6 +218,7 @@ object TreeTester extends App {
 
   implicit val hf: CryptographicHash[Digest32] = new Blake2b256Unsafe
 
+  //to heat up JVM
   (1 to 2000000).foreach(i => hf.hash(i.toString))
 
   val height: Byte = 30
@@ -244,8 +245,11 @@ object TreeTester extends App {
   assert(tree2.lastProof.valid(tree2.rootDigest, height)(hf))
 
 
+
+
+
   val t0 = System.currentTimeMillis()
-  (1 to 10000).foldLeft(SparseMerkleTree.emptyTree(height) -> Seq[SparseMerkleProof[Digest32]]()) { case ((tree, proofs), _) =>
+  val (tree, proofs) = (1 to 10000).foldLeft(SparseMerkleTree.emptyTree(height) -> Seq[SparseMerkleProof[Digest32]]()) { case ((tree, proofs), _) =>
 
     val (newProofs, proof, newValue) = if (Random.nextInt(3) == 0 && proofs.nonEmpty) {
       val nps = Random.shuffle(proofs)
@@ -258,7 +262,41 @@ object TreeTester extends App {
     tree.update(proof, newValue, newProofs).get
   }
   val t = System.currentTimeMillis()
-  println((t - t0) + " ms.")
+  println(t - t0)
+
+  var proof = proofs(Random.nextInt(proofs.size))
+
+  println(s"=========== height: $height")
+  (1 to 10000).foldLeft(tree) { case (tree, _) =>
+    val lastProof = tree.lastProof
+    val newValue = Some(LeafData @@ Longs.toByteArray(Random.nextInt()))
+
+    val tu0 = System.currentTimeMillis()
+    (1 to 1000000).foreach(_ => tree.update(lastProof, newValue, Seq.empty))
+    val tu = System.currentTimeMillis()
+    val dtu = tu-tu0
+    println("Time for 1000000 last proof updates: " + dtu + " ms.")
+
+    val tl0 = System.currentTimeMillis()
+    (1 to 1000000).foreach(_ => tree.update(lastProof, newValue, Seq(proof)))
+    val tl = System.currentTimeMillis()
+    val dtl = tl-tl0
+    println("Time for 1000000 local proof updates: " + (dtl-dtu) + " ms.")
+
+
+    val tv0 = System.currentTimeMillis()
+    (1 to 1000000).foreach(_ => proof.valid(tree))
+    val tv = System.currentTimeMillis()
+    val dtv = tv - tv0
+    println("Time for 1000000 verifications: " + dtv + " ms.")
+
+    System.gc()
+    Thread.sleep(2000)
+
+    val (updTree, updProof) = tree.update(lastProof, newValue, Seq(proof)).get
+    proof = updProof.head
+    updTree
+  }
 }
 
 
@@ -347,4 +385,5 @@ object BlockchainSimulator extends App {
 
     afterTree
   }
+
 }
