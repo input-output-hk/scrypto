@@ -1,12 +1,13 @@
 package scorex.crypto.authds.avltree
 
-import org.scalatest.PropSpec
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
+
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
 
-class AVLDeleteSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
+class AVLDeleteSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
 
   val KL = 26
   val VL = 8

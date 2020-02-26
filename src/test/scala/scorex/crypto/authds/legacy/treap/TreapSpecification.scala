@@ -1,15 +1,15 @@
 package scorex.crypto.authds.legacy.treap
-
 import org.scalacheck.Gen
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.InsertOrUpdate
 import scorex.crypto.authds.legacy.treap.Constants._
 import scorex.crypto.hash.Blake2b256
 
 
-class TreapSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TwoPartyTests {
+class TreapSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with Matchers with TwoPartyTests {
 
 
   def validKey(key: ADKey): Boolean = key.length > 1 && key.length < MaxKeySize

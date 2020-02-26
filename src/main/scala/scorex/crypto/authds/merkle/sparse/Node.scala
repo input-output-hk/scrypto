@@ -1,7 +1,7 @@
 package scorex.crypto.authds.merkle.sparse
 
 import scorex.crypto.authds.LeafData
-import scorex.crypto.encode.Base16
+import scorex.util.encode.Base16
 import scorex.crypto.hash._
 
 trait Node[D <: Digest] {

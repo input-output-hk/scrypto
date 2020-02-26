@@ -2,19 +2,18 @@ package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Longs
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.PropSpec
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import scorex.crypto.authds.avltree.batch.BatchingPlayground.{D, HF, generateProver, time}
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.legacy.avltree.AVLTree
 import scorex.crypto.authds._
-import scorex.crypto.encode.{Base16, Base58}
-import scorex.crypto.hash.{Blake2b256, _}
+import scorex.util.encode.{Base16, Base58}
+import scorex.crypto.hash._
 import scorex.utils.{ByteArray, Random}
 
 import scala.util.Random.{nextInt => randomInt}
 import scala.util.{Failure, Try}
 
-class AVLBatchSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests
+class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests
   with BatchTestingHelpers {
 
   property("return removed leafs and internal nodes for small tree") {

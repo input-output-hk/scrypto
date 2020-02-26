@@ -3,14 +3,14 @@ package scorex.crypto.authds.avltree.batch
 import com.google.common.primitives.Longs
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
-import org.scalatest.PropSpec
+import org.scalatest.propspec.AnyPropSpec
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.utils.{Random => RandomBytes}
 
 import scala.util.{Failure, Random, Success, Try}
 
-class AVLBatchStatefulSpecification extends PropSpec {
+class AVLBatchStatefulSpecification extends AnyPropSpec {
 
   property("BatchAVLProver: prove and verify") {
     AVLCommands.property().check

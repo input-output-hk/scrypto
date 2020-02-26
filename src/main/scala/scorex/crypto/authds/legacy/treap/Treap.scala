@@ -147,6 +147,6 @@ class Treap[HF <: CryptographicHash[_ <: Digest]](rootOpt: Option[Leaf] = None)
 
     val (newTopNode: ProverNodes, changeHappened: Boolean) = modifyHelper(topNode, foundAbove = false)
     if (changeHappened) topNode = newTopNode
-    TreapModifyProof(key, proofStream)
+    TreapModifyProof(key, proofStream.toSeq) // .toSeq required for 2.13
   }
 }
