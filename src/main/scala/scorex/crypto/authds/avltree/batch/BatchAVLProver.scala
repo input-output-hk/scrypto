@@ -29,7 +29,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
                                                              (implicit val hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper with ScorexLogging {
 
-  protected val labelLength = hf.DigestSize
+  protected val labelLength: Int = hf.DigestSize
 
   private[batch] var topNode: ProverNodes[D] = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
@@ -230,7 +230,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
       }
     }
 
-    loop(topNode, false)
+    loop(topNode, keyFound = false)
   }
 
   /**
@@ -442,7 +442,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     var fail: Boolean = false
 
     def checkTreeHelper(rNode: ProverNodes[D]): (ProverLeaf[D], ProverLeaf[D], Int) = {
-      def myRequire(t: Boolean, s: String) = {
+      def myRequire(t: Boolean, s: String): Unit = {
         if (!t) {
           var x = rNode.key(0).toInt
           if (x < 0) x = x + 256

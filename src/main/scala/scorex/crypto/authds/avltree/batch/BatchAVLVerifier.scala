@@ -5,7 +5,6 @@ import scorex.crypto.authds._
 import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
-import scala.collection.mutable
 import scala.util.{Failure, Try}
 
 /**
@@ -33,7 +32,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
 
   override val collectChangedNodes: Boolean = false
 
-  protected val labelLength = hf.DigestSize
+  protected val labelLength: Int = hf.DigestSize
 
   /**
     * Returns Some[the current digest of the authenticated data structure],
@@ -169,8 +168,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
     // Now reconstruct the tree from the proof, which has the post order traversal
     // of the tree
     var numNodes = 0
-    var s = List.empty[VerifierNodes[D]]
-
+    var s = List.empty[VerifierNodes[D]] // Nodes and depths
     var i = 0
     var previousLeaf: Option[Leaf[D]] = None
     while (proof(i) != EndOfTreeInPackagedProof) {
