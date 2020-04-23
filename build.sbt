@@ -10,7 +10,7 @@ lazy val scala211 = "2.11.12"
 lazy val scala213 = "2.13.1"
 
 crossScalaVersions := Seq(scala212, scala211, scala213)
-scalaVersion := scala212
+scalaVersion := scala213
 
 javacOptions ++=
   "-source" :: "1.8" ::
