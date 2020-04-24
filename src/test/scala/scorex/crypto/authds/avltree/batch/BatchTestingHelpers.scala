@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import scorex.crypto.authds.{ADKey, ADValue}
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.utils.Random

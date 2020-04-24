@@ -263,6 +263,6 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
 
     val (newTopNode, changeHappened, childHeightIncreased) = modifyHelper(topNode, foundAbove = false)
     if (changeHappened) topNode = newTopNode
-    AVLModifyProof(key, proofStream)
+    AVLModifyProof(key, proofStream.toSeq) //toSeq required for 2.13
   }
 }

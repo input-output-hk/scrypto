@@ -1,14 +1,15 @@
 package scorex.crypto.signing
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.encode.Base16
+
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import scorex.util.encode.Base16
 import scorex.crypto.signatures.{Curve25519, PrivateKey}
 
 
-class SigningFunctionsSpecification extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
+class SigningFunctionsSpecification extends AnyPropSpec
+  with ScalaCheckDrivenPropertyChecks
   with Matchers {
 
   property("signed message should be verifiable with appropriate public key") {

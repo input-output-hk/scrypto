@@ -1,16 +1,17 @@
 package scorex.crypto.hash
 
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
-import org.scalatest.{Matchers, PropSpec}
-import scorex.crypto.encode.Base16
+
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
+import scorex.util.encode.Base16
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-trait HashTest extends PropSpec
-  with PropertyChecks
-  with GeneratorDrivenPropertyChecks
+trait HashTest extends AnyPropSpec
+  with ScalaCheckDrivenPropertyChecks
   with Matchers {
   val emptyBytes: Array[Byte] = Array.empty
 

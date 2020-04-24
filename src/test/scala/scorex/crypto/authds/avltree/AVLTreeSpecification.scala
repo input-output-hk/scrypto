@@ -1,14 +1,14 @@
 package scorex.crypto.authds.avltree
 
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.PropSpec
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch.{Insert, InsertOrUpdate, Lookup, Update}
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.hash.Sha256
 
-class AVLTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with TwoPartyTests {
+class AVLTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
 
   val KL = 26
   val VL = 8

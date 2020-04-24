@@ -5,7 +5,6 @@ import scorex.crypto.authds._
 import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
-import scala.collection.mutable
 import scala.util.{Failure, Try}
 
 /**
@@ -33,7 +32,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
 
   override val collectChangedNodes: Boolean = false
 
-  protected val labelLength = hf.DigestSize
+  protected val labelLength: Int = hf.DigestSize
 
   /**
     * Returns Some[the current digest of the authenticated data structure],
@@ -169,7 +168,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
     // Now reconstruct the tree from the proof, which has the post order traversal
     // of the tree
     var numNodes = 0
-    val s = new mutable.Stack[VerifierNodes[D]] // Nodes and depths
+    var s = List.empty[VerifierNodes[D]] // Nodes and depths
     var i = 0
     var previousLeaf: Option[Leaf[D]] = None
     while (proof(i) != EndOfTreeInPackagedProof) {
@@ -181,7 +180,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
         case LabelInPackagedProof =>
           val label = proof.slice(i, i + labelLength).asInstanceOf[D]
           i += labelLength
-          s.push(new LabelOnlyNode[D](label))
+          s = new LabelOnlyNode[D](label) +: s
           previousLeaf = None
         case LeafInPackagedProof =>
           val key = if (previousLeaf.nonEmpty) {
@@ -202,17 +201,21 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
           val value = ADValue @@ proof.slice(i, i + valueLength)
           i += valueLength
           val leaf = new VerifierLeaf[D](key, value, nextLeafKey)
-          s.push(leaf)
+          s = leaf +: s
+
           previousLeaf = Some(leaf)
         case _ =>
-          val right = s.pop
-          val left = s.pop
-          s.push(new InternalVerifierNode(left, right, Balance @@ n))
+          val right = s.head
+          s = s.tail
+          val left = s.head
+          s = s.tail
+          s = new InternalVerifierNode(left, right, Balance @@ n) +: s
+
       }
     }
 
     require(s.size == 1)
-    val root = s.pop
+    val root = s.head
     require(startingDigest startsWith root.label)
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)

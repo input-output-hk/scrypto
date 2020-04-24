@@ -7,12 +7,14 @@ description := "Cryptographic primitives for Scala"
 
 lazy val scala212 = "2.12.10"
 lazy val scala211 = "2.11.12"
-crossScalaVersions := Seq(scala212, scala211)
-scalaVersion := scala212
+lazy val scala213 = "2.13.1"
+
+crossScalaVersions := Seq(scala212, scala211, scala213)
+scalaVersion := scala213
 
 javacOptions ++=
-  "-source" :: "1.7" ::
-    "-target" :: "1.7" ::
+  "-source" :: "1.8" ::
+    "-target" :: "1.8" ::
     Nil
 
 lazy val commonSettings = Seq(
@@ -31,17 +33,19 @@ lazy val commonSettings = Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.rudogma" %% "supertagged" % "1.4",
+  "org.rudogma" %% "supertagged" % "1.5",
   "com.google.guava" % "guava" % "20.0",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.whispersystems" % "curve25519-java" % "0.5.0",
   "org.bouncycastle" % "bcprov-jdk15on" % "1.64",
-  "org.scorexfoundation" %% "scorex-util" % "0.1.6"
+  "org.scorexfoundation" %% "scorex-util" % "0.1.7"
 )
 
 libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "3.0.+" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.13.+" % "test"
+  "org.scalatest" %% "scalatest" % "3.1.+" % Test,
+  "org.scalacheck" %% "scalacheck" % "1.14.+" % Test,
+  // https://mvnrepository.com/artifact/org.scalatestplus/scalatestplus-scalacheck
+  "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
 )
 
 publishMavenStyle := true

@@ -1,12 +1,14 @@
 package scorex.crypto.authds.merkle
 
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
-import org.scalatest.{Matchers, PropSpec}
+
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.LeafData
-import scorex.crypto.hash.{Digest32, Keccak256}
+import scorex.crypto.hash.Keccak256
 
-class MerkleTreeSpecification extends PropSpec with GeneratorDrivenPropertyChecks with Matchers with TestingCommons {
+class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with Matchers with TestingCommons {
   implicit val hf = Keccak256
 
   private val LeafSize = 32

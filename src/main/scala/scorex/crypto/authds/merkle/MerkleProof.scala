@@ -2,7 +2,7 @@ package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.{LeafData, Side}
 import scorex.crypto.hash.{CryptographicHash, Digest}
-import scorex.utils.ScorexEncoding
+import scorex.util.ScorexEncoding
 
 /**
   * Proof is given leaf data, leaf hash sibling and also siblings for parent nodes. Using this data, it is possible to

@@ -29,7 +29,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
                                                              (implicit val hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper with ScorexLogging {
 
-  protected val labelLength = hf.DigestSize
+  protected val labelLength: Int = hf.DigestSize
 
   private[batch] var topNode: ProverNodes[D] = oldRootAndHeight.map(_._1).getOrElse({
     val t = new ProverLeaf(NegativeInfinityKey,
@@ -230,7 +230,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
       }
     }
 
-    loop(topNode, false)
+    loop(topNode, keyFound = false)
   }
 
   /**
@@ -267,7 +267,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
      *   that contains only this info)
      * - Condense the sequence of values if they are mostly not randomly distributed
      * */
-    def packTree(rNode: ProverNodes[D]) {
+    def packTree(rNode: ProverNodes[D]): Unit = {
       // Post order traversal to pack up the tree
       if (!rNode.visited) {
         packagedTree += LabelInPackagedProof
@@ -357,21 +357,21 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     * @return Random leaf from the tree that is not positive or negative infinity
     */
   def randomWalk(rand: Random = new Random): Option[(ADKey, ADValue)] = {
-    def internalNodeFn(r: InternalProverNode[D], dummy: Unit.type) =
+    def internalNodeFn(r: InternalProverNode[D], dummy: Unit): (ProverNodes[D], Unit) =
       rand.nextBoolean() match {
         case true =>
-          (r.right, Unit)
+          (r.right, ())
         case false =>
-          (r.left, Unit)
+          (r.left, ())
       }
 
-    def leafFn(leaf: ProverLeaf[D], dummy: Unit.type): Option[(ADKey, ADValue)] = {
+    def leafFn(leaf: ProverLeaf[D], dummy: Unit): Option[(ADKey, ADValue)] = {
       if (leaf.key sameElements PositiveInfinityKey) None
       else if (leaf.key sameElements NegativeInfinityKey) None
       else Some(leaf.key -> leaf.value)
     }
 
-    treeWalk(internalNodeFn, leafFn, Unit)
+    treeWalk(internalNodeFn, leafFn, ())
   }
 
   /**
@@ -442,7 +442,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
     var fail: Boolean = false
 
     def checkTreeHelper(rNode: ProverNodes[D]): (ProverLeaf[D], ProverLeaf[D], Int) = {
-      def myRequire(t: Boolean, s: String) = {
+      def myRequire(t: Boolean, s: String): Unit = {
         if (!t) {
           var x = rNode.key(0).toInt
           if (x < 0) x = x + 256

@@ -32,7 +32,7 @@ class LegacyProver(tree: AVLTree[_]) {
         case Failure(e) => throw BatchFailure(e, m)
       }
     }
-    BatchSuccessSimple(aggregatedProofs)
+    BatchSuccessSimple(aggregatedProofs.toSeq)
   } match {
     case Success(p) => p
     case Failure(e: BatchFailure) => e

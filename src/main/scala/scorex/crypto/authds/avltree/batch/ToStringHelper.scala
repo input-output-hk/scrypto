@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.utils.ScorexEncoding
+import scorex.util.ScorexEncoding
 
 trait ToStringHelper extends ScorexEncoding {
   //Needed for debug (toString) only

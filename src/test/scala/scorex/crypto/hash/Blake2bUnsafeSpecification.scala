@@ -1,11 +1,11 @@
 package scorex.crypto.hash
 
-import org.scalatest.{Matchers, PropSpec}
-import org.scalatest.prop.{GeneratorDrivenPropertyChecks, PropertyChecks}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.propspec.AnyPropSpec
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 
-class Blake2bUnsafeSpecification extends PropSpec
-with PropertyChecks
-with GeneratorDrivenPropertyChecks
+class Blake2bUnsafeSpecification extends AnyPropSpec
+with ScalaCheckDrivenPropertyChecks
 with Matchers {
 
   val unsafeHash = new Blake2b256Unsafe

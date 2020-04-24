@@ -3,7 +3,7 @@ package scorex.crypto
 import java.io.File
 
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 
 import scala.util.Random
 
