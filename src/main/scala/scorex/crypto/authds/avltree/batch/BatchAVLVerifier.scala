@@ -30,6 +30,11 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
                                                                (implicit hf: HF = Blake2b256)
   extends AuthenticatedTreeOps[D] with ToStringHelper {
 
+  /** Default implementation of error logging. */
+  protected def logError(t: Throwable) = {
+    t.printStackTrace()
+  }
+
   override val collectChangedNodes: Boolean = false
 
   protected val labelLength: Int = hf.DigestSize
@@ -220,7 +225,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.recoverWith { case e =>
-    e.printStackTrace()
+    logError(e)
     Failure(e)
   }.getOrElse(None)
 
