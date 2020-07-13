@@ -136,13 +136,13 @@ Here are code examples for generating proofs and checking them. In this example 
   val op6 = Lookup(ADKey @@ key3)
   val op7 = Remove(ADKey @@ Array(5:Byte))
   val op8 = Remove(ADKey @@ key3)
-  prover.performOneOperation(op4) // Returns Try(Some(Longs.toByteArray(10)))
+  prover.performOneOperation(op4) // Returns Success(Some(Longs.toByteArray(10)))
   // Here we can, for example, perform prover.unauthenticatedLookup(key1) to get 50
   // without affecting the proof or anything else
   prover.performOneOperation(op5) // Returns Failure
-  prover.performOneOperation(op6) // Returns Try(Some(Longs.toByteArray(30)))
+  prover.performOneOperation(op6) // Returns Success(Some(Longs.toByteArray(30)))
   prover.performOneOperation(op7) // Returns Failure
-  prover.performOneOperation(op8) // Returns Try(Some(Longs.toByteArray(30)))
+  prover.performOneOperation(op8) // Returns Success(Some(Longs.toByteArray(30)))
   val proof2 = prover.generateProof() // Proof only for op4 and op6
   val digest2 = prover.digest
 ```
@@ -160,9 +160,9 @@ Here are code examples for generating proofs and checking them. In this example 
     case Some(d1) if d1.sameElements(digest1) =>
       //If digest1 from the prover is already trusted, then verification of the second batch can simply start here
       val verifier2 = new BatchAVLVerifier[Digest32, Blake2b256.type](d1, proof2, keyLength = 1, valueLengthOpt = Some(8), maxNumOperations = Some(3), maxDeletes = Some(1))
-      verifier2.performOneOperation(op4) // Returns Try(Some(Longs.toByteArray(10)))
-      verifier2.performOneOperation(op6) // Returns Try(Some(Longs.toByteArray(30)))
-      verifier2.performOneOperation(op8) // Returns Try(Some(Longs.toByteArray(30)))
+      verifier2.performOneOperation(op4) // Returns Success(Some(Longs.toByteArray(10)))
+      verifier2.performOneOperation(op6) // Returns Success(Some(Longs.toByteArray(30)))
+      verifier2.performOneOperation(op8) // Returns Success(Some(Longs.toByteArray(30)))
       verifier2.digest match {
         case Some(d2) if d2.sameElements(digest2) => println("first and second digest value and proofs are valid")
         case _ => println("second proof or announced digest NOT valid")
