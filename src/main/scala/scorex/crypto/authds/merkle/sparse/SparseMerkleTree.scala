@@ -5,7 +5,7 @@ import scorex.crypto.authds.LeafData
 import scorex.crypto.hash._
 
 import scala.collection.mutable
-import scala.util.{Random, Try}
+import scala.util.Try
 
 /**
   *
@@ -172,54 +172,6 @@ case class SparseMerkleProof[D <: Digest](idx: Node.ID,
   }
 
   def valid(tree: SparseMerkleTree[D])(implicit hf: CryptographicHash[D]): Boolean = valid(tree.rootDigest, tree.height)
-}
-
-
-object TreeTester extends App {
-
-  implicit val hf: CryptographicHash[Digest32] = new Blake2b256Unsafe
-
-  (1 to 2000000).foreach(i => hf.hash(i.toString))
-
-  val height: Byte = 30
-
-  val tree0 = SparseMerkleTree.emptyTree(height)
-
-  assert(tree0.lastProof.valid(tree0.rootDigest, height)(hf))
-
-  val zp = SparseMerkleTree.zeroProof[Digest32](height)
-
-  val zp1 = zp.copy(idx = 1)
-
-  val (tree1, updProofs) = tree0.update(zp, Some(LeafData @@ Longs.toByteArray(5)), Seq(zp)).get
-
-
-  assert(zp.valid(tree0.rootDigest, height)(hf))
-  assert(zp1.valid(tree0.rootDigest, height)(hf))
-  assert(updProofs.head.valid(tree1.rootDigest, height)(hf))
-
-  assert(tree1.lastProof.valid(tree1.rootDigest, height)(hf))
-
-  val tree2 = tree1.update(tree1.lastProof, Some(LeafData @@ Longs.toByteArray(10))).get._1
-
-  assert(tree2.lastProof.valid(tree2.rootDigest, height)(hf))
-
-
-  val t0 = System.currentTimeMillis()
-  (1 to 10000).foldLeft(SparseMerkleTree.emptyTree(height) -> Seq[SparseMerkleProof[Digest32]]()) { case ((tree, proofs), _) =>
-
-    val (newProofs, proof, newValue) = if (Random.nextInt(3) == 0 && proofs.nonEmpty) {
-      val nps = Random.shuffle(proofs)
-      (nps.tail, nps.head, None)
-    } else {
-      val nps = if (Random.nextInt(2) == 0 && proofs.size < 5) proofs :+ tree.lastProof else proofs
-      (nps, tree.lastProof, Some(LeafData @@ Longs.toByteArray(Random.nextInt())))
-    }
-
-    tree.update(proof, newValue, newProofs).get
-  }
-  val t = System.currentTimeMillis()
-  println((t - t0) + " ms.")
 }
 
 object OpsBenchmark extends App {

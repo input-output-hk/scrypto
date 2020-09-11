@@ -1,6 +1,5 @@
 package scorex.crypto.authds.merkle
 
-
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
