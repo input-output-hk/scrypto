@@ -5,9 +5,9 @@ import scala.util.Try
 name := "scrypto"
 description := "Cryptographic primitives for Scala"
 
-lazy val scala212 = "2.12.10"
+lazy val scala212 = "2.12.12"
 lazy val scala211 = "2.11.12"
-lazy val scala213 = "2.13.1"
+lazy val scala213 = "2.13.3"
 
 crossScalaVersions := Seq(scala212, scala211, scala213)
 scalaVersion := scala213
@@ -34,10 +34,10 @@ lazy val commonSettings = Seq(
 
 libraryDependencies ++= Seq(
   "org.rudogma" %% "supertagged" % "1.5",
-  "com.google.guava" % "guava" % "20.0",
+  "com.google.guava" % "guava" % "23.0",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.whispersystems" % "curve25519-java" % "0.5.0",
-  "org.bouncycastle" % "bcprov-jdk15on" % "1.64",
+  "org.bouncycastle" % "bcprov-jdk15on" % "1.66",
   "org.scorexfoundation" %% "scorex-util" % "0.1.7"
 )
 
