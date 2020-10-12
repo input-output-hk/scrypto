@@ -25,4 +25,7 @@ package object authds {
   object SerializedAdProof extends TaggedType[Array[Byte]]
 
   object Balance extends TaggedType[Byte]
+
+  /** Immutable empty array which can be used in many places to avoid allocations. */
+  val EmptyByteArray = Array.empty[Byte]
 }
