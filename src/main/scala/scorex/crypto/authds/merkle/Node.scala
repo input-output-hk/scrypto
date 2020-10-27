@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.LeafData
+import scorex.crypto.authds.{LeafData, EmptyByteArray}
 import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 
@@ -49,7 +49,7 @@ case class Leaf[D <: Digest](data: LeafData)(implicit val hf: CryptographicHash[
   * @tparam D - hash function application type
   */
 case class EmptyNode[D <: Digest]()(implicit val hf: CryptographicHash[D]) extends Node[D] {
-  override val hash: D = Array[Byte]().asInstanceOf[D]
+  override val hash: D = EmptyByteArray.asInstanceOf[D]
 }
 
 /**
