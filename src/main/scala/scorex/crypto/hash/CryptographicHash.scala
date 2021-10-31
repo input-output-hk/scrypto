@@ -39,5 +39,7 @@ trait CryptographicHash[D <: Digest] {
   def hash(inputs: Array[Byte]*): D = hash(ByteArray.concat(inputs))
 
   def byteArrayToDigest(bytes: Array[Byte]): Try[D]
+
+  def getValue[D <: Digest](x: D): Digest = x
 }
 

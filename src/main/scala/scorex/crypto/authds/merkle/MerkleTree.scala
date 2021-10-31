@@ -1,5 +1,6 @@
 package scorex.crypto.authds.merkle
 
+import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
 import scorex.crypto.authds.{LeafData, Side}
 import scorex.crypto.hash._
 
@@ -7,7 +8,8 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 case class MerkleTree[D <: Digest](topNode: Node[D],
-                                   elementsHashIndex: Map[mutable.WrappedArray.ofByte, Int]) {
+                                   elementsHashIndex: Map[mutable.WrappedArray.ofByte, Int],
+                                   hashes: Seq[Digest]) {
 
   lazy val rootHash: D = topNode.hash
   lazy val length: Int = elementsHashIndex.size
@@ -36,6 +38,37 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
     leafWithProofs.map(lp => MerkleProof(lp._1.data, lp._2)(lp._1.hf))
   } else {
     None
+  }
+
+  def proofByIndexes(indexes: Seq[Int])(implicit hf: CryptographicHash[D]): Option[BatchMerkleProof[D]] = {
+
+    def loop(a: Seq[Int], l: Seq[Digest]): Seq[Digest] = {
+
+      val b_pruned = a
+        .map(i => {
+          if (i % 2 == 0) {
+            (i, i + 1)
+          } else {
+            (i - 1, i)
+          }
+        })
+        .distinct
+
+      val b_flat = b_pruned.flatten{case (a,b) => Seq(a,b)}
+      val dif = b_flat diff a
+      var m = dif.map(l.apply)
+
+      val a_new = b_pruned.map(_._1 / 2)
+      val l_new = l.grouped(2).map(lr => hf.hash(
+        lr.head ++ (if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D].hash))).toSeq
+
+      if (l_new.size > 1) {
+        m = m ++ loop(a_new, l_new)
+      }
+      m
+    }
+    val multiproof = loop(indexes, hashes)
+    Some(BatchMerkleProof(indexes zip (indexes map hashes.apply), multiproof))
   }
 
   lazy val lengthWithEmptyLeafs: Int = {
@@ -81,9 +114,10 @@ object MerkleTree {
     val elementsIndex: Map[mutable.WrappedArray.ofByte, Int] = leafs.indices.map { i =>
       (new mutable.WrappedArray.ofByte(leafs(i).hash), i)
     }.toMap
+    val hashes = leafs.map(_.hash)
     val topNode = calcTopNode[D](leafs)
 
-    MerkleTree(topNode, elementsIndex)
+    MerkleTree(topNode, elementsIndex, hashes)
   }
 
   @tailrec

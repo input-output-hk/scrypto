@@ -46,6 +46,17 @@ class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyC
     }
   }
 
+  property("Batch proof generation by indexes") {
+    forAll(smallInt) { N: Int =>
+      whenever(N == 7) {
+        val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+        val tree = MerkleTree(d)
+
+        tree.proofByIndexes(Seq(0,1)).get.valid(tree.rootHash, d.map(d => Leaf(d))) shouldBe true
+      }
+    }
+  }
+
   property("Tree creation from 0 elements") {
     val tree = MerkleTree(Seq.empty)(hf)
     tree.rootHash shouldEqual Array.fill(hf.DigestSize)(0: Byte)
