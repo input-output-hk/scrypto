@@ -42,7 +42,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
 
   def proofByIndexes(indexes: Seq[Int])(implicit hf: CryptographicHash[D]): Option[BatchMerkleProof[D]] = {
 
-    def loop(a: Seq[Int], l: Seq[Digest]): Seq[Digest] = {
+    def loop(a: Seq[Int], l: Seq[Digest]): Seq[(Digest, Side)] = {
 
       val b_pruned = a
         .map(i => {
@@ -56,11 +56,17 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
 
       val b_flat = b_pruned.flatten{case (a,b) => Seq(a,b)}
       val dif = b_flat diff a
-      var m = dif.map(l.apply)
+      var m = dif.map(i => {
+        val side = if (i % 2 == 0) MerkleProof.LeftSide else MerkleProof.RightSide
+        (l.apply(i), side)
+      })
 
       val a_new = b_pruned.map(_._1 / 2)
-      val l_new = l.grouped(2).map(lr => hf.hash(
-        lr.head ++ (if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D].hash))).toSeq
+
+      val l_new = l.grouped(2).map(lr => {
+        hf.prefixedHash(InternalNodePrefix,
+          lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D].hash)
+      }).toSeq
 
       if (l_new.size > 1) {
         m = m ++ loop(a_new, l_new)

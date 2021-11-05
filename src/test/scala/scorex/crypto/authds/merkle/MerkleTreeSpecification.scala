@@ -5,6 +5,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.LeafData
+import scorex.crypto.authds.merkle.MerkleTree.LeafPrefix
 import scorex.crypto.hash.Keccak256
 
 class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with Matchers with TestingCommons {
@@ -48,11 +49,12 @@ class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyC
 
   property("Batch proof generation by indexes") {
     forAll(smallInt) { N: Int =>
-      whenever(N == 7) {
+      whenever(N == 16) {
         val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
         val tree = MerkleTree(d)
-
-        tree.proofByIndexes(Seq(0,1)).get.valid(tree.rootHash, d.map(d => Leaf(d))) shouldBe true
+        val l = Leaf(d.apply(2)).hash
+        val r = Leaf(d.apply(3)).hash
+        tree.proofByIndexes(Seq(2,3,8,13)).get.valid(tree.rootHash) shouldBe true
       }
     }
   }
