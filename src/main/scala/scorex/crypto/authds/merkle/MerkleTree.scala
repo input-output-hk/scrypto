@@ -2,14 +2,13 @@ package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
 import scorex.crypto.authds.{LeafData, Side}
-import scorex.crypto.hash._
+import scorex.crypto.hash.{Digest, _}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
 case class MerkleTree[D <: Digest](topNode: Node[D],
-                                   elementsHashIndex: Map[mutable.WrappedArray.ofByte, Int],
-                                   hashes: Seq[Digest]) {
+                                   elementsHashIndex: Map[mutable.WrappedArray.ofByte, Int]) {
 
   lazy val rootHash: D = topNode.hash
   lazy val length: Int = elementsHashIndex.size
@@ -73,6 +72,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
       }
       m
     }
+    val hashes: Seq[Digest] = elementsHashIndex.toSeq.sortBy(_._2).map(_._1.toArray.asInstanceOf[Digest])
     val multiproof = loop(indexes, hashes)
     Some(BatchMerkleProof(indexes zip (indexes map hashes.apply), multiproof))
   }
@@ -123,7 +123,7 @@ object MerkleTree {
     val hashes = leafs.map(_.hash)
     val topNode = calcTopNode[D](leafs)
 
-    MerkleTree(topNode, elementsIndex, hashes)
+    MerkleTree(topNode, elementsIndex)
   }
 
   @tailrec
