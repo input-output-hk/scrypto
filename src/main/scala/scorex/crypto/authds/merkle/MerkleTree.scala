@@ -39,10 +39,27 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
     None
   }
 
-  def proofByIndexes(indexes: Seq[Int])(implicit hf: CryptographicHash[D]): Option[BatchMerkleProof[D]] = {
+  /**
+    * Build compact batch Merkle proof by indexes
+    *
+    * @param indices - leaf indices
+    * @return Optional BatchMerkleProof
+    */
+  def proofByIndexes(indices: Seq[Int])(implicit hf: CryptographicHash[D]): Option[BatchMerkleProof[D]] = {
+
+    /**
+      * Recursive function to build the multiproof
+      *
+      * @param a - leaf indices
+      * @param l - hashes of the current layer of the Merkle tree
+      * @return multiproof as sequence of pairs (hash, side)
+      */
 
     def loop(a: Seq[Int], l: Seq[Digest]): Seq[(Digest, Side)] = {
 
+      // For each of the indices in A, take the index of its immediate neighbor in layer L
+      // Store the given element index and the neighboring index as a pair of indices
+      // Remove any duplicates
       val b_pruned = a
         .map(i => {
           if (i % 2 == 0) {
@@ -53,6 +70,8 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
         })
         .distinct
 
+      // Take the difference between the set of indices in B_pruned and A
+      // Append the hash values (and side) for the given indices in the current Merkle layer to the multiproof M
       val b_flat = b_pruned.flatten{case (a,b) => Seq(a,b)}
       val dif = b_flat diff a
       var m = dif.map(i => {
@@ -60,21 +79,24 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
         (l.apply(i), side)
       })
 
+      //  Take all the even numbers from B_pruned, and divide them by two
       val a_new = b_pruned.map(_._1 / 2)
 
+      //  Go up one layer in the tree
       val l_new = l.grouped(2).map(lr => {
         hf.prefixedHash(InternalNodePrefix,
           lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D].hash)
       }).toSeq
 
+      //  Repeat until the root of the tree is reached
       if (l_new.size > 1) {
         m = m ++ loop(a_new, l_new)
       }
       m
     }
     val hashes: Seq[Digest] = elementsHashIndex.toSeq.sortBy(_._2).map(_._1.toArray.asInstanceOf[Digest])
-    val multiproof = loop(indexes, hashes)
-    Some(BatchMerkleProof(indexes zip (indexes map hashes.apply), multiproof))
+    val multiproof = loop(indices, hashes)
+    Some(BatchMerkleProof(indices zip (indices map hashes.apply), multiproof))
   }
 
   lazy val lengthWithEmptyLeafs: Int = {
