@@ -13,9 +13,17 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
                                     (implicit val phf: CryptographicHash[D])
   extends InternalProverNode(k = pk, l = null, r = null, b = pb)(phf) {
 
-  override def computeLabel: D = hf.hash(Array(InternalNodePrefix, b), leftLabel, rightLabel)
+  override def computeLabel: D = {
+    hf.hash(Array(InternalNodePrefix, b), leftLabel, rightLabel)
+  }
 
-  override def label: D = if (isEmpty) selfLabelOpt.getOrElse(computeLabel) else super.label
+  override def label: D = if (isEmpty) {
+    val l = selfLabelOpt.getOrElse(computeLabel)
+    labelOpt = Some(l)
+    l
+  } else {
+    super.label
+  }
 
   def setChild(n: ProverNodes[D]): Unit = {
     if (n.label sameElements leftLabel) {

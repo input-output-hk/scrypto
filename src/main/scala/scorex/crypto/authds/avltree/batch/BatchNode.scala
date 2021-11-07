@@ -40,7 +40,9 @@ sealed trait InternalNode[D <: Digest] extends Node[D] {
 
   protected val hf: CryptographicHash[D]
 
-  protected def computeLabel: D = hf.hash(Array(InternalNodePrefix, b), left.label, right.label)
+  override protected def computeLabel: D = {
+    hf.hash(Array(InternalNodePrefix, b), left.label, right.label)
+  }
 
   def balance: Balance = b
 
@@ -137,7 +139,9 @@ sealed trait Leaf[D <: Digest] extends Node[D] with KeyInVar {
 
   protected val hf: CryptographicHash[D] // TODO: Seems very wasteful to store hf in every node of the tree, when they are all the same. Is there a better way? Pass them in to label method from above? Same for InternalNode and for other, non-batch, trees
 
-  protected def computeLabel: D = hf.prefixedHash(LeafPrefix, k, v, nk)
+  protected def computeLabel: D = {
+    hf.prefixedHash(LeafPrefix, k, v, nk)
+  }
 
   def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): Leaf[D]
 

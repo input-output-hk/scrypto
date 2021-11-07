@@ -114,6 +114,26 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     serializer.manifestFromBytes(manifestBytes, tree.keyLength).isFailure shouldBe true
   }
 
+  property("verify manifest") {
+    val tree = generateProver()
+    val sliced = slice(tree)
+    val manifest = sliced._1
+    manifest.verify(tree.topNode.label) shouldBe true
+  }
+
+  property("subtreesIds for manifest") {
+    val tree = generateProver()
+    val sliced = slice(tree)
+    val manifest = sliced._1
+    val subtrees = sliced._2
+
+    val manSubtrees = manifest.subtreesIds
+    manSubtrees.size shouldBe subtrees.size
+    manSubtrees.foreach{digest =>
+      subtrees.exists(_.id.sameElements(digest)) shouldBe true
+    }
+  }
+
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {
     case n: ProxyInternalNode[D] if n.isEmpty =>
       Seq(n)
