@@ -105,10 +105,12 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     println("h: " + tree.rootNodeHeight)
     val sliced = slice(tree)
     val manifest = sliced._1
+    println("manifest: " + manifest)
     val wrongManifest: BatchAVLProverManifest[D] =
       BatchAVLProverManifest(manifest.rootAndHeight._1 -> (manifest.rootAndHeight._2 + 1))
 
     val manifestBytes = serializer.manifestToBytes(wrongManifest)
+    println("mb: " + manifestBytes.size)
     serializer.manifestFromBytes(manifestBytes, tree.keyLength).isFailure shouldBe true
   }
 

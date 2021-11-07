@@ -28,7 +28,10 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
 
   def isEmpty: Boolean = l == null || r == null
 
-  override def toString: String = s"${arrayToString(label)} ProxyInternalNode($isEmpty,${arrayToString(pk)},${arrayToString(leftLabel)}|${l == null},${arrayToString(rightLabel)}}|${r == null},$pb})"
+  override def toString: String = {
+    s"${arrayToString(label)} ProxyInternalNode($isEmpty,${arrayToString(pk)},${arrayToString(leftLabel)}|${l == null},${arrayToString(rightLabel)}}|${r == null},$pb})"
+  }
+
 }
 
 object ProxyInternalNode {

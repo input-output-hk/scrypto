@@ -96,7 +96,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
   def subtreeFromBytes(b: Array[Byte], kl: Int): Try[BatchAVLProverSubtree[D]] = nodesFromBytes(b, kl).
     map(topNode => BatchAVLProverSubtree[D](topNode))
 
-  def nodesToBytes(obj: ProverNodes[D]): Array[Byte] = {
+  def nodesToBytes(rootNode: ProverNodes[D]): Array[Byte] = {
     def loop(currentNode: ProverNodes[D]): Array[Byte] = currentNode match {
       case l: ProverLeaf[D] =>
         Bytes.concat(Array(0.toByte), l.key, l.nextLeafKey, l.value)
@@ -108,7 +108,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         Bytes.concat(Array(1.toByte, n.balance), n.key, Ints.toByteArray(leftBytes.length), leftBytes, rightBytes)
     }
 
-    loop(obj)
+    loop(rootNode)
   }
 
   def nodesFromBytes(bytesIn: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
