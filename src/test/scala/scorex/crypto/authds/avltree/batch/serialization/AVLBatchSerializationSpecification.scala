@@ -24,6 +24,10 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
   def randomValue(size: Int = 64): ADValue = ADValue @@ Random.randomBytes(size)
 
+  val serializer = new BatchAVLProverSerializer[D, HF]
+
+  def slice(tree: BatchAVLProver[D, HF]) = serializer.slice(tree, tree.rootNodeHeight / 2)
+
   private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[D, HF] = {
     val prover = new BatchAVLProver[D, HF](KL, None)
     val keyValues = (0 until size) map { i =>
@@ -40,8 +44,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
         val tree = generateProver(treeSize)
         val height = tree.rootNodeHeight
         val digest = tree.digest
-        val serializer = new BatchAVLProverSerializer[D, HF]
-        val sliced = serializer.slice(tree)
+        val sliced = slice(tree)
 
         val manifestLeftTree = leftTree(sliced._1.rootAndHeight._1)
         val subtreeLeftTree = leftTree(sliced._2.head.subtreeTop)
@@ -63,7 +66,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
       val kl = tree.keyLength
       val digest = tree.digest
 
-      val sliced = serializer.slice(tree)
+      val sliced = slice(tree)
 
       val manifestBytes = serializer.manifestToBytes(sliced._1)
       val subtreeBytes = sliced._2.map(t => serializer.subtreeToBytes(t))
@@ -87,7 +90,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
       val digest = tree.digest
-      val sliced = serializer.slice(tree)
+      val sliced = slice(tree)
 
       val manifest = sliced._1
       val manifestBytes = serializer.manifestToBytes(manifest)
@@ -99,8 +102,8 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
   property("wrong manifest") {
     val tree = generateProver()
-    val serializer = new BatchAVLProverSerializer[D, HF]
-    val sliced = serializer.slice(tree)
+    println("h: " + tree.rootNodeHeight)
+    val sliced = slice(tree)
     val manifest = sliced._1
     val wrongManifest: BatchAVLProverManifest[D] =
       BatchAVLProverManifest(manifest.rootAndHeight._1 -> (manifest.rootAndHeight._2 + 1))

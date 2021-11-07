@@ -13,8 +13,6 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
 
   type SlicedTree = (BatchAVLProverManifest[D], Seq[BatchAVLProverSubtree[D]])
 
-  def slice(tree: BatchAVLProver[D, HF]): SlicedTree = slice(tree, tree.rootNodeHeight / 2)
-
   /**
     * Slice AVL tree to top subtree tree (BatchAVLProverManifest) and
     * bottom subtrees (BatchAVLProverSubtree) with height `subtreeDepth`
