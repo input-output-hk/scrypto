@@ -22,7 +22,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
   def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
 
-  def randomValue(size: Int = 32): ADValue = ADValue @@ Random.randomBytes(size)
+  def randomValue(size: Int = 64): ADValue = ADValue @@ Random.randomBytes(size)
 
   private def generateProver(size: Int = InitialTreeSize): BatchAVLProver[D, HF] = {
     val prover = new BatchAVLProver[D, HF](KL, None)
@@ -49,8 +49,9 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
         manifestLeftTree.length should be < height
         manifestLeftTree.last.asInstanceOf[ProxyInternalNode[D]].leftLabel shouldEqual subtreeLeftTree.head.label
 
-        val recovered = serializer.combine(sliced).get
+        val recovered = serializer.combine(sliced, tree.keyLength, tree.valueLengthOpt).get
         recovered.digest shouldEqual digest
+        recovered.rootNodeHeight shouldEqual height
       }
     }
   }
@@ -67,14 +68,14 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
       val manifestBytes = serializer.manifestToBytes(sliced._1)
       val subtreeBytes = sliced._2.map(t => serializer.subtreeToBytes(t))
 
-      val recoveredManifest = serializer.manifestFromBytes(manifestBytes).get
+      val recoveredManifest = serializer.manifestFromBytes(manifestBytes, tree.keyLength).get
       val recoveredSubtrees = subtreeBytes.map(b => serializer.subtreeFromBytes(b, kl).get)
 
       val subtreeBytes2 = recoveredSubtrees.map(t => serializer.subtreeToBytes(t))
       subtreeBytes.flatten shouldEqual subtreeBytes2.flatten
 
       val recoveredSliced = (recoveredManifest, recoveredSubtrees)
-      val recovered = serializer.combine(recoveredSliced).get
+      val recovered = serializer.combine(recoveredSliced, tree.keyLength, tree.valueLengthOpt).get
 
       recovered.digest shouldEqual digest
     }
@@ -90,7 +91,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
       val manifest = sliced._1
       val manifestBytes = serializer.manifestToBytes(manifest)
-      val deserializedManifest = serializer.manifestFromBytes(manifestBytes).get
+      val deserializedManifest = serializer.manifestFromBytes(manifestBytes, kl).get
 
       deserializedManifest.rootAndHeight._1.label shouldBe manifest.rootAndHeight._1.label
     }
@@ -100,10 +101,12 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     val tree = generateProver()
     val serializer = new BatchAVLProverSerializer[D, HF]
     val sliced = serializer.slice(tree)
-    val wrongManifest: BatchAVLProverManifest[D] = sliced._1.copy(valueLengthOpt = Some(-2))
+    val manifest = sliced._1
+    val wrongManifest: BatchAVLProverManifest[D] =
+      BatchAVLProverManifest(manifest.rootAndHeight._1 -> (manifest.rootAndHeight._2 + 1))
 
     val manifestBytes = serializer.manifestToBytes(wrongManifest)
-    serializer.manifestFromBytes(manifestBytes).isFailure shouldBe true
+    serializer.manifestFromBytes(manifestBytes, tree.keyLength).isFailure shouldBe true
   }
 
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {

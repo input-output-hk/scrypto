@@ -45,16 +45,18 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
       }
 
       val subtrees = getSubtrees(tn.left, height - 1, rootProxyNode) ++ getSubtrees(tn.right, height - 1, rootProxyNode)
-      val manifest = BatchAVLProverManifest[D](tree.keyLength, tree.valueLengthOpt, (rootProxyNode, height))
+      val manifest = BatchAVLProverManifest[D]((rootProxyNode, height))
       (manifest, subtrees)
     case l: ProverLeaf[D] =>
-      (BatchAVLProverManifest[D](tree.keyLength, tree.valueLengthOpt, (l, tree.rootNodeHeight)), Seq.empty)
+      (BatchAVLProverManifest[D]((l, tree.rootNodeHeight)), Seq.empty)
   }
 
   /**
     * Combine tree pieces into one big tree
     */
-  def combine(sliced: SlicedTree): Try[BatchAVLProver[D, HF]] = Try {
+  def combine(sliced: SlicedTree,
+              keyLength: Int,
+              valueLengthOpt: Option[Int]): Try[BatchAVLProver[D, HF]] = Try {
     sliced._1.rootAndHeight._1 match {
       case tn: InternalProverNode[D] =>
         def mutateLoop(n: ProverNodes[D]): Unit = n match {
@@ -70,28 +72,24 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         }
 
         mutateLoop(tn)
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
+        new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(sliced._1.rootAndHeight))
       case _: ProverLeaf[D] =>
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
+        new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(sliced._1.rootAndHeight))
     }
   }
 
   def manifestToBytes(manifest: BatchAVLProverManifest[D]): Array[Byte] = {
-    Bytes.concat(Ints.toByteArray(manifest.keyLength),
-      Ints.toByteArray(manifest.valueLengthOpt.getOrElse(-1)),
+    Bytes.concat(
       Ints.toByteArray(manifest.rootAndHeight._2),
       nodesToBytes(manifest.rootAndHeight._1)
     )
   }
 
-  def manifestFromBytes(bytes: Array[Byte]): Try[BatchAVLProverManifest[D]] = Try {
-    val keyLength = Ints.fromByteArray(bytes.slice(0, 4))
-    val valueLength = Ints.fromByteArray(bytes.slice(4, 8))
-    if (valueLength < -1) throw new Error(s"Wrong valueLength: $valueLength")
-    val valueLengthOpt = if (valueLength == -1) None else Some(valueLength)
-    val oldHeight = Ints.fromByteArray(bytes.slice(8, 12))
-    val oldTop = nodesFromBytes(bytes.slice(12, bytes.length), keyLength).get
-    BatchAVLProverManifest[D](keyLength, valueLengthOpt, (oldTop, oldHeight))
+  def manifestFromBytes(bytes: Array[Byte],
+                        keyLength: Int): Try[BatchAVLProverManifest[D]] = Try {
+    val oldHeight = Ints.fromByteArray(bytes.slice(0, 4))
+    val oldTop = nodesFromBytes(bytes.slice(4, bytes.length), keyLength).get
+    BatchAVLProverManifest[D]((oldTop, oldHeight))
   }
 
   def subtreeToBytes(t: BatchAVLProverSubtree[D]): Array[Byte] = nodesToBytes(t.subtreeTop)
