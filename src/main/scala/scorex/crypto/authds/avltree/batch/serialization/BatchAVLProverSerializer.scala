@@ -60,8 +60,8 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
 
         def mutateLoop(n: ProverNodes[D]): Unit = n match {
           case n: ProxyInternalNode[D] if n.isEmpty =>
-            val left = sliced._2.find(_.subtreeTop.label sameElements n.leftLabel).get.subtreeTop
-            val right = sliced._2.find(_.subtreeTop.label sameElements n.rightLabel).get.subtreeTop
+            val left = sliced._2.find(_.id sameElements n.leftLabel).get.subtreeTop
+            val right = sliced._2.find(_.id sameElements n.rightLabel).get.subtreeTop
             n.setChild(left)
             n.setChild(right)
           case n: InternalProverNode[D] =>
