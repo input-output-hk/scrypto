@@ -31,15 +31,15 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         currentNode match {
           case n: InternalProverNode[D] if currentHeight > subtreeDepth =>
             val nextParent = ProxyInternalNode(n)
-            parent.mutate(nextParent)
+            parent.setChild(nextParent)
             val leftSubtrees = getSubtrees(n.left, currentHeight - 1, nextParent)
             val rightSubtrees = getSubtrees(n.right, currentHeight - 1, nextParent)
             leftSubtrees ++ rightSubtrees
           case n: InternalProverNode[D] =>
-            parent.mutate(ProxyInternalNode(n))
+            parent.setChild(ProxyInternalNode(n))
             Seq(BatchAVLProverSubtree(n.left), BatchAVLProverSubtree(n.right))
           case l: ProverLeaf[D] =>
-            parent.mutate(l)
+            parent.setChild(l)
             Seq(BatchAVLProverSubtree(l))
         }
       }
@@ -59,12 +59,13 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
               valueLengthOpt: Option[Int]): Try[BatchAVLProver[D, HF]] = Try {
     sliced._1.rootAndHeight._1 match {
       case tn: InternalProverNode[D] =>
+
         def mutateLoop(n: ProverNodes[D]): Unit = n match {
           case n: ProxyInternalNode[D] if n.isEmpty =>
             val left = sliced._2.find(_.subtreeTop.label sameElements n.leftLabel).get.subtreeTop
             val right = sliced._2.find(_.subtreeTop.label sameElements n.rightLabel).get.subtreeTop
-            n.mutate(left)
-            n.mutate(right)
+            n.setChild(left)
+            n.setChild(right)
           case n: InternalProverNode[D] =>
             mutateLoop(n.left)
             mutateLoop(n.right)
