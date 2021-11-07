@@ -1,5 +1,6 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
+import scorex.crypto.authds.avltree.batch.InternalNode.InternalNodePrefix
 import scorex.crypto.authds.avltree.batch.{InternalProverNode, ProverNodes}
 import scorex.crypto.authds.{ADKey, Balance}
 import scorex.crypto.hash.{CryptographicHash, Digest}
@@ -12,7 +13,7 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
                                     (implicit val phf: CryptographicHash[D])
   extends InternalProverNode(k = pk, l = null, r = null, b = pb)(phf) {
 
-  override def computeLabel: D = hf.prefixedHash(1: Byte, Array(b), leftLabel, rightLabel)
+  override def computeLabel: D = hf.hash(Array(InternalNodePrefix, b), leftLabel, rightLabel)
 
   override def label: D = if (isEmpty) selfLabelOpt.getOrElse(computeLabel) else super.label
 
