@@ -40,12 +40,12 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
   }
 
   /**
-    * Build compact batch Merkle proof by indexes
+    * Build compact batch Merkle proof by indices
     *
     * @param indices - leaf indices
     * @return Optional BatchMerkleProof
     */
-  def proofByIndexes(indices: Seq[Int])(implicit hf: CryptographicHash[D]): Option[BatchMerkleProof[D]] = {
+  def proofByIndices(indices: Seq[Int])(implicit hf: CryptographicHash[D]): Option[BatchMerkleProof[D]] = {
 
     /**
       * Recursive function to build the multiproof
@@ -76,7 +76,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
       val dif = b_flat diff a
       var m = dif.map(i => {
         val side = if (i % 2 == 0) MerkleProof.LeftSide else MerkleProof.RightSide
-        (l.apply(i), side)
+        (l.lift(i).getOrElse(EmptyNode[D].hash), side)
       })
 
       //  Take all the even numbers from B_pruned, and divide them by two
@@ -94,9 +94,15 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
       }
       m
     }
-    val hashes: Seq[Digest] = elementsHashIndex.toSeq.sortBy(_._2).map(_._1.toArray.asInstanceOf[Digest])
-    val multiproof = loop(indices, hashes)
-    Some(BatchMerkleProof(indices zip (indices map hashes.apply), multiproof))
+
+    if (indices.forall(index => index >= 0 && index < length)) {
+      val hashes: Seq[Digest] = elementsHashIndex.toSeq.sortBy(_._2).map(_._1.toArray.asInstanceOf[Digest])
+      val normalized_indices = indices.distinct.sorted
+      val multiproof = loop(normalized_indices, hashes)
+      Some(BatchMerkleProof(normalized_indices zip (normalized_indices map hashes.apply), multiproof))
+    } else {
+      None
+    }
   }
 
   lazy val lengthWithEmptyLeafs: Int = {
@@ -109,7 +115,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
   override lazy val toString: String = {
     def loop(nodes: Seq[Node[D]], level: Int, acc: String): String = {
       if (nodes.nonEmpty) {
-        val thisLevStr = s"Level $level: " + nodes.map(_.toString).mkString(",") + "\n"
+        val thisLevStr = s"Level $level: " + nodes.map(_.hash.toList).map(_.toString).mkString(",") + "\n"
         val nextLevNodes = nodes.flatMap {
           case i: InternalNode[D] => Seq(i.left, i.right)
           case _ => Seq()

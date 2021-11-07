@@ -4,9 +4,11 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.LeafData
-import scorex.crypto.authds.merkle.MerkleTree.LeafPrefix
-import scorex.crypto.hash.Keccak256
+import scorex.crypto.authds.{EmptyByteArray, LeafData}
+import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
+import scorex.crypto.hash.{Digest, Keccak256}
+
+import scala.util.Random
 
 class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with Matchers with TestingCommons {
   implicit val hf = Keccak256
@@ -47,16 +49,36 @@ class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyC
     }
   }
 
-  property("Batch proof generation by indexes") {
+  property("Batch proof generation by indices") {
     forAll(smallInt) { N: Int =>
-      whenever(N == 16) {
+      whenever(N > 0) {
         val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
         val tree = MerkleTree(d)
-        val l = Leaf(d.apply(2)).hash
-        val r = Leaf(d.apply(3)).hash
-        tree.proofByIndexes(Seq(2,3,8,13)).get.valid(tree.rootHash) shouldBe true
+        val randIndices = (0 until Random.between(1, N + 1))
+          .map(_ => Random.between(0, N))
+          .distinct
+          .sorted
+        tree.proofByIndices(randIndices).get.valid(tree.rootHash) shouldBe true
       }
     }
+  }
+
+  property("Batch proof generation by duplicated indices") {
+    val d = (0 until 10).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+    val tree = MerkleTree(d)
+    tree.proofByIndices(Seq(2,2,2,3,6,6,8,9,9)).get.valid(tree.rootHash) shouldBe true
+  }
+
+  property("Batch proof generation by negative indices") {
+    val d = (0 until 5).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+    val tree = MerkleTree(d)
+    tree.proofByIndices(Seq(-1,2)) shouldBe None
+  }
+
+  property("Batch proof generation by oob indices") {
+    val d = (0 until 5).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+    val tree = MerkleTree(d)
+    tree.proofByIndices(Seq(2,10)) shouldBe None
   }
 
   property("Tree creation from 0 elements") {

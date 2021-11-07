@@ -7,7 +7,14 @@ import scorex.util.ScorexEncoding
 
 import scala.language.postfixOps
 
-case class BatchMerkleProof[D <: Digest](indexes: Seq[(Int, Digest)], proofs: Seq[(Digest, Side)])
+  /**
+    * Implementation is based on Compact Merkle Multiproofs by Lum Ramabaja
+    * Retrieved from https://deepai.org/publication/compact-merkle-multiproofs
+    *
+    * @param indices - leaf indices used to build the proof
+    * @param proofs - hash and side of nodes in the proof
+    */
+case class BatchMerkleProof[D <: Digest](indices: Seq[(Int, Digest)], proofs: Seq[(Digest, Side)])
                                         (implicit val hf: CryptographicHash[D]) extends ScorexEncoding {
 
   /**
@@ -40,7 +47,7 @@ case class BatchMerkleProof[D <: Digest](indexes: Seq[(Int, Digest)], proofs: Se
         })
 
       // B will always have the same size as E
-      assert(e.size == b.size);
+      assert(e.size == b.size)
 
       var a_new: Seq[Int] = Seq.empty
       var e_new: Seq[Digest] = Seq.empty
@@ -76,13 +83,13 @@ case class BatchMerkleProof[D <: Digest](indexes: Seq[(Int, Digest)], proofs: Se
       a_new = b.distinct.map(_._1 / 2)
 
       // Repeat until the root of the tree is reached (M has no more elements)
-      if (e_new.size > 1) {
+      if (m_new.nonEmpty || e_new.size > 1) {
         e_new = loop(a_new, a_new zip e_new, m_new)
       }
       e_new
     }
 
-    val e = indexes sortBy(_._1)
-    loop(indexes.map(_._1), e, proofs).head.sameElements(expectedRootHash)
+    val e = indices sortBy(_._1)
+    loop(indices.map(_._1), e, proofs).head.sameElements(expectedRootHash)
   }
 }
