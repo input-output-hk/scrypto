@@ -11,4 +11,7 @@ case class BatchAVLProverSubtree[D <: Digest](subtreeTop: ProverNodes[D]) {
     * Unique (and cryptographically strong) identifier of the sub-tree
     */
   def id: D = subtreeTop.label
+
+  def verify: Boolean = true
+
 }

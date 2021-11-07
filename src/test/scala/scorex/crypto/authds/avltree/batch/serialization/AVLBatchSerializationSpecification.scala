@@ -46,7 +46,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
         val digest = tree.digest
         val sliced = slice(tree)
 
-        val manifestLeftTree = leftTree(sliced._1.rootAndHeight._1)
+        val manifestLeftTree = leftTree(sliced._1.root)
         val subtreeLeftTree = leftTree(sliced._2.head.subtreeTop)
 
         manifestLeftTree.length should be < height
@@ -96,7 +96,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
       val manifestBytes = serializer.manifestToBytes(manifest)
       val deserializedManifest = serializer.manifestFromBytes(manifestBytes, kl).get
 
-      deserializedManifest.rootAndHeight._1.label shouldBe manifest.rootAndHeight._1.label
+      deserializedManifest.root.label shouldBe manifest.root.label
     }
   }
 
@@ -107,7 +107,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     val manifest = sliced._1
     println("manifest: " + manifest)
     val wrongManifest: BatchAVLProverManifest[D] =
-      BatchAVLProverManifest(manifest.rootAndHeight._1 -> (manifest.rootAndHeight._2 + 1))
+      BatchAVLProverManifest(manifest.root, manifest.rootHeight + 1)
 
     val manifestBytes = serializer.manifestToBytes(wrongManifest)
     println("mb: " + manifestBytes.size)
