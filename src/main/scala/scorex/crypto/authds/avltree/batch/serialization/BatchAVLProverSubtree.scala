@@ -12,6 +12,8 @@ case class BatchAVLProverSubtree[D <: Digest](subtreeTop: ProverNodes[D]) {
     */
   def id: D = subtreeTop.label
 
-  def verify: Boolean = true
+  def verify(expectedDigest: D): Boolean = {
+    subtreeTop.label.sameElements(expectedDigest)
+  }
 
 }

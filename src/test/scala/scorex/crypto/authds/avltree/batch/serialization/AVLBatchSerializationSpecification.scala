@@ -6,7 +6,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.hash.{Blake2b256, _}
-import scorex.utils.Random
+import scorex.util.encode.Base16
 
 class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
 
@@ -19,10 +19,6 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
   implicit val hf: HF = Blake2b256
 
   implicit def noShrink[A]: Shrink[A] = Shrink(_ => Stream.empty)
-
-  def randomKey(size: Int = 32): ADKey = ADKey @@ Random.randomBytes(size)
-
-  def randomValue(size: Int = 64): ADValue = ADValue @@ Random.randomBytes(size)
 
   val serializer = new BatchAVLProverSerializer[D, HF]
 
@@ -102,23 +98,31 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
   property("wrong manifest") {
     val tree = generateProver()
-    println("h: " + tree.rootNodeHeight)
     val sliced = slice(tree)
     val manifest = sliced._1
-    println("manifest: " + manifest)
-    val wrongManifest: BatchAVLProverManifest[D] =
-      BatchAVLProverManifest(manifest.root, manifest.rootHeight + 1)
 
-    val manifestBytes = serializer.manifestToBytes(wrongManifest)
-    println("mb: " + manifestBytes.size)
-    serializer.manifestFromBytes(manifestBytes, tree.keyLength).isFailure shouldBe true
+    val manifestBytes = serializer.manifestToBytes(manifest)
+    val idx = scala.util.Random.nextInt(manifestBytes.length)
+    println("idx: " + idx)
+    println("before: " + manifestBytes.hashCode())
+    println("before b: " + manifestBytes(idx))
+    val b = ((manifestBytes(idx) + 1) % Byte.MaxValue).toByte
+    manifestBytes(idx) = b
+    println("after b: " + manifestBytes(idx))
+    println("after: " + manifestBytes.hashCode())
+
+    val serTry = serializer.manifestFromBytes(manifestBytes, tree.keyLength)
+    println("eq: " + (manifest == serTry.get))
+    serTry.isSuccess || serTry.get.verify(manifest.root.label) shouldBe false
   }
 
-  property("verify manifest") {
+  property("verify manifest and subtrees") {
     val tree = generateProver()
     val sliced = slice(tree)
     val manifest = sliced._1
     manifest.verify(tree.topNode.label) shouldBe true
+    val subtrees = sliced._2
+    subtrees.forall(st => st.verify(st.id)) shouldBe true
   }
 
   property("subtreesIds for manifest") {
@@ -132,6 +136,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     manSubtrees.foreach{digest =>
       subtrees.exists(_.id.sameElements(digest)) shouldBe true
     }
+    manSubtrees.map(Base16.encode).distinct.size shouldBe manSubtrees.size
   }
 
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {
