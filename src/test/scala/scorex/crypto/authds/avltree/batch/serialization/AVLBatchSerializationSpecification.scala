@@ -7,6 +7,7 @@ import scorex.crypto.authds.avltree.batch._
 import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
 import scorex.crypto.hash.{Blake2b256, _}
 import scorex.util.encode.Base16
+import scala.util.Random
 
 class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
 
@@ -96,31 +97,37 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     }
   }
 
-  property("wrong manifest") {
+  property("wrong manifest & subtree bytes") {
     val tree = generateProver()
     val sliced = slice(tree)
     val manifest = sliced._1
 
-    val manifestBytes = serializer.manifestToBytes(manifest)
-    val idx = scala.util.Random.nextInt(manifestBytes.length)
-    println("idx: " + idx)
-    println("before: " + manifestBytes.hashCode())
-    println("before b: " + manifestBytes(idx))
-    val b = ((manifestBytes(idx) + 1) % Byte.MaxValue).toByte
-    manifestBytes(idx) = b
-    println("after b: " + manifestBytes(idx))
-    println("after: " + manifestBytes.hashCode())
+    val subtreeId = manifest.subtreesIds(Random.nextInt(manifest.subtreesIds.size))
 
-    val serTry = serializer.manifestFromBytes(manifestBytes, tree.keyLength)
-    println("eq: " + (manifest == serTry.get))
-    serTry.isSuccess || serTry.get.verify(manifest.root.label) shouldBe false
+    val manifestBytes = serializer.manifestToBytes(manifest)
+    val idx = manifestBytes.indexOfSlice(subtreeId)
+    manifestBytes(idx) = ((manifestBytes(idx) + 1) % Byte.MaxValue).toByte
+
+    // whether manifest deserialization or follow-up verification must fail
+    serializer.manifestFromBytes(manifestBytes, tree.keyLength)
+      .get
+      .verify(manifest.id, manifest.rootHeight) shouldBe false
+
+    val subtree = sliced._2.head
+    val subtreeBytes = serializer.subtreeToBytes(subtree)
+    val value = subtree.leafValues.head
+    val idx2 = subtreeBytes.indexOfSlice(value)
+    subtreeBytes(idx2) = ((subtreeBytes(idx2) + 1) % Byte.MaxValue).toByte
+    serializer.subtreeFromBytes(subtreeBytes, tree.keyLength)
+      .get
+      .verify(subtree.id) shouldBe false
   }
 
   property("verify manifest and subtrees") {
     val tree = generateProver()
     val sliced = slice(tree)
     val manifest = sliced._1
-    manifest.verify(tree.topNode.label) shouldBe true
+    manifest.verify(tree.topNode.label, tree.rootNodeHeight) shouldBe true
     val subtrees = sliced._2
     subtrees.forall(st => st.verify(st.id)) shouldBe true
   }

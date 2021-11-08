@@ -11,8 +11,10 @@ import scala.collection.mutable
   */
 case class BatchAVLProverManifest[D <: Digest](root: ProverNodes[D], rootHeight: Int) {
 
-  def verify(expectedDigest: D): Boolean = {
-    root.label.sameElements(expectedDigest)
+  def id: D = root.label
+
+  def verify(expectedDigest: D, expectedHeight: Int): Boolean = {
+    id.sameElements(expectedDigest) && expectedHeight == rootHeight
   }
 
   def subtreesIds: mutable.Buffer[D] = {
