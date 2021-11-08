@@ -107,11 +107,9 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     val manifestBytes = serializer.manifestToBytes(manifest)
     val idx = manifestBytes.indexOfSlice(subtreeId)
     manifestBytes(idx) = ((manifestBytes(idx) + 1) % Byte.MaxValue).toByte
+    val wrongManifest = serializer.manifestFromBytes(manifestBytes, tree.keyLength).get
 
-    // whether manifest deserialization or follow-up verification must fail
-    serializer.manifestFromBytes(manifestBytes, tree.keyLength)
-      .get
-      .verify(manifest.id, manifest.rootHeight) shouldBe false
+    wrongManifest.verify(manifest.root.label, manifest.rootHeight) shouldBe false
 
     val subtree = sliced._2.head
     val subtreeBytes = serializer.subtreeToBytes(subtree)
