@@ -20,12 +20,17 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
     hf.hash(Array(InternalNodePrefix, b), leftLabel, rightLabel)
   }
 
-  override def label: D = if (isEmpty) {
-    val l = selfLabelOpt.getOrElse(computeLabel)
-    labelOpt = Some(l)
-    l
-  } else {
-    super.label
+  /**
+    * Get digest of the node. If it was computed previously, read the digest from hash, otherwise,
+    * take externally provided label or compute if not provided.
+    */
+  override def label: D = labelOpt match {
+    case Some(l) =>
+      l
+    case None =>
+      val l = selfLabelOpt.getOrElse(computeLabel)
+      labelOpt = Some(l)
+      l
   }
 
   private[serialization] def setChild(n: ProverNodes[D]): Unit = {
