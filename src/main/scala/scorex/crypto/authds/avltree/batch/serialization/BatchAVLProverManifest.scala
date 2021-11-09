@@ -7,16 +7,27 @@ import scala.collection.mutable
 
 
 /**
-  * Top subtree of AVL tree, starting from root node and ending with ProxyInternalNode
+  * A subtree of AVL tree, which is starting from root node and ending at certain depth with nodes
+  * having no children (ProxyInternalNode). The manifest commits to subtrees below the depth.
   */
 case class BatchAVLProverManifest[D <: Digest](root: ProverNodes[D], rootHeight: Int) {
 
+  /**
+    * Unique (and cryptographically strong) identifier of the manifest (digest of the root node)
+    */
   def id: D = root.label
 
+  /**
+    * Verify that manifest corresponds to expected digest and height provided by a trusted party
+    * (for blockchain protocols, it can be digest and height included by a miner)
+    */
   def verify(expectedDigest: D, expectedHeight: Int): Boolean = {
     id.sameElements(expectedDigest) && expectedHeight == rootHeight
   }
 
+  /**
+    * Identifiers (digests) of subtrees below the manifest
+    */
   def subtreesIds: mutable.Buffer[D] = {
     def idCollector(node: ProverNodes[D], acc: mutable.Buffer[D]): mutable.Buffer[D] = {
       node match {

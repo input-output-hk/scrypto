@@ -5,6 +5,9 @@ import scorex.crypto.authds.avltree.batch.{InternalProverNode, ProverNodes}
 import scorex.crypto.authds.{ADKey, Balance}
 import scorex.crypto.hash.{CryptographicHash, Digest}
 
+/**
+  * Internal node for which not children are stored but just their digests
+  */
 class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
                                      val selfLabelOpt: Option[D],
                                      val leftLabel: D,
@@ -25,7 +28,7 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
     super.label
   }
 
-  def setChild(n: ProverNodes[D]): Unit = {
+  private[serialization] def setChild(n: ProverNodes[D]): Unit = {
     if (n.label sameElements leftLabel) {
       l = n
     } else if (n.label sameElements rightLabel) {
