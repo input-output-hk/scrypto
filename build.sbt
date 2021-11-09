@@ -1,16 +1,14 @@
 import sbt.Keys.{homepage, scalaVersion}
 
-import scala.util.Try
-
 name := "scrypto"
 description := "Cryptographic primitives for Scala"
 
-lazy val scala212 = "2.12.12"
+lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
-lazy val scala213 = "2.13.3"
+lazy val scala213 = "2.13.7"
 
 crossScalaVersions := Seq(scala212, scala211, scala213)
-scalaVersion := scala213
+scalaVersion := scala212
 
 javacOptions ++=
   "-source" :: "1.8" ::

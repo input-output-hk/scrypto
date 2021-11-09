@@ -11,4 +11,5 @@ package object encode {
   val Base58 = scorex.util.encode.Base58
   @deprecated("Use scorex.util.encode.Base64 instead.", "scorex-util 0.1.1")
   val Base64 = scorex.util.encode.Base64
+
 }
