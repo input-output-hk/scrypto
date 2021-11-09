@@ -148,7 +148,6 @@ object MerkleTree {
     val elementsIndex: Map[mutable.WrappedArray.ofByte, Int] = leafs.indices.map { i =>
       (new mutable.WrappedArray.ofByte(leafs(i).hash), i)
     }.toMap
-    val hashes = leafs.map(_.hash)
     val topNode = calcTopNode[D](leafs)
 
     MerkleTree(topNode, elementsIndex)
