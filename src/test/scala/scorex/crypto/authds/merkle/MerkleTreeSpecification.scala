@@ -50,12 +50,13 @@ class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyC
   }
 
   property("Batch proof generation by indices") {
+    val r = new Random()
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
         val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
         val tree = MerkleTree(d)
-        val randIndices = (0 until Random.between(1, N + 1))
-          .map(_ => Random.between(0, N))
+        val randIndices = (0 until r.nextInt(N + 1) + 1)
+          .map(_ => r.nextInt(N))
           .distinct
           .sorted
         tree.proofByIndices(randIndices).get.valid(tree.rootHash) shouldBe true
