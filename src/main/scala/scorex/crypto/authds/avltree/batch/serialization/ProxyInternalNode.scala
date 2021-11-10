@@ -9,7 +9,6 @@ import scorex.crypto.hash.{CryptographicHash, Digest}
   * Internal node for which not children are stored but just their digests
   */
 class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
-                                     val selfLabelOpt: Option[D],
                                      val leftLabel: D,
                                      val rightLabel: D,
                                      protected var pb: Balance)
@@ -18,19 +17,6 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
 
   override def computeLabel: D = {
     hf.hash(Array(InternalNodePrefix, b), leftLabel, rightLabel)
-  }
-
-  /**
-    * Get digest of the node. If it was computed previously, read the digest from hash, otherwise,
-    * take externally provided label or compute if not provided.
-    */
-  override def label: D = labelOpt match {
-    case Some(l) =>
-      l
-    case None =>
-      val l = selfLabelOpt.getOrElse(computeLabel)
-      labelOpt = Some(l)
-      l
   }
 
   private[serialization] def setChild(n: ProverNodes[D]): Unit = {
@@ -53,6 +39,6 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
 
 object ProxyInternalNode {
   def apply[D <: Digest](node: InternalProverNode[D])(implicit phf: CryptographicHash[D]): ProxyInternalNode[D] = {
-    new ProxyInternalNode[D](node.key, Some(node.label), node.left.label, node.right.label, node.balance)
+    new ProxyInternalNode[D](node.key, node.left.label, node.right.label, node.balance)
   }
 }

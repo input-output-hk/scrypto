@@ -11,6 +11,9 @@ sealed trait Node[D <: Digest] extends ToStringHelper {
 
   protected var labelOpt: Option[D] = None
 
+  /**
+    * Get digest of the node. If it was computed previously, read the digest from hash, otherwise, compute it.
+    */
   def label: D = labelOpt match {
     case None =>
       val l = computeLabel

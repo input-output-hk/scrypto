@@ -134,7 +134,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val key = ADKey @@ bytes.slice(2, keyLength + 2)
         val leftLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2, keyLength + 2 + labelLength)).get
         val rightLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2 + labelLength, keyLength + 2 + 2 * labelLength)).get
-        new ProxyInternalNode[D](key, None, leftLabel, rightLabel, balance)
+        new ProxyInternalNode[D](key, leftLabel, rightLabel, balance)
       case _ =>
         ???
     }
