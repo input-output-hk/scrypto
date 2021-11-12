@@ -13,8 +13,6 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
 
   type SlicedTree = (BatchAVLProverManifest[D], Seq[BatchAVLProverSubtree[D]])
 
-  def slice(tree: BatchAVLProver[D, HF]): SlicedTree = slice(tree, tree.rootNodeHeight / 2)
-
   /**
     * Slice AVL tree to top subtree tree (BatchAVLProverManifest) and
     * bottom subtrees (BatchAVLProverSubtree) with height `subtreeDepth`
@@ -31,38 +29,43 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         currentNode match {
           case n: InternalProverNode[D] if currentHeight > subtreeDepth =>
             val nextParent = ProxyInternalNode(n)
-            parent.mutate(nextParent)
+            parent.setChild(nextParent)
             val leftSubtrees = getSubtrees(n.left, currentHeight - 1, nextParent)
             val rightSubtrees = getSubtrees(n.right, currentHeight - 1, nextParent)
             leftSubtrees ++ rightSubtrees
           case n: InternalProverNode[D] =>
-            parent.mutate(ProxyInternalNode(n))
+            parent.setChild(ProxyInternalNode(n))
             Seq(BatchAVLProverSubtree(n.left), BatchAVLProverSubtree(n.right))
           case l: ProverLeaf[D] =>
-            parent.mutate(l)
+            parent.setChild(l)
             Seq(BatchAVLProverSubtree(l))
         }
       }
 
       val subtrees = getSubtrees(tn.left, height - 1, rootProxyNode) ++ getSubtrees(tn.right, height - 1, rootProxyNode)
-      val manifest = BatchAVLProverManifest[D](tree.keyLength, tree.valueLengthOpt, (rootProxyNode, height))
+      val manifest = BatchAVLProverManifest[D](rootProxyNode, height)
       (manifest, subtrees)
     case l: ProverLeaf[D] =>
-      (BatchAVLProverManifest[D](tree.keyLength, tree.valueLengthOpt, (l, tree.rootNodeHeight)), Seq.empty)
+      (BatchAVLProverManifest[D](l, tree.rootNodeHeight), Seq.empty)
   }
 
   /**
     * Combine tree pieces into one big tree
     */
-  def combine(sliced: SlicedTree): Try[BatchAVLProver[D, HF]] = Try {
-    sliced._1.rootAndHeight._1 match {
+  def combine(sliced: SlicedTree,
+              keyLength: Int,
+              valueLengthOpt: Option[Int]): Try[BatchAVLProver[D, HF]] = Try {
+    val manifest = sliced._1
+    manifest.root match {
       case tn: InternalProverNode[D] =>
+
+        // manifest being mutated here
         def mutateLoop(n: ProverNodes[D]): Unit = n match {
           case n: ProxyInternalNode[D] if n.isEmpty =>
-            val left = sliced._2.find(_.subtreeTop.label sameElements n.leftLabel).get.subtreeTop
-            val right = sliced._2.find(_.subtreeTop.label sameElements n.rightLabel).get.subtreeTop
-            n.mutate(left)
-            n.mutate(right)
+            val left = sliced._2.find(_.id sameElements n.leftLabel).get.subtreeTop
+            val right = sliced._2.find(_.id sameElements n.rightLabel).get.subtreeTop
+            n.setChild(left)
+            n.setChild(right)
           case n: InternalProverNode[D] =>
             mutateLoop(n.left)
             mutateLoop(n.right)
@@ -70,28 +73,24 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         }
 
         mutateLoop(tn)
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
       case _: ProverLeaf[D] =>
-        new BatchAVLProver[D, HF](sliced._1.keyLength, sliced._1.valueLengthOpt, Some(sliced._1.rootAndHeight))
     }
+
+    new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(manifest.root -> manifest.rootHeight))
   }
 
   def manifestToBytes(manifest: BatchAVLProverManifest[D]): Array[Byte] = {
-    Bytes.concat(Ints.toByteArray(manifest.keyLength),
-      Ints.toByteArray(manifest.valueLengthOpt.getOrElse(-1)),
-      Ints.toByteArray(manifest.rootAndHeight._2),
-      nodesToBytes(manifest.rootAndHeight._1)
+    Bytes.concat(
+      Ints.toByteArray(manifest.rootHeight),
+      nodesToBytes(manifest.root)
     )
   }
 
-  def manifestFromBytes(bytes: Array[Byte]): Try[BatchAVLProverManifest[D]] = Try {
-    val keyLength = Ints.fromByteArray(bytes.slice(0, 4))
-    val valueLength = Ints.fromByteArray(bytes.slice(4, 8))
-    if (valueLength < -1) throw new Error(s"Wrong valueLength: $valueLength")
-    val valueLengthOpt = if (valueLength == -1) None else Some(valueLength)
-    val oldHeight = Ints.fromByteArray(bytes.slice(8, 12))
-    val oldTop = nodesFromBytes(bytes.slice(12, bytes.length), keyLength).get
-    BatchAVLProverManifest[D](keyLength, valueLengthOpt, (oldTop, oldHeight))
+  def manifestFromBytes(bytes: Array[Byte],
+                        keyLength: Int): Try[BatchAVLProverManifest[D]] = Try {
+    val oldHeight = Ints.fromByteArray(bytes.slice(0, 4))
+    val oldTop = nodesFromBytes(bytes.slice(4, bytes.length), keyLength).get
+    BatchAVLProverManifest[D](oldTop, oldHeight)
   }
 
   def subtreeToBytes(t: BatchAVLProverSubtree[D]): Array[Byte] = nodesToBytes(t.subtreeTop)
@@ -99,19 +98,19 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
   def subtreeFromBytes(b: Array[Byte], kl: Int): Try[BatchAVLProverSubtree[D]] = nodesFromBytes(b, kl).
     map(topNode => BatchAVLProverSubtree[D](topNode))
 
-  def nodesToBytes(obj: ProverNodes[D]): Array[Byte] = {
+  def nodesToBytes(rootNode: ProverNodes[D]): Array[Byte] = {
     def loop(currentNode: ProverNodes[D]): Array[Byte] = currentNode match {
       case l: ProverLeaf[D] =>
         Bytes.concat(Array(0.toByte), l.key, l.nextLeafKey, l.value)
       case n: ProxyInternalNode[D] if n.isEmpty =>
-        Bytes.concat(Array(2.toByte, n.balance), n.key, n.leftLabel, n.rightLabel, n.label)
+        Bytes.concat(Array(2.toByte, n.balance), n.key, n.leftLabel, n.rightLabel)
       case n: InternalProverNode[D] =>
         val leftBytes = loop(n.left)
         val rightBytes = loop(n.right)
         Bytes.concat(Array(1.toByte, n.balance), n.key, Ints.toByteArray(leftBytes.length), leftBytes, rightBytes)
     }
 
-    loop(obj)
+    loop(rootNode)
   }
 
   def nodesFromBytes(bytesIn: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
@@ -135,8 +134,7 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val key = ADKey @@ bytes.slice(2, keyLength + 2)
         val leftLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2, keyLength + 2 + labelLength)).get
         val rightLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2 + labelLength, keyLength + 2 + 2 * labelLength)).get
-        val selfLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2 + 2 * labelLength, keyLength + 2 + 3 * labelLength)).get
-        new ProxyInternalNode[D](key, Some(selfLabel), leftLabel, rightLabel, balance)
+        new ProxyInternalNode[D](key, leftLabel, rightLabel, balance)
       case _ =>
         ???
     }

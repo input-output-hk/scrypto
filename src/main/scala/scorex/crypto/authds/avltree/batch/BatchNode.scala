@@ -11,6 +11,9 @@ sealed trait Node[D <: Digest] extends ToStringHelper {
 
   protected var labelOpt: Option[D] = None
 
+  /**
+    * Get digest of the node. If it was computed previously, read the digest from hash, otherwise, compute it.
+    */
   def label: D = labelOpt match {
     case None =>
       val l = computeLabel
@@ -34,11 +37,15 @@ class LabelOnlyNode[D <: Digest](l: D) extends VerifierNodes[D] {
 }
 
 sealed trait InternalNode[D <: Digest] extends Node[D] {
+  import InternalNode.InternalNodePrefix
+
   protected var b: Balance
 
   protected val hf: CryptographicHash[D]
 
-  protected def computeLabel: D = hf.prefixedHash(1: Byte, Array(b), left.label, right.label)
+  override protected def computeLabel: D = {
+    hf.hash(Array(InternalNodePrefix, b), left.label, right.label)
+  }
 
   def balance: Balance = b
 
@@ -50,6 +57,10 @@ sealed trait InternalNode[D <: Digest] extends Node[D] {
   def getNew(newLeft: Node[D] = left, newRight: Node[D] = right, newBalance: Balance = b): InternalNode[D]
 
   def getNewKey(newKey: ADKey): InternalNode[D]
+}
+
+object InternalNode {
+  val InternalNodePrefix: Byte = 1: Byte
 }
 
 class InternalProverNode[D <: Digest](protected var k: ADKey,
@@ -120,9 +131,10 @@ class InternalVerifierNode[D <: Digest](protected var l: Node[D], protected var 
 }
 
 sealed trait Leaf[D <: Digest] extends Node[D] with KeyInVar {
+  import Leaf.LeafPrefix
+
   protected var nk: ADKey
   protected var v: ADValue
-
 
   def nextLeafKey: ADKey = nk
 
@@ -130,13 +142,20 @@ sealed trait Leaf[D <: Digest] extends Node[D] with KeyInVar {
 
   protected val hf: CryptographicHash[D] // TODO: Seems very wasteful to store hf in every node of the tree, when they are all the same. Is there a better way? Pass them in to label method from above? Same for InternalNode and for other, non-batch, trees
 
-  protected def computeLabel: D = hf.prefixedHash(0: Byte, k, v, nk)
+  protected def computeLabel: D = {
+    hf.prefixedHash(LeafPrefix, k, v, nk)
+  }
 
   def getNew(newKey: ADKey = k, newValue: ADValue = v, newNextLeafKey: ADKey = nk): Leaf[D]
 
   override def toString: String = {
     s"${arrayToString(label)}: Leaf(${arrayToString(key)}, ${arrayToString(value)}, ${arrayToString(nextLeafKey)})"
   }
+
+}
+
+object Leaf {
+  val LeafPrefix = 0: Byte
 }
 
 class VerifierLeaf[D <: Digest](protected var k: ADKey, protected var v: ADValue, protected var nk: ADKey)

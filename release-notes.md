@@ -1,3 +1,27 @@
+**2.2.0**
+---------
+
+* Rework of sliced AVL+ trees (BatchAVLProverManifest / BatchAVLProverSubtree)
+* Batch Merkle proof implementation
+* AuthenticationTreeOps.logError 
+* Scala, scorex-util, Guava, BouncyCastle dependencies updated
+* example app in SparseMarkleTree reworked into tests (#38)
+* switch from sbt-git to sbt-dynver
+* migration from Travis to GA
+
+
+**2.1.8**
+---------
+
+* Guava's comparator for byte arrays is used instead of custom old one ( #74 )
+* Scala 2.13 support ( #75 )
+
+**2.1.7**
+---------
+
+* remove logback dependency, add sbt-dependency-graph plugin
+* add git versioning, cross-build with scala 2.11, auto sonatype publishing(WIP); remove sbt-lock
+
 **2.1.6**
 ---------
 
