@@ -1,5 +1,6 @@
 package scorex.crypto.authds.merkle.serialization
 
+import org.scalatest.TryValues
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.merkle.{BatchMerkleProof, Leaf, MerkleTree}
@@ -8,7 +9,10 @@ import scorex.crypto.hash.{Digest, Digest32, Keccak256}
 
 import scala.util.Random
 
-class BatchMerkleProofSerializationSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
+class BatchMerkleProofSerializerSpecification extends AnyPropSpec
+  with ScalaCheckDrivenPropertyChecks
+  with TwoPartyTests
+  with TryValues {
 
   type D = Digest32
   type HF = Keccak256.type
@@ -17,7 +21,7 @@ class BatchMerkleProofSerializationSpecification extends AnyPropSpec with ScalaC
 
   property("Batch proof serialization + deserialization") {
     val r = new Random()
-    val serializer = new BatchMerkleProofSerialization[D]
+    val serializer = new BatchMerkleProofSerializer[D, HF]
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
         val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
@@ -26,18 +30,18 @@ class BatchMerkleProofSerializationSpecification extends AnyPropSpec with ScalaC
           .map(_ => r.nextInt(N))
           .distinct
           .sorted
+
         val compactMultiproof = tree.proofByIndices(randIndices).get
+        val serializedBytes = serializer.serialize(compactMultiproof)
+        val rebuiltMultiproof = serializer.deserialize(serializedBytes).get
 
-        val rebuiltMultiproof = BatchMerkleProof(
-          serializer.indicesFromBytes(serializer.indicesToBytes(compactMultiproof.indices)),
-          serializer.proofsFromBytes(serializer.proofsToBytes(compactMultiproof.proofs)))
-
+        serializedBytes.length shouldEqual
+          (8 + (compactMultiproof.proofs.size * 33) + (compactMultiproof.indices.size * 36))
         compactMultiproof.indices.zipWithIndex.foreach { case ((index, hash), i) =>
           val res = rebuiltMultiproof.indices.apply(i)
           index shouldEqual res._1
           hash shouldEqual res._2
         }
-
         compactMultiproof.proofs.zipWithIndex.foreach { case ((digest, side), i) =>
           val res = rebuiltMultiproof.proofs.apply(i)
           digest shouldEqual res._1
@@ -47,9 +51,21 @@ class BatchMerkleProofSerializationSpecification extends AnyPropSpec with ScalaC
     }
   }
 
+  property(testName = "empty deserialization input") {
+    val serializer = new BatchMerkleProofSerializer[D, HF]
+    val res = serializer.deserialize(scorex.utils.Random.randomBytes(2))
+    res.failure.exception should have message "Deserialization error, empty input."
+  }
+
+  property(testName = "invalid deserialization input") {
+    val serializer = new BatchMerkleProofSerializer[D, HF]
+    val res = serializer.deserialize(scorex.utils.Random.randomBytes(9))
+    res.failure.exception should have message "Deserialization error, invalid input."
+  }
+
   property("indices serialization + deserialization") {
     val r = new Random()
-    val serializer = new BatchMerkleProofSerialization[D]
+    val serializer = new BatchMerkleProofSerializer[D, HF]
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
 
@@ -74,7 +90,7 @@ class BatchMerkleProofSerializationSpecification extends AnyPropSpec with ScalaC
 
   property("proofs serialization + deserialization") {
     val r = new Random()
-    val serializer = new BatchMerkleProofSerialization[D]
+    val serializer = new BatchMerkleProofSerializer[D, HF]
     forAll(smallInt) { N: Int =>
       whenever(N > 0) {
 
