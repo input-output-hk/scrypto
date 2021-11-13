@@ -128,6 +128,8 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val rightBytes = bytes.slice(keyLength + 6 + leftLength, bytes.length)
         val left = loop(leftBytes)
         val right = loop(rightBytes)
+        val keyAsNum = BigInt(1, key)
+        require(BigInt(1, left.key) < keyAsNum && keyAsNum <= BigInt(1, right.key), s"key check fail")
         new InternalProverNode[D](key, left, right, balance)
       case 2 =>
         val balance = Balance @@ bytes.slice(1, 2).head
