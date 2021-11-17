@@ -4,6 +4,8 @@ import com.google.common.primitives.{Bytes, Ints}
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, InternalProverNode, ProverLeaf, ProverNodes}
 import scorex.crypto.authds.{ADKey, ADValue, Balance}
 import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.util.encode.Base16
+import scorex.utils.ByteArray
 
 import scala.util.Try
 
@@ -128,6 +130,11 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
         val rightBytes = bytes.slice(keyLength + 6 + leftLength, bytes.length)
         val left = loop(leftBytes)
         val right = loop(rightBytes)
+
+        // check that left.key < key <= right.key
+        val leftComparison = ByteArray.compare(left.key, key)
+        val rightComparison = ByteArray.compare(key, right.key)
+        require(leftComparison < 0 && rightComparison <= 0, s"key check fail for key ${Base16.encode(key)}")
         new InternalProverNode[D](key, left, right, balance)
       case 2 =>
         val balance = Balance @@ bytes.slice(1, 2).head
