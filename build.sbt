@@ -27,7 +27,13 @@ lazy val commonSettings = Seq(
           <name>Alexander Chepurnoy</name>
           <url>http://chepurnoy.org/</url>
         </developer>
-      </developers>
+      </developers>,
+  scmInfo := Some(
+      ScmInfo(
+          url("https://github.com/input-output-hk/scrypto"),
+          "scm:git@github.com:input-output-hk/scrypto.git"
+      )
+  ),
 )
 
 libraryDependencies ++= Seq(
