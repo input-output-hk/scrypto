@@ -5,6 +5,7 @@ import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
 import scorex.crypto.hash.{CryptographicHash, Digest}
 import scorex.util.ScorexEncoding
 
+import java.util
 import scala.language.postfixOps
 
   /**
@@ -92,4 +93,15 @@ case class BatchMerkleProof[D <: Digest](indices: Seq[(Int, Digest)], proofs: Se
     val e = indices sortBy(_._1)
     loop(indices.map(_._1), e, proofs).head.sameElements(expectedRootHash)
   }
+
+    override def equals(obj: Any): Boolean = obj match {
+      case that: BatchMerkleProof[D] =>
+        (this.indices zip that.indices forall { case (left, right) =>
+          left._1 == right._1 && util.Arrays.equals(left._2, right._2)
+        }) &&
+          (this.proofs zip that.proofs forall { case (left, right) =>
+            util.Arrays.equals(left._1, right._1) && left._2 == right._2
+          })
+      case _ => false
+    }
 }
