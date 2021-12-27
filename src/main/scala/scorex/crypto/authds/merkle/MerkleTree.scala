@@ -95,7 +95,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
       m
     }
 
-    if (indices.forall(index => index >= 0 && index < length)) {
+    if (indices.nonEmpty && indices.forall(index => index >= 0 && index < length)) {
       val hashes: Seq[Digest] = elementsHashIndex.toSeq.sortBy(_._2).map(_._1.toArray.asInstanceOf[Digest])
       val normalized_indices = indices.distinct.sorted
       val multiproof = loop(normalized_indices, hashes)

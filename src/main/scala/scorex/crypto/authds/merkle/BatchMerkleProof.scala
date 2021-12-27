@@ -91,17 +91,31 @@ case class BatchMerkleProof[D <: Digest](indices: Seq[(Int, Digest)], proofs: Se
     }
 
     val e = indices sortBy(_._1)
-    loop(indices.map(_._1), e, proofs).head.sameElements(expectedRootHash)
+    loop(indices.map(_._1), e, proofs) match {
+      case root: Seq[Digest] if root.size == 1 => root.head.sameElements(expectedRootHash)
+      case _ => false
+    }
   }
 
     override def equals(obj: Any): Boolean = obj match {
       case that: BatchMerkleProof[D] =>
-        (this.indices zip that.indices forall { case (left, right) =>
-          left._1 == right._1 && util.Arrays.equals(left._2, right._2)
-        }) &&
-          (this.proofs zip that.proofs forall { case (left, right) =>
-            util.Arrays.equals(left._1, right._1) && left._2 == right._2
-          })
+        if (this.indices.size != that.indices.size ||
+          this.proofs.size != that.proofs.size) {
+          return false
+        }
+        for (i <- this.indices.indices) {
+          if (this.indices.apply(i)._1 != that.indices.apply(i)._1 ||
+            !util.Arrays.equals(this.indices.apply(i)._2, that.indices.apply(i)._2)) {
+            return false
+          }
+        }
+        for (i <- this.proofs.indices) {
+          if (this.proofs.apply(i)._2 != that.proofs.apply(i)._2 ||
+            !util.Arrays.equals(this.proofs.apply(i)._1, that.proofs.apply(i)._1)) {
+            return false
+          }
+        }
+        true
       case _ => false
     }
 }
