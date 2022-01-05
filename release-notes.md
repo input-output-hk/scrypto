@@ -1,3 +1,10 @@
+**2.2.1**
+---------
+
+* Custom equality for BatchMerkleProof
+* Bugfix for BatchMerkleProof (reckless .head call) 
+* scmInfo fix in build.sbt
+
 **2.2.0**
 ---------
 
