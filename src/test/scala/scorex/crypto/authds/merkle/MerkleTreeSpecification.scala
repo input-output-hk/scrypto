@@ -82,6 +82,12 @@ class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyC
     tree.proofByIndices(Seq(2,10)) shouldBe None
   }
 
+  property("Empty Batch proof generation should be None") {
+    val d = (0 until 10).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+    val tree = MerkleTree(d)
+    tree.proofByIndices(Seq.empty[Int]) shouldBe None
+  }
+
   property("Tree creation from 0 elements") {
     val tree = MerkleTree(Seq.empty)(hf)
     tree.rootHash shouldEqual Array.fill(hf.DigestSize)(0: Byte)
