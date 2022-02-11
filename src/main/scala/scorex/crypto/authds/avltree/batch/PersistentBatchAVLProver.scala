@@ -55,8 +55,11 @@ object PersistentBatchAVLProver {
         case Some(ver) => rollback(ver).get
         case None => generateProofAndUpdateStorage(additionalData) //to initialize storage and clear prover's state
       }).ensuring { _ =>
-        storage.version.get.sameElements(avlProver.digest) &&
-          (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
+        storage.version match {
+          case Some(ver) => ver.sameElements(avlProver.digest) &&
+            (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
+          case None => true
+        }
       }
     }
   }
