@@ -6,7 +6,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.{EmptyByteArray, LeafData}
 import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
-import scorex.crypto.hash.{Digest, Keccak256}
+import scorex.crypto.hash.{Digest, Digest32, Keccak256}
 
 import scala.util.Random
 
@@ -86,6 +86,11 @@ class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyC
     val d = (0 until 10).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
     val tree = MerkleTree(d)
     tree.proofByIndices(Seq.empty[Int]) shouldBe None
+  }
+
+  property("Proof for empty node caused stack overflow") {
+    val batch = BatchMerkleProof(Seq(), Seq((Digest32 @@ Array.fill[Byte](32)(0),MerkleProof.LeftSide)))
+    batch.valid(Digest32 @@ Array.fill[Byte](32)(0))
   }
 
   property("Tree creation from 0 elements") {
