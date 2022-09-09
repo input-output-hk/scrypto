@@ -3,12 +3,12 @@ import sbt.Keys.{homepage, scalaVersion}
 name := "scrypto"
 description := "Cryptographic primitives for Scala"
 
+lazy val scala213 = "2.13.8"
 lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
-lazy val scala213 = "2.13.7"
 
 crossScalaVersions := Seq(scala212, scala211, scala213)
-scalaVersion := scala212
+scalaVersion := scala213
 
 javacOptions ++=
   "-source" :: "1.8" ::
@@ -37,12 +37,12 @@ lazy val commonSettings = Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.rudogma" %% "supertagged" % "1.5",
+  "org.rudogma" %% "supertagged" % "2.0-RC2",
   "com.google.guava" % "guava" % "23.0",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
   "org.whispersystems" % "curve25519-java" % "0.5.0",
   "org.bouncycastle" % "bcprov-jdk15to18" % "1.66",
-  "org.scorexfoundation" %% "scorex-util" % "0.1.8"
+  "org.scorexfoundation" %% "scorex-util" % "0.1.8-18-4f4d3c60-SNAPSHOT"
 )
 
 libraryDependencies ++= Seq(
@@ -60,12 +60,13 @@ publishTo := sonatypePublishToBundle.value
 
 pomIncludeRepository := { _ => false }
 
-lazy val scrypto = (project in file(".")).settings(commonSettings: _*)
+lazy val scrypto = (project in file("."))
+    .settings(commonSettings: _*)
 
-lazy val benchmarks = (project in file("benchmarks"))
-  .settings(commonSettings, name := "scrypto-benchmarks")
-  .dependsOn(scrypto)
-  .enablePlugins(JmhPlugin)
+//lazy val benchmarks = (project in file("benchmarks"))
+//  .settings(commonSettings, name := "scrypto-benchmarks")
+//  .dependsOn(scrypto)
+//  .enablePlugins(JmhPlugin)
 
 credentials ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))

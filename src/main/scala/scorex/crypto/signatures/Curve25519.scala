@@ -4,12 +4,11 @@ import java.lang.reflect.Constructor
 
 import org.whispersystems.curve25519.OpportunisticCurve25519Provider
 import scorex.crypto.hash.Sha256
-import scorex.util.ScorexLogging
+import com.typesafe.scalalogging.StrictLogging
 
 import scala.util.{Failure, Try}
 
-object Curve25519 extends EllipticCurveSignatureScheme with ScorexLogging {
-
+object Curve25519 extends EllipticCurveSignatureScheme with StrictLogging {
   val SignatureLength25519 = 64
   val KeyLength25519 = 32
 
@@ -45,7 +44,7 @@ object Curve25519 extends EllipticCurveSignatureScheme with ScorexLogging {
     require(publicKey.length == KeyLength)
     provider.verifySignature(publicKey, message, signature)
   }.recoverWith { case e =>
-    log.debug("Error while message signature verification", e)
+    logger.debug("Error while message signature verification", e)
     Failure(e)
   }.getOrElse(false)
 

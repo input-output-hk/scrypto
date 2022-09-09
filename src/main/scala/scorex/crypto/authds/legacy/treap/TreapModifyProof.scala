@@ -111,7 +111,7 @@ case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
 
     val (newTopNode, changeHappened, oldLabel) = verifyHelper()
     if (oldLabel sameElements digest) {
-      Some(ADDigest @@ newTopNode.label)
+      Some(ADDigest @@@ newTopNode.label)
     } else {
       None
     }

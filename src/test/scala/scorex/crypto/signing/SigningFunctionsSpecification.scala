@@ -39,8 +39,8 @@ class SigningFunctionsSpecification extends AnyPropSpec
         val shared = Curve25519.createSharedSecret(keyPair1._1, keyPair2._2)
         val sharedWithKeysReversed = Curve25519.createSharedSecret(keyPair2._1, keyPair1._2)
 
-        val badSharedSecret1 = Curve25519.createSharedSecret(PrivateKey @@ keyPair2._2, keyPair1._2)
-        val badSharedSecret2 = Curve25519.createSharedSecret(PrivateKey @@ keyPair2._2, keyPair1._2)
+        val badSharedSecret1 = Curve25519.createSharedSecret(PrivateKey @@@ keyPair2._2, keyPair1._2)
+        val badSharedSecret2 = Curve25519.createSharedSecret(PrivateKey @@@ keyPair2._2, keyPair1._2)
 
         shared.sameElements(sharedWithKeysReversed) should be(true)
 

@@ -18,7 +18,7 @@ class Treap[HF <: CryptographicHash[_ <: Digest]](rootOpt: Option[Leaf] = None)
 
   var topNode: ProverNodes = rootOpt.getOrElse(Leaf(NegativeInfinity._1, NegativeInfinity._2, PositiveInfinity._1))
 
-  def rootHash(): ADDigest = ADDigest @@ topNode.label
+  def rootHash(): ADDigest = ADDigest @@@ topNode.label
 
   override def run[O <: Operation](operation: O): Try[TreapModifyProof] = Try {
     val key = operation.key

@@ -54,7 +54,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
       System.gc()
       val toRemove = elements.slice(i * toRemoveSize, (i + 1) * toRemoveSize).map(e => Remove(e._1))
       val toInsert = (0 until toInsertSize).map(j => Sha256(s"$i-$j"))
-        .map(k => Insert(ADKey @@ k, ADValue @@ k.take(8)))
+        .map(k => Insert(ADKey @@@ k, ADValue @@ k.take(8)))
       val treeSize = startTreeSize + i * (toInsert.length - toRemove.length)
       val oldTop = prover.topNode
       val mods = toRemove ++ toInsert
@@ -93,7 +93,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     val ElementsToInsert = 100000
     val elements = (0 until ElementsToInsert)
       .map(i => Sha256(i.toString))
-      .map(k => (ADKey @@ k, ADValue @@ k.take(8)))
+      .map(k => (ADKey @@@ k, ADValue @@ k.take(8)))
 
     elements.foreach(e => prover.performOneOperation(Insert(e._1, e._2)))
     prover.generateProof()
@@ -690,7 +690,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     for (i <- 0 until testAtTheEnd) {
       val key = randomKey()
       keys += key
-      val m = Insert(ADKey @@ key, randomValue(8))
+      val m = Insert(ADKey @@@ key, randomValue(8))
       newProver.performOneOperation(m)
       len += newProver.generateProof().length
     }
@@ -700,7 +700,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     len = 0
     for (i <- 0 until testAtTheEnd) {
       val j = Random.randomBytes(3)
-      val key = ADKey @@ keys(
+      val key = ADKey @@@ keys(
         (j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % keys.size)
       keys -= key
       val m = Remove(key)
@@ -786,7 +786,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
         digest = p.digest
         val key = randomKey()
-        p.performOneOperation(Insert(ADKey @@ key, randomValue(8)))
+        p.performOneOperation(Insert(ADKey @@@ key, randomValue(8)))
         pf = p.generateProof()
         p.checkTree()
 

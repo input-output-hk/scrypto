@@ -213,7 +213,7 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
     initializeIterator()
 
     val (newTopNode, _, _, oldLabel) = verifyHelper(updateFn)
-    if (oldLabel sameElements digest) Some(ADDigest @@ newTopNode.label) else None
+    if (oldLabel sameElements digest) Some(ADDigest @@@ newTopNode.label) else None
   }.getOrElse(None)
 
   /**

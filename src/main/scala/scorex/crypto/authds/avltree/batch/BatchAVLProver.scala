@@ -1,14 +1,14 @@
 package scorex.crypto.authds.avltree.batch
 
 import com.google.common.primitives.Ints
+import com.typesafe.scalalogging.StrictLogging
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
-import scorex.util.ScorexLogging
 import scorex.utils.ByteArray
 
 import scala.annotation.tailrec
 import scala.collection.mutable
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.{Random, Try, Success, Failure}
 
 
 /**
@@ -27,7 +27,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
                                                               oldRootAndHeight: Option[(ProverNodes[D], Int)] = None,
                                                               val collectChangedNodes: Boolean = true)
                                                              (implicit val hf: HF = Blake2b256)
-  extends AuthenticatedTreeOps[D] with ToStringHelper with ScorexLogging {
+  extends AuthenticatedTreeOps[D] with ToStringHelper with StrictLogging {
 
   protected val labelLength: Int = hf.DigestSize
 
@@ -446,7 +446,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
         if (!t) {
           var x = rNode.key(0).toInt
           if (x < 0) x = x + 256
-          log.error("Tree failed at key = " + x + ": " + s)
+          logger.error("Tree failed at key = " + x + ": " + s)
           fail = true
         }
       }

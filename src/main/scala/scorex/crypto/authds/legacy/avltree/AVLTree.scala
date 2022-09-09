@@ -22,7 +22,7 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
 
   private var topNode: ProverNodes = rootOpt.getOrElse(DefaultTopNode)
 
-  def rootHash(): ADDigest = ADDigest @@ topNode.label
+  def rootHash(): ADDigest = ADDigest @@@ topNode.label
 
   override def run[O <: Operation](operation: O): Try[AVLModifyProof] = Try {
     val key = operation.key
