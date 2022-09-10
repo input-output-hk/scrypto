@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle.sparse
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks

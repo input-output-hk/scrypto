@@ -95,7 +95,7 @@ Here are code examples for generating proofs and checking them. In this example 
 * First, we create a prover and get an initial digest from it (in a real application, this value is a public constant because anyone, including verifiers, can compute it by using the same two lines of code)
 
 ```scala
-  import com.google.common.primitives.Longs
+  import scorex.utils.Longs
   import scorex.crypto.authds.{ADKey, ADValue}
   import scorex.crypto.authds.avltree.batch._
   import scorex.crypto.hash.{Blake2b256, Digest32}

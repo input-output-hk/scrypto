@@ -2,7 +2,7 @@ package scorex.benchmarks
 
 import java.util.concurrent.TimeUnit
 
-import com.google.common.primitives.Shorts
+import scorex.utils.Shorts
 import org.openjdk.jmh.annotations._
 import org.openjdk.jmh.infra.Blackhole
 import scorex.utils.ByteArray

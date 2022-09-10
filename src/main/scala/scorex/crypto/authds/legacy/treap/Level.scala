@@ -1,6 +1,6 @@
 package scorex.crypto.authds.legacy.treap
 
-import com.google.common.primitives.Ints
+import scorex.utils.Ints
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Sha256
 import scorex.utils.ByteArray

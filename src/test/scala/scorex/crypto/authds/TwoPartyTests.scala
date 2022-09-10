@@ -1,6 +1,6 @@
 package scorex.crypto.authds
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.avltree.batch.{Modification, Update}
 import scorex.crypto.hash.Digest

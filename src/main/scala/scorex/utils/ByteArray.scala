@@ -1,7 +1,5 @@
 package scorex.utils
 
-import com.google.common.primitives.UnsignedBytes
-
 object ByteArray {
 
   def compare(buffer1: Array[Byte], buffer2: Array[Byte]): Int =

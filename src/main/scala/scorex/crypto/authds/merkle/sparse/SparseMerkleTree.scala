@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle.sparse
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import scorex.crypto.authds.LeafData
 import scorex.crypto.hash._
 
