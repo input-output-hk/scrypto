@@ -1,11 +1,10 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
-import com.google.common.primitives.{Bytes, Ints}
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, InternalProverNode, ProverLeaf, ProverNodes}
-import scorex.crypto.authds.{ADKey, ADValue, Balance}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, ProverLeaf, InternalProverNode, ProverNodes}
+import scorex.crypto.authds.{ADValue, ADKey, Balance}
 import scorex.crypto.hash.{CryptographicHash, Digest}
 import scorex.util.encode.Base16
-import scorex.utils.ByteArray
+import scorex.utils.{Bytes, ByteArray, Ints}
 
 import scala.util.Try
 

@@ -1,14 +1,13 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Longs
 import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.propspec.AnyPropSpec
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, Digest32}
-import scorex.utils.{Random => RandomBytes}
+import scorex.utils.{Longs, Random => RandomBytes}
 
-import scala.util.{Failure, Random, Success, Try}
+import scala.util.{Random, Try, Success, Failure}
 
 class AVLBatchStatefulSpecification extends AnyPropSpec {
 

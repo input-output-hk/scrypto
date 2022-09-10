@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle.serialization
 
-import com.google.common.primitives.{Bytes, Ints}
+import scorex.utils.{Bytes, Ints}
 import scorex.crypto.authds.merkle.BatchMerkleProof
 import scorex.crypto.authds.{EmptyByteArray, Side}
 import scorex.crypto.hash.{CryptographicHash, Digest, Digest32}

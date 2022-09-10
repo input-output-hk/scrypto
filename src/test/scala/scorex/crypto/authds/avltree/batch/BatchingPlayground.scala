@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Longs
+import scorex.utils.Longs
 import org.scalatest.matchers.should.Matchers
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
@@ -1032,16 +1032,16 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     val key1 = ADKey @@ Array(1: Byte)
     val key2 = ADKey @@ Array(2: Byte)
     val key3 = ADKey @@ Array(3: Byte)
-    val op1 = Insert(key1, ADValue @@ Longs.toByteArray(10))
-    val op2 = Insert(key2, ADValue @@ Longs.toByteArray(20))
-    val op3 = Insert(key3, ADValue @@ Longs.toByteArray(30))
+    val op1 = Insert(key1, ADValue @@ Longs.toByteArray(10L))
+    val op2 = Insert(key2, ADValue @@ Longs.toByteArray(20L))
+    val op3 = Insert(key3, ADValue @@ Longs.toByteArray(30L))
     require(prover.performOneOperation(op1).get.isEmpty) // Should return None
     require(prover.performOneOperation(op2).get.isEmpty) // Should return None
     require(prover.performOneOperation(op3).get.isEmpty) // Should return None
     val proof1 = prover.generateProof()
     val digest1 = prover.digest
 
-    val op4 = Update(key1, ADValue @@ Longs.toByteArray(50))
+    val op4 = Update(key1, ADValue @@ Longs.toByteArray(50L))
     val op5 = UpdateLongBy(key2, -40)
     val op6 = Lookup(key3)
     val op7 = Remove(ADKey @@ Array(5: Byte))

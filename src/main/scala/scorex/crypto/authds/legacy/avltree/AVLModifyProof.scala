@@ -1,12 +1,11 @@
 package scorex.crypto.authds.legacy.avltree
 
-import com.google.common.primitives.Bytes
 import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.Modification
 import scorex.crypto.hash.{CryptographicHash, _}
-import scorex.utils.ByteArray
+import scorex.utils.{ByteArray, Bytes}
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{Try, Success, Failure}
 
 case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
                          (implicit hf: CryptographicHash[_ <: Digest]) extends TwoPartyProof {

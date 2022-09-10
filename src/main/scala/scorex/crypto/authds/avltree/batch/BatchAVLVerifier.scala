@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Ints
+import scorex.utils.Ints
 import scorex.crypto.authds._
 import scorex.crypto.hash._
 import scorex.utils.ByteArray

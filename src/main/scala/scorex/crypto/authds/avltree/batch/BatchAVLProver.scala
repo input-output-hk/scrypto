@@ -1,10 +1,9 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.google.common.primitives.Ints
 import com.typesafe.scalalogging.StrictLogging
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
-import scorex.utils.ByteArray
+import scorex.utils.{ByteArray, Ints}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
