@@ -39,7 +39,6 @@ lazy val commonSettings = Seq(
 libraryDependencies ++= Seq(
   "org.rudogma" %% "supertagged" % "2.0-RC2",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-  "org.whispersystems" % "curve25519-java" % "0.5.0",
   "org.bouncycastle" % "bcprov-jdk15to18" % "1.66",
   "org.scorexfoundation" %% "scorex-util" % "0.1.8-18-4f4d3c60-SNAPSHOT"
 )
