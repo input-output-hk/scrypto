@@ -7,9 +7,6 @@ lazy val scala213 = "2.13.8"
 lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
 
-crossScalaVersions := Seq(scala212, scala211, scala213)
-scalaVersion := scala213
-
 javacOptions ++=
   "-source" :: "1.8" ::
     "-target" :: "1.8" ::
@@ -34,32 +31,43 @@ lazy val commonSettings = Seq(
           "scm:git@github.com:input-output-hk/scrypto.git"
       )
   ),
+  libraryDependencies ++= Seq(
+    "org.rudogma" %% "supertagged" % "2.0-RC2",
+    "org.scorexfoundation" %% "scorex-util" % "0.1.8-18-4f4d3c60-SNAPSHOT",
+    "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
+    "org.scalacheck" %%% "scalacheck" % "1.15.2" % Test,
+    "org.scalatestplus" %%% "scalacheck-1-15" % "3.3.0.0-SNAP3" % Test
+  ),
+  publishMavenStyle := true,
+  publishTo := sonatypePublishToBundle.value
 )
 
-libraryDependencies ++= Seq(
-  "org.rudogma" %% "supertagged" % "2.0-RC2",
-  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-  "org.bouncycastle" % "bcprov-jdk15to18" % "1.66",
-  "org.scorexfoundation" %% "scorex-util" % "0.1.8-18-4f4d3c60-SNAPSHOT"
-)
 
-libraryDependencies ++= Seq(
-  "org.scalatest" %% "scalatest" % "3.1.+" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.14.+" % Test,
-  // https://mvnrepository.com/artifact/org.scalatestplus/scalatestplus-scalacheck
-  "org.scalatestplus" %% "scalatestplus-scalacheck" % "3.1.0.0-RC2" % Test
-)
 
-publishMavenStyle := true
+Test / publishArtifact := false
 
-publishArtifact in Test := false
-
-publishTo := sonatypePublishToBundle.value
 
 pomIncludeRepository := { _ => false }
 
-lazy val scrypto = (project in file("."))
+lazy val scrypto = crossProject(JVMPlatform)
+    .in(file("."))
     .settings(commonSettings: _*)
+    .jvmSettings(
+      libraryDependencies ++= Seq(
+        "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+        "org.bouncycastle" % "bcprov-jdk15to18" % "1.66"
+      ),
+      scalaVersion := scala213,
+      crossScalaVersions := Seq(scala211, scala212, scala213)
+    )
+//    .jsSettings(
+//      scalaVersion := scala213,
+//      crossScalaVersions := Seq(scala213),
+//      libraryDependencies ++= Seq(
+//      ),
+//      parallelExecution in Test := false
+//    )
+
 
 //lazy val benchmarks = (project in file("benchmarks"))
 //  .settings(commonSettings, name := "scrypto-benchmarks")
@@ -72,9 +80,9 @@ credentials ++= (for {
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
 
 // prefix version with "-SNAPSHOT" for builds without a git tag
-dynverSonatypeSnapshots in ThisBuild := true
+ThisBuild / dynverSonatypeSnapshots := true
 // use "-" instead of default "+"
-dynverSeparator in ThisBuild := "-"
+ThisBuild / dynverSeparator := "-"
 
 // PGP key for signing a release build published to sonatype
 // signing is done by sbt-pgp plugin
