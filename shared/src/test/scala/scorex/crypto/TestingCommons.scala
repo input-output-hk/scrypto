@@ -8,9 +8,6 @@ import org.scalatest.matchers.should.Matchers
 import scala.util.Random
 
 trait TestingCommons extends Matchers {
-  val dirName = "/tmp/scorex-test/test/"
-  val treeDir = new File(dirName)
-  treeDir.mkdirs()
 
   def genElements(howMany: Int, seed: Long, size: Int = 32): Seq[Array[Byte]] = {
     val r = Random
