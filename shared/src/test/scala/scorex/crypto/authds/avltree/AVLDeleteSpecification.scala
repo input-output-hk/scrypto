@@ -4,8 +4,9 @@ package scorex.crypto.authds.avltree
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
+import scorex.crypto.authds.{ADValue, TwoPartyTests, ADKey}
 import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scorex.utils.Logger
 
 class AVLDeleteSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
 

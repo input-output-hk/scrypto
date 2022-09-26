@@ -1,9 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
-import com.typesafe.scalalogging.StrictLogging
 import scorex.crypto.authds._
 import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
-import scorex.utils.{ByteArray, Ints}
+import scorex.utils.{Ints, ByteArray, Logger}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -26,8 +25,8 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
                                                               oldRootAndHeight: Option[(ProverNodes[D], Int)] = None,
                                                               val collectChangedNodes: Boolean = true)
                                                              (implicit val hf: HF = Blake2b256)
-  extends AuthenticatedTreeOps[D] with ToStringHelper with StrictLogging {
-
+  extends AuthenticatedTreeOps[D] with ToStringHelper {
+  val logger: Logger = Logger.Default
   protected val labelLength: Int = hf.DigestSize
 
   private[batch] var topNode: ProverNodes[D] = oldRootAndHeight.map(_._1).getOrElse({

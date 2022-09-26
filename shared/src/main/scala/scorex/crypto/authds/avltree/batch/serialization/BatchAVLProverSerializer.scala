@@ -4,11 +4,12 @@ import scorex.crypto.authds.avltree.batch.{BatchAVLProver, ProverLeaf, InternalP
 import scorex.crypto.authds.{ADValue, ADKey, Balance}
 import scorex.crypto.hash.{CryptographicHash, Digest}
 import scorex.util.encode.Base16
-import scorex.utils.{Bytes, ByteArray, Ints}
+import scorex.utils.{Bytes, Ints, ByteArray, Logger}
 
 import scala.util.Try
 
-class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit val hf: HF) {
+class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]]
+    (implicit val hf: HF, val logger: Logger) { serializer =>
 
   private val labelLength = hf.DigestSize
 
@@ -77,7 +78,9 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]](implicit
       case _: ProverLeaf[D] =>
     }
 
-    new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(manifest.root -> manifest.rootHeight))
+    new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(manifest.root -> manifest.rootHeight)) {
+      override val logger = serializer.logger
+    }
   }
 
   def manifestToBytes(manifest: BatchAVLProverManifest[D]): Array[Byte] = {

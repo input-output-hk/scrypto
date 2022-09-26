@@ -1,6 +1,6 @@
 package scorex.crypto.authds
 
-import scorex.utils.Longs
+import scorex.utils.{Longs, Logger}
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.avltree.batch.{Modification, Update}
 import scorex.crypto.hash.Digest
@@ -9,6 +9,8 @@ import scala.util.Success
 
 
 trait TwoPartyTests extends TestingCommons {
+
+  implicit val loggerInTests: Logger = Logger.Default
 
   def genUpd(key: ADKey) = Update(key, ADValue @@ key.take(8))
 

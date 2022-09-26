@@ -54,7 +54,6 @@ lazy val scrypto = crossProject(JVMPlatform)
     .settings(commonSettings: _*)
     .jvmSettings(
       libraryDependencies ++= Seq(
-        "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
         "org.bouncycastle" % "bcprov-jdk15to18" % "1.66"
       ),
       scalaVersion := scala213,
