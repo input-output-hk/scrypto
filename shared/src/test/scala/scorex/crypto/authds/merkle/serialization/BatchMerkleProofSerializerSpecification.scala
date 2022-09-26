@@ -3,9 +3,9 @@ package scorex.crypto.authds.merkle.serialization
 import org.scalatest.TryValues
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-import scorex.crypto.authds.merkle.{BatchMerkleProof, Leaf, MerkleTree}
-import scorex.crypto.authds.{LeafData, Side, TwoPartyTests}
-import scorex.crypto.hash.{Digest, Digest32, Keccak256}
+import scorex.crypto.authds.merkle.{MerkleTree, Leaf}
+import scorex.crypto.authds.{Side, TwoPartyTests, LeafData}
+import scorex.crypto.hash.{Digest32, Digest}
 
 import scala.util.Random
 
@@ -15,8 +15,8 @@ class BatchMerkleProofSerializerSpecification extends AnyPropSpec
   with TryValues {
 
   type D = Digest32
-  type HF = Keccak256.type
-  implicit val hf: HF = Keccak256
+  type HF = scorex.crypto.hash.Blake2b256.type
+  implicit val hf: HF = scorex.crypto.hash.Blake2b256
   private val LeafSize = 32
 
   property("Batch proof serialization + deserialization") {

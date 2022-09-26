@@ -4,14 +4,13 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.TestingCommons
-import scorex.crypto.authds.{EmptyByteArray, LeafData}
-import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
-import scorex.crypto.hash.{Digest, Keccak256}
+import scorex.crypto.authds.LeafData
+import scorex.crypto.hash.Blake2b256
 
 import scala.util.Random
 
 class MerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with Matchers with TestingCommons {
-  implicit val hf = Keccak256
+  implicit val hf = Blake2b256
 
   private val LeafSize = 32
 

@@ -200,7 +200,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     val prover = new BatchAVLProver[D, HF](KL, None)
     val digest = prover.digest
     val keyValues = (0 until InitialTreeSize) map { i =>
-      val aValue = Keccak256(i.toString.getBytes("UTF-8"))
+      val aValue = Blake2b256(i.toString.getBytes("UTF-8"))
       (ADKey @@ aValue.take(KL), ADValue @@@ aValue)
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
@@ -218,7 +218,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     }
 
     (0 until InitialTreeSize) foreach { i =>
-      val aValue = Keccak256(i.toString.getBytes("UTF-8"))
+      val aValue = Blake2b256(i.toString.getBytes("UTF-8"))
       verifier.performOneOperation(Insert(ADKey @@ aValue.take(KL), ADValue @@@ aValue))
     }
     //extract all leafs
@@ -235,7 +235,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     val prover = new BatchAVLProver[D, HF](KL, None)
     val digest = prover.digest
     val keyValues = (0 until InitialTreeSize) map { i =>
-      val aValue = Keccak256(i.toString.getBytes("UTF-8"))
+      val aValue = Blake2b256(i.toString.getBytes("UTF-8"))
       (ADKey @@ aValue.take(KL), ADValue @@@ aValue)
     }
     keyValues.foreach(kv => prover.performOneOperation(Insert(kv._1, kv._2)))
