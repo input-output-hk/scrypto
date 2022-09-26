@@ -20,4 +20,13 @@ package object hash {
 
   type NonStandardDigest = NonStandardDigest.Type
 
+  type ExtendedDigest = Platform.Digest
+
+  def createBlake2bDigest(bitSize: Int): ExtendedDigest = Platform.createBlake2bDigest(bitSize)
+
+  def updateDigest(digest: ExtendedDigest, b: Byte) = Platform.updateDigest(digest, b)
+
+  def updateDigest(digest: ExtendedDigest, in: Array[Byte], inOff: Int, inLen: Int) = Platform.updateDigest(digest, in, inOff, inLen)
+
+  def doFinalDigest(digest: ExtendedDigest): Array[Byte] = Platform.doFinalDigest(digest)
 }
