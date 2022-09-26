@@ -24,6 +24,8 @@ package object hash {
 
   def createBlake2bDigest(bitSize: Int): ExtendedDigest = Platform.createBlake2bDigest(bitSize)
 
+  def createSha256Digest(): ExtendedDigest = Platform.createSha256Digest()
+
   def updateDigest(digest: ExtendedDigest, b: Byte) = Platform.updateDigest(digest, b)
 
   def updateDigest(digest: ExtendedDigest, in: Array[Byte], inOff: Int, inLen: Int) = Platform.updateDigest(digest, in, inOff, inLen)

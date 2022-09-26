@@ -1,12 +1,14 @@
 package scorex.crypto.hash
 
-import org.bouncycastle.crypto.digests.Blake2bDigest
+import org.bouncycastle.crypto.digests.{Blake2bDigest, SHA256Digest}
 
 object Platform {
 
   type Digest = org.bouncycastle.crypto.ExtendedDigest
   
   def createBlake2bDigest(bitSize: Int): Digest = new Blake2bDigest(bitSize)
+
+  def createSha256Digest(): Digest = new SHA256Digest()
 
   def updateDigest(digest: Digest, b: Byte) = digest.update(b)
 

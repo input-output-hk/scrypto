@@ -1,10 +1,13 @@
 package scorex.crypto.hash
 
-import java.security.MessageDigest
-
 /**
   * Hashing functions implementation with sha256 impl from Java SDK
   */
-object Sha256 extends CryptographicHash32 {
-  override def hash(input: Array[Byte]): Digest32 = Digest32 @@ MessageDigest.getInstance("SHA-256").digest(input)
+object Sha256 extends CryptographicHash32 with BouncyCastleHash[Digest32] {
+  override def hash(input: Array[Byte]): Digest32 = Digest32 @@ internalHash(input)
+
+  override protected lazy val digestFn = createSha256Digest()
+
+  override def prefixedHash(prefix: Byte, inputs: Array[Byte]*): Digest32 =
+    Digest32 @@ internalPrefixedHash(prefix, inputs: _*)
 }
