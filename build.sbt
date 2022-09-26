@@ -49,7 +49,7 @@ Test / publishArtifact := false
 
 pomIncludeRepository := { _ => false }
 
-lazy val scrypto = crossProject(JVMPlatform)
+lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
     .in(file("."))
     .settings(commonSettings: _*)
     .jvmSettings(
@@ -59,13 +59,13 @@ lazy val scrypto = crossProject(JVMPlatform)
       scalaVersion := scala213,
       crossScalaVersions := Seq(scala211, scala212, scala213)
     )
-//    .jsSettings(
-//      scalaVersion := scala213,
-//      crossScalaVersions := Seq(scala213),
-//      libraryDependencies ++= Seq(
-//      ),
-//      parallelExecution in Test := false
-//    )
+    .jsSettings(
+      scalaVersion := scala213,
+      crossScalaVersions := Seq(scala213),
+      libraryDependencies ++= Seq(
+      ),
+      parallelExecution in Test := false
+    )
 
 
 lazy val benchmarks = project

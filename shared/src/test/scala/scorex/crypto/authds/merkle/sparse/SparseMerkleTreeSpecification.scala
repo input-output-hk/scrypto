@@ -6,11 +6,11 @@ import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.LeafData
-import scorex.crypto.hash.{Blake2b256Unsafe, CryptographicHash, Digest32}
+import scorex.crypto.hash.{CryptographicHash, Digest32, Blake2b256}
 
 class SparseMerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with Matchers with TestingCommons {
 
-  implicit val hf: CryptographicHash[Digest32] = new Blake2b256Unsafe
+  implicit val hf: CryptographicHash[Digest32] = Blake2b256
 
   property("Tree has valid last proof") {
     forAll { height: Byte =>
