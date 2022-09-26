@@ -45,12 +45,12 @@ object Base16Benchmark {
       .view
       .map(_ => Random.nextString(200).getBytes("UTF-8"))
       .map(Base16.encode)
-      .force
+      .force.toSeq
 
     val xab: Seq[Array[Byte]] = (1 to 1000)
       .view
       .map(_ => Random.nextString(200).getBytes("UTF-8"))
-      .force
+      .force.toSeq
   }
 
 }

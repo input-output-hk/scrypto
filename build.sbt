@@ -68,10 +68,15 @@ lazy val scrypto = crossProject(JVMPlatform)
 //    )
 
 
-//lazy val benchmarks = (project in file("benchmarks"))
-//  .settings(commonSettings, name := "scrypto-benchmarks")
-//  .dependsOn(scrypto)
-//  .enablePlugins(JmhPlugin)
+lazy val benchmarks = project
+    .in(file("benchmarks"))
+    .dependsOn(scrypto.jvm)
+    .settings(
+      moduleName := "scrypto-benchmarks",
+      crossScalaVersions := Seq(scala211, scala212, scala213),
+      scalaVersion := scala213,
+    )
+    .enablePlugins(JmhPlugin)
 
 credentials ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
