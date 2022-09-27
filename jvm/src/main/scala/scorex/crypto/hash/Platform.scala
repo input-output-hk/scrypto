@@ -10,12 +10,12 @@ object Platform {
 
   def createSha256Digest(): Digest = new SHA256Digest()
 
-  def updateDigest(digest: Digest, b: Byte) = digest.update(b)
+  def updateDigest(digest: Digest, b: Byte): Unit = digest.update(b)
 
   def updateDigest(digest: Digest,
                    in: Array[Byte],
                    inOff: Int,
-                   inLen: Int) = {
+                   inLen: Int): Unit = {
     digest.update(in, inOff, inLen)
   }
 

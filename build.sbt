@@ -70,9 +70,19 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
       ),
-      parallelExecution in Test := false
+      parallelExecution in Test := false,
+      Compile / npmDependencies ++= Seq(
+          "bn.js" -> "5.2.0",
+          "hash.js" -> "1.1.7",
+          "elliptic" -> "6.5.4",
+          "blakejs" -> "1.2.1",
+          "bouncycastle-js" -> "0.1.8"
+          ),
+      useYarn := true
     )
 
+lazy val scryptoJS = scrypto.js
+    .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val benchmarks = project
     .in(file("benchmarks"))
