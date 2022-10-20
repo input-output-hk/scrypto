@@ -55,6 +55,10 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     cls.getSuperclass.getName shouldBe "java.lang.Object"
   }
 
+//  property("getDeclaringClass") {
+//    cls.getDeclaringClass.getName shouldBe "ScalaJsSpec" // Referring to non-existent method java.lang.Class.getDeclaringClass()
+//  }
+
   property("isAssignableFrom") {
     cls.isAssignableFrom(clsY) shouldBe true
     cls.isAssignableFrom(classOf[java.lang.Object]) shouldBe false
@@ -92,6 +96,11 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     t.toString() shouldBe "java.lang.String"
   }
 
+//  property("Class.forName") {
+//    val t = Class.forName("java.lang.String") // error: Referring to non-existent method static java.lang.Class.forName(java.lang.String)
+//    t.toString() shouldBe "java.lang.String"
+//  }
+
   property("ClassTag.runtimeClass") {
     val t = ClassTag[String](classOf[String])
     t.runtimeClass shouldBe classOf[String]
@@ -105,6 +114,17 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     catch {
       case e: NoSuchMethodException =>
         e.getMessage shouldBe "methodName"
+    }
+  }
+
+  property("NoSuchFieldException") {
+    try {
+      throw new NoSuchFieldException("fieldName")
+      assert(false)
+    }
+    catch {
+      case e: NoSuchFieldException =>
+        e.getMessage shouldBe "fieldName"
     }
   }
 
