@@ -5,9 +5,11 @@ import org.scalatest.propspec.AnyPropSpec
 
 import java.io.{StringWriter, PrintWriter}
 import java.lang.annotation.{ElementType, Target}
-import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
+import java.lang.reflect.{UndeclaredThrowableException, InvocationTargetException}
 import java.nio.ByteBuffer
+import java.util
 import scala.collection.mutable
+import scala.io.Source
 import scala.reflect.ClassTag
 
 class ScalaJsSpec extends AnyPropSpec with Matchers {
@@ -128,4 +130,14 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     }
   }
 
+  property("java.util.HashMap") {
+    val m = new java.util.HashMap[Int, Int]()
+    m.put(1, 10)
+    m.get(1) shouldBe 10
+  }
+
+  property("scala.io.Source") {
+    val lines = Source.fromString("abc").getLines.toSeq
+    lines.length shouldBe 1
+  }
 }

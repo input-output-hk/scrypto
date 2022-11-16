@@ -34,7 +34,7 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
 //    scalaOrganization.value % "scala-reflect" % scalaVersion.value % "provided",
     "org.rudogma" %%% "supertagged" % "2.0-RC2",
-    "org.scorexfoundation" %%% "scorex-util" % "0.1.8-19-0331a3d9-SNAPSHOT",
+    "org.scorexfoundation" %%% "scorex-util" % "0.1.8-20-565873cd-SNAPSHOT",
 
     "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
@@ -65,12 +65,12 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
     )
     .jsSettings(
       scalaVersion := scala213,
-      crossScalaVersions := Seq(scala213),
+      crossScalaVersions := Seq(scala212, scala213),
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
       ),
-      parallelExecution in Test := false,
+      Test / parallelExecution := false,
       Compile / npmDependencies ++= Seq(
           "bn.js" -> "5.2.0",
           "hash.js" -> "1.1.7",
