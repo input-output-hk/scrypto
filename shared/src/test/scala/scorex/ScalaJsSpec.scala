@@ -12,6 +12,11 @@ import scala.collection.mutable
 import scala.io.Source
 import scala.reflect.ClassTag
 
+/** This suite is used to check different Scala features and base libraries against
+  * Scala.js, i.e. whether they are supported or not.
+  * The `// Not supported` code fails at compile time when compiled as part of scrypto/js.
+  * See commented code for what is not supported.
+  */
 class ScalaJsSpec extends AnyPropSpec with Matchers {
   class A {
     val f: Int = 10
@@ -29,6 +34,7 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
   property("getSimpleName") {
     cls shouldNot be(null)
     cls.getSimpleName shouldBe "A"
+    // Not supported
     // cls.getEnclosingClass shouldNot be (null) // Referring to non-existent method java.lang.Class.getEnclosingClass()
     println(cls)
   }
@@ -40,6 +46,7 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     t.get(clsY) shouldBe Some(1)
   }
 
+// Not supported
 //  property("getField") {
 ////    cls.getField("f") shouldNot be(null) // Referring to non-existent method java.lang.Class.getField(java.lang.String)
 //  }
@@ -57,6 +64,7 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     cls.getSuperclass.getName shouldBe "java.lang.Object"
   }
 
+// Not supported
 //  property("getDeclaringClass") {
 //    cls.getDeclaringClass.getName shouldBe "ScalaJsSpec" // Referring to non-existent method java.lang.Class.getDeclaringClass()
 //  }
@@ -78,6 +86,7 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     buf.position() shouldBe 0
   }
 
+// Not supported
 //  property("InvocationTargetException") {
 //    // [error] Referring to non-existent class java.lang.reflect.InvocationTargetException
 //    an[InvocationTargetException] should be thrownBy(throw new InvocationTargetException(null))
@@ -89,6 +98,7 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
 //  }
 
   property("ExceptionInInitializerError") {
+    // Not supported
     // [error] Referring to non-existent class java.lang.reflect.UndeclaredThrowableException
     an[ExceptionInInitializerError] should be thrownBy(throw new ExceptionInInitializerError("error"))
   }
@@ -98,6 +108,7 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     t.toString() shouldBe "java.lang.String"
   }
 
+// Not supported
 //  property("Class.forName") {
 //    val t = Class.forName("java.lang.String") // error: Referring to non-existent method static java.lang.Class.forName(java.lang.String)
 //    t.toString() shouldBe "java.lang.String"

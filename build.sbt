@@ -63,7 +63,11 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
       scalaVersion := scala213,
       crossScalaVersions := Seq(scala211, scala212, scala213)
     )
-    .jsSettings(
+
+lazy val scryptoJS = scrypto.js
+    .enablePlugins(ScalaJSBundlerPlugin)
+    .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
+    .settings(
       scalaVersion := scala213,
       crossScalaVersions := Seq(scala212, scala213),
       libraryDependencies ++= Seq(
@@ -71,18 +75,10 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
       ),
       Test / parallelExecution := false,
-      Compile / npmDependencies ++= Seq(
-          "bn.js" -> "5.2.0",
-          "hash.js" -> "1.1.7",
-          "elliptic" -> "6.5.4",
-          "blakejs" -> "1.2.1",
-          "bouncycastle-js" -> "0.1.8"
-          ),
+      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1397
+      externalNpm := { println(s"baseDirectory: ${baseDirectory.value}"); file(s"${baseDirectory.value}/..") },
       useYarn := true
     )
-
-lazy val scryptoJS = scrypto.js
-    .enablePlugins(ScalaJSBundlerPlugin)
 
 lazy val benchmarks = project
     .in(file("benchmarks"))
