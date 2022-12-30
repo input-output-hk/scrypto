@@ -1,3 +1,13 @@
+
+**3.0.0**
+---------
+
+* CI configuration for Scala.js 
+* configuration of SBT with necessary JS dependencies (@noble/hashes) using ScalablyTyped
+* removed all Java dependencies
+* necessary code changes for Scala.js cross-compilation
+* some classes moved to JVM-only module
+
 **2.2.1**
 ---------
 
