@@ -74,6 +74,10 @@ lazy val scryptoJS = scrypto.js
       Test / parallelExecution := false,
       // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1397
       externalNpm := { println(s"baseDirectory: ${baseDirectory.value}"); file(s"${baseDirectory.value}/..") },
+      Compile / npmDependencies ++= Seq(
+        "@noble/hashes" -> "^1.1.4",
+        "typescript" -> "^4.9.4"
+      ),
       useYarn := true
     )
 
