@@ -72,7 +72,7 @@ lazy val scryptoJS = scrypto.js
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
       ),
       Test / parallelExecution := false,
-      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1397
+      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1341
       externalNpm := { file(s"${baseDirectory.value}/..") },
       Compile / npmDependencies ++= Seq(
         "@noble/hashes" -> "^1.1.4"

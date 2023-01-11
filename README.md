@@ -190,4 +190,30 @@ The code is under Public Domain CC0 license means you can do anything with it. F
 
 # Contributing
 
-Your contributions are always welcome! Please submit a pull request or create an issue to add a new cryptographic primitives or better implementations.
+Clone the repository
+```
+$git clone <repository> scrypto
+$cd scrypto
+```
+
+The code uses [Scalablytyped](https://scalablytyped.org/docs/readme) to generate Scala.js bindings
+for `@noble/hashes`. This [video](https://youtu.be/hWUAVrNj65c?t=1341) explains how the
+environment for ScalablyTyped is configured in this repository.
+
+Before compiling the library with SBT, you need to install JS dependencies for ScalablyTyped. 
+The configuration is in `package.json`.
+```
+$npm install
+added 285 packages, and audited 286 packages in 20s
+found 0 vulnerabilities
+```
+
+Then you can compile the library with SBT and run tests.
+```
+$sbt
+sbt:scrypto> compile
+sbt:scrypto> test
+```
+
+Your contributions are always welcome! 
+Please submit a pull request or create an issue to add a new cryptographic primitives or better implementations.
