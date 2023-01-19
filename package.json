@@ -2,7 +2,7 @@
   "name": "scrypto-js",
   "version": "0.0.1",
   "description": "Scrypto.js library",
-  "license": "MIT",
+  "license": "CC0",
   "publishConfig": {
     "access": "public"
   },
