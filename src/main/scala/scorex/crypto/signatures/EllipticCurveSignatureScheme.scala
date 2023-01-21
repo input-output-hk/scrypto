@@ -1,0 +1,3 @@
+package scorex.crypto.signatures
+
+trait EllipticCurveSignatureScheme extends SigningFunctions

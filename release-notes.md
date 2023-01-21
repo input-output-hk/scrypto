@@ -1,15 +1,3 @@
-
-**3.0.0**
----------
-
-* CI configuration for Scala.js 
-* configuration of SBT with necessary JS dependencies (@noble/hashes) using ScalablyTyped
-* removed all Java dependencies in `shared` code (jvm still uses BouncyCastle)
-* necessary code changes for Scala.js cross-compilation
-* the following classes moved to JVM-only module (with the corresponding tests): 
-    Blake2b256Unsafe, Blake2b512, CryptographicHash64, Keccak, Keccak256, Keccak512, 
-    Sha256Unsafe, Skein256, Skein512, Stribog256, Stribog512, ThreadUnsafeHash, Whirlpool
-
 **2.2.1**
 ---------
 
