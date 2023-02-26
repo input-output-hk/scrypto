@@ -14,6 +14,14 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Setup NPM
+        uses: pnpm/action-setup@v2
+        with:
+          version: 7.21.0
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+      - run: pnpm install
+
       - name: Setup Java and Scala
         uses: olafurpg/setup-scala@v10
         with:
