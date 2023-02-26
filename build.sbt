@@ -2,6 +2,7 @@ import sbt.Keys.{homepage, scalaVersion}
 
 name := "scrypto"
 description := "Cryptographic primitives for Scala"
+organization := "org.scorexfoundation"
 
 lazy val scala213 = "2.13.8"
 lazy val scala212 = "2.12.15"
@@ -33,13 +34,14 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies ++= Seq(
     "org.rudogma" %%% "supertagged" % "2.0-RC2",
-    "org.scorexfoundation" %%% "scorex-util" % "0.1.8-20-565873cd-SNAPSHOT",
+    "org.scorexfoundation" %%% "scorex-util" % "0.2.0",
     "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
     "org.scalatestplus" %%% "scalacheck-1-15" % "3.3.0.0-SNAP3" % Test,
     "org.scalacheck" %%% "scalacheck" % "1.15.2" % Test
   ),
+  javacOptions ++= javacReleaseOption,
   publishMavenStyle := true,
   publishTo := sonatypePublishToBundle.value
 )
@@ -50,9 +52,15 @@ Test / publishArtifact := false
 
 pomIncludeRepository := { _ => false }
 
+lazy val noPublishSettings = Seq(
+  publish := {},
+  publishLocal := {},
+  publishArtifact := false
+)
+
 lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
     .in(file("."))
-    .settings(commonSettings: _*)
+    .settings(commonSettings)
     .jvmSettings(
       libraryDependencies ++= Seq(
         "org.bouncycastle" % "bcprov-jdk15to18" % "1.66"
@@ -89,6 +97,15 @@ lazy val benchmarks = project
       scalaVersion := scala213,
     )
     .enablePlugins(JmhPlugin)
+    .settings(noPublishSettings)
+
+def javacReleaseOption = {
+  if (System.getProperty("java.version").startsWith("1."))
+  // java <9 "--release" is not supported
+    Seq()
+  else
+    Seq("--release", "8")
+}
 
 credentials ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
