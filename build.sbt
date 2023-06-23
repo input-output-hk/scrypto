@@ -15,7 +15,7 @@ javacOptions ++=
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers ++= Resolver.sonatypeOssRepos("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/input-output-hk/scrypto")),
   pomExtra :=
@@ -71,7 +71,7 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
 
 lazy val scryptoJS = scrypto.js
     .enablePlugins(ScalaJSBundlerPlugin)
-    .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
+    .enablePlugins(ScalablyTypedConverterGenSourcePlugin)
     .settings(
       scalaVersion := scala213,
       crossScalaVersions := Seq(scala212, scala213),
@@ -80,8 +80,8 @@ lazy val scryptoJS = scrypto.js
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
       ),
       Test / parallelExecution := false,
-      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1341
-      externalNpm := { file(s"${baseDirectory.value}/..") },
+      // how to setup ScalablyTyped https://scalablytyped.org/docs/library-developer
+      stOutputPackage := "scorex",
       Compile / npmDependencies ++= Seq(
         "@noble/hashes" -> "1.1.4"
       ),
