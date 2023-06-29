@@ -3,10 +3,6 @@ logLevel := Level.Warn
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")
 
-// Development of this plugin has been discontinued (use scalafix instead).
-// the plugin has old conflicting dependencies with scalablytyped
-//addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
-
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.8")
 
 addSbtPlugin("pl.project13.scala" % "sbt-jmh" % "0.3.3")
