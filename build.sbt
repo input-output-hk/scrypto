@@ -4,8 +4,8 @@ name := "scrypto"
 description := "Cryptographic primitives for Scala"
 organization := "org.scorexfoundation"
 
-lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.15"
+lazy val scala213 = "2.13.11"
+lazy val scala212 = "2.12.18"
 lazy val scala211 = "2.11.12"
 
 javacOptions ++=
@@ -34,7 +34,7 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies ++= Seq(
     "org.rudogma" %%% "supertagged" % "2.0-RC2",
-    "org.scorexfoundation" %%% "scorex-util" % "0.2.0",
+    "org.scorexfoundation" %%% "scorex-util" % "0.2.0-2-d2b192dc-SNAPSHOT",
     "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
@@ -74,7 +74,7 @@ lazy val scryptoJS = scrypto.js
     .enablePlugins(ScalablyTypedConverterGenSourcePlugin)
     .settings(
       scalaVersion := scala213,
-      crossScalaVersions := Seq(scala212, scala213),
+      crossScalaVersions := Seq(scala213),
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
