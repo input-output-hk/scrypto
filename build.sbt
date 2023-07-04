@@ -34,7 +34,7 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies ++= Seq(
     "org.rudogma" %%% "supertagged" % "2.0-RC2",
-    "org.scorexfoundation" %%% "scorex-util" % "0.2.0-2-d2b192dc-SNAPSHOT",
+    "org.scorexfoundation" %%% "scorex-util" % "0.2.1",
     "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
