@@ -4,7 +4,7 @@ name := "scrypto"
 description := "Cryptographic primitives for Scala"
 organization := "org.scorexfoundation"
 
-lazy val scala213 = "2.13.8"
+lazy val scala213 = "2.13.10"
 lazy val scala212 = "2.12.15"
 lazy val scala211 = "2.11.12"
 
@@ -35,6 +35,8 @@ lazy val commonSettings = Seq(
   libraryDependencies ++= Seq(
     "org.rudogma" %%% "supertagged" % "2.0-RC2",
     "org.scorexfoundation" %%% "scorex-util" % "0.2.0",
+    // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15to18
+    "org.bouncycastle" % "bcprov-jdk15to18" % "1.75",
     "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
