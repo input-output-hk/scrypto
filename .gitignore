@@ -13,3 +13,6 @@ target
 # logs
 scorex-errors.log
 *.log
+
+# js
+node_modules
