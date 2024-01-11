@@ -4,9 +4,14 @@ name := "scrypto"
 description := "Cryptographic primitives for Scala"
 organization := "org.scorexfoundation"
 
-lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.15"
+lazy val scalac3: Seq[String] = Seq(
+  "-source:3.0-migration", // makes the compiler forgiving on most of the dropped features, printing warnings in place of errors
+)
+
+lazy val scala213 = "2.13.12"
+lazy val scala212 = "2.12.18"
 lazy val scala211 = "2.11.12"
+lazy val scala3 = "3.3.1"
 
 javacOptions ++=
   "-source" :: "1.8" ::
@@ -15,7 +20,7 @@ javacOptions ++=
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/input-output-hk/scrypto")),
   pomExtra :=
@@ -33,14 +38,27 @@ lazy val commonSettings = Seq(
       )
   ),
   libraryDependencies ++= Seq(
-    "org.rudogma" %%% "supertagged" % "2.0-RC2",
-    "org.scorexfoundation" %%% "scorex-util" % "0.2.0",
-    "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
-    "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
-    "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
-    "org.scalatestplus" %%% "scalacheck-1-15" % "3.3.0.0-SNAP3" % Test,
-    "org.scalacheck" %%% "scalacheck" % "1.15.2" % Test
-  ),
+    ("org.rudogma" %%% "supertagged" % "2.0-RC2").cross(CrossVersion.for3Use2_13),
+  ) ++ {
+    if (scalaVersion.value == scala3)
+      Seq(
+        ("org.scorexfoundation" %%% "scorex-util" % "0.2.1").cross(CrossVersion.for3Use2_13),
+        "org.scalatest" %%% "scalatest" % "3.3.0-alpha.1" % Test,
+        "org.scalatest" %%% "scalatest-propspec" % "3.3.0-alpha.1" % Test,
+        "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-alpha.1" % Test,
+        "org.scalacheck" %%% "scalacheck" % "1.15.3" % Test,
+        "org.scalatestplus" %%% "scalacheck-1-17" % "3.3.0.0-alpha.1" % Test
+      )
+    else // use last versions with Scala 2.11 support
+      Seq(
+        "org.scorexfoundation" %%% "scorex-util" % "0.2.0",
+        "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
+        "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
+        "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
+        "org.scalacheck" %%% "scalacheck" % "1.15.2" % Test,
+        "org.scalatestplus" %%% "scalacheck-1-15" % "3.3.0.0-SNAP3" % Test
+      )
+  },
   javacOptions ++= javacReleaseOption,
   publishMavenStyle := true,
   publishTo := sonatypePublishToBundle.value
@@ -65,8 +83,20 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
       libraryDependencies ++= Seq(
         "org.bouncycastle" % "bcprov-jdk15to18" % "1.66"
       ),
+      scalacOptions ++= {
+        CrossVersion.partialVersion(scalaVersion.value) match {
+          case Some((2, n)) if n == 13 =>
+            Seq()
+          case Some((2, n)) if n == 12 =>
+            Seq()
+          case Some((2, 11)) =>
+            Seq()
+          case Some((3, _)) =>
+            Seq() ++ scalac3
+        }
+      },
       scalaVersion := scala213,
-      crossScalaVersions := Seq(scala211, scala212, scala213)
+      crossScalaVersions := Seq(scala211, scala212, scala213, scala3)
     )
 
 lazy val scryptoJS = scrypto.js
@@ -74,7 +104,7 @@ lazy val scryptoJS = scrypto.js
     .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
     .settings(
       scalaVersion := scala213,
-      crossScalaVersions := Seq(scala212, scala213),
+      crossScalaVersions := Seq(scala212, scala213, scala3),
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
@@ -83,7 +113,7 @@ lazy val scryptoJS = scrypto.js
       // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1341
       externalNpm := { file(s"${baseDirectory.value}/..") },
       Compile / npmDependencies ++= Seq(
-        "@noble/hashes" -> "1.1.4"
+        "@noble/hashes" -> "1.3.3"
       ),
       useYarn := true
     )
@@ -93,7 +123,7 @@ lazy val benchmarks = project
     .dependsOn(scrypto.jvm)
     .settings(
       moduleName := "scrypto-benchmarks",
-      crossScalaVersions := Seq(scala211, scala212, scala213),
+      crossScalaVersions := Seq(scala211, scala212, scala213, scala3),
       scalaVersion := scala213,
     )
     .enablePlugins(JmhPlugin)

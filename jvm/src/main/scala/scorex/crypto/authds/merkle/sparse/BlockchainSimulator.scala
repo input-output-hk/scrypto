@@ -49,18 +49,21 @@ object BlockchainSimulator extends App {
   val godAccount = Array.fill(32)(0: Byte)
   val godBalance = 100000000000L //100B
   val emptyState = SparseMerkleTree.emptyTree(height)
-  val (initialState, godProofs) = emptyState.update(emptyState.lastProof,
-    Transaction.coinBytes(godAccount, godBalance),
-    Seq(emptyState.lastProof)).get
+  val (initialState: SparseMerkleTree[Digest32], godProofs:  Seq[SparseMerkleProof[Digest32]]) =
+    emptyState.update(
+      emptyState.lastProof,
+      Transaction.coinBytes(godAccount, godBalance),
+      Seq(emptyState.lastProof)
+    ).get
   var godProof = godProofs.head
   var currentGodBalance = godBalance
   val txAmount = 10
   (1 to numOfBlocks).foldLeft(initialState) { case (beforeBlocktree, blockNum) =>
-    val (afterTree, processingTime) = (1 to txsPerBlock).foldLeft(beforeBlocktree -> 0L) { case ((tree, totalTime), txNum) =>
+    val (afterTree, processingTime) = (1 to txsPerBlock).foldLeft(beforeBlocktree -> 0L) { case ((tree: SparseMerkleTree[Digest32], totalTime), txNum) =>
       val recipient = hf(scala.util.Random.nextString(20))
       val tx = Transaction(txAmount, godAccount, recipient, currentGodBalance, godProof)
       val t0 = System.currentTimeMillis()
-      val (updState, proofs) = Transaction.process(tx, tree).get //we generate always valid transaction
+      val (updState: SparseMerkleTree[Digest32], proofs: Seq[SparseMerkleProof[Digest32]]) = Transaction.process(tx, tree).get //we generate always valid transaction
       val t = System.currentTimeMillis()
       currentGodBalance = currentGodBalance - txAmount
       godProof = proofs.last

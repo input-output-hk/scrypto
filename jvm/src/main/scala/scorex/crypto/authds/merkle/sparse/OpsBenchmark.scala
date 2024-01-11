@@ -18,7 +18,8 @@ object OpsBenchmark extends App {
       Seq(proof)
     } else Seq.empty[SparseMerkleProof[Digest32]]
     if (i % 1000 == 0) println(s"$i elements added")
-    val (t, p) = tree.update(tree.lastProof, Some(LeafData @@ Longs.toByteArray(i)), proofsToUpdate).get
+    val (t:  SparseMerkleTree[Digest32], p: Seq[SparseMerkleProof[Digest32]]) =
+      tree.update(tree.lastProof, Some(LeafData @@ Longs.toByteArray(i)), proofsToUpdate).get
     tree = t
     if (i >= bSize / 2) proof = p.head
   }
