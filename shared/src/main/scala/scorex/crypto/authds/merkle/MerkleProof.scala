@@ -1,7 +1,7 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.{LeafData, Side}
-import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 
 /**
@@ -30,11 +30,11 @@ case class MerkleProof[D <: Digest](leafData: LeafData, levels: Seq[(Digest, Sid
 
     levels.foldLeft(leafHash) { case (prevHash, (hash, side)) =>
       if (side == MerkleProof.LeftSide) {
-        hf.prefixedHash(MerkleTree.InternalNodePrefix, prevHash ++ hash)
+        hf.prefixedHash(MerkleTree.InternalNodePrefix, prevHash.value ++ hash)
       } else {
-        hf.prefixedHash(MerkleTree.InternalNodePrefix, hash ++ prevHash)
+        hf.prefixedHash(MerkleTree.InternalNodePrefix, hash.value ++ prevHash)
       }
-    }.sameElements(expectedRootHash)
+    }.value.sameElements(expectedRootHash.value)
   }
 
   override def toString: String =
@@ -44,7 +44,7 @@ case class MerkleProof[D <: Digest](leafData: LeafData, levels: Seq[(Digest, Sid
 
 object MerkleProof {
 
-  val LeftSide: Side = Side @@ 0.toByte
-  val RightSide: Side = Side @@ 1.toByte
+  val LeftSide: Side = @@[Side](0.toByte)
+  val RightSide: Side = @@[Side](1.toByte)
 }
 

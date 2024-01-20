@@ -22,7 +22,7 @@ case class BatchAVLProverManifest[D <: Digest](root: ProverNodes[D], rootHeight:
     * (for blockchain protocols, it can be digest and height included by a miner)
     */
   def verify(expectedDigest: D, expectedHeight: Int): Boolean = {
-    id.sameElements(expectedDigest) && expectedHeight == rootHeight
+    id.value.sameElements(expectedDigest.value) && expectedHeight == rootHeight
   }
 
   /**

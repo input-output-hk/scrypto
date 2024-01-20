@@ -12,7 +12,7 @@ class Blake2b256Unsafe extends CryptographicHash32 with ThreadUnsafeHash[Digest3
     digestFn.update(input, 0, input.length)
     val res = new Array[Byte](DigestSize)
     digestFn.doFinal(res, 0)
-    Digest32 @@ res
+    @@[Digest32](res)
   }
 
   override def prefixedHash(prefix: Byte, inputs: Message*): Digest32 = {
@@ -24,6 +24,6 @@ class Blake2b256Unsafe extends CryptographicHash32 with ThreadUnsafeHash[Digest3
     inputs.foreach(i => digestFn.update(i, 0, i.length))
     val res = new Array[Byte](DigestSize)
     digestFn.doFinal(res, 0)
-    Digest32 @@ res
+    @@[Digest32](res)
   }
 }

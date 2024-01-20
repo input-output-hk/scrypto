@@ -133,7 +133,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
     */
   protected def addNode(r: Leaf[D], key: ADKey, v: ADValue): InternalVerifierNode[D] = {
     val n = r.nextLeafKey
-    new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), Balance @@ 0.toByte)
+    new InternalVerifierNode(r.getNew(newNextLeafKey = key), new VerifierLeaf(key, v, n), @@[Balance](0.toByte))
   }
 
   protected var rootNodeHeight = 0
@@ -144,7 +144,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
     require(keyLength > 0)
     valueLengthOpt.foreach(vl => require(vl >= 0))
     require(startingDigest.length == labelLength + 1)
-    rootNodeHeight = startingDigest.last & 0xff
+    rootNodeHeight = startingDigest.value.last & 0xff
 
     val maxNodes = if (maxNumOperations.isDefined) {
       // compute the maximum number of nodes the proof can contain according to
@@ -183,27 +183,27 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
       require(maxNumOperations.isEmpty || numNodes <= maxNodes, "Proof too long")
       n match {
         case LabelInPackagedProof =>
-          val label = proof.slice(i, i + labelLength).asInstanceOf[D]
+          val label = proof.value.slice(i, i + labelLength).asInstanceOf[D]
           i += labelLength
           s = new LabelOnlyNode[D](label) +: s
           previousLeaf = None
         case LeafInPackagedProof =>
           val key = if (previousLeaf.nonEmpty) {
-            ADKey @@@ previousLeaf.get.nextLeafKey
+            previousLeaf.get.nextLeafKey
           }
           else {
             val start = i
             i += keyLength
-            ADKey @@ proof.slice(start, i)
+            @@[ADKey](proof.value.slice(start, i))
           }
-          val nextLeafKey = ADKey @@ proof.slice(i, i + keyLength)
+          val nextLeafKey = @@[ADKey](proof.value.slice(i, i + keyLength))
           i += keyLength
           val valueLength: Int = valueLengthOpt.getOrElse {
-            val vl = Ints.fromByteArray(proof.slice(i, i + 4))
+            val vl = Ints.fromByteArray(proof.value.slice(i, i + 4))
             i += 4
             vl
           }
-          val value = ADValue @@ proof.slice(i, i + valueLength)
+          val value = @@[ADValue](proof.value.slice(i, i + valueLength))
           i += valueLength
           val leaf = new VerifierLeaf[D](key, value, nextLeafKey)
           s = leaf +: s
@@ -214,14 +214,14 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
           s = s.tail
           val left = s.head
           s = s.tail
-          s = new InternalVerifierNode(left, right, Balance @@ n) +: s
+          s = new InternalVerifierNode(left, right, @@[Balance](n)) +: s
 
       }
     }
 
     require(s.size == 1)
     val root = s.head
-    require(startingDigest startsWith root.label)
+    require(startingDigest.value startsWith root.label)
     directionsIndex = (i + 1) * 8 // Directions start right after the packed tree, which we just finished
     Some(root)
   }.recoverWith { case e =>

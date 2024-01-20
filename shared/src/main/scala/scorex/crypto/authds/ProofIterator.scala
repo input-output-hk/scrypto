@@ -12,27 +12,27 @@ trait ProofIterator {
 
   protected def dequeueValue(): ADValue = {
     i = i + 1
-    ADValue @@ proofSeq(i).asInstanceOf[ProofValue].e
+    @@[ADValue](proofSeq(i).asInstanceOf[ProofValue].e)
   }
 
   protected def dequeueKey(): ADKey = {
     i = i + 1
-    ADKey @@ proofSeq(i).asInstanceOf[ProofKey].e
+    @@[ADKey](proofSeq(i).asInstanceOf[ProofKey].e)
   }
 
   protected def dequeueNextLeafKey(): ADKey = {
     i = i + 1
-    ADKey @@ proofSeq(i).asInstanceOf[ProofNextLeafKey].e
+    @@[ADKey](proofSeq(i).asInstanceOf[ProofNextLeafKey].e)
   }
 
   protected def dequeueRightLabel(): Digest = {
     i = i + 1
-    Digest32 @@ proofSeq(i).asInstanceOf[ProofRightLabel].e
+    @@[Digest32](proofSeq(i).asInstanceOf[ProofRightLabel].e)
   }
 
   protected def dequeueLeftLabel(): Digest = {
     i = i + 1
-    Digest32 @@ proofSeq(i).asInstanceOf[ProofLeftLabel].e
+    @@[Digest32](proofSeq(i).asInstanceOf[ProofLeftLabel].e)
   }
 
   protected def dequeueDirection(): Direction = {
@@ -48,9 +48,9 @@ trait ProofIterator {
   protected def dequeueBalance(): Balance = {
     i = i + 1
     proofSeq(i).bytes(0) match {
-      case -1 => Balance @@ -1.toByte
-      case 0 => Balance @@ 0.toByte
-      case 1 => Balance @@ 1.toByte
+      case -1 => @@[Balance](-1.toByte)
+      case 0 => @@[Balance](0.toByte)
+      case 1 => @@[Balance](1.toByte)
     }
   }
 }

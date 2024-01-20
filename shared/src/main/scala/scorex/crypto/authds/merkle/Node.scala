@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.{LeafData, EmptyByteArray}
+import scorex.crypto.authds._
 import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 
@@ -23,7 +23,7 @@ case class InternalNode[D <: Digest](left: Node[D], right: Node[D])
 
   override def toString: String = s"InternalNode(" +
     s"left: ${encoder.encode(left.hash)}, " +
-    s"right: ${if (right.hash.isEmpty) "null" else encoder.encode(right.hash)}," +
+    s"right: ${if (right.hash.value.isEmpty) "null" else encoder.encode(right.hash)}," +
     s"hash: ${encoder.encode(hash)})"
 }
 

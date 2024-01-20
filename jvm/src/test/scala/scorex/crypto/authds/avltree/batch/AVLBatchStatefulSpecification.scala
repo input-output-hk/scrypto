@@ -4,10 +4,10 @@ import org.scalacheck.commands.Commands
 import org.scalacheck.{Gen, Prop}
 import org.scalatest.propspec.AnyPropSpec
 import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{@@, Blake2b256, Digest32}
 import scorex.utils.{Longs, Random => RandomBytes}
 
-import scala.util.{Random, Try, Success, Failure}
+import scala.util.{Failure, Random, Success, Try}
 
 class AVLBatchStatefulSpecification extends AnyPropSpec {
 
@@ -60,14 +60,14 @@ object AVLCommands extends Commands {
   private def generateOperations(state: State): List[Operation] = {
     val appendsCommandsLength = Random.nextInt(MAXIMUM_GENERATED_OPERATIONS) + MINIMUM_OPERATIONS_LENGTH
 
-    val keys = (0 until appendsCommandsLength).map { _ => ADKey @@ RandomBytes.randomBytes(KL) }.toList
+    val keys = (0 until appendsCommandsLength).map { _ => @@[ADKey](RandomBytes.randomBytes(KL)) }.toList
     val removedKeys = state.operations.filter(_.isInstanceOf[Remove]).map(_.key).distinct
-    val prevKeys = state.operations.map(_.key).distinct.filterNot(k1 => removedKeys.exists { k2 => k1.sameElements(k2) })
+    val prevKeys = state.operations.map(_.key).distinct.filterNot(k1 => removedKeys.exists { k2 => k1.value.sameElements(k2.value) })
     val uniqueKeys = keys.filterNot(prevKeys.contains).distinct
     val updateKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, UPDATE_FRACTION))
     val removeKeys = Random.shuffle(prevKeys).take(safeDivide(prevKeys.length, REMOVE_FRACTION))
 
-    val appendCommands: List[Operation] = uniqueKeys.map { k => Insert(k, ADValue @@ Longs.toByteArray(nextPositiveLong)) }
+    val appendCommands: List[Operation] = uniqueKeys.map { k => Insert(k, @@[ADValue](Longs.toByteArray(nextPositiveLong))) }
     val updateCommands: List[Operation] = updateKeys.map { k => UpdateLongBy(k, nextPositiveLong) }
     val removeCommands: List[Operation] = removeKeys.map { k => Remove(k) }
 
@@ -98,7 +98,7 @@ object AVLCommands extends Commands {
         case Success(res) =>
           val verifier = new BatchAVLVerifier[T, HF](res.digest, res.proof, KL, Some(VL))
           ops.foreach(verifier.performOneOperation)
-          verifier.digest.exists(_.sameElements(res.postDigest))
+          verifier.digest.exists(_.value.sameElements(res.postDigest))
         case Failure(_) =>
           false
       }

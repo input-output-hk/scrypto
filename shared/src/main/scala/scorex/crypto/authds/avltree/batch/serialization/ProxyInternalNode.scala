@@ -2,8 +2,8 @@ package scorex.crypto.authds.avltree.batch.serialization
 
 import scorex.crypto.authds.avltree.batch.InternalNode.InternalNodePrefix
 import scorex.crypto.authds.avltree.batch.{InternalProverNode, ProverNodes}
-import scorex.crypto.authds.{ADKey, Balance}
-import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 
 /**
   * Internal node for which not children are stored but just their digests
@@ -20,9 +20,9 @@ class ProxyInternalNode[D <: Digest](protected var pk: ADKey,
   }
 
   private[serialization] def setChild(n: ProverNodes[D]): Unit = {
-    if (n.label sameElements leftLabel) {
+    if (n.label.value sameElements leftLabel.value) {
       l = n
-    } else if (n.label sameElements rightLabel) {
+    } else if (n.label.value sameElements rightLabel.value) {
       r = n
     } else {
       throw new AssertionError("Unable to determine direction to mutate")

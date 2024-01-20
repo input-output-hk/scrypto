@@ -1,7 +1,7 @@
 package scorex.crypto.authds.legacy.avltree
 
 import scorex.crypto.authds.avltree.batch.ToStringHelper
-import scorex.crypto.authds.{ADKey, ADValue, Balance}
+import scorex.crypto.authds._
 import scorex.crypto.hash._
 
 sealed trait Node extends ToStringHelper {
@@ -56,7 +56,7 @@ case class LabelOnlyNode(l: Digest) extends Node {
 }
 
 case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _right: ProverNodes,
-                      protected var _balance: Balance = Balance @@ 0.toByte)
+                      protected var _balance: Balance = @@[Balance](0.toByte))
                      (implicit val hf: CryptographicHash[_ <: Digest]) extends ProverNodes with InternalNode {
 
   def left: ProverNodes = _left
@@ -82,7 +82,7 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
   //needed for debug only
   private[avltree] def checkHeight: Boolean = {
     height = math.max(right.height, left.height) + 1
-    balance == right.height - left.height && balance >= -1 && balance <= 1
+    balance.value == right.height - left.height && balance >= -1 && balance <= 1
   }
 
   override def toString: String = {

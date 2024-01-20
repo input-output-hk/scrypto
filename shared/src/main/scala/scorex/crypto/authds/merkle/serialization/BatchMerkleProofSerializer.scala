@@ -2,8 +2,8 @@ package scorex.crypto.authds.merkle.serialization
 
 import scorex.utils.{Bytes, Ints}
 import scorex.crypto.authds.merkle.BatchMerkleProof
-import scorex.crypto.authds.{EmptyByteArray, Side}
-import scorex.crypto.hash.{CryptographicHash, Digest, Digest32}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 
 import scala.util.Try
 
@@ -52,7 +52,7 @@ class BatchMerkleProofSerializer[D <: Digest32, HF <: CryptographicHash[D]](impl
   private[serialization] def proofsToBytes(proofs: Seq[(Digest, Side)]): Array[Byte] = {
     Bytes.concat(
       proofs.map(p => (p._1, Array(p._2.toByte))).flatten{
-        case (a, b) if a.isEmpty => Bytes.concat(Array.ofDim[Byte](32), b)
+        case (a, b) if a.value.isEmpty => Bytes.concat(Array.ofDim[Byte](32), b)
         case (a, b) => Bytes.concat(a, b)
       }.toArray
     )

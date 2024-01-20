@@ -164,7 +164,7 @@ case class SparseMerkleProof[D <: Digest](idx: Node.ID,
     val calcRootHash = propagateChanges(leafDataOpt: Option[LeafData])._1
 
     (calcRootHash, expectedRootHash) match {
-      case (Some(calcRoot), Some(expRoot)) => calcRoot sameElements expRoot
+      case (Some(calcRoot), Some(expRoot)) => calcRoot.value sameElements expRoot.value
       case (None, None) => true
       case _ => false
     }

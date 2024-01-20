@@ -1,8 +1,8 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.Side
+import scorex.crypto.authds._
 import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
-import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 
 import java.util
@@ -63,15 +63,15 @@ case class BatchMerkleProof[D <: Digest](indices: Seq[(Int, Digest)], proofs: Se
         if (b.size > 1 && b.lift(i) == b.lift(i + 1)) {
 
           // hash the corresponding values inside E with one another
-          e_new = e_new :+ hf.prefixedHash(InternalNodePrefix, e.apply(i)._2 ++ e.apply(i + 1)._2)
+          e_new = e_new :+ hf.prefixedHash(InternalNodePrefix, e.apply(i)._2.value ++ e.apply(i + 1)._2)
           i += 2
         } else {
 
           // hash the corresponding value inside E with the first hash inside M, taking note of the side
           if (m_new.head._2 == MerkleProof.LeftSide) {
-            e_new = e_new :+ hf.prefixedHash(MerkleTree.InternalNodePrefix, m_new.head._1 ++ e.apply(i)._2)
+            e_new = e_new :+ hf.prefixedHash(MerkleTree.InternalNodePrefix, m_new.head._1.value ++ e.apply(i)._2)
           } else {
-            e_new = e_new :+ hf.prefixedHash(MerkleTree.InternalNodePrefix, e.apply(i)._2 ++ m_new.head._1)
+            e_new = e_new :+ hf.prefixedHash(MerkleTree.InternalNodePrefix, e.apply(i)._2.value ++ m_new.head._1)
           }
 
           // remove the used value from m
@@ -92,7 +92,7 @@ case class BatchMerkleProof[D <: Digest](indices: Seq[(Int, Digest)], proofs: Se
 
     val e = indices sortBy(_._1)
     loop(indices.map(_._1), e, proofs) match {
-      case root: Seq[Digest] if root.size == 1 => root.head.sameElements(expectedRootHash)
+      case root: Seq[Digest] if root.size == 1 => root.head.value.sameElements(expectedRootHash.value)
       case _ => false
     }
   }

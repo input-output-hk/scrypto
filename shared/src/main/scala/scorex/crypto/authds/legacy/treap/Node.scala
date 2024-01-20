@@ -2,7 +2,7 @@ package scorex.crypto.authds.legacy.treap
 
 import scorex.crypto.authds.avltree.batch.ToStringHelper
 import scorex.crypto.authds.legacy.treap.Constants.LevelFunction
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds._
 import scorex.crypto.hash._
 
 sealed trait Node extends ToStringHelper {
@@ -24,7 +24,7 @@ sealed trait Node extends ToStringHelper {
 
 trait InternalNode {
   val hf: CryptographicHash[_ <: Digest]
-  val level: Level
+  def level: Level
 
   def leftLabel: Digest
 
@@ -44,7 +44,8 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
                      (implicit val hf: CryptographicHash[_ <: Digest], levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
-  lazy val level: Level = levelFunc(key)
+  // https://users.scala-lang.org/t/from-scala-2-13-to-3-some-surprises/7759
+  def level: Level = levelFunc(key)
 
   def left: ProverNodes = _left
 

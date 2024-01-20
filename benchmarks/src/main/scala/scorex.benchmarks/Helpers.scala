@@ -1,9 +1,9 @@
 package scorex.benchmarks
 
 import scorex.utils.Longs
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds._
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, Insert, Operation, Remove}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash._
 
 import scala.util.Random
 
@@ -17,7 +17,7 @@ object Helpers {
       val key = new Array[Byte](kl)
       val k = Longs.toByteArray(i)
       k.copyToArray(key)
-      Insert(ADKey @@ key, ADValue @@ k.take(kl))
+      Insert(@@[ADKey](key), @@[ADValue](k.take(kl)))
     }
 
   def generateDeletes(inserts: Seq[Operation], count: Int): Seq[Operation] =
@@ -41,7 +41,7 @@ object Helpers {
         val fullKey = Array.fill(kl - 8)(0: Byte) ++ key
         val fullValue = Array.fill(vl - 8)(0: Byte) ++ value
 
-        val insert = Insert(ADKey @@ fullKey, ADValue @@ fullValue)
+        val insert = Insert(@@[ADKey](fullKey), @@[ADValue](fullValue))
         prover.performOneOperation(insert)
       }
       prover.generateProof()

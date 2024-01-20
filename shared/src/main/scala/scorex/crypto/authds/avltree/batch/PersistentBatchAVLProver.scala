@@ -48,14 +48,14 @@ object PersistentBatchAVLProver {
                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
 
     new PersistentBatchAVLProver[D, HF] {
-      override var avlProver: BatchAVLProver[D, HF] = avlBatchProver
+      var avlProver: BatchAVLProver[D, HF] = avlBatchProver
       override val storage: VersionedAVLStorage[D] = versionedStorage
 
       (storage.version match {
         case Some(ver) => rollback(ver).get
         case None => generateProofAndUpdateStorage(additionalData) //to initialize storage and clear prover's state
       }).ensuring { _ =>
-        storage.version.get.sameElements(avlProver.digest) &&
+        storage.version.get.value.sameElements(avlProver.digest.value) &&
           (!paranoidChecks || Try(avlProver.checkTree(true)).isSuccess)
       }
     }

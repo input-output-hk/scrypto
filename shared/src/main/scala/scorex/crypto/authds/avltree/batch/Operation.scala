@@ -1,7 +1,8 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.utils.Longs
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 
 import scala.util.{Failure, Success, Try}
@@ -13,7 +14,7 @@ sealed trait Operation {
 case class Lookup(override val key: ADKey) extends Operation
 
 case object UnknownModification extends Modification {
-  override val key: ADKey = ADKey @@ Array[Byte]()
+  override val key: ADKey = @@[ADKey](Array[Byte]())
 
   override def updateFn: UpdateFunction = old => Success(old)
 }
@@ -88,14 +89,14 @@ case class RemoveIfExists(key: ADKey) extends Modification {
 case class UpdateLongBy(key: ADKey, delta: Long) extends Modification {
   override def updateFn: UpdateFunction = {
     case m if delta == 0 => Success(m)
-    case None if delta > 0 => Success(Some(ADValue @@ Longs.toByteArray(delta)))
+    case None if delta > 0 => Success(Some(@@[ADValue](Longs.toByteArray(delta))))
     case None if delta < 0 => Failure(new Exception("Trying to decrease non-existing value"))
     case Some(oldV) =>
       val newVal = Math.addExact(Longs.fromByteArray(oldV), delta)
       if (newVal == 0) {
         Success(None)
       } else if (newVal > 0) {
-        Success(Some(ADValue @@ Longs.toByteArray(newVal)))
+        Success(Some(@@[ADValue](Longs.toByteArray(newVal))))
       } else {
         Failure(new Exception("New value is negative"))
       }

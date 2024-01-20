@@ -1,7 +1,7 @@
 package scorex.crypto.authds.merkle.sparse
 
 import scorex.crypto.authds.LeafData
-import scorex.crypto.hash.{CryptographicHash, Digest32, Blake2b256Unsafe}
+import scorex.crypto.hash._
 import scorex.utils.Longs
 
 object OpsBenchmark extends App {
@@ -19,7 +19,7 @@ object OpsBenchmark extends App {
     } else Seq.empty[SparseMerkleProof[Digest32]]
     if (i % 1000 == 0) println(s"$i elements added")
     val (t:  SparseMerkleTree[Digest32], p: Seq[SparseMerkleProof[Digest32]]) =
-      tree.update(tree.lastProof, Some(LeafData @@ Longs.toByteArray(i)), proofsToUpdate).get
+      tree.update(tree.lastProof, Some(@@[LeafData](Longs.toByteArray(i))), proofsToUpdate).get
     tree = t
     if (i >= bSize / 2) proof = p.head
   }
@@ -31,12 +31,12 @@ object OpsBenchmark extends App {
   println(s"1000 updates time: ${tv - tv0} ms")
   val te0 = System.currentTimeMillis()
   (1 to 1000).foreach(_ =>
-    tree.update(tree.lastProof, Some(LeafData @@ Longs.toByteArray(2)), Seq())
+    tree.update(tree.lastProof, Some(@@[LeafData](Longs.toByteArray(2))), Seq())
   )
   val te = System.currentTimeMillis()
   val tp0 = System.currentTimeMillis()
   (1 to 1000).foreach(_ =>
-    tree.update(tree.lastProof, Some(LeafData @@ Longs.toByteArray(2)), Seq(proof))
+    tree.update(tree.lastProof, Some(@@[LeafData](Longs.toByteArray(2))), Seq(proof))
   )
   val tp = System.currentTimeMillis()
   val tu = (tp - tp0) - (te - te0)

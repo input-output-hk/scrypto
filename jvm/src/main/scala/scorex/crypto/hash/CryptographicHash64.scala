@@ -7,6 +7,6 @@ trait CryptographicHash64 extends CryptographicHash[Digest64] {
 
   override def byteArrayToDigest(bytes: Array[Byte]): Try[Digest64] = Try {
     require(bytes.lengthCompare(DigestSize) == 0, "Incorrect digest size")
-    Digest64 @@ bytes
+    @@[Digest64](bytes)
   }
 }

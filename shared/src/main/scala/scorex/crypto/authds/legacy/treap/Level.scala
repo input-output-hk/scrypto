@@ -1,7 +1,7 @@
 package scorex.crypto.authds.legacy.treap
 
 import scorex.utils.Ints
-import scorex.crypto.authds.ADKey
+import scorex.crypto.authds._
 import scorex.crypto.hash.Sha256
 import scorex.utils.ByteArray
 
@@ -18,11 +18,11 @@ object Level {
 
     val s = Sha256(key)
     var i = 0
-    while (i < 256 && !isBitSet(s(i / 8))(i % 8)) i = i + 1
+    while (i < 256 && !isBitSet(s.value(i / 8))(i % 8)) i = i + 1
     ByteLevel(i.toByte)
   }
 
-  def treapLevel(key: ADKey): Level = IntLevel(Ints.fromByteArray(Sha256(key).take(4)))
+  def treapLevel(key: ADKey): Level = IntLevel(Ints.fromByteArray(Sha256(key).value.take(4)))
 }
 
 

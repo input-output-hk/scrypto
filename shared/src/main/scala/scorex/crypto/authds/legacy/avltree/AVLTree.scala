@@ -15,14 +15,14 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
   type ChangeHappened = Boolean
   type ChildHeightIncreased = Boolean
 
-  private val PositiveInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(-1: Byte)
-  private val NegativeInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(0: Byte)
+  private val PositiveInfinityKey: ADKey = @@[ADKey](Array.fill(keyLength)(-1: Byte))
+  private val NegativeInfinityKey: ADKey = @@[ADKey](Array.fill(keyLength)(0: Byte))
 
-  val DefaultTopNode = Leaf(NegativeInfinityKey, ADValue @@ Array.fill(valueLength)(0: Byte), PositiveInfinityKey)
+  val DefaultTopNode = Leaf(NegativeInfinityKey, @@[ADValue](Array.fill(valueLength)(0: Byte)), PositiveInfinityKey)
 
   private var topNode: ProverNodes = rootOpt.getOrElse(DefaultTopNode)
 
-  def rootHash(): ADDigest = ADDigest @@@ topNode.label
+  def rootHash(): ADDigest = @@@[Digest, ADDigest](topNode.label)
 
   override def run[O <: Operation](operation: O): Try[AVLModifyProof] = Try {
     val key = operation.key
@@ -125,9 +125,9 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
                     if (newLeft.balance < 0) {
                       // single rotate
                       r.left = newLeft.right
-                      r.balance = Balance @@ 0.toByte
+                      r.balance = @@[Balance](0.toByte)
                       newLeft.right = r
-                      newLeft.balance = Balance @@ 0.toByte
+                      newLeft.balance = @@[Balance](0.toByte)
                       assert(r.checkHeight)
                       assert(newLeft.checkHeight)
                       (newLeft, true, false)
@@ -145,20 +145,20 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
                       newRoot.left = newLeft
 
                       newRoot.balance match {
-                        case a if a == 0 =>
+                        case a if a.value == 0 =>
                           // newRoot is a newly created node
                           assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
                           assert(newLeft.left.isInstanceOf[Leaf] && newLeft.right.isInstanceOf[Leaf])
-                          newLeft.balance = Balance @@ 0.toByte
-                          r.balance = Balance @@ 0.toByte
-                        case a if a == -1 =>
-                          newLeft.balance = Balance @@ 0.toByte
-                          r.balance = Balance @@ 1.toByte
-                        case a if a == 1 =>
-                          newLeft.balance = Balance @@ -1.toByte
-                          r.balance = Balance @@ 0.toByte
+                          newLeft.balance = @@[Balance](0.toByte)
+                          r.balance = @@[Balance](0.toByte)
+                        case a if a.value == -1 =>
+                          newLeft.balance = @@[Balance](0.toByte)
+                          r.balance = @@[Balance](1.toByte)
+                        case a if a.value == 1 =>
+                          newLeft.balance = @@[Balance](-1.toByte)
+                          r.balance = @@[Balance](0.toByte)
                       }
-                      newRoot.balance = Balance @@ 0.toByte
+                      newRoot.balance = @@[Balance](0.toByte)
 
                       assert(r.checkHeight)
                       assert(newLeft.checkHeight)
@@ -172,8 +172,8 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
               } else {
                 // no need to rotate
                 r.left = newLeftM
-                val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-                if (childHeightIncreased) r.balance = Balance @@ (r.balance - 1).toByte
+                val myHeightIncreased: Boolean = childHeightIncreased && r.balance.value == (0: Byte)
+                if (childHeightIncreased) r.balance = @@[Balance]((r.balance - 1).toByte)
                 assert(r.checkHeight)
 
                 (r, true, myHeightIncreased)
@@ -200,9 +200,9 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
                     if (newRight.balance > 0) {
                       // single rotate
                       r.right = newRight.left
-                      r.balance = Balance @@ 0.toByte
+                      r.balance = @@[Balance](0.toByte)
                       newRight.left = r
-                      newRight.balance = Balance @@ 0.toByte
+                      newRight.balance = @@[Balance](0.toByte)
                       assert(r.checkHeight)
                       assert(newRight.checkHeight)
                       (newRight, true, false)
@@ -220,20 +220,20 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
                       newRoot.right = newRight
 
                       newRoot.balance match {
-                        case a if a == 0 =>
+                        case a if a.value == 0 =>
                           // newRoot is an newly created node
                           assert(r.left.isInstanceOf[Leaf] && r.right.isInstanceOf[Leaf])
                           assert(newRight.left.isInstanceOf[Leaf] && newRight.right.isInstanceOf[Leaf])
-                          newRight.balance = Balance @@ 0.toByte
-                          r.balance = Balance @@ 0.toByte
-                        case a if a == -1 =>
-                          newRight.balance = Balance @@ 1.toByte
-                          r.balance = Balance @@ 0.toByte
-                        case a if a == 1 =>
-                          newRight.balance = Balance @@ 0.toByte
-                          r.balance = Balance @@ -1.toByte
+                          newRight.balance = @@[Balance](0.toByte)
+                          r.balance = @@[Balance](0.toByte)
+                        case a if a.value == -1 =>
+                          newRight.balance = @@[Balance](1.toByte)
+                          r.balance = @@[Balance](0.toByte)
+                        case a if a.value == 1 =>
+                          newRight.balance = @@[Balance](0.toByte)
+                          r.balance = @@[Balance](-1.toByte)
                       }
-                      newRoot.balance = Balance @@ 0.toByte
+                      newRoot.balance = @@[Balance](0.toByte)
 
                       assert(r.checkHeight)
                       assert(newRight.checkHeight)
@@ -247,8 +247,8 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
               } else {
                 // no need to rotate
                 r.right = newRightM
-                val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-                if (childHeightIncreased) r.balance = Balance @@ (r.balance + 1).toByte
+                val myHeightIncreased: Boolean = childHeightIncreased && r.balance.value == (0: Byte)
+                if (childHeightIncreased) r.balance = @@[Balance]((r.balance + 1).toByte)
                 assert(r.checkHeight)
                 (r, true, myHeightIncreased)
               }

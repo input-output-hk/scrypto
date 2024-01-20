@@ -1,24 +1,48 @@
 package scorex.crypto
 
-import supertagged.TaggedType
+import scala.language.implicitConversions
+
+//import supertagged.TaggedType
 
 package object hash {
 
-  trait BaseDigest extends TaggedType[Array[Byte]]
+//  trait BaseDigest extends TaggedType[Array[Byte]]
 
-  type Digest = BaseDigest#Type
+//  type Digest = BaseDigest#Type
 
-  object Digest32 extends BaseDigest
+//  object Digest32 extends BaseDigest
+//
+//  type Digest32 = Digest32.Type
 
-  type Digest32 = Digest32.Type
+  def @@[C](c: Array[Byte]): C = unsafeCast(c)
+  def @@[C](c: Byte): C = unsafeCast(c)
 
-  object Digest64 extends BaseDigest
+  def @@@[A, B](c: A): B = unsafeCast(c)
 
-  type Digest64 = Digest64.Type
+  @inline final def unsafeCast[A, B](v: A): B = v.asInstanceOf[B]
+  implicit def digest32ToArray(dig: Digest32): Array[Byte] = dig.value
+  implicit def digest64ToArray(dig: Digest64): Array[Byte] = dig.value
+  implicit def digestToArray(dig: Digest): Array[Byte] = dig.value
 
-  object NonStandardDigest extends BaseDigest
+  trait Digest extends Any {
+    val value: Array[Byte]
 
-  type NonStandardDigest = NonStandardDigest.Type
+    def toList: List[Byte] = value.toList
+  }
+
+//  case class Digest(val value: Array[Byte]) extends AnyVal with BaseDigest
+
+  case class Digest32(value: Array[Byte]) extends AnyVal with Digest
+
+  case class Digest64(value: Array[Byte]) extends AnyVal with Digest
+//  object Digest64 extends BaseDigest
+
+//  type Digest64 = Digest64.Type
+
+//  object NonStandardDigest extends BaseDigest
+
+//  type NonStandardDigest = NonStandardDigest.Type
+  case class NonStandardDigest(val value: Array[Byte]) extends AnyVal
 
   type ExtendedDigest = Platform.Digest
 

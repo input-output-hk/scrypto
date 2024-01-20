@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.{Balance, _}
-import scorex.crypto.hash.Digest
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 import scorex.utils.ByteArray
 
 import scala.collection.mutable.ArrayBuffer
@@ -30,8 +30,8 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
     */
   protected val changedNodesBufferToCheck: ArrayBuffer[ProverNodes[D]] = ArrayBuffer.empty
 
-  protected val PositiveInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(-1: Byte)
-  protected val NegativeInfinityKey: ADKey = ADKey @@ Array.fill(keyLength)(0: Byte)
+  protected val PositiveInfinityKey: ADKey = @@[ADKey](Array.fill(keyLength)(-1: Byte))
+  protected val NegativeInfinityKey: ADKey = @@[ADKey](Array.fill(keyLength)(0: Byte))
 
   protected var rootNodeHeight: Int
 
@@ -65,7 +65,7 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
     // verifier, by adding 256 if it's negative).
     // The reason rootNodeHeight should never be more than 255 is that if height is more than 255,
     // then the AVL tree has at least  2^{255/1.4405} = 2^177 leaves, which is more than the number of atoms on planet Earth.
-    ADDigest @@ (rootNode.label :+ rootNodeHeight.toByte)
+    @@[ADDigest]((rootNode.label.value :+ rootNodeHeight.toByte))
   }
 
   /* The following four methods differ for the prover and verifier, but are used in the code below */
@@ -104,16 +104,16 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
   private def doubleLeftRotate(currentRoot: InternalNode[D], leftChild: Node[D], rightChild: InternalNode[D]): InternalNode[D] = {
     val newRoot = rightChild.left.asInstanceOf[InternalNode[D]]
     val (newLeftBalance: Balance, newRightBalance: Balance) = newRoot.balance match {
-      case a if a == 0 =>
-        (Balance @@ 0.toByte, Balance @@ 0.toByte)
-      case a if a == -1 =>
-        (Balance @@ 0.toByte, Balance @@ 1.toByte)
-      case a if a == 1 =>
-        (Balance @@ -1.toByte, Balance @@ 0.toByte)
+      case a if a.value == 0 =>
+        (@@[Balance](0.toByte), @@[Balance](0.toByte))
+      case a if a.value == -1 =>
+        (@@[Balance](0.toByte), @@[Balance](1.toByte))
+      case a if a.value == 1 =>
+        (@@[Balance](-1.toByte), @@[Balance](0.toByte))
     }
     val newLeftChild = currentRoot.getNew(newLeft = leftChild, newRight = newRoot.left, newBalance = newLeftBalance)
     val newRightChild = rightChild.getNew(newLeft = newRoot.right, newBalance = newRightBalance)
-    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = Balance @@ 0.toByte)
+    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = @@[Balance](0.toByte))
   }
 
   /**
@@ -124,16 +124,16 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
   private def doubleRightRotate(currentRoot: InternalNode[D], leftChild: InternalNode[D], rightChild: Node[D]): InternalNode[D] = {
     val newRoot = leftChild.right.asInstanceOf[InternalNode[D]]
     val (newLeftBalance: Balance, newRightBalance: Balance) = newRoot.balance match {
-      case a if a == 0 =>
-        (Balance @@ 0.toByte, Balance @@ 0.toByte)
-      case a if a == -1 =>
-        (Balance @@ 0.toByte, Balance @@ 1.toByte)
-      case a if a == 1 =>
-        (Balance @@ -1.toByte, Balance @@ 0.toByte)
+      case a if a.value == 0 =>
+        (@@[Balance](0.toByte), @@[Balance](0.toByte))
+      case a if a.value == -1 =>
+        (@@[Balance](0.toByte), @@[Balance](1.toByte))
+      case a if a.value == 1 =>
+        (@@[Balance](-1.toByte), @@[Balance](0.toByte))
     }
     val newRightChild = currentRoot.getNew(newRight = rightChild, newLeft = newRoot.right, newBalance = newRightBalance)
     val newLeftChild = leftChild.getNew(newRight = newRoot.left, newBalance = newLeftBalance)
-    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = Balance @@ 0.toByte)
+    newRoot.getNew(newLeft = newLeftChild, newRight = newRightChild, newBalance = @@[Balance](0.toByte))
   }
 
   protected def returnResultOfOneOperation(operation: Operation, rootNode: Node[D]): Try[(Node[D], Option[ADValue])] = Try {
@@ -219,15 +219,15 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
                 val newLeft = newLeftM.asInstanceOf[InternalNode[D]]
                 if (newLeft.balance < 0) {
                   // single right rotate
-                  val newR = r.getNew(newLeft = newLeft.right, newBalance = Balance @@ 0.toByte)
-                  (newLeft.getNew(newRight = newR, newBalance = Balance @@ 0.toByte), true, false, false, oldValue)
+                  val newR = r.getNew(newLeft = newLeft.right, newBalance = @@[Balance](0.toByte))
+                  (newLeft.getNew(newRight = newR, newBalance = @@[Balance](0.toByte)), true, false, false, oldValue)
                 } else {
                   (doubleRightRotate(r, newLeft, r.right), true, false, false, oldValue)
                 }
               } else {
                 // no need to rotate
-                val myHeightIncreased = childHeightIncreased && r.balance == (0: Byte)
-                val rBalance = if (childHeightIncreased) Balance @@ (r.balance - 1).toByte else r.balance
+                val myHeightIncreased = childHeightIncreased && r.balance.value == (0: Byte)
+                val rBalance = if (childHeightIncreased) @@[Balance]((r.balance - 1).toByte) else r.balance
                 (r.getNew(newLeft = newLeftM, newBalance = rBalance), true, myHeightIncreased, false, oldValue)
               }
 
@@ -248,15 +248,15 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
 
                 if (newRight.balance > 0) {
                   // single left rotate
-                  val newR = r.getNew(newRight = newRight.left, newBalance = Balance @@ 0.toByte)
-                  (newRight.getNew(newLeft = newR, newBalance = Balance @@ 0.toByte), true, false, false, oldValue)
+                  val newR = r.getNew(newRight = newRight.left, newBalance = @@[Balance](0.toByte))
+                  (newRight.getNew(newLeft = newR, newBalance = @@[Balance](0.toByte)), true, false, false, oldValue)
                 } else {
                   (doubleLeftRotate(r, r.left, newRight), true, false, false, oldValue)
                 }
               } else {
                 // no need to rotate
-                val myHeightIncreased: Boolean = childHeightIncreased && r.balance == (0: Byte)
-                val rBalance = if (childHeightIncreased) Balance @@ (r.balance + 1).toByte else r.balance
+                val myHeightIncreased: Boolean = childHeightIncreased && r.balance.value == (0: Byte)
+                val rBalance = if (childHeightIncreased) @@[Balance]((r.balance + 1).toByte) else r.balance
                 (r.getNew(newRight = newRightM, newBalance = rBalance), true, myHeightIncreased, false, oldValue)
               }
             } else {
@@ -386,15 +386,15 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
             } else {
               // single left rotate
               val newLeftChild = newRoot.getNew(newLeft = newLeft, newRight = rightChild.left,
-                newBalance = Balance @@ (1 - rightChild.balance).toByte)
+                newBalance = @@[Balance]((1 - rightChild.balance).toByte))
               val newR = rightChild.getNew(newLeft = newLeftChild,
-                newBalance = Balance @@ (rightChild.balance - 1).toByte)
-              (newR, newR.balance == 0)
+                newBalance = @@[Balance]((rightChild.balance - 1).toByte))
+              (newR, newR.balance.value == 0)
             }
           } else {
             // no rotation, just recalculate newRoot.balance and childHeightDecreased
-            val newBalance = if (childHeightDecreased) Balance @@ (newRoot.balance + 1).toByte else newRoot.balance
-            (newRoot.getNew(newLeft = newLeft, newBalance = newBalance), childHeightDecreased && newBalance == 0)
+            val newBalance = if (childHeightDecreased) @@[Balance]((newRoot.balance + 1).toByte) else newRoot.balance
+            (newRoot.getNew(newLeft = newLeft, newBalance = newBalance), childHeightDecreased && newBalance.value == 0)
           }
         } else {
           // going right; know right child is not a leaf
@@ -413,15 +413,15 @@ trait AuthenticatedTreeOps[D <: Digest] extends BatchProofConstants with ToStrin
             } else {
               // single right rotate
               val newRightChild = r.getNew(newLeft = leftChild.right, newRight = newRight,
-                newBalance = Balance @@ (-leftChild.balance - 1).toByte)
+                newBalance = @@[Balance]((-leftChild.balance - 1).toByte))
               val newR = leftChild.getNew(newRight = newRightChild,
-                newBalance = Balance @@ (1 + leftChild.balance).toByte)
-              (newR, newR.balance == 0)
+                newBalance = @@[Balance]((1 + leftChild.balance).toByte))
+              (newR, newR.balance.value == 0)
             }
           } else {
             // no rotation, just recalculate r.balance and childHeightDecreased
-            val newBalance = if (childHeightDecreased) Balance @@ (r.balance - 1).toByte else r.balance
-            (r.getNew(newRight = newRight, newBalance = newBalance), childHeightDecreased && newBalance == 0)
+            val newBalance = if (childHeightDecreased) @@[Balance]((r.balance - 1).toByte) else r.balance
+            (r.getNew(newRight = newRight, newBalance = newBalance), childHeightDecreased && newBalance.value == 0)
           }
         }
       }

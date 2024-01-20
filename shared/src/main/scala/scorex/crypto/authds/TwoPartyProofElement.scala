@@ -69,8 +69,8 @@ case object GoingRight extends Direction
 
 case class ProofBalance(e: Balance) extends AVLProofElement {
   override val bytes: Array[Byte] = Array(e match {
-    case a if a == -1 => -1: Byte
-    case a if a == 0 => 0: Byte
-    case a if a == 1 => 1: Byte
+    case a if a.value == -1 => -1: Byte
+    case a if a.value == 0 => 0: Byte
+    case a if a.value == 1 => 1: Byte
   })
 }

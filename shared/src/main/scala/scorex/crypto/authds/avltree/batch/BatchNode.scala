@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.{ADKey, ADValue, Balance}
+import scorex.crypto.authds._
 import scorex.crypto.hash._
 
 sealed trait Node[D <: Digest] extends ToStringHelper {
@@ -66,7 +66,7 @@ object InternalNode {
 class InternalProverNode[D <: Digest](protected var k: ADKey,
                                       protected var l: ProverNodes[D],
                                       protected var r: ProverNodes[D],
-                                      protected var b: Balance = Balance @@ 0.toByte)(implicit val hf: CryptographicHash[D])
+                                      protected var b: Balance = @@[Balance](0.toByte))(implicit val hf: CryptographicHash[D])
   extends ProverNodes[D] with InternalNode[D] {
 
 

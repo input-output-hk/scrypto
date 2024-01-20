@@ -19,7 +19,7 @@ case class BatchAVLProverSubtree[D <: Digest](subtreeTop: ProverNodes[D]) {
     * Verify that manifest corresponds to expected digest (e.g. got from a manifest)
     */
   def verify(expectedDigest: D): Boolean = {
-    subtreeTop.label.sameElements(expectedDigest)
+    subtreeTop.label.value.sameElements(expectedDigest.value)
   }
 
   /**

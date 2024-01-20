@@ -1,10 +1,10 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
-import scorex.crypto.authds.avltree.batch.{BatchAVLProver, ProverLeaf, InternalProverNode, ProverNodes}
-import scorex.crypto.authds.{ADValue, ADKey, Balance}
-import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.crypto.authds.avltree.batch.{BatchAVLProver, InternalProverNode, ProverLeaf, ProverNodes}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 import scorex.util.encode.Base16
-import scorex.utils.{Bytes, Ints, ByteArray, Logger}
+import scorex.utils.{ByteArray, Bytes, Ints, Logger}
 
 import scala.util.Try
 
@@ -64,8 +64,8 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]]
         // manifest being mutated here
         def mutateLoop(n: ProverNodes[D]): Unit = n match {
           case n: ProxyInternalNode[D] if n.isEmpty =>
-            val left = sliced._2.find(_.id sameElements n.leftLabel).get.subtreeTop
-            val right = sliced._2.find(_.id sameElements n.rightLabel).get.subtreeTop
+            val left = sliced._2.find(_.id.value sameElements n.leftLabel.value).get.subtreeTop
+            val right = sliced._2.find(_.id.value sameElements n.rightLabel.value).get.subtreeTop
             n.setChild(left)
             n.setChild(right)
           case n: InternalProverNode[D] =>
@@ -120,13 +120,13 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]]
   def nodesFromBytes(bytesIn: Array[Byte], keyLength: Int): Try[ProverNodes[D]] = Try {
     def loop(bytes: Array[Byte]): ProverNodes[D] = bytes.head match {
       case 0 =>
-        val key = ADKey @@ bytes.slice(1, keyLength + 1)
-        val nextLeafKey = ADKey @@ bytes.slice(keyLength + 1, 2 * keyLength + 1)
-        val value = ADValue @@ bytes.slice(2 * keyLength + 1, bytes.length)
+        val key = @@[ADKey](bytes.slice(1, keyLength + 1))
+        val nextLeafKey = @@[ADKey](bytes.slice(keyLength + 1, 2 * keyLength + 1))
+        val value = @@[ADValue](bytes.slice(2 * keyLength + 1, bytes.length))
         new ProverLeaf[D](key, value, nextLeafKey)
       case 1 =>
-        val balance = Balance @@ bytes.slice(1, 2).head
-        val key = ADKey @@ bytes.slice(2, keyLength + 2)
+        val balance = @@[Balance](bytes.slice(1, 2).head)
+        val key = @@[ADKey](bytes.slice(2, keyLength + 2))
         val leftLength = Ints.fromByteArray(bytes.slice(keyLength + 2, keyLength + 6))
         val leftBytes = bytes.slice(keyLength + 6, keyLength + 6 + leftLength)
         val rightBytes = bytes.slice(keyLength + 6 + leftLength, bytes.length)
@@ -139,8 +139,8 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]]
         require(leftComparison < 0 && rightComparison <= 0, s"key check fail for key ${Base16.encode(key)}")
         new InternalProverNode[D](key, left, right, balance)
       case 2 =>
-        val balance = Balance @@ bytes.slice(1, 2).head
-        val key = ADKey @@ bytes.slice(2, keyLength + 2)
+        val balance = @@[Balance](bytes.slice(1, 2).head)
+        val key = @@[ADKey](bytes.slice(2, keyLength + 2))
         val leftLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2, keyLength + 2 + labelLength)).get
         val rightLabel = hf.byteArrayToDigest(bytes.slice(keyLength + 2 + labelLength, keyLength + 2 + 2 * labelLength)).get
         new ProxyInternalNode[D](key, leftLabel, rightLabel, balance)

@@ -3,10 +3,11 @@ package scorex.crypto.authds.merkle.sparse
 import scorex.crypto.authds.LeafData
 
 import scala.util.Try
-import scorex.crypto.hash.{CryptographicHash, Digest32, Blake2b256Unsafe}
+import scorex.crypto.hash._
 
 import scala.collection.mutable
 import scorex.utils.Longs
+
 
 object BlockchainSimulator extends App {
   type PubKey = Array[Byte]
@@ -20,13 +21,13 @@ object BlockchainSimulator extends App {
                          coinProof: SparseMerkleProof[Digest32])
 
   object Transaction {
-    def coinBytes(pubKey: PubKey, balance: Long) = Some(LeafData @@ (pubKey ++ Longs.toByteArray(balance)))
+    def coinBytes(pubKey: PubKey, balance: Long) = Some(@@[LeafData](pubKey ++ Longs.toByteArray(balance)))
 
     def process(tx: Transaction,
                 state: SparseMerkleTree[Digest32]):
     Try[(SparseMerkleTree[Digest32], Seq[SparseMerkleProof[Digest32]])] = Try {
       require(tx.amount <= tx.coinBalance)
-      require(tx.coinProof.leafDataOpt.get sameElements coinBytes(tx.sender, tx.coinBalance).get)
+      require(tx.coinProof.leafDataOpt.get.value sameElements coinBytes(tx.sender, tx.coinBalance).get.value)
       require(tx.coinProof.valid(state.rootDigest, height))
       val (state1, _) = state.update(tx.coinProof, None).get
       val (state2, proofs2) = state1.update(state1.lastProof,

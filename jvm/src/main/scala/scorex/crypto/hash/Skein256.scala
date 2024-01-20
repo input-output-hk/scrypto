@@ -8,8 +8,8 @@ import org.bouncycastle.crypto.digests.SkeinDigest
 object Skein256 extends BouncyCastleHash[Digest32] with CryptographicHash32 {
   override protected lazy val digestFn = new SkeinDigest(SkeinDigest.SKEIN_512, SkeinDigest.SKEIN_256)
 
-  override def hash(input: Message): Digest32 = Digest32 @@ internalHash(input)
+  override def hash(input: Message): Digest32 = @@[Digest32](internalHash(input))
 
   override def prefixedHash(prefix: Byte, inputs: Array[Byte]*): Digest32 =
-    Digest32 @@ internalPrefixedHash(prefix, inputs: _*)
+    @@[Digest32](internalPrefixedHash(prefix, inputs: _*))
 }

@@ -5,6 +5,7 @@ import scorex.crypto.authds.avltree.batch.Modification
 import scorex.crypto.authds.legacy.treap.Constants.LevelFunction
 import scorex.crypto.hash._
 import scorex.utils.ByteArray
+import supertagged.postfix.PostfixSugar
 
 import scala.util.{Failure, Success, Try}
 
@@ -110,8 +111,8 @@ case class TreapModifyProof(key: ADKey, proofSeq: Seq[WTProofElement])
     }
 
     val (newTopNode, changeHappened, oldLabel) = verifyHelper()
-    if (oldLabel sameElements digest) {
-      Some(ADDigest @@@ newTopNode.label)
+    if (oldLabel.value sameElements digest.value) {
+      Some(@@@[Digest, ADDigest](newTopNode.label))
     } else {
       None
     }
