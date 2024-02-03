@@ -18,9 +18,6 @@ package object hash {
     def take(num: Int): Array[Byte] = value.take(num)
 
   }
-//  object Digest {
-//    def @@@(c: ADKey): Digest = unsafeCast(c)
-//  }
   case class Digest32(value: Array[Byte]) extends AnyVal with Digest {
     def length: Int = value.length
   }

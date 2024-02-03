@@ -12,7 +12,6 @@ package object authds {
   }
   object LeafData {
     def @@(c: Array[Byte]): LeafData = LeafData(c)
-//    def @@(c: Byte): LeafData = unsafeCast(c)
 
   }
   implicit def leafDataToArray(data: LeafData): Array[Byte] = data.value
@@ -20,7 +19,6 @@ package object authds {
   case class Side(value: Byte) extends AnyVal
   object Side {
     def @@(c: Byte): Side = Side(c)
-//    def @@(c: Byte): Side = unsafeCast(c)
 
   }
   implicit def sideToArray(data: Side): Byte = data.value
@@ -30,7 +28,6 @@ package object authds {
   }
   object ADKey {
     def @@(c: Array[Byte]): ADKey = ADKey(c)
-//    def @@(c: Byte): ADKey = unsafeCast(c)
     def @@@(c: Digest32): ADKey = ADKey(c.value)
 
   }
@@ -41,7 +38,6 @@ package object authds {
   }
   object ADValue {
     def @@(c: Array[Byte]): ADValue = ADValue(c)
-//    def @@(c: Byte): ADValue = unsafeCast(c)
     def @@@(c: Digest32): ADValue = ADValue(c.value)
 
   }
@@ -56,7 +52,6 @@ package object authds {
   }
   object ADDigest {
     def @@(c: Array[Byte]): ADDigest = ADDigest(c)
-//    def @@(c: Byte): ADDigest = unsafeCast(c)
     def @@@(c: Digest): ADDigest = ADDigest(c.value)
 
   }
@@ -78,7 +73,6 @@ package object authds {
     def !=(c: Int): Boolean = value.toInt != c
   }
   object Balance {
-//    def @@(c: Array[Byte]): Balance = unsafeCast(c)
     def @@(c: Byte): Balance = Balance(c)
 
   }
