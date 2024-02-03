@@ -3,6 +3,7 @@ package scorex.crypto.authds.legacy.avltree
 import scorex.crypto.authds.avltree.batch.ToStringHelper
 import scorex.crypto.authds.{ADKey, ADValue, Balance}
 import scorex.crypto.hash._
+import scorex.crypto.authds._
 
 sealed trait Node extends ToStringHelper {
 

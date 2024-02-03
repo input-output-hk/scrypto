@@ -1,8 +1,8 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.Side
+import scorex.crypto.authds._
 import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
-import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 
 import java.util

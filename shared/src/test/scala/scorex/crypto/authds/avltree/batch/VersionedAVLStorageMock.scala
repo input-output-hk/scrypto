@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.ADDigest
+import scorex.crypto.authds.{ADDigest, addigestToArray, addigestToWArray}
 import scorex.crypto.hash.Digest
 
 import scala.collection.mutable

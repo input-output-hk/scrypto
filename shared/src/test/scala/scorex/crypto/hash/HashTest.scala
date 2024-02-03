@@ -21,7 +21,7 @@ trait HashTest extends AnyPropSpec
   def hashCheck[D <: Digest](hash: CryptographicHash[D], external: Map[Array[Byte], String]): Unit = {
 
     property(s"${hash.getClass.getSimpleName} size of hash should be DigestSize") {
-      forAll { data: Array[Byte] =>
+      forAll { (data: Array[Byte]) =>
         hash.hash(data).length shouldBe hash.DigestSize
       }
     }

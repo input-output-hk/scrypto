@@ -1,31 +1,89 @@
 package scorex.crypto
 
-import supertagged.TaggedType
+import scorex.crypto.hash.{Digest, Digest32}
+
+import scala.collection.mutable.WrappedArray
+import scala.language.implicitConversions
 
 package object authds {
+  case class LeafData(value: Array[Byte]) extends AnyVal {
+    def ++(c: Array[Byte]): Array[Byte] = value ++ c
+    def sameElements(c: Array[Byte]): Boolean = value.sameElements(c)
+  }
+  object LeafData {
+    def @@(c: Array[Byte]): LeafData = LeafData(c)
+//    def @@(c: Byte): LeafData = unsafeCast(c)
 
-  type LeafData = LeafData.Type
-  type Side = Side.Type
-  type ADKey = ADKey.Type
-  type ADValue = ADValue.Type
-  type ADDigest = ADDigest.Type
-  type SerializedAdProof = SerializedAdProof.Type
-  type Balance = Balance.Type
+  }
+  implicit def leafDataToArray(data: LeafData): Array[Byte] = data.value
 
-  object LeafData extends TaggedType[Array[Byte]]
+  case class Side(value: Byte) extends AnyVal
+  object Side {
+    def @@(c: Byte): Side = Side(c)
+//    def @@(c: Byte): Side = unsafeCast(c)
 
-  object Side extends TaggedType[Byte]
+  }
+  implicit def sideToArray(data: Side): Byte = data.value
+  case class ADKey(value: Array[Byte]) extends AnyVal {
+    def sameElements(c: Array[Byte]): Boolean = value.sameElements(c)
+    def +:(c: Byte): Array[Byte] = c +: value
+  }
+  object ADKey {
+    def @@(c: Array[Byte]): ADKey = ADKey(c)
+//    def @@(c: Byte): ADKey = unsafeCast(c)
+    def @@@(c: Digest32): ADKey = ADKey(c.value)
 
-  object ADKey extends TaggedType[Array[Byte]]
+  }
+  implicit def adkeyToArray(data: ADKey): Array[Byte] = data.value
+  case class ADValue(value: Array[Byte]) extends AnyVal {
+    def sameElements(c: Array[Byte]): Boolean = value.sameElements(c)
+    def nonEmpty: Boolean = value.nonEmpty
+  }
+  object ADValue {
+    def @@(c: Array[Byte]): ADValue = ADValue(c)
+//    def @@(c: Byte): ADValue = unsafeCast(c)
+    def @@@(c: Digest32): ADValue = ADValue(c.value)
 
-  object ADValue extends TaggedType[Array[Byte]]
+  }
+  implicit def advalueToArray(data: ADValue): Array[Byte] = data.value
+  case class ADDigest(value: Array[Byte]) extends AnyVal {
+    def sameElements(c: Array[Byte]): Boolean = value.sameElements(c)
+    def last: Byte = value.last
+    def startsWith(c: Array[Byte]): Boolean = value.startsWith(c)
+    def length: Int = value.length
 
-  object ADDigest extends TaggedType[Array[Byte]]
 
-  object SerializedAdProof extends TaggedType[Array[Byte]]
+  }
+  object ADDigest {
+    def @@(c: Array[Byte]): ADDigest = ADDigest(c)
+//    def @@(c: Byte): ADDigest = unsafeCast(c)
+    def @@@(c: Digest): ADDigest = ADDigest(c.value)
 
-  object Balance extends TaggedType[Byte]
+  }
+  implicit def addigestToArray(data: ADDigest): Array[Byte] = data.value
+  implicit def addigestToWArray(data: ADDigest): WrappedArray[Byte] = data.value
 
+  case class SerializedAdProof(value: Array[Byte]) extends AnyVal {
+    def slice(from: Int, until: Int): Array[Byte] = value.slice(from, until)
+
+  }
+  object SerializedAdProof {
+    def @@(c: Array[Byte]): SerializedAdProof = SerializedAdProof(c)
+//    def @@(c: Byte): SerializedAdProof = unsafeCast(c)
+
+  }
+  implicit def adproofToArray(data: SerializedAdProof): Array[Byte] = data.value
+  case class Balance(value: Byte) extends AnyVal {
+    def ==(c: Int): Boolean = value.toInt == c
+    def !=(c: Int): Boolean = value.toInt != c
+  }
+  object Balance {
+//    def @@(c: Array[Byte]): Balance = unsafeCast(c)
+    def @@(c: Byte): Balance = Balance(c)
+
+  }
+  implicit def balanceToArray(data: Balance): Byte = data.value
+  
   /** Immutable empty array which can be used in many places to avoid allocations. */
   val EmptyByteArray = Array.empty[Byte]
 }

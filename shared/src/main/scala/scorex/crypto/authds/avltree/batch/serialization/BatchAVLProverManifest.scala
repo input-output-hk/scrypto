@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
 import scorex.crypto.authds.avltree.batch.{InternalProverNode, ProverLeaf, ProverNodes}
-import scorex.crypto.hash.Digest
+import scorex.crypto.hash._
 
 import scala.collection.mutable
 

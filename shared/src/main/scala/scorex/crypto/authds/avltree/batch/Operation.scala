@@ -1,7 +1,7 @@
 package scorex.crypto.authds.avltree.batch
 
 import scorex.utils.Longs
-import scorex.crypto.authds.{ADKey, ADValue}
+import scorex.crypto.authds._
 import scorex.util.ScorexEncoding
 
 import scala.util.{Failure, Success, Try}

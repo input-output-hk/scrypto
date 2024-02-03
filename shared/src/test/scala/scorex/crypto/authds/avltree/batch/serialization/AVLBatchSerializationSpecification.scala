@@ -4,9 +4,11 @@ import org.scalacheck.{Gen, Shrink}
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch._
-import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
-import scorex.crypto.hash.{Blake2b256, _}
+import scorex.crypto.authds._
+import scorex.crypto.hash.{Blake2b256, Digest, Digest32, digest32ToArray, digestToArray}
 import scorex.util.encode.Base16
+
+import scala.collection.mutable
 import scala.util.Random
 
 class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
@@ -36,7 +38,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
   }
 
   property("slice to pieces and combine tree back") {
-    forAll(Gen.choose(10, 10000)) { treeSize: Int =>
+    forAll(Gen.choose(10, 10000)) { (treeSize: Int) =>
       whenever(treeSize >= 10) {
         val tree = generateProver(treeSize)
         val height = tree.rootNodeHeight
@@ -57,7 +59,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
   }
 
   property("slice to Array[Byte] pieces and combine tree back") {
-    forAll(Gen.choose(0, 10000)) { treeSize: Int =>
+    forAll(Gen.choose(0, 10000)) { (treeSize: Int) =>
       val serializer = new BatchAVLProverSerializer[D, HF]
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
@@ -83,7 +85,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
   property("manifest serialization") {
     val serializer = new BatchAVLProverSerializer[D, HF]
-    forAll(Gen.choose(0, 10000)) { treeSize: Int =>
+    forAll(Gen.choose(0, 10000)) { (treeSize: Int) =>
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
       val digest = tree.digest
@@ -102,7 +104,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     val sliced = slice(tree)
     val manifest = sliced._1
 
-    val subtreeId = manifest.subtreesIds(Random.nextInt(manifest.subtreesIds.size))
+    val subtreeId: Array[Byte] = manifest.subtreesIds(Random.nextInt(manifest.subtreesIds.size))
 
     val manifestBytes = serializer.manifestToBytes(manifest)
     val idx = manifestBytes.indexOfSlice(subtreeId)
@@ -113,7 +115,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
     val subtree = sliced._2.head
     val subtreeBytes = serializer.subtreeToBytes(subtree)
-    val value = subtree.leafValues.head
+    val value: Array[Byte] = subtree.leafValues.head
     val idx2 = subtreeBytes.indexOfSlice(value)
     subtreeBytes(idx2) = ((subtreeBytes(idx2) + 1) % Byte.MaxValue).toByte
     serializer.subtreeFromBytes(subtreeBytes, tree.keyLength)
@@ -141,7 +143,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     manSubtrees.foreach{digest =>
       subtrees.exists(_.id.sameElements(digest)) shouldBe true
     }
-    manSubtrees.map(Base16.encode).distinct.size shouldBe manSubtrees.size
+    manSubtrees.map(x => Base16.encode(x.value)).distinct.size shouldBe manSubtrees.size
   }
 
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {

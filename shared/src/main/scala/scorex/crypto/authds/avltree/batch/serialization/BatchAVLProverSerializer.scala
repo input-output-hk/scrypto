@@ -1,11 +1,11 @@
 package scorex.crypto.authds.avltree.batch.serialization
 
 import scorex.crypto.authds.avltree.batch.{BatchAVLProver, ProverLeaf, InternalProverNode, ProverNodes}
-import scorex.crypto.authds.{ADValue, ADKey, Balance}
+import scorex.crypto.authds._
 import scorex.crypto.hash.{CryptographicHash, Digest}
 import scorex.util.encode.Base16
 import scorex.utils.{Bytes, Ints, ByteArray, Logger}
-
+import scorex.crypto.hash._
 import scala.util.Try
 
 class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]]

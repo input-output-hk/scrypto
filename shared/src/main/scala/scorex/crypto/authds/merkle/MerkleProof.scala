@@ -1,7 +1,7 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.{LeafData, Side}
-import scorex.crypto.hash.{CryptographicHash, Digest}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 
 /**

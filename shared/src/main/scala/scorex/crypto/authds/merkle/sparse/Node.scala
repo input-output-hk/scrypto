@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle.sparse
 
-import scorex.crypto.authds.LeafData
+import scorex.crypto.authds._
 import scorex.util.encode.Base16
 import scorex.crypto.hash._
 
@@ -18,9 +18,9 @@ case class InternalNode[D <: Digest](left: Option[Node[D]],
                                      right: Option[Node[D]])
                                     (implicit val hf: CryptographicHash[D]) extends Node[D] {
 
-  lazy val leftHash: Array[Byte] =  left.map(_.hash).getOrElse(Array[Byte]())
+  lazy val leftHash: Array[Byte] =  left.map(_.hash.value).getOrElse(Array[Byte]())
 
-  lazy val rightHash: Array[Byte] = right.map(_.hash).getOrElse(Array[Byte]())
+  lazy val rightHash: Array[Byte] = right.map(_.hash.value).getOrElse(Array[Byte]())
 
   override lazy val isNull: Boolean = left.isEmpty && right.isEmpty
 

@@ -1,16 +1,17 @@
 package scorex.crypto.authds.avltree.batch
 
-import org.scalacheck.{Gen, Arbitrary}
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest.propspec.AnyPropSpec
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.legacy.avltree.AVLTree
-import scorex.crypto.authds._
-import scorex.util.encode.{Base58, Base16}
-import scorex.crypto.hash._
-import scorex.utils.{Random, ByteArray, Longs}
+import scorex.crypto.authds.{ADDigest, ADKey, ADValue, SerializedAdProof, TwoPartyTests, addigestToArray, adkeyToArray, adproofToArray, advalueToArray}
+import scorex.util.encode.{Base16, Base58}
+import scorex.crypto.hash.digestToArray
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.utils.{ByteArray, Longs, Random}
 
 import scala.util.Random.{nextInt => randomInt}
-import scala.util.{Try, Failure}
+import scala.util.{Failure, Try}
 
 class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests
   with BatchTestingHelpers {
@@ -167,7 +168,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
   property("randomWalk") {
     val prover = generateProver()._1
 
-    forAll { seed: Long =>
+    forAll { (seed: Long) =>
       val e1 = prover.randomWalk(new scala.util.Random(seed))
       val e2 = prover.randomWalk(new scala.util.Random(seed))
       e1.map(_._1) shouldEqual e2.map(_._1)
@@ -226,7 +227,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     allLeafs.get.length shouldBe InitialTreeSize
     //First extracted leaf should be smallest
     val ordering: (Array[Byte], Array[Byte]) => Boolean = (a, b) => ByteArray.compare(a, b) > 0
-    val smallestKey = keyValues.map(_._1).sortWith(ordering).last
+    val smallestKey = keyValues.map(_._1.value).sortWith(ordering).last
     val minLeaf = verifier.extractFirstNode(nonInfiniteLeaf).get.asInstanceOf[VerifierLeaf[D]]
     minLeaf.key shouldEqual smallestKey
   }
@@ -256,7 +257,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
 
     //First extracted leaf should be smallest
     val ordering: (Array[Byte], Array[Byte]) => Boolean = (a, b) => ByteArray.compare(a, b) > 0
-    val smallestKey = keyValues.map(_._1).sortWith(ordering).last
+    val smallestKey = keyValues.map(_._1.value).sortWith(ordering).last
     val minLeaf = verifier.extractFirstNode(nonInfiniteLeaf).get.asInstanceOf[VerifierLeaf[D]]
     minLeaf.key shouldEqual smallestKey
 
@@ -279,7 +280,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     val prover = generateProver()._1
     val digest = prover.digest
 
-    forAll(smallInt) { numberOfLookups: Int =>
+    forAll(smallInt) { (numberOfLookups: Int) =>
       val currentMods = (0 until numberOfLookups).map(_ => randomKey(KL)).map(k => Lookup(k))
 
       currentMods foreach (m => prover.performOneOperation(m))
@@ -296,7 +297,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     val prover = new BatchAVLProver[D, HF](KL, None)
     var digest = prover.digest
 
-    forAll { valueLength: Short =>
+    forAll { (valueLength: Short) =>
       whenever(valueLength >= 0) {
         val aKey = Random.randomBytes(KL)
         val aValue = Random.randomBytes(valueLength)
@@ -413,7 +414,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     var digest = prover.digest
 
     forAll(kvGen) { case (aKey, aValue) =>
-      val oldValue: Long = prover.unauthenticatedLookup(aKey).map(Longs.fromByteArray).getOrElse(0L)
+      val oldValue: Long = prover.unauthenticatedLookup(aKey).map(x => Longs.fromByteArray(x)).getOrElse(0L)
       val delta = Math.abs(Longs.fromByteArray(aValue))
       whenever(Try(Math.addExact(oldValue, delta)).isSuccess) {
 
@@ -503,7 +504,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
 
       digest = p.digest
       val key = randomKey(KL)
-      p.performOneOperation(Insert(ADKey @@@ key, randomValue(8)))
+      p.performOneOperation(Insert(key, randomValue(8)))
       pf = p.generateProof()
       p.checkTree()
 

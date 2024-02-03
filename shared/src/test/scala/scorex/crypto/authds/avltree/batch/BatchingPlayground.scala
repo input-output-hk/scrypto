@@ -3,8 +3,8 @@ package scorex.crypto.authds.avltree.batch
 import scorex.utils.Longs
 import org.scalatest.matchers.should.Matchers
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
-import scorex.crypto.authds.{ADDigest, ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32, Sha256}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 import scorex.utils.Random
 
 import scala.util.Success
@@ -38,7 +38,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
   //removedNodesBenchmark
   //removedNodesBenchmark()
 
-  testReadme
+  testReadme()
 
   def removedNodesBenchmark(startTreeSize: Int = 10000,
                             toRemoveSize: Int = 2000,
@@ -125,7 +125,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
   }
 
-  def lookupTest() {
+  def lookupTest() = {
     val kl = 4
     val vl = 7
 
@@ -370,9 +370,9 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
   }
 
-  def memoryTestWithBatching() {
+  def memoryTestWithBatching() = {
     // Generate a key out of an int
-    def generateKey(i: Int, key: Array[Byte]) {
+    def generateKey(i: Int, key: Array[Byte]) = {
       val r = i
       for (j <- 0 until 32)
         key(j) = ((r >> ((j % 4) * 8)) % 256).toByte
@@ -470,7 +470,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
    */
 
-  def memoryTestNoBatching {
+  def memoryTestNoBatching() = {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
     var p: Option[scala.util.Try[AVLModifyProof]] = None
@@ -512,7 +512,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
   }
 
-  def timeBenchmarksNew {
+  def timeBenchmarksNew() = {
     val newProver = new BatchAVLProver[D, HF](KL, Some(VL))
     val numMods = 1024 * 1024
 
@@ -576,7 +576,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
   }
 
-  def timeBenchmarksOld {
+  def timeBenchmarksOld() = {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
 
@@ -636,7 +636,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
   }
 
-  def spaceBenchmarks {
+  def spaceBenchmarks() = {
     val newProver = new BatchAVLProver[D, HF](KL, Some(VL))
 
     val numMods = 1024 * 1024
@@ -690,7 +690,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     for (i <- 0 until testAtTheEnd) {
       val key = randomKey()
       keys += key
-      val m = Insert(ADKey @@@ key, randomValue(8))
+      val m = Insert(key, randomValue(8))
       newProver.performOneOperation(m)
       len += newProver.generateProof().length
     }
@@ -700,7 +700,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     len = 0
     for (i <- 0 until testAtTheEnd) {
       val j = Random.randomBytes(3)
-      val key = ADKey @@@ keys(
+      val key = keys(
         (j(0).toInt.abs + j(1).toInt.abs * 128 + j(2).toInt.abs * 128 * 128) % keys.size)
       keys -= key
       val m = Remove(key)
@@ -786,7 +786,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
         digest = p.digest
         val key = randomKey()
-        p.performOneOperation(Insert(ADKey @@@ key, randomValue(8)))
+        p.performOneOperation(Insert(key, randomValue(8)))
         pf = p.generateProof()
         p.checkTree()
 
@@ -1025,7 +1025,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     override def updateFn: UpdateFunction = old => Success(old)
   }
 
-  def testReadme {
+  def testReadme() = {
     val prover =
       new BatchAVLProver[D, HF](keyLength = 1, valueLengthOpt = Some(VL))
     val initialDigest = prover.digest

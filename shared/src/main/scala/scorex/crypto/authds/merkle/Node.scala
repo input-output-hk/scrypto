@@ -1,6 +1,6 @@
 package scorex.crypto.authds.merkle
 
-import scorex.crypto.authds.{LeafData, EmptyByteArray}
+import scorex.crypto.authds._
 import scorex.crypto.hash._
 import scorex.util.ScorexEncoding
 

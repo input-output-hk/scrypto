@@ -189,7 +189,7 @@ class BatchAVLVerifier[D <: Digest, HF <: CryptographicHash[D]](startingDigest: 
           previousLeaf = None
         case LeafInPackagedProof =>
           val key = if (previousLeaf.nonEmpty) {
-            ADKey @@@ previousLeaf.get.nextLeafKey
+            previousLeaf.get.nextLeafKey
           }
           else {
             val start = i

@@ -2,8 +2,8 @@ package scorex.crypto.authds.merkle.serialization
 
 import scorex.utils.{Bytes, Ints}
 import scorex.crypto.authds.merkle.BatchMerkleProof
-import scorex.crypto.authds.{EmptyByteArray, Side}
-import scorex.crypto.hash.{CryptographicHash, Digest, Digest32}
+import scorex.crypto.authds._
+import scorex.crypto.hash._
 
 import scala.util.Try
 

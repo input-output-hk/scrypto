@@ -1,7 +1,7 @@
 package scorex.crypto.hash
 
 import typings.nobleHashes.blake2Mod.BlakeOpts
-import typings.nobleHashes.mod.blake2b
+import typings.nobleHashes.blake2bMod.blake2b
 import typings.nobleHashes.sha256Mod.sha256
 import typings.nobleHashes.utilsMod
 

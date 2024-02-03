@@ -1,13 +1,13 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds._
-import scorex.crypto.hash.{Blake2b256, CryptographicHash, Digest}
 import scorex.utils.{Ints, ByteArray, Logger}
-
 import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.util.{Random, Try, Success, Failure}
 
+import scorex.crypto.authds._
+import scorex.crypto.hash._
+import scorex.crypto.hash.digestToArray
 
 /**
   * Implements the batch AVL prover from https://eprint.iacr.org/2016/994
@@ -269,7 +269,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
       // Post order traversal to pack up the tree
       if (!rNode.visited) {
         packagedTree += LabelInPackagedProof
-        packagedTree ++= rNode.label
+        packagedTree ++= rNode.label.value
         assert(rNode.label.length == labelLength)
         previousLeafAvailable = false
       } else {
@@ -277,12 +277,12 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
         rNode match {
           case r: ProverLeaf[D] =>
             packagedTree += LeafInPackagedProof
-            if (!previousLeafAvailable) packagedTree ++= r.key
-            packagedTree ++= r.nextLeafKey
+            if (!previousLeafAvailable) packagedTree ++= r.key.value
+            packagedTree ++= r.nextLeafKey.value
             if (valueLengthOpt.isEmpty) {
               packagedTree ++= Ints.toByteArray(r.value.length)
             }
-            packagedTree ++= r.value
+            packagedTree ++= r.value.value
             previousLeafAvailable = true
           case r: InternalProverNode[D] =>
             packTree(r.left)

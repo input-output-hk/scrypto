@@ -3,7 +3,8 @@ package scorex.crypto.authds
 import scorex.utils.{Longs, Logger}
 import scorex.crypto.TestingCommons
 import scorex.crypto.authds.avltree.batch.{Modification, Update}
-import scorex.crypto.hash.Digest
+import scorex.crypto.authds.adkeyToArray
+import scorex.crypto.authds.advalueToArray
 
 import scala.util.Success
 
@@ -12,7 +13,7 @@ trait TwoPartyTests extends TestingCommons {
 
   implicit val loggerInTests: Logger = Logger.Default
 
-  def genUpd(key: ADKey) = Update(key, ADValue @@ key.take(8))
+  def genUpd(key: ADKey) = Update(key, ADValue @@ key.value.take(8))
 
   def profileTree(tree: TwoPartyDictionary, elements: Seq[ADKey], inDigest: ADDigest): Seq[Float] = {
     var digest = inDigest
@@ -48,13 +49,13 @@ trait TwoPartyTests extends TestingCommons {
 
   case class Append(key: ADKey, value: ADValue) extends Modification {
     override def updateFn: UpdateFunction = {
-      oldOpt: Option[ADValue] => Success(Some(ADValue @@ oldOpt.map(_ ++ value).getOrElse(value)))
+      (oldOpt: Option[ADValue]) => Success(Some(oldOpt.map(x => ADValue @@ (x.value ++ value)).getOrElse(value)))
     }: UpdateFunction
   }
 
   case class TransactionUpdate(key: ADKey, amount: Long) extends Modification {
     override def updateFn: UpdateFunction = {
-      oldOpt: Option[ADValue] =>
+      (oldOpt: Option[ADValue]) =>
         Success(Some(ADValue @@ Longs.toByteArray(oldOpt.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
     }: UpdateFunction
   }

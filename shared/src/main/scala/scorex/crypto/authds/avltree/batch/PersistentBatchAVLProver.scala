@@ -48,7 +48,7 @@ object PersistentBatchAVLProver {
                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
 
     new PersistentBatchAVLProver[D, HF] {
-      override var avlProver: BatchAVLProver[D, HF] = avlBatchProver
+      var avlProver: BatchAVLProver[D, HF] = avlBatchProver
       override val storage: VersionedAVLStorage[D] = versionedStorage
 
       (storage.version match {

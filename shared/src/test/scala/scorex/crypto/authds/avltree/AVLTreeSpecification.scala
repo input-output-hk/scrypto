@@ -6,7 +6,10 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.avltree.batch.{Insert, InsertOrUpdate, Lookup, Update}
 import scorex.crypto.authds.legacy.avltree.{AVLModifyProof, AVLTree}
 import scorex.crypto.authds.{ADKey, ADValue, TwoPartyTests}
-import scorex.crypto.hash.Sha256
+import scorex.crypto.authds.addigestToArray
+import scorex.crypto.authds.adkeyToArray
+import scorex.crypto.authds.advalueToArray
+import scorex.crypto.hash._
 
 class AVLTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests {
 
@@ -123,7 +126,7 @@ class AVLTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChec
     forAll(kvGen) { case (aKey, aValue) =>
       whenever(aKey.length == KL && aValue.length == VL) {
         digest shouldEqual wt.rootHash()
-        val rewrite = InsertOrUpdate(aKey, ADValue @@ aValue.take(VL))
+        val rewrite = InsertOrUpdate(aKey, ADValue @@ aValue.value.take(VL))
         val proof = wt.run(rewrite).get
         digest = proof.verify(digest, rewrite).get
         val parsed = AVLModifyProof.parseBytes(proof.bytes)(KL, 32).get

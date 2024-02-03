@@ -3,9 +3,9 @@ package scorex.crypto.authds.legacy.treap
 import scorex.utils.Ints
 import scorex.crypto.authds.ADKey
 import scorex.crypto.hash.Sha256
+import scorex.crypto.hash.digest32ToMessage
+import scorex.crypto.authds._
 import scorex.utils.ByteArray
-
-
 
 trait Level extends Ordered[Level] {
   val bytes: Array[Byte]
