@@ -18,3 +18,5 @@ scorex-errors.log
 node_modules
 .bsp
 .DS_Store
+yarn.lock
+package-lock.json
