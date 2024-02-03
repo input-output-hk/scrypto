@@ -64,7 +64,6 @@ package object authds {
   }
   object SerializedAdProof {
     def @@(c: Array[Byte]): SerializedAdProof = SerializedAdProof(c)
-//    def @@(c: Byte): SerializedAdProof = unsafeCast(c)
 
   }
   implicit def adproofToArray(data: SerializedAdProof): Array[Byte] = data.value
