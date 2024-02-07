@@ -9,6 +9,7 @@ import scorex.util.encode.Base16
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import scala.reflect.ClassTag
 
 trait HashTest extends AnyPropSpec
   with ScalaCheckDrivenPropertyChecks
@@ -21,7 +22,7 @@ trait HashTest extends AnyPropSpec
   def hashCheck[D <: Digest](hash: CryptographicHash[D], external: Map[Array[Byte], String]): Unit = {
 
     property(s"${hash.getClass.getSimpleName} size of hash should be DigestSize") {
-      forAll { data: Array[Byte] =>
+      forAll { (data: Array[Byte]) =>
         hash.hash(data).length shouldBe hash.DigestSize
       }
     }

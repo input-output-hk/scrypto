@@ -1,6 +1,6 @@
 package scorex.crypto.authds.avltree.batch
 
-import scorex.crypto.authds.{ADKey, ADValue, Balance}
+import scorex.crypto.authds._
 import scorex.crypto.hash._
 
 sealed trait Node[D <: Digest] extends ToStringHelper {

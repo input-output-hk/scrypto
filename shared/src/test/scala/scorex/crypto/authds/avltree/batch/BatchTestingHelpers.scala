@@ -2,7 +2,7 @@ package scorex.crypto.authds.avltree.batch
 
 import org.scalatest.matchers.should.Matchers
 import scorex.crypto.authds.{ADKey, ADValue}
-import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.crypto.hash.{Blake2b256, Digest, Digest32}
 import scorex.utils.Random
 
 trait BatchTestingHelpers extends ToStringHelper with Matchers {

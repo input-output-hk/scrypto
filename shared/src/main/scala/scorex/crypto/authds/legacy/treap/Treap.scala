@@ -28,7 +28,7 @@ class Treap[HF <: CryptographicHash[_ <: Digest]](rootOpt: Option[Leaf] = None)
 
     //todo: unify types AVLValue/TreapValue and then generalize 4 LoCs below which are the same for Treap & AVLTree
     val updateFn: Option[ADValue] => Try[Option[ADValue]] = operation match {
-      case _: Lookup => x: Option[ADValue] => Success(x)
+      case _: Lookup => (x: Option[ADValue]) => Success(x)
       case m: Modification => m.updateFn
     }
 
