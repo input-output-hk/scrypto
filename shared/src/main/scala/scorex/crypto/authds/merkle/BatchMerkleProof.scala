@@ -1,6 +1,7 @@
 package scorex.crypto.authds.merkle
 
 import scorex.crypto.authds.Side
+import scorex.crypto.authds.merkle.MerkleProof.LeftSide
 import scorex.crypto.authds.merkle.MerkleTree.InternalNodePrefix
 import scorex.crypto.hash.{CryptographicHash, Digest}
 import scorex.util.ScorexEncoding
@@ -68,10 +69,10 @@ case class BatchMerkleProof[D <: Digest](indices: Seq[(Int, Digest)], proofs: Se
         } else {
 
           // hash the corresponding value inside E with the first hash inside M, taking note of the side
-          if (m_new.head._2 == MerkleProof.LeftSide) {
-            e_new = e_new :+ hf.prefixedHash(MerkleTree.InternalNodePrefix, m_new.head._1 ++ e.apply(i)._2)
+          if (m_new.head._2 == LeftSide) {
+            e_new = e_new :+ hf.prefixedHash(InternalNodePrefix, m_new.head._1 ++ e.apply(i)._2)
           } else {
-            e_new = e_new :+ hf.prefixedHash(MerkleTree.InternalNodePrefix, e.apply(i)._2 ++ m_new.head._1)
+            e_new = e_new :+ hf.prefixedHash(InternalNodePrefix, e.apply(i)._2 ++ m_new.head._1)
           }
 
           // remove the used value from m
@@ -84,7 +85,7 @@ case class BatchMerkleProof[D <: Digest](indices: Seq[(Int, Digest)], proofs: Se
       a_new = b.distinct.map(_._1 / 2)
 
       // Repeat until the root of the tree is reached (M has no more elements)
-      if (m_new.nonEmpty || e_new.size > 1) {
+      if ((m_new.nonEmpty || e_new.size > 1) && a_new.nonEmpty) {
         e_new = loop(a_new, a_new zip e_new, m_new)
       }
       e_new
