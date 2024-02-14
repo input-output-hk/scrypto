@@ -151,4 +151,14 @@ class ScalaJsSpec extends AnyPropSpec with Matchers {
     val lines = Source.fromString("abc").getLines.toSeq
     lines.length shouldBe 1
   }
+
+  property("System.currentTimeMillis") {
+    val start = System.currentTimeMillis()
+    println(s"time: $start ms")
+  }
+
+  property("System.nanoTime") {
+    val start = System.nanoTime()
+    println(s"time: $start ns")
+  }
 }
