@@ -6,10 +6,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.util.encode.Base16
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-
 trait HashTest extends AnyPropSpec
   with ScalaCheckDrivenPropertyChecks
   with Matchers {
@@ -56,15 +52,11 @@ trait HashTest extends AnyPropSpec
     }
 
 
-    property(s"${hash.getClass.getSimpleName} should return correct Tag") {
-      forAll { (string: String, bytes: Array[Byte]) =>
-        val digest = hash(string)
-        digest.isInstanceOf[D] shouldBe true
-        if (digest.isInstanceOf[Digest32]) {
-          hash.DigestSize shouldBe 32
-        } else if (digest.isInstanceOf[Digest64]) {
-          hash.DigestSize shouldBe 64
-        }
+    property(s"${hash.getClass.getSimpleName} should have correct size") {
+      if (hash.isInstanceOf[CryptographicHash32]) {
+        hash.DigestSize shouldBe 32
+      } else {
+        hash.DigestSize shouldBe 64
       }
     }
   }
