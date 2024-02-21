@@ -1,19 +1,19 @@
 package scorex.crypto
 
-import scorex.crypto.utils.NewType
+import scorex.crypto.utils.NewArrayByte
+import scorex.crypto.utils.NewDigest
 
 package object hash {
 
-  trait BaseDigest extends NewType[Array[Byte]]
+  trait BaseDigest extends NewDigest
   type Digest = BaseDigest#Type
-
   object Digest32 extends BaseDigest
   object Digest64 extends BaseDigest
 
   type Digest32 = Digest32.Type
   type Digest64 = Digest64.Type
 
-  object NonStandardDigest extends NewType[Array[Byte]]
+  object NonStandardDigest extends NewDigest
   type NonStandardDigest = NonStandardDigest.Type
 
   type ExtendedDigest = Platform.Digest

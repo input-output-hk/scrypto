@@ -1,27 +1,27 @@
 package scorex.crypto
 
-import scorex.crypto.utils.NewType
+import scorex.crypto.utils.{NewByte, NewArrayByte}
 
 package object authds:
-  object LeafData extends NewType[Array[Byte]]
+  object LeafData extends NewArrayByte
   type LeafData = LeafData.Type
 
-  object Side extends NewType[Byte]
+  object Side extends NewByte
   type Side = Side.Type
 
-  object ADKey extends NewType[Array[Byte]]
+  object ADKey extends NewArrayByte
   type ADKey = ADKey.Type
 
-  object ADValue extends NewType[Array[Byte]]
+  object ADValue extends NewArrayByte
   type ADValue = ADValue.Type
 
-  object ADDigest extends NewType[Array[Byte]]
+  object ADDigest extends NewArrayByte
   type ADDigest = ADDigest.Type
 
-  object SerializedAdProof extends NewType[Array[Byte]]
+  object SerializedAdProof extends NewArrayByte
   type SerializedAdProof = SerializedAdProof.Type
 
-  object Balance extends NewType[Byte]
+  object Balance extends NewByte
   type Balance = Balance.Type
 
   /** Immutable empty array which can be used in many places to avoid allocations. */
