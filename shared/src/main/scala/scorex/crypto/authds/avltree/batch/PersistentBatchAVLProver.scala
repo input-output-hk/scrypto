@@ -7,7 +7,8 @@ import scala.util.Try
 
 abstract class PersistentBatchAVLProver[D <: Digest, HF <: CryptographicHash[D]] {
 
-  var avlProver: BatchAVLProver[D, HF]
+  def avlProver: BatchAVLProver[D, HF]
+  def avlProver_=(v: BatchAVLProver[D, HF]): Unit
   val storage: VersionedAVLStorage[D]
 
   def digest: ADDigest = avlProver.digest
@@ -48,7 +49,7 @@ object PersistentBatchAVLProver {
                    ): Try[PersistentBatchAVLProver[D, HF]] = Try {
 
     new PersistentBatchAVLProver[D, HF] {
-      var avlProver: BatchAVLProver[D, HF] = avlBatchProver
+      override var avlProver: BatchAVLProver[D, HF] = avlBatchProver
       override val storage: VersionedAVLStorage[D] = versionedStorage
 
       (storage.version match {
