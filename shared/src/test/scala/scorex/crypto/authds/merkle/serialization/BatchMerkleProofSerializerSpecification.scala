@@ -22,7 +22,7 @@ class BatchMerkleProofSerializerSpecification extends AnyPropSpec
   property("Batch proof serialization + deserialization") {
     val r = new Random()
     val serializer = new BatchMerkleProofSerializer[D, HF]
-    forAll(smallInt) { N: Int =>
+    forAll(smallInt) { (N: Int) =>
       whenever(N > 0) {
         val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
         val tree = MerkleTree(d)
@@ -66,7 +66,7 @@ class BatchMerkleProofSerializerSpecification extends AnyPropSpec
   property("indices serialization + deserialization") {
     val r = new Random()
     val serializer = new BatchMerkleProofSerializer[D, HF]
-    forAll(smallInt) { N: Int =>
+    forAll(smallInt) { (N: Int) =>
       whenever(N > 0) {
 
         val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
@@ -91,7 +91,7 @@ class BatchMerkleProofSerializerSpecification extends AnyPropSpec
   property("proofs serialization + deserialization") {
     val r = new Random()
     val serializer = new BatchMerkleProofSerializer[D, HF]
-    forAll(smallInt) { N: Int =>
+    forAll(smallInt) { (N: Int) =>
       whenever(N > 0) {
 
         val proofs: Seq[(Digest, Side)] = (0 until N)

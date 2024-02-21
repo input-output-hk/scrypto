@@ -5,7 +5,7 @@ class CommutativeHashSpecification extends HashTest {
   val hash = new CommutativeHash(Sha256)
 
   property(s"CommutativeHash(Sha256) is CryptographicHash") {
-    forAll { data: Array[Byte] =>
+    forAll { (data: Array[Byte]) =>
       hash.hash(data).length shouldBe hash.DigestSize
     }
 

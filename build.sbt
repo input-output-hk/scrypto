@@ -4,9 +4,10 @@ name := "scrypto"
 description := "Cryptographic primitives for Scala"
 organization := "org.scorexfoundation"
 
-lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.15"
+lazy val scala213 = "2.13.12"
+lazy val scala212 = "2.12.18"
 lazy val scala211 = "2.11.12"
+lazy val scala3   = "3.3.1"
 
 javacOptions ++=
   "-source" :: "1.8" ::
@@ -15,32 +16,44 @@ javacOptions ++=
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers ++= Resolver.sonatypeOssRepos("snapshots"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/input-output-hk/scrypto")),
   pomExtra :=
-      <developers>
-        <developer>
-          <id>kushti</id>
-          <name>Alexander Chepurnoy</name>
-          <url>http://chepurnoy.org/</url>
-        </developer>
-      </developers>,
+    <developers>
+      <developer>
+        <id>kushti</id>
+        <name>Alexander Chepurnoy</name>
+        <url>http://chepurnoy.org/</url>
+      </developer>
+    </developers>,
   scmInfo := Some(
-      ScmInfo(
-          url("https://github.com/input-output-hk/scrypto"),
-          "scm:git@github.com:input-output-hk/scrypto.git"
+    ScmInfo(
+      url("https://github.com/input-output-hk/scrypto"),
+      "scm:git@github.com:input-output-hk/scrypto.git"
+    )
+  ),
+  libraryDependencies ++= {
+    if (scalaVersion.value == scala3)
+      Seq(
+        ("org.scorexfoundation" %%% "scorex-util" % "0.2.1").cross(CrossVersion.for3Use2_13),
+        "org.scalatest" %%% "scalatest" % "3.3.0-alpha.1" % Test,
+        "org.scalatest" %%% "scalatest-propspec" % "3.3.0-alpha.1" % Test,
+        "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-alpha.1" % Test,
+        "org.scalacheck" %%% "scalacheck" % "1.15.3" % Test,
+        "org.scalatestplus" %%% "scalacheck-1-17" % "3.3.0.0-alpha.1" % Test
       )
-  ),
-  libraryDependencies ++= Seq(
-    "org.rudogma" %%% "supertagged" % "2.0-RC2",
-    "org.scorexfoundation" %%% "scorex-util" % "0.2.0",
-    "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
-    "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
-    "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
-    "org.scalatestplus" %%% "scalacheck-1-15" % "3.3.0.0-SNAP3" % Test,
-    "org.scalacheck" %%% "scalacheck" % "1.15.2" % Test
-  ),
+    else // use last versions with Scala 2.11 support
+      Seq(
+        "org.rudogma" %%% "supertagged" % "2.0-RC2",
+        "org.scorexfoundation" %%% "scorex-util" % "0.2.1",
+        "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
+        "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
+        "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
+        "org.scalacheck" %%% "scalacheck" % "1.15.2" % Test,
+        "org.scalatestplus" %%% "scalacheck-1-15" % "3.3.0.0-SNAP3" % Test
+      )
+  },
   javacOptions ++= javacReleaseOption,
   publishMavenStyle := true,
   publishTo := sonatypePublishToBundle.value
@@ -66,7 +79,7 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
         "org.bouncycastle" % "bcprov-jdk15to18" % "1.66"
       ),
       scalaVersion := scala213,
-      crossScalaVersions := Seq(scala211, scala212, scala213)
+      crossScalaVersions := Seq(scala211, scala212, scala213, scala3)
     )
 
 lazy val scryptoJS = scrypto.js
@@ -74,7 +87,7 @@ lazy val scryptoJS = scrypto.js
     .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
     .settings(
       scalaVersion := scala213,
-      crossScalaVersions := Seq(scala212, scala213),
+      crossScalaVersions := Seq(scala212, scala213, scala3),
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
@@ -93,7 +106,7 @@ lazy val benchmarks = project
     .dependsOn(scrypto.jvm)
     .settings(
       moduleName := "scrypto-benchmarks",
-      crossScalaVersions := Seq(scala211, scala212, scala213),
+      crossScalaVersions := Seq(scala211, scala212, scala213, scala3),
       scalaVersion := scala213,
     )
     .enablePlugins(JmhPlugin)

@@ -13,7 +13,7 @@ class SparseMerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPro
   implicit val hf: CryptographicHash[Digest32] = Blake2b256
 
   property("Tree has valid last proof") {
-    forAll { height: Byte =>
+    forAll { (height: Byte) =>
       whenever(height > 0) {
         val tree0 = SparseMerkleTree.emptyTree(height)
         tree0.lastProof.valid(tree0.rootDigest, height) shouldBe true
@@ -22,7 +22,7 @@ class SparseMerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPro
   }
 
   property("ZeroProof tree has valid proof") {
-    forAll { height: Byte =>
+    forAll { (height: Byte) =>
       whenever(height > 0) {
         val zp = SparseMerkleTree.zeroProof[Digest32](height)
         val zp1 = zp.copy(idx = 1)
@@ -35,7 +35,7 @@ class SparseMerkleTreeSpecification extends AnyPropSpec with ScalaCheckDrivenPro
   }
 
   property("Updated tree has valid proof") {
-    forAll { height: Byte =>
+    forAll { (height: Byte) =>
       whenever(height > 1) {
         val zp = SparseMerkleTree.zeroProof[Digest32](height)
         val tree0 = SparseMerkleTree.emptyTree(height)

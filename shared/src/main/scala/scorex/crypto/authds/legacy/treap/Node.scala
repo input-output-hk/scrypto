@@ -24,7 +24,7 @@ sealed trait Node extends ToStringHelper {
 
 trait InternalNode {
   val hf: CryptographicHash[_ <: Digest]
-  val level: Level
+  def level: Level
 
   def leftLabel: Digest
 
@@ -44,7 +44,7 @@ case class ProverNode(key: ADKey, private var _left: ProverNodes, private var _r
                      (implicit val hf: CryptographicHash[_ <: Digest], levelFunc: LevelFunction)
   extends ProverNodes with InternalNode {
 
-  lazy val level: Level = levelFunc(key)
+  def level: Level = levelFunc(key)
 
   def left: ProverNodes = _left
 
