@@ -4,8 +4,8 @@ name := "scrypto"
 description := "Cryptographic primitives for Scala"
 organization := "org.scorexfoundation"
 
-lazy val scala213 = "2.13.8"
-lazy val scala212 = "2.12.15"
+lazy val scala213 = "2.13.11"
+lazy val scala212 = "2.12.18"
 lazy val scala211 = "2.11.12"
 
 javacOptions ++=
@@ -15,7 +15,7 @@ javacOptions ++=
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers ++= Resolver.sonatypeOssRepos("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/input-output-hk/scrypto")),
   pomExtra :=
@@ -34,7 +34,7 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies ++= Seq(
     "org.rudogma" %%% "supertagged" % "2.0-RC2",
-    "org.scorexfoundation" %%% "scorex-util" % "0.2.0",
+    "org.scorexfoundation" %%% "scorex-util" % "0.2.1",
     "org.scalatest" %%% "scalatest" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-propspec" % "3.3.0-SNAP3" % Test,
     "org.scalatest" %%% "scalatest-shouldmatchers" % "3.3.0-SNAP3" % Test,
@@ -71,17 +71,17 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
 
 lazy val scryptoJS = scrypto.js
     .enablePlugins(ScalaJSBundlerPlugin)
-    .enablePlugins(ScalablyTypedConverterExternalNpmPlugin)
+    .enablePlugins(ScalablyTypedConverterGenSourcePlugin)
     .settings(
       scalaVersion := scala213,
-      crossScalaVersions := Seq(scala212, scala213),
+      crossScalaVersions := Seq(scala213),
       libraryDependencies ++= Seq(
         "org.scala-js" %%% "scala-js-macrotask-executor" % "1.0.0",
         ("org.scala-js" %%% "scalajs-java-securerandom" % "1.0.0").cross(CrossVersion.for3Use2_13)
       ),
       Test / parallelExecution := false,
-      // how to setup ScalablyTyped https://youtu.be/hWUAVrNj65c?t=1341
-      externalNpm := { file(s"${baseDirectory.value}/..") },
+      // how to setup ScalablyTyped https://scalablytyped.org/docs/library-developer
+      stOutputPackage := "scorex",
       Compile / npmDependencies ++= Seq(
         "@noble/hashes" -> "1.1.4"
       ),
