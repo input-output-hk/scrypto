@@ -85,7 +85,7 @@ lazy val scryptoJS = scrypto.js
       Compile / npmDependencies ++= Seq(
         "@noble/hashes" -> "1.1.4"
       ),
-      useYarn := true
+      useYarn := false
     )
 
 lazy val benchmarks = project

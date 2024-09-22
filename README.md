@@ -11,14 +11,14 @@ Use the repository as code examples for the trees also, though one code example 
 
 ## Get Scrypto
 
-Scrypto is available on Sonatype for Scala 2.12:
+Scrypto is available on Sonatype for Scala 2.12 / 2.13:
 ```scala
 resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
 ```
 
 You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
 ```scala
-libraryDependencies += "org.scorexfoundation" %% "scrypto" % "2.2.0"
+libraryDependencies += "org.scorexfoundation" %% "scrypto" % "3.0.0"
 ```
 
 ### Hash functions
@@ -208,7 +208,11 @@ added 285 packages, and audited 286 packages in 20s
 found 0 vulnerabilities
 ```
 
-Then you can compile the library with SBT and run tests.
+Then you can compile the library with SBT and run tests. Please note that Scala-JS compilation of JavaScript code
+may consume a lot of memory, so makes sense to give more memory to SBT by e.g. running 
+`export SBT_OPTS="-Xmx3G -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=2G -Xss2M"` (to give 3G
+of RAM to it) before launching SBT.
+
 ```
 $sbt
 sbt:scrypto> compile

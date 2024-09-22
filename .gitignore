@@ -3,6 +3,7 @@
 .ensime
 .ensime_cache/
 scorex.yaml
+.bsp
 
 # scala build folders
 target
@@ -13,3 +14,7 @@ target
 # logs
 scorex-errors.log
 *.log
+
+# local-only JS-related files and folders
+package-lock.json
+node_modules/

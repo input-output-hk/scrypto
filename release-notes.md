@@ -2,6 +2,7 @@
 **3.0.0**
 ---------
 
+* Javascript support via Scala.JS
 * CI configuration for Scala.js 
 * configuration of SBT with necessary JS dependencies (@noble/hashes) using ScalablyTyped
 * removed all Java dependencies in `shared` code (jvm still uses BouncyCastle)
