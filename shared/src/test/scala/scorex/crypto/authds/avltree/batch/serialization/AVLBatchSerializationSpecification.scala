@@ -36,7 +36,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
   }
 
   property("slice to pieces and combine tree back") {
-    forAll(Gen.choose(10, 10000)) { treeSize: Int =>
+    forAll(Gen.choose(10, 10000)) { (treeSize: Int) =>
       whenever(treeSize >= 10) {
         val tree = generateProver(treeSize)
         val height = tree.rootNodeHeight
@@ -57,7 +57,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
   }
 
   property("slice to Array[Byte] pieces and combine tree back") {
-    forAll(Gen.choose(0, 10000)) { treeSize: Int =>
+    forAll(Gen.choose(0, 10000)) { (treeSize: Int) =>
       val serializer = new BatchAVLProverSerializer[D, HF]
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
@@ -83,7 +83,7 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
 
   property("manifest serialization") {
     val serializer = new BatchAVLProverSerializer[D, HF]
-    forAll(Gen.choose(0, 10000)) { treeSize: Int =>
+    forAll(Gen.choose(0, 10000)) { (treeSize: Int) =>
       val tree = generateProver(treeSize)
       val kl = tree.keyLength
       val digest = tree.digest

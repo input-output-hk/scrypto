@@ -24,7 +24,7 @@ sealed trait Node extends ToStringHelper {
 
 trait InternalNode {
   val hf: CryptographicHash[_ <: Digest]
-  val level: Level
+  def level: Level
 
   def leftLabel: Digest
 

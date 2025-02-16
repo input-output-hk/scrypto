@@ -91,7 +91,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
       val newNodes = visitedNodes(prover.topNode)
       newNodes.foreach(nn => removed.find(r => r.label sameElements nn.label) shouldBe None)
 
-     prover.generateProof()
+      prover.generateProof()
     }
 
   }
@@ -167,7 +167,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
   property("randomWalk") {
     val prover = generateProver()._1
 
-    forAll { seed: Long =>
+    forAll { (seed: Long) =>
       val e1 = prover.randomWalk(new scala.util.Random(seed))
       val e2 = prover.randomWalk(new scala.util.Random(seed))
       e1.map(_._1) shouldEqual e2.map(_._1)
@@ -279,7 +279,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     val prover = generateProver()._1
     val digest = prover.digest
 
-    forAll(smallInt) { numberOfLookups: Int =>
+    forAll(smallInt) { (numberOfLookups: Int) =>
       val currentMods = (0 until numberOfLookups).map(_ => randomKey(KL)).map(k => Lookup(k))
 
       currentMods foreach (m => prover.performOneOperation(m))
@@ -296,7 +296,7 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
     val prover = new BatchAVLProver[D, HF](KL, None)
     var digest = prover.digest
 
-    forAll { valueLength: Short =>
+    forAll { (valueLength: Short) =>
       whenever(valueLength >= 0) {
         val aKey = Random.randomBytes(KL)
         val aValue = Random.randomBytes(valueLength)

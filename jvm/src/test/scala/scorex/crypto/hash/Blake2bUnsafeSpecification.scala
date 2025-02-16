@@ -11,7 +11,7 @@ with Matchers {
   val unsafeHash = new Blake2b256Unsafe
 
   property("Unsafe should produce the same result") {
-    forAll { message: Array[Byte] =>
+    forAll { (message: Array[Byte]) =>
       unsafeHash.hash(message) shouldEqual Blake2b256(message)
     }
   }

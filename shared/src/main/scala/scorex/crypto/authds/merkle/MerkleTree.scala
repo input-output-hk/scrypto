@@ -76,7 +76,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
       val dif = b_flat diff a
       var m = dif.map(i => {
         val side = if (i % 2 == 0) MerkleProof.LeftSide else MerkleProof.RightSide
-        (l.lift(i).getOrElse(EmptyNode[D].hash), side)
+        (l.lift(i).getOrElse(EmptyNode[D]().hash), side)
       })
 
       //  Take all the even numbers from B_pruned, and divide them by two
@@ -85,7 +85,7 @@ case class MerkleTree[D <: Digest](topNode: Node[D],
       //  Go up one layer in the tree
       val l_new = l.grouped(2).map(lr => {
         hf.prefixedHash(InternalNodePrefix,
-          lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D].hash)
+          lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D]().hash)
       }).toSeq
 
       //  Repeat until the root of the tree is reached
@@ -156,10 +156,10 @@ object MerkleTree {
   @tailrec
   def calcTopNode[D <: Digest](nodes: Seq[Node[D]])(implicit hf: CryptographicHash[D]): Node[D] = {
     if (nodes.isEmpty) {
-      EmptyRootNode[D]
+      EmptyRootNode[D]()
     } else {
       val nextNodes = nodes.grouped(2)
-        .map(lr => InternalNode[D](lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D])).toSeq
+        .map(lr => InternalNode[D](lr.head, if (lr.lengthCompare(2) == 0) lr.last else EmptyNode[D]())).toSeq
       if (nextNodes.lengthCompare(1) == 0) nextNodes.head else calcTopNode(nextNodes)
     }
   }
