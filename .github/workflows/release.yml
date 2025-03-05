@@ -17,9 +17,14 @@ jobs:
       - name: Setup NPM
         uses: pnpm/action-setup@v4
         with:
-          version: 7.21.0
+          version: 8.15.6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
           node-version: ${{ matrix.node-version }}
-          cache: "pnpm"
+          cache: 'pnpm'
+
       - run: pnpm install
 
       - name: Setup Java and Scala
