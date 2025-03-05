@@ -17,7 +17,7 @@ jobs:
       - name: Setup NPM
         uses: pnpm/action-setup@v4
         with:
-          version: 8.15.6
+          version: 8.15.9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
