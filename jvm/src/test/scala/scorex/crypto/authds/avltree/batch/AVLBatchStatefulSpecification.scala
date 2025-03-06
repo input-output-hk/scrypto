@@ -12,7 +12,7 @@ import scala.util.{Random, Try, Success, Failure}
 class AVLBatchStatefulSpecification extends AnyPropSpec {
 
   property("BatchAVLProver: prove and verify") {
-    AVLCommands.property().check
+    AVLCommands.property().check()
   }
 }
 

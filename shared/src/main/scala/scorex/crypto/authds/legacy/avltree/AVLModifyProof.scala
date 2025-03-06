@@ -225,7 +225,7 @@ case class AVLModifyProof(key: ADKey, proofSeq: Seq[AVLProofElement])
 
     val pathLength = if (keyFound) proofSeq.length - 3 else proofSeq.length - 4
     val inBytes = pathLength.toByte +: key
-    val pathProofsBytes: Array[Byte] = (0 until pathLength / 3).toArray.flatMap { i: Int =>
+    val pathProofsBytes: Array[Byte] = (0 until pathLength / 3).toArray.flatMap { (i: Int) =>
       val label = proofSeq(3 * i + 1)
       val directionLabelByte = AVLModifyProof.directionBalanceByte(proofSeq(3 * i).asInstanceOf[ProofDirection],
         proofSeq(3 * i + 2).asInstanceOf[ProofBalance])
@@ -251,7 +251,7 @@ object AVLModifyProof {
     val pathLength: Int = bytes.head.ensuring(_ % 3 == 0)
 
     val key = ADKey @@ bytes.slice(1, 1 + keyLength)
-    val pathProofs: Seq[AVLProofElement] = (0 until pathLength / 3) flatMap { i: Int =>
+    val pathProofs: Seq[AVLProofElement] = (0 until pathLength / 3) flatMap { (i: Int) =>
       val start = 1 + keyLength + i * (1 + 32)
       val (direction, balance) = parseDirectionBalance(bytes.slice(start, start + 1).head)
       val labelBytes = bytes.slice(start + 1, start + 1 + digestSize)

@@ -48,13 +48,13 @@ trait TwoPartyTests extends TestingCommons {
 
   case class Append(key: ADKey, value: ADValue) extends Modification {
     override def updateFn: UpdateFunction = {
-      oldOpt: Option[ADValue] => Success(Some(ADValue @@ oldOpt.map(_ ++ value).getOrElse(value)))
+      (oldOpt: Option[ADValue]) => Success(Some(ADValue @@ oldOpt.map(_ ++ value).getOrElse(value)))
     }: UpdateFunction
   }
 
   case class TransactionUpdate(key: ADKey, amount: Long) extends Modification {
     override def updateFn: UpdateFunction = {
-      oldOpt: Option[ADValue] =>
+      (oldOpt: Option[ADValue]) =>
         Success(Some(ADValue @@ Longs.toByteArray(oldOpt.map(v => Longs.fromByteArray(v) + amount).getOrElse(amount))))
     }: UpdateFunction
   }

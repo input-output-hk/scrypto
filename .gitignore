@@ -18,3 +18,10 @@ scorex-errors.log
 # local-only JS-related files and folders
 package-lock.json
 node_modules/
+
+# Metals
+.metals/
+**/metals.sbt
+
+# Bloop
+**/.bloop

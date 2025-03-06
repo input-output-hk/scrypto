@@ -38,7 +38,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
   //removedNodesBenchmark
   //removedNodesBenchmark()
 
-  testReadme
+  testReadme()
 
   def removedNodesBenchmark(startTreeSize: Int = 10000,
                             toRemoveSize: Int = 2000,
@@ -125,7 +125,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
   }
 
-  def lookupTest() {
+  def lookupTest() = {
     val kl = 4
     val vl = 7
 
@@ -370,9 +370,9 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
 
   }
 
-  def memoryTestWithBatching() {
+  def memoryTestWithBatching() = {
     // Generate a key out of an int
-    def generateKey(i: Int, key: Array[Byte]) {
+    def generateKey(i: Int, key: Array[Byte]) = {
       val r = i
       for (j <- 0 until 32)
         key(j) = ((r >> ((j % 4) * 8)) % 256).toByte
@@ -470,7 +470,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
    */
 
-  def memoryTestNoBatching {
+  def memoryTestNoBatching() = {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
     var p: Option[scala.util.Try[AVLModifyProof]] = None
@@ -512,7 +512,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
   }
 
-  def timeBenchmarksNew {
+  def timeBenchmarksNew() = {
     val newProver = new BatchAVLProver[D, HF](KL, Some(VL))
     val numMods = 1024 * 1024
 
@@ -576,7 +576,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
   }
 
-  def timeBenchmarksOld {
+  def timeBenchmarksOld() = {
     val oldProver = new AVLTree(32)
     val numMods = 1024 * 1024
 
@@ -636,7 +636,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     }
   }
 
-  def spaceBenchmarks {
+  def spaceBenchmarks() = {
     val newProver = new BatchAVLProver[D, HF](KL, Some(VL))
 
     val numMods = 1024 * 1024
@@ -1025,7 +1025,7 @@ object BatchingPlayground extends App with BatchTestingHelpers with Matchers {
     override def updateFn: UpdateFunction = old => Success(old)
   }
 
-  def testReadme {
+  def testReadme() = {
     val prover =
       new BatchAVLProver[D, HF](keyLength = 1, valueLengthOpt = Some(VL))
     val initialDigest = prover.digest

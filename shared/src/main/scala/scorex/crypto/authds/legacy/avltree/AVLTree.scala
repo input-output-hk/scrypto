@@ -34,7 +34,7 @@ class AVLTree[HF <: CryptographicHash[_ <: Digest]](keyLength: Int,
     val proofStream = new scala.collection.mutable.Queue[AVLProofElement]
 
     val updateFn: Option[ADValue] => Try[Option[ADValue]] = operation match {
-      case _: Lookup => x: Option[ADValue] => Success(x)
+      case _: Lookup => (x: Option[ADValue]) => Success(x)
 
       case m: Modification => m.updateFn
     }
