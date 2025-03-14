@@ -102,7 +102,7 @@ lazy val scryptoJS = scrypto.js
       // how to setup ScalablyTyped https://scalablytyped.org/docs/library-developer
       stOutputPackage := "scorex",
       Compile / npmDependencies ++= Seq(
-        "@noble/hashes" -> "1.1.4"
+        "@noble/hashes" -> "1.6.0"
       ),
       useYarn := false
     )
