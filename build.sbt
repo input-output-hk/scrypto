@@ -6,7 +6,7 @@ organization := "org.scorexfoundation"
 
 lazy val scala211 = "2.11.12"
 lazy val scala212 = "2.12.20"
-lazy val scala213 = "2.13.13"
+lazy val scala213 = "2.13.16"
 lazy val scala3   = "3.3.5"
 lazy val scalatestVersion = "3.2.19"
 
@@ -36,7 +36,7 @@ lazy val commonSettings = Seq(
   ),
   libraryDependencies ++= {
     val base = Seq(
-      ("org.scorexfoundation" %%% "scorex-util" % "0.2.1").cross(CrossVersion.for3Use2_13),
+      "org.scorexfoundation" %%% "scorex-util" % "0.2.2",
       "org.scalatest" %%% "scalatest" % scalatestVersion % Test,
       "org.scalatest" %%% "scalatest-propspec" % scalatestVersion % Test,
       "org.scalatest" %%% "scalatest-shouldmatchers" % scalatestVersion % Test,
