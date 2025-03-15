@@ -6,7 +6,7 @@ import org.openjdk.jmh.profile.GCProfiler
 import org.openjdk.jmh.runner.options.OptionsBuilder
 import org.openjdk.jmh.runner.{Runner, RunnerException}
 import scorex.benchmarks.Base16Benchmark.BenchmarkState
-import scorex.crypto.encode.Base16
+import scorex.util.encode.Base16
 
 import scala.util.Random
 
