@@ -144,6 +144,74 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     manSubtrees.map(Base16.encode).distinct.size shouldBe manSubtrees.size
   }
 
+  private val forgedKey: ADKey = ADKey @@ Blake2b256("forged").take(KL)
+
+  /** Same children and balance, different key - and therefore the same label */
+  private def withForgedKey(n: InternalProverNode[D], key: ADKey = forgedKey): InternalProverNode[D] =
+    new InternalProverNode[D](key, n.left, n.right, n.balance)
+
+  private def firstInternalSubtree(sliced: serializer.SlicedTree): BatchAVLProverSubtree[D] =
+    sliced._2.find(_.subtreeTop.isInstanceOf[InternalProverNode[D]]).get
+
+  property("a label does not commit to the key of an internal node") {
+    val tree = generateProver()
+    val subtree = firstInternalSubtree(slice(tree))
+    val top = subtree.subtreeTop.asInstanceOf[InternalProverNode[D]]
+
+    val forged = withForgedKey(top)
+
+    // this is the hole the checks below close: the key changed, the digest did not
+    forged.key.sameElements(top.key) shouldBe false
+    forged.label.sameElements(top.label) shouldBe true
+  }
+
+  property("subtree with a forged internal key does not verify") {
+    val tree = generateProver()
+    val subtree = firstInternalSubtree(slice(tree))
+    val top = subtree.subtreeTop.asInstanceOf[InternalProverNode[D]]
+
+    val forgedSubtree = BatchAVLProverSubtree[D](withForgedKey(top))
+
+    // it still passes the digest check it used to be accepted on ...
+    forgedSubtree.id.sameElements(subtree.id) shouldBe true
+    // ... and is rejected anyway
+    forgedSubtree.verify(subtree.id) shouldBe false
+
+    subtree.verify(subtree.id) shouldBe true
+  }
+
+  property("manifest with an internal key out of order does not verify") {
+    val tree = generateProver()
+    val manifest = slice(tree)._1
+    val root = manifest.root.asInstanceOf[InternalProverNode[D]]
+
+    // smaller than every key in the tree, so the in-order walk stops increasing at the root
+    val smallest = ADKey @@ Array.fill(KL)(0.toByte)
+    val forgedManifest = BatchAVLProverManifest[D](withForgedKey(root, smallest), manifest.rootHeight)
+
+    forgedManifest.id.sameElements(manifest.id) shouldBe true
+    forgedManifest.verify(manifest.id, manifest.rootHeight) shouldBe false
+
+    manifest.verify(manifest.id, manifest.rootHeight) shouldBe true
+  }
+
+  property("combining a tree with a forged internal key fails") {
+    val tree = generateProver()
+
+    // combine mutates the manifest it is given, so each case gets its own slice of the same tree
+    serializer.combine(slice(tree), tree.keyLength, tree.valueLengthOpt).isSuccess shouldBe true
+
+    val sliced = slice(tree)
+    val subtree = firstInternalSubtree(sliced)
+    val top = subtree.subtreeTop.asInstanceOf[InternalProverNode[D]]
+
+    val forgedSubtree = BatchAVLProverSubtree[D](withForgedKey(top))
+    val forgedSliced = (sliced._1, sliced._2.map(st => if (st.id.sameElements(subtree.id)) forgedSubtree else st))
+
+    // the label is unchanged, so the forged subtree is still found and attached where the real one belongs
+    serializer.combine(forgedSliced, tree.keyLength, tree.valueLengthOpt).isFailure shouldBe true
+  }
+
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {
     case n: ProxyInternalNode[D] if n.isEmpty =>
       Seq(n)
