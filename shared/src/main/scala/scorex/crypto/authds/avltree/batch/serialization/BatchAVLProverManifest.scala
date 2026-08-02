@@ -20,9 +20,14 @@ case class BatchAVLProverManifest[D <: Digest](root: ProverNodes[D], rootHeight:
   /**
     * Verify that manifest corresponds to expected digest and height provided by a trusted party
     * (for blockchain protocols, it can be digest and height included by a miner)
+    *
+    * Node labels do not commit to the keys of internal nodes, so matching the digest is not enough on its
+    * own. A manifest ends at nodes whose children are only labels, so the keys below it are not available
+    * yet and only the search-tree ordering of its own keys can be checked here; the complete check runs on
+    * the assembled tree in `BatchAVLProverSerializer.combine`.
     */
   def verify(expectedDigest: D, expectedHeight: Int): Boolean = {
-    id.sameElements(expectedDigest) && expectedHeight == rootHeight
+    id.sameElements(expectedDigest) && expectedHeight == rootHeight && NodeKeyChecks.keysAreOrdered(root)
   }
 
   /**

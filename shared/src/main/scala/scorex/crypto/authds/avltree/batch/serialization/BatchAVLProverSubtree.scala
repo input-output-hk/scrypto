@@ -17,9 +17,13 @@ case class BatchAVLProverSubtree[D <: Digest](subtreeTop: ProverNodes[D]) {
 
   /**
     * Verify that manifest corresponds to expected digest (e.g. got from a manifest)
+    *
+    * Node labels do not commit to the keys of internal nodes, so matching the digest is not enough on its
+    * own: the keys are checked against the ones the leaves imply. A subtree is fully materialized, so that
+    * check is complete here.
     */
   def verify(expectedDigest: D): Boolean = {
-    subtreeTop.label.sameElements(expectedDigest)
+    subtreeTop.label.sameElements(expectedDigest) && NodeKeyChecks.keysAreConsistent(subtreeTop)
   }
 
   /**
