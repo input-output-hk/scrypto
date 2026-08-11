@@ -439,7 +439,8 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
   private[batch] def checkTree(postProof: Boolean = false): Unit = {
     var fail: Boolean = false
 
-    def checkTreeHelper(rNode: ProverNodes[D]): (ProverLeaf[D], ProverLeaf[D], Int) = {
+    def checkTreeHelper(rNode: ProverNodes[D], depth: Int): (ProverLeaf[D], ProverLeaf[D], Int) = {
+      require(depth >= 0, "tree depth exceeds maximum allowed depth")
       def myRequire(t: Boolean, s: String): Unit = {
         if (!t) {
           var x = rNode.key(0).toInt
@@ -457,8 +458,8 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
           if (r.right.isInstanceOf[InternalProverNode[D]])
             myRequire(ByteArray.compare(r.right.key, r.key) > 0, "wrong right key")
 
-          val (minLeft, maxLeft, leftHeight) = checkTreeHelper(r.left)
-          val (minRight, maxRight, rightHeight) = checkTreeHelper(r.right)
+          val (minLeft, maxLeft, leftHeight) = checkTreeHelper(r.left, depth - 1)
+          val (minRight, maxRight, rightHeight) = checkTreeHelper(r.right, depth - 1)
           myRequire(maxLeft.nextLeafKey sameElements minRight.key, "children don't match")
           myRequire(minRight.key sameElements r.key, "min of right subtree doesn't match")
           myRequire(r.balance >= -1 && r.balance <= 1 && r.balance.toInt == rightHeight - leftHeight, "wrong balance")
@@ -470,7 +471,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
       }
     }
 
-    val (minTree, maxTree, treeHeight) = checkTreeHelper(topNode)
+    val (minTree, maxTree, treeHeight) = checkTreeHelper(topNode, rootNodeHeight)
     require(minTree.key sameElements NegativeInfinityKey)
     require(maxTree.nextLeafKey sameElements PositiveInfinityKey)
     require(treeHeight == rootNodeHeight)

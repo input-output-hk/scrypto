@@ -1,4 +1,4 @@
-import sbt.Keys.{homepage, scalaVersion}
+import sbt.Keys.{homepage, localStaging, scalaVersion}
 
 name := "scrypto"
 description := "Cryptographic primitives for Scala"
@@ -17,7 +17,6 @@ javacOptions ++=
 
 lazy val commonSettings = Seq(
   organization := "org.scorexfoundation",
-  resolvers ++= Resolver.sonatypeOssRepos("public"),
   licenses := Seq("CC0" -> url("https://creativecommons.org/publicdomain/zero/1.0/legalcode")),
   homepage := Some(url("https://github.com/input-output-hk/scrypto")),
   pomExtra :=
@@ -62,7 +61,11 @@ lazy val commonSettings = Seq(
   },
   javacOptions ++= javacReleaseOption,
   publishMavenStyle := true,
-  publishTo := sonatypePublishToBundle.value
+  publishTo := {
+    val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+    if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+    else localStaging.value
+  }
 )
 
 
@@ -82,7 +85,7 @@ lazy val scrypto = crossProject(JVMPlatform, JSPlatform)
     .settings(commonSettings)
     .jvmSettings(
       libraryDependencies ++= Seq(
-        "org.bouncycastle" % "bcprov-jdk15to18" % "1.80"
+        "org.bouncycastle" % "bcprov-jdk15to18" % "1.85.1"
       ),
       scalaVersion := scala213,
       crossScalaVersions := Seq(scala211, scala212, scala213, scala3)
@@ -102,7 +105,7 @@ lazy val scryptoJS = scrypto.js
       // how to setup ScalablyTyped https://scalablytyped.org/docs/library-developer
       stOutputPackage := "scorex",
       Compile / npmDependencies ++= Seq(
-        "@noble/hashes" -> "1.6.0"
+        "@noble/hashes" -> "1.6.1"
       ),
       useYarn := false
     )
@@ -129,7 +132,7 @@ def javacReleaseOption = {
 credentials ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
   password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
-} yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
+} yield Credentials("Sonatype Nexus Repository Manager", "central.sonatype.com", username, password)).toSeq
 
 // prefix version with "-SNAPSHOT" for builds without a git tag
 ThisBuild / dynverSonatypeSnapshots := true

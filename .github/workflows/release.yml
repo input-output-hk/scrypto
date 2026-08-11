@@ -6,6 +6,7 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SBT_OPTS: "-Xmx4G -Xss4M -XX:+UseG1GC"
 
 jobs:
   publish_release:
@@ -22,15 +23,16 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 20.x
           cache: 'pnpm'
 
       - run: pnpm install
 
-      - name: Setup Java and Scala
-        uses: olafurpg/setup-scala@v10
+      - name: Setup JVM and sbt
+        uses: coursier/setup-action@v1
         with:
-          java-version: adopt@1.8
+          jvm: adoptium:1.8
+          apps: sbt
 
       - name: Cache sbt
         uses: actions/cache@v4
@@ -42,7 +44,7 @@ jobs:
             ~/.cache/coursier/v1
             ~/AppData/Local/Coursier/Cache/v1
             ~/Library/Caches/Coursier/v1
-          key: ${{ runner.os }}-sbt-cache-v4-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+          key: ${{ runner.os }}-sbt-cache-v5-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
       - name: Import GPG key
         run: ci/import_gpg.sh
@@ -50,7 +52,7 @@ jobs:
           GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
 
       - name: Publish release ${{ github.ref }}
-        run: sbt +scryptoJVM/publishSigned +scryptoJS/publishSigned sonatypeBundleRelease
+        run: sbt +scryptoJVM/publishSigned +scryptoJS/publishSigned sonaRelease
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}

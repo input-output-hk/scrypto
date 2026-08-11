@@ -7,6 +7,9 @@ import scorex.crypto.hash.{CryptographicHash, Digest, Digest32}
 
 import scala.util.Try
 
+/**
+  * Serializer for compact Merkle multiproofs.
+  */
 class BatchMerkleProofSerializer[D <: Digest32, HF <: CryptographicHash[D]](implicit val hf: HF)  {
 
   private val digestSize = hf.DigestSize
@@ -15,6 +18,9 @@ class BatchMerkleProofSerializer[D <: Digest32, HF <: CryptographicHash[D]](impl
   private val indicesSize = digestSize + indexSize
   private val proofsSize = digestSize + sideSize
 
+  /**
+    * Serializes a multiproof to bytes: 4-byte numIndices, 4-byte numProofs, indices, proofs.
+    */
   def serialize(bmp: BatchMerkleProof[D]): Array[Byte] =
     Bytes.concat(
       Ints.toByteArray(bmp.indices.size),
@@ -23,19 +29,24 @@ class BatchMerkleProofSerializer[D <: Digest32, HF <: CryptographicHash[D]](impl
       proofsToBytes(bmp.proofs)
     )
 
+  /**
+    * Deserializes a multiproof from bytes.
+    * Validates the header length, non-negative counts, and that the declared payload fits in the input.
+    */
   def deserialize(bytes: Array[Byte]): Try[BatchMerkleProof[D]] = Try {
 
-    if (bytes.length < 8) {
-      throw new Error("Deserialization error, empty input.")
-    }
+    require(bytes.length >= 8, "Deserialization error, input too short.")
 
     val numIndices = Ints.fromByteArray(bytes.slice(0, 4))
     val numProofs = Ints.fromByteArray(bytes.slice(4, 8))
-    val (indices, proofs) = bytes.drop(8).splitAt(numIndices * indicesSize)
 
-    if (indices.length != numIndices * indicesSize || proofs.length != numProofs * proofsSize) {
-      throw new Error("Deserialization error, invalid input.")
-    }
+    require(numIndices >= 0, "Deserialization error, invalid input.")
+    require(numProofs >= 0, "Deserialization error, invalid input.")
+
+    val expectedLength = numIndices.toLong * indicesSize + numProofs.toLong * proofsSize
+    require(expectedLength == bytes.length - 8, "Deserialization error, invalid input.")
+
+    val (indices, proofs) = bytes.drop(8).splitAt(numIndices * indicesSize)
 
     BatchMerkleProof(
       indicesFromBytes(indices),
@@ -62,6 +73,7 @@ class BatchMerkleProofSerializer[D <: Digest32, HF <: CryptographicHash[D]](impl
     bytes.grouped(indicesSize)
       .map(b => {
         val index = Ints.fromByteArray(b.slice(0, indexSize))
+        require(index >= 0, "Deserialization error, invalid negative index.")
         val hash = b.slice(indexSize, indicesSize).asInstanceOf[Digest]
         (index,hash)
       })
@@ -72,8 +84,10 @@ class BatchMerkleProofSerializer[D <: Digest32, HF <: CryptographicHash[D]](impl
     bytes.grouped(proofsSize)
       .map(b => {
         val hashBytes = b.slice(0, digestSize)
-        val hash = (if (hashBytes.forall(0.toByte.equals)) EmptyByteArray else hashBytes).asInstanceOf[Digest]
-        val side = b.apply(digestSize).asInstanceOf[Side]
+        val hash = (if (hashBytes.forall(_ == 0.toByte)) EmptyByteArray else hashBytes).asInstanceOf[Digest]
+        val sideByte = b.apply(digestSize)
+        require(sideByte == 0 || sideByte == 1, "Deserialization error, invalid side value.")
+        val side = Side @@ sideByte
         (hash, side)
       })
       .toSeq

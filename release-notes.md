@@ -1,4 +1,15 @@
 
+**3.1.1**
+---------
+
+* AVL+ tree serialization hardening
+* BouncyCastle dependency update
+
+**3.1.0**
+---------
+
+* Scala 3 support
+
 **3.0.0**
 ---------
 

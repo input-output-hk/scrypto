@@ -1,4 +1,4 @@
-# Scrypto [![Build Status](https://travis-ci.org/input-output-hk/scrypto.svg?branch=master)](https://travis-ci.org/input-output-hk/scrypto)
+# Scrypto [![CI](https://github.com/input-output-hk/scrypto/actions/workflows/ci.yml/badge.svg)](https://github.com/input-output-hk/scrypto/actions/workflows/ci.yml)
 
 Scrypto is an open source cryptographic toolkit designed to make it easier and safer for developers to use cryptography in their applications.
 
@@ -11,14 +11,18 @@ Use the repository as code examples for the trees also, though one code example 
 
 ## Get Scrypto
 
-Scrypto is available on Sonatype for Scala 2.12 / 2.13:
+Scrypto is available on Maven Central for Scala 2.11, 2.12, 2.13, and 3, with Scala.js support for Scala 2.13 and 3:
+
+For the JVM:
+
 ```scala
-resolvers += "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/"
+libraryDependencies += "org.scorexfoundation" %% "scrypto" % "3.1.1"
 ```
 
-You can use Scrypto in your sbt project by simply adding the following dependency to your build file:
+For Scala.js:
+
 ```scala
-libraryDependencies += "org.scorexfoundation" %% "scrypto" % "3.0.0"
+libraryDependencies += "org.scorexfoundation" %%% "scrypto" % "3.1.1"
 ```
 
 ### Hash functions
@@ -178,11 +182,11 @@ Here are code examples for generating proofs and checking them. In this example 
 
 # Tests
 
-Run `sbt test` from a folder containing the framework to launch tests.
+Run `sbt +scryptoJVM/test +scryptoJS/test` from a folder containing the framework to launch tests.
 
 # Benchmarks
 
-Run `sbt bench:test` from a folder containing the framework to launch embedded benchmarks.
+Run `sbt benchmarks/Jmh/run` from a folder containing the framework to launch JMH benchmarks.
 
 # License
 
@@ -202,21 +206,26 @@ environment for ScalablyTyped is configured in this repository.
 
 Before compiling the library with SBT, you need to install JS dependencies for ScalablyTyped. 
 The configuration is in `package.json`.
-```
-$npm install
-added 285 packages, and audited 286 packages in 20s
-found 0 vulnerabilities
+
+```bash
+pnpm install
 ```
 
-Then you can compile the library with SBT and run tests. Please note that Scala-JS compilation of JavaScript code
-may consume a lot of memory, so makes sense to give more memory to SBT by e.g. running 
-`export SBT_OPTS="-Xmx3G -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=2G -Xss2M"` (to give 3G
-of RAM to it) before launching SBT.
+Then you can compile the library with SBT and run tests. Please note that Scala.js compilation of JavaScript code
+may consume a lot of memory, so it makes sense to give more memory to SBT by e.g. running 
 
+```bash
+export SBT_OPTS="-Xmx4G -Xss4M -XX:+UseG1GC"
 ```
-$sbt
-sbt:scrypto> compile
-sbt:scrypto> test
+
+before launching SBT.
+
+```bash
+sbt
+sbt:scrypto> +scryptoJVM/compile
+sbt:scrypto> +scryptoJS/compile
+sbt:scrypto> +scryptoJVM/test
+sbt:scrypto> +scryptoJS/test
 ```
 
 Your contributions are always welcome! 

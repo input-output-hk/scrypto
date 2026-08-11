@@ -22,7 +22,6 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         scala: [3.3.5, 2.13.16, 2.12.20, 2.11.12]
-        java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (full)
@@ -30,10 +29,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Java and Scala
-        uses: olafurpg/setup-scala@v10
+      - name: Setup JVM and sbt
+        uses: coursier/setup-action@v1
         with:
-          java-version: ${{ matrix.java }}
+          jvm: adoptium:1.8
+          apps: sbt
 
       - name: Cache sbt
         uses: actions/cache@v4
@@ -45,7 +45,7 @@ jobs:
             ~/.cache/coursier/v1
             ~/AppData/Local/Coursier/Cache/v1
             ~/Library/Caches/Coursier/v1
-          key: ${{ runner.os }}-sbt-cache-v4-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+          key: ${{ runner.os }}-sbt-cache-v5-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
       - name: Runs tests
         run: sbt ++${{ matrix.scala }} scryptoJVM/test
@@ -61,12 +61,12 @@ jobs:
     name: JS - Test and publish a snapshot
     env:
       HAS_SECRETS: ${{ secrets.SONATYPE_PASSWORD != '' }}
+      SBT_OPTS: "-Xmx4G -Xss4M -XX:+UseG1GC"
     strategy:
       matrix:
         os: [ubuntu-latest]
         scala: [3.3.5, 2.13.16]
-        java: [adopt@1.8]
-        node-version: [16.x]
+        node-version: [20.x]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -84,10 +84,11 @@ jobs:
 
       - run: pnpm install
 
-      - name: Setup Java and Scala
-        uses: olafurpg/setup-scala@v10
+      - name: Setup JVM and sbt
+        uses: coursier/setup-action@v1
         with:
-          java-version: ${{ matrix.java }}
+          jvm: adoptium:1.8
+          apps: sbt
 
       - name: Cache sbt
         uses: actions/cache@v4
@@ -99,7 +100,7 @@ jobs:
             ~/.cache/coursier/v1
             ~/AppData/Local/Coursier/Cache/v1
             ~/Library/Caches/Coursier/v1
-          key: ${{ runner.os }}-sbt-cache-v4-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
+          key: ${{ runner.os }}-sbt-cache-v5-${{ hashFiles('**/*.sbt') }}-${{ hashFiles('project/build.properties') }}
 
       - name: Runs tests
         run: sbt ++${{ matrix.scala }} scryptoJS/test

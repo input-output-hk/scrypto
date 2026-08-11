@@ -15,6 +15,8 @@ import scala.util.{Try, Failure}
 class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChecks with TwoPartyTests
   with BatchTestingHelpers {
 
+  implicit val hf: HF = Blake2b256
+
   property("return removed leafs and internal nodes for small tree") {
     /**
       * manual check, that correct leafs and internal nodes where deleted
@@ -771,6 +773,39 @@ class AVLBatchSpecification extends AnyPropSpec with ScalaCheckDrivenPropertyChe
       prover.digest shouldEqual digest
     }
     prover.checkTree(true)
+  }
+
+  property("checkTree rejects trees deeper than rootNodeHeight") {
+    val depth = 10
+    val rootHeight = 5
+
+    def keyBytes(value: Int): Array[Byte] = {
+      val arr = new Array[Byte](KL)
+      arr(KL - 1) = value.toByte
+      arr
+    }
+
+    var current: ProverNodes[D] = new ProverLeaf[D](
+      ADKey @@ keyBytes(2 * depth),
+      ADValue @@ Array(0.toByte),
+      ADKey @@ keyBytes(2 * depth + 1)
+    )
+    for (i <- depth - 1 to 0 by -1) {
+      val left = new ProverLeaf[D](
+        ADKey @@ keyBytes(2 * i),
+        ADValue @@ Array(0.toByte),
+        ADKey @@ keyBytes(2 * i + 1)
+      )
+      current = new InternalProverNode[D](
+        ADKey @@ keyBytes(2 * i + 1),
+        left,
+        current,
+        Balance @@ 0.toByte
+      )
+    }
+
+    val prover = new BatchAVLProver[D, HF](KL, None, Some(current -> rootHeight))
+    the [IllegalArgumentException] thrownBy prover.checkTree() should have message "requirement failed: tree depth exceeds maximum allowed depth"
   }
 
 

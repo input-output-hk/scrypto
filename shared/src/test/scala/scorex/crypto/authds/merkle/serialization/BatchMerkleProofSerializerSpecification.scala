@@ -6,6 +6,7 @@ import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import scorex.crypto.authds.merkle.{MerkleTree, Leaf}
 import scorex.crypto.authds.{Side, TwoPartyTests, LeafData}
 import scorex.crypto.hash.{Digest32, Digest}
+import scorex.utils.{Bytes, Ints}
 
 import scala.util.Random
 
@@ -54,13 +55,13 @@ class BatchMerkleProofSerializerSpecification extends AnyPropSpec
   property(testName = "empty deserialization input") {
     val serializer = new BatchMerkleProofSerializer[D, HF]
     val res = serializer.deserialize(scorex.utils.Random.randomBytes(2))
-    res.failure.exception should have message "Deserialization error, empty input."
+    res.failure.exception should have message "requirement failed: Deserialization error, input too short."
   }
 
   property(testName = "invalid deserialization input") {
     val serializer = new BatchMerkleProofSerializer[D, HF]
     val res = serializer.deserialize(scorex.utils.Random.randomBytes(9))
-    res.failure.exception should have message "Deserialization error, invalid input."
+    res.failure.exception should have message "requirement failed: Deserialization error, invalid input."
   }
 
   property("indices serialization + deserialization") {
@@ -109,4 +110,85 @@ class BatchMerkleProofSerializerSpecification extends AnyPropSpec
       }
     }
   }
+
+  property("deserialize rejects trailing bytes") {
+    val serializer = new BatchMerkleProofSerializer[D, HF]
+    val r = new Random()
+    forAll(smallInt) { (N: Int) =>
+      whenever(N > 0) {
+        val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+        val tree = MerkleTree(d)
+        val randIndices = (0 until r.nextInt(N + 1) + 1)
+          .map(_ => r.nextInt(N))
+          .distinct
+          .sorted
+        val compactMultiproof = tree.proofByIndices(randIndices).get
+        val serializedBytes = serializer.serialize(compactMultiproof)
+        serializer.deserialize(serializedBytes ++ Array(0.toByte)).isFailure shouldBe true
+      }
+    }
+  }
+
+  property("deserialize rejects invalid side value") {
+    val serializer = new BatchMerkleProofSerializer[D, HF]
+    val r = new Random()
+    forAll(smallInt) { (N: Int) =>
+      whenever(N > 0) {
+        val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+        val tree = MerkleTree(d)
+        val randIndices = (0 until r.nextInt(N + 1) + 1)
+          .map(_ => r.nextInt(N))
+          .distinct
+          .sorted
+        val compactMultiproof = tree.proofByIndices(randIndices).get
+        whenever(compactMultiproof.proofs.nonEmpty) {
+          val serializedBytes = serializer.serialize(compactMultiproof)
+          val corrupted = serializedBytes.clone()
+          // First proof side byte is at the start of the proof section + digest size.
+          val proofSectionStart = 8 + compactMultiproof.indices.size * 36
+          corrupted(proofSectionStart + hf.DigestSize) = 2.toByte
+          serializer.deserialize(corrupted).isFailure shouldBe true
+        }
+      }
+    }
+  }
+
+  property("deserialize rejects negative index") {
+    val serializer = new BatchMerkleProofSerializer[D, HF]
+    val r = new Random()
+    forAll(smallInt) { (N: Int) =>
+      whenever(N > 0) {
+        val d = (0 until N).map(_ => LeafData @@ scorex.utils.Random.randomBytes(LeafSize))
+        val tree = MerkleTree(d)
+        val randIndices = (0 until r.nextInt(N + 1) + 1)
+          .map(_ => r.nextInt(N))
+          .distinct
+          .sorted
+        val compactMultiproof = tree.proofByIndices(randIndices).get
+        whenever(compactMultiproof.indices.nonEmpty) {
+          val serializedBytes = serializer.serialize(compactMultiproof)
+          val corrupted = serializedBytes.clone()
+          val negativeIndex = Ints.toByteArray(-1)
+          corrupted(8) = negativeIndex(0)
+          corrupted(9) = negativeIndex(1)
+          corrupted(10) = negativeIndex(2)
+          corrupted(11) = negativeIndex(3)
+          serializer.deserialize(corrupted).isFailure shouldBe true
+        }
+      }
+    }
+  }
+
+  property("deserialize rejects payload length mismatch") {
+    val serializer = new BatchMerkleProofSerializer[D, HF]
+    val numIndices = 1
+    val numProofs = 0
+    val header = Bytes.concat(Ints.toByteArray(numIndices), Ints.toByteArray(numProofs))
+    // 1 index needs 36 bytes, but we provide 40.
+    val payload = scorex.utils.Random.randomBytes(40)
+    val bytes = Bytes.concat(header, payload)
+    serializer.deserialize(bytes).isFailure shouldBe true
+  }
+
 }
+
