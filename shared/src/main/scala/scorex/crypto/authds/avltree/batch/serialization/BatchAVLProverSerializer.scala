@@ -78,9 +78,11 @@ class BatchAVLProverSerializer[D <: Digest, HF <: CryptographicHash[D]]
       case _: ProverLeaf[D] =>
     }
 
-    new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(manifest.root -> manifest.rootHeight)) {
+    val prover = new BatchAVLProver[D, HF](keyLength, valueLengthOpt, Some(manifest.root -> manifest.rootHeight)) {
       override val logger = serializer.logger
     }
+    prover.checkTree()
+    prover
   }
 
   def manifestToBytes(manifest: BatchAVLProverManifest[D]): Array[Byte] = {

@@ -466,6 +466,7 @@ class BatchAVLProver[D <: Digest, HF <: CryptographicHash[D]](val keyLength: Int
           (minLeft, maxRight, height)
 
         case l: ProverLeaf[D] =>
+          myRequire(ByteArray.compare(l.key, l.nextLeafKey) < 0, "wrong leaf keys")
           (l, l, 0)
       }
     }

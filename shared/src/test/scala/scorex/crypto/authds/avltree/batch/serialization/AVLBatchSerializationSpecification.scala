@@ -144,6 +144,53 @@ class AVLBatchSerializationSpecification extends AnyPropSpec with ScalaCheckDriv
     manSubtrees.map(Base16.encode).distinct.size shouldBe manSubtrees.size
   }
 
+  property("reject forged internal node keys in subtree, manifest, and combine (issue #89)") {
+    val tree = generateProver(200)
+    val expectedDigest = tree.topNode.label
+    val expectedHeight = tree.rootNodeHeight
+
+    // 1. Subtree verification rejects forged internal key even though label is unchanged
+    val (_, subtreesForSubtreeTest) = slice(tree)
+    val nonLeafSubtree = subtreesForSubtreeTest.find(_.subtreeTop.isInstanceOf[InternalProverNode[D]]).get
+    val originalSubtreeDigest = nonLeafSubtree.id
+    val internalTop = nonLeafSubtree.subtreeTop.asInstanceOf[InternalProverNode[D]]
+    val forgedKey = ADKey @@ internalTop.key.clone()
+    forgedKey(forgedKey.length - 1) = (forgedKey(forgedKey.length - 1) ^ 1).toByte
+    val mutatedTop = internalTop.getNewKey(forgedKey)
+    // InternalProverNode label does not commit to the internal key
+    mutatedTop.label shouldEqual originalSubtreeDigest
+    val forgedSubtree = BatchAVLProverSubtree[D](mutatedTop)
+    forgedSubtree.verify(originalSubtreeDigest) shouldBe false
+
+    // 2. Manifest verification rejects out-of-order internal keys even though manifest root label is unchanged
+    val (manifestForManifestTest, _) = slice(tree)
+    val manifestRoot = manifestForManifestTest.root.asInstanceOf[InternalProverNode[D]]
+    val leftInternal = manifestRoot.left.asInstanceOf[InternalProverNode[D]]
+    // Forge left child's key to be greater than root's key; root label does not change
+    leftInternal.getNewKey(manifestRoot.right.key)
+    manifestForManifestTest.id shouldEqual expectedDigest
+    manifestForManifestTest.verify(expectedDigest, expectedHeight) shouldBe false
+
+    // 3. combine rejects forged manifest internal key even when manifest keys remain strictly ordered
+    val (manifestForCombineTest, subtreesForCombineTest) = slice(tree)
+    val combineRoot = manifestForCombineTest.root.asInstanceOf[InternalProverNode[D]]
+    val nudgedRootKey = ADKey @@ combineRoot.key.clone()
+    nudgedRootKey(nudgedRootKey.length - 1) = (nudgedRootKey(nudgedRootKey.length - 1) ^ 1).toByte
+    combineRoot.getNewKey(nudgedRootKey)
+    combineRoot.label shouldEqual expectedDigest
+    serializer.combine((manifestForCombineTest, subtreesForCombineTest), tree.keyLength, tree.valueLengthOpt).isFailure shouldBe true
+
+    // 4. combine also rejects forged subtree internal key
+    val (cleanManifest, cleanSubtrees) = slice(tree)
+    val idx = cleanSubtrees.indexWhere(_.subtreeTop.isInstanceOf[InternalProverNode[D]])
+    val targetSubtree = cleanSubtrees(idx)
+    val targetNode = targetSubtree.subtreeTop.asInstanceOf[InternalProverNode[D]]
+    val badSubtreeKey = ADKey @@ targetNode.key.clone()
+    badSubtreeKey(badSubtreeKey.length - 1) = (badSubtreeKey(badSubtreeKey.length - 1) ^ 1).toByte
+    val badSubtrees = cleanSubtrees.updated(idx, BatchAVLProverSubtree[D](targetNode.getNewKey(badSubtreeKey)))
+    serializer.combine((cleanManifest, badSubtrees), tree.keyLength, tree.valueLengthOpt).isFailure shouldBe true
+  }
+
   def leftTree(n: ProverNodes[D]): Seq[ProverNodes[D]] = n match {
     case n: ProxyInternalNode[D] if n.isEmpty =>
       Seq(n)
